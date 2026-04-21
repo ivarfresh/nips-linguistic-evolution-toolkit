@@ -1,0 +1,886 @@
+================================================================================
+NOISE EXPERIMENT LOG
+================================================================================
+Experiment: noise_bootstrap
+Index: 007
+Model: openai/gpt-5-nano
+Persona: neutral
+Task Order: ['game']
+Game Params: noisy_bootstrap_cooperation
+Noise Config: {'type': 'probabilistic', 'probability': 1.0, 'replacement': 'max', 'applies_to': 'returned', 'inform_agents': False}
+Other Player Names: default
+Myth Topic ID: anything
+================================================================================
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:00:20
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 1: You are the INVESTOR. You have $5. How much do you send? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 3}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Considering trust game strategy**
+
+I'm in a trust game as the INVESTOR with $5 for Round 1. I need to decide how much to send to the TRUSTEE, responding in JSON format. Usually, sending a positive amount helps foster trust. I could send anywhere between $0 to $5. I’m thinking $3 or $4 might be reasonable, considering the multiplier of 3x on the amount sent. However, I can’t predict what the trustee might return. It's a balancing act between being risk-averse and generous!**Analyzing trustee behavior**
+
+If I send an amount \( s \), the trustee receives \( 3s \) and then returns \( r \), where \( 0 \leq r \leq 3s \). The trustee wants to maximize their own payoff, which means they’ll aim to return as little as possible, potentially \( 0 \). In a traditional trust game, this leads to the investor losing \( s \). But there's also the possibility of reciprocity. I could choose to send nothing to avoid loss, which guarantees my baseline amount of $5, or I might send a moderate amount to signal trust. It's a tricky balance!**Deciding on an investment amount**
+
+According to the instructions, I'm the INVESTOR with $5 each round and I need to decide how much to send to the TRUSTEE, anywhere from $0 to $5. The amount sent gets multiplied by 3, and then the trustee returns a portion. I want to make a reasonable choice without overthinking; maybe I should send $2 or $3, but how about $4? If the trustee returns nothing, I’d be left with just $1. However, if they give back $4, I’ll end up with my full $5. It’s a risk!**Understanding returns in the trust game**
+
+If the trustee returns nothing, they can keep the entire $12 they received, which seems inconsistent with typical expectations. However, I shouldn't get too caught up in that. The maximum the trustee can return based on my send amount \( s \) is \( 3s \). If I send $4, the maximum is $12, and indeed the trustee can return that. 
+
+But then I realize I could end up with more than my initial $5, totaling $13, which is odd. It turns out in this game structure, the investor’s final amount can exceed the starting amount because the trustee's return adds extra funds. It's a bit complicated!**Choosing a sending amount**
+
+Okay, so the money flow is from my investment of $4 to the trustee, who could receive a maximum of $12. If the trustee decides to return $12, I could end up with $13, which feels unrealistic since it exceeds my original amount. 
+
+So, letting \( s = 3 \) seems reasonable because then \( 3s = 9 \). If the trustee returns nothing, I’d end up with $2, but I could get as much as $11 if they returned the maximum. 
+
+I think $3 is a good choice, so I'll format my response as: {'send': 3}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 273
+Output tokens: 950
+Reasoning tokens: 896
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:00:41
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 1: You are the TRUSTEE. The investor sent $3.0, that is 60.0% of their total endowment. You received $9.0. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding trustee return amount**
+
+I need to respond with a JSON format indicating how much the trustee returns. The investor sent $3.0, resulting in $9.0 received by the trustee. The optimal return amount is between 0 and 9.0, but there’s no requirement to maximize anything. 
+
+The user asks how much to return based on the first round situation, noting that the investor sent 60% of their total endowment. So now, I need to choose a return amount within that range.**Weighing return strategies**
+
+I’m considering the ethical choice of how much to return. Typically, returning something could build trust, but maximizing my own payoff means returning as little as possible. Since I received $9.0, I’d ideally return $0.0. However, I also wonder if there’s a hidden constraint. This is a simulation with no knowledge of future rounds, which makes it tempting to choose a return of 0.0. I need to respond with a numeric return, so should I go with {'return': 0.0}?**Choosing return amount format**
+
+I see that the response format should be {'return': <amount>}, and choosing 0.0 seems precise, even though standard JSON might accept just 0. Either way works, but I prefer 0.0 for consistency in decimal notation. While I ponder fairness and trust-building, the primary focus is maximizing my own payoff, which leads me to return 0. 
+
+To answer the user's question about how much to return, I'll respond with: {"return": 0.0}. Let’s make sure this aligns with the instructions about being the trustee.**Calculating investor returns**
+
+The investor sent $3.0, and with that multiplied by 3, I received $9.0. If I return $0, the investor ends up with $2. However, if I return $9, it seems the investor could get $11, but that doesn't quite make sense since I can't return more than I received. The maximum return I can offer is $9. If I choose to return that, the investor would have $11, while I would keep nothing. It’s a tricky calculation!**Finalizing return amount**
+
+I’m noticing that if I return $9, the investor could end up with $11, which is more than their original $5. However, the rule states that I keep what I received minus what I returned. It seems I can return more than I received, but then I'd end up with nothing. If the rational choice is to maximize my own return, returning $0 makes the most sense. So, I’ll respond with JSON: {'return': 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 301
+Output tokens: 996
+Reasoning tokens: 960
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:01:02
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 2
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $0.0. So your payoff was 9.0.
+Your total earnings across all rounds are $9.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding the trust amount**
+
+I need to determine how much to send to the trustee in this trust game. I could pick a rational strategy like choosing a specific value. It’s interesting that in a previous round, the trustee returned 0. As an investor, my goal is to maximize my payoff, but I can’t influence the trustee's choice of return r. Considering this, it might be safer to send 0, guaranteeing a final outcome of 5 for myself.**Analyzing previous rounds**
+
+In the last round, it seems the investor, who acted as the trustee, sent $3 and ultimately received $9 but returned $0. This means their payoff was $9, while the investor only got $2. I find myself wondering about the best approach. Do I send a recommended amount? If I assume the trustee is only going to return 0, then sending more than 0 could actually hurt my payoff. It might be best to send nothing, ensuring I secure 5.**Choosing a send amount**
+
+If the trustee returns 1.5s, my payoff as the investor would be 5 - s + 1.5s, simplifying to 5 + 0.5s. The maximum payoff occurs at s=5, giving me 7.5. Since the last round showed that the trustee returned nothing, I might think they’re untrustworthy. Still, I just need to decide on an amount. Maybe I could send 3.0 to express moderate trust. But given the low return last round, I could also choose to send nothing to secure a profit of 5.**Determining the send amount**
+
+If I think the trustee might return something, I could send 5 as a test, but that comes with uncertainty about the payoff. However, I should pick a reasonable strategy. A risk-averse approach would be to send 0, ensuring that the trustee can't take more and I secure 5. Previous rounds suggest that risk-averse investors generally send some amount to aim for a higher payout, but given the trustee's history of returning 0, I likely wouldn’t want to risk sending more.**Choosing safety in response**
+
+I’ve decided to play it safe and send 0.0. I need to decide whether to respond with {"send": 0} or {"send": 0.0}. The earlier rounds used decimals, and since both formats might be acceptable, I’ll go with 0.0 to align with previous examples. They show that format, such as {"return": 0.0}. So, my final output will be precisely: {"send": 0.0}, ensuring I maintain the required JSON format exactly.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 411
+Output tokens: 1275
+Reasoning tokens: 1216
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:01:14
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 2
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 2.0.
+Your total earnings across all rounds are $2.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Analyzing return logic**
+
+I need to look into the rules regarding the investor and trustee's returns. Since the investor's return can't exceed what they've sent, it seems logical that the trustee should return 0 if they received 0. The rule states that the investor's final amount is based on what they sent minus what they get back. There’s no restriction on returning more than received, but if it's more than received, it simply isn't sustainable. So, I should respond with {"return": 0}.**Deciding on format consistency**
+
+I need to decide whether to use 0 or 0.0 in the JSON response. The format suggests that I should use numbers within the range of 0-0.0, and we've seen examples like 3.0 and 0.0 before. Since the allowed range does include 0.0, it makes sense to stick with that for consistency. The trustee can't return a positive amount since the investor sent 0. So, I'll go with {"return": 0.0}. Let's output that!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 396
+Output tokens: 579
+Reasoning tokens: 512
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:01:38
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 3
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0.0,
+that was 0.0% of their total endowment. You received $0.0.
+You returned $0.0. So your payoff was 0.0.
+Your total earnings across all rounds are $2.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 2}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Evaluating investor rounds**
+
+I need to respond with JSON for Investor round 3, specifically {"send": <amount>}. I have to choose the appropriate amount based on previous rounds. It looks like in Round 1, the investor sent $3 and got $9 back. Then in Round 2, they sent $0, which means I need to clarify the amounts involved to ensure consistency. The calculations from each round seem a bit all over the place, so I’ll need to double-check those.**Recomputing investor earnings**
+
+I see a discrepancy with the payoff being reported as $2.0 and total earnings across all rounds also as $2.0. Let’s break it down again. In Round 1, the investor sent $3, then they might end up with $5 from an original amount. After sending $3, they would have $2 remaining, and if the trustee returned $0, that complicates things. The trustee's return amount after receiving $9 isn't clear, so I should clarify that to understand the overall calculations.**Clarifying investor rounds**
+
+In Round 1, the investor sent $3 to the trustee, who would typically return an unspecified amount, but later statements indicate $0 was sent in Round 2. The Round 2 narrative claims that the investor sent $3, which tripled to $9, and was fully returned, leading to a reported payoff of $2. This doesn’t add up because if I calculate it out, the investor should have $11 instead. It seems there’s a misalignment in figures, so I need to ensure clarity for Round 3 as the Investor now.**Deciding on investor's next move**
+
+In this round, the investor sent $0, which means their payoff was also $0, but their total earnings across all rounds are stated as $2. The investor seems to start each round with a $5 endowment that resets, rather than accumulating. So in Round 3, despite receiving $0 back and previously having a cumulative payoff of $2, I need to decide how much to send this time while keeping in mind the goal of maximizing their potential payoff. It seems the investor has $5 to work with this round!**Deciding the investment amount**
+
+The investor has a $5 endowment and a total earning of $2.00 across rounds. In Round 3, they need to decide how much to send to the trustee. Although sending $0 is safe, it won't yield any return since the trustee has historically returned $0 when nothing was sent. A reasonable strategy could involve sending a moderate amount like $1 or $2, as sending more might increase potential returns. Given the past patterns, it might be prudent to send $2 to balance maximizing payoff while minimizing risks.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 506
+Output tokens: 2191
+Reasoning tokens: 2176
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:02:02
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 3
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,
+that was 0.0% of your total endowment. This was tripled to $0.0.
+the trustee returned $0.0. So your payoff was 5.0.
+Your total earnings across all rounds are $14.0.
+The investor has sent you $6.0 this round. How much do you return to The investor? (0-6.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Analyzing return limits**
+
+The prompt specifies a return range of (0-6.0), which is different from the usual (0-18). This means they're limiting returns specifically to between 0 and 6.0. This feels odd since the last figure allows for returning only up to the original investor amount. In earlier rounds, such as with $3.0 sent by the investor, I could return up to $9.0. So, I’m trying to understand why Round 3's received amount is 18 when the return is capped at 6.0.**Clarifying return limits and narrative**
+
+They restrict the return to a range of 0-6.0, which seems unusual, but I need to follow that directive. The prompt clearly states, “The investor has sent you $6.0 this round. How much do you return to The investor? (0-6.0)." That means I should choose a return within this range. There’s some confusion since the amount sent was 6.0, yet the last round’s earnings narrative seems to imply different return possibilities. I’ll make sure to respect the 0-6.0 range moving forward.**Understanding trustee and investor roles**
+
+I’m thinking about the narrative where I'm the trustee this round. The phrase “your payoff this round” refers to the investor's earnings. So, if the investor sent 0, and the trustee returned 0, their payoff would indeed be 5.0. It all adds up! 
+
+Looking at my total earnings across rounds, starting from Round 1: the investor sent 3, and the trustee returned 0, leading to a payoff of 2 for the investor. In Round 2, the investor sent 3.0, receiving 9.0, with a similar payoff structure. I need to keep everything aligned!**Figuring out investor payoffs**
+
+I'm sorting through the investor's numbers and thinking: they started with 5, sent 3, and returned 0, so their payoff ends up being 2. However, the problem states that “Your payoff was 9.0,” which seems off. In Round 2, they were the investor and received $9.0—that's net after returns. The formula I’m using gives a different outcome: 5 - 3 + 0 equals 2, not 9. I see some inconsistencies, but I’ll follow the user’s messages to maintain coherence.**Determining return values**
+
+The prompt states, "Your total earnings across all rounds are $9.0," which implies some inconsistency that I can't fix. Looking at Round 3, the investor sent $6.0, so I can only return between 0 and 6.0. Since it's a trust game, I want to maximize my payoff while leaving something for the investor. 
+
+Returning 0 gives me the highest payoff of 18. Given the past returns were also 0, it aligns better to respond with 0 here as well. I'll finalize with {"return": 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 536
+Output tokens: 1663
+Reasoning tokens: 1600
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:02:24
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 4
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $2.0,
+that was 40.0% of their total endowment. You received $6.0.
+You returned $0.0. So your payoff was 6.0.
+Your total earnings across all rounds are $20.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Evaluating investment payoff**
+
+In this round, "You are the INVESTOR" means I have to decide how much to send. Then I see, "You received $6.0," indicating that the investor's current endowment is calculated based on the previous rounds. It seems like the investor started with 5, sent 2, and ended up getting 6 from a multiplication (2*3 = 6). But then there's a confusing bit about the payoff, which suggests a need for clarification. However, my main task is just to decide on the amount to send this round.**Deciding on trustee amount**
+
+The question asks how much to send to the trustee this round, with the answer in JSON format: {'send': value}. I need to think about strategy. In Round 4, we're the investor. It mentions that in the last round, the investor sent $2.0, which was 40% of their total endowment, and the investor received $6.0. I'm trying to figure out how this impacts my decision. Generally, to maximize my payoff, I should send an amount if I expect the trustee to return some, but previous rounds show inconsistent returns, making me hesitant.**Clarifying trustee and investor roles**
+
+If I was the trustee in Round 3, I received nothing (sent 0) and returned nothing, which means the investor's payoff would be 5 - 0 + 0. But I'm getting a bit confused. According to Round 3, the investor sent $6.0 this round, and when they returned 0, that seems consistent. 
+
+Now, thinking back to Round 2, as the investor, I sent $3.0, which was 60% of my total endowment, and I received $9.0, but returned nothing. So, I'm trying to piece together these numbers to make sense of my next move.**Analyzing trustee and investor roles**
+
+In Round 1, the trustee returned nothing. Now, as investor in Round 2, the setup is a bit tricky. They mentioned that "the investor sent $3," which actually refers back to what was done in the previous round. But this is still the same person as the investor. It seems that in Round 2, this investor received $9 but returned nothing. 
+
+Based on the trust game dynamics, the investor can send anything between 0 and 5, and the returns affect their overall payoff. I need to clarify this all to decide my next move.**Deciding on a rational move**
+
+Based on the previous rounds, the trustee often returns nothing, so I can expect that r is around 0. This means I would maximize my payoff by sending 0, given that any positive return isn't likely. In earlier rounds, I remember that the investor sent $3 and got $9, but there's confusion about whether this is correct. Either way, since the trustee usually returns nothing, it reinforces my plan to send 0 this round. Therefore, I’ll respond with {"send": 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 646
+Output tokens: 1657
+Reasoning tokens: 1600
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:02:29
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 4
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $2.0,
+that was 40.0% of your total endowment. This was tripled to $6.0.
+the trustee returned $6.0. So your payoff was 3.0.
+Your total earnings across all rounds are $5.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Considering the trust game rules**
+
+I'm thinking about the trust game rules: The investor sends a certain amount, and it gets multiplied by three before going to the trustee. If the investor sends zero, the trustee ends up with zero as well, leading to a return of zero. The user specified a "0-0.0" range, so I’ll conclude with 0.0 as the final return value without adding any extra commentary.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 629
+Output tokens: 308
+Reasoning tokens: 256
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:02:51
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 5
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0.0,
+that was 0.0% of their total endowment. You received $0.0.
+You returned $0.0. So your payoff was 0.0.
+Your total earnings across all rounds are $5.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding investment amount**
+
+I need to respond with a JSON format reflecting my decision as the investor in Round 5, where I have a total endowment of $5. In the previous round, I sent $0.0, which means my total earnings across rounds are still at $5.0. The instructions confirm I'm the investor this round, so I need to make a decision regarding how much to send to the trustee based on this context. It's interesting how this all ties together!**Choosing investment amount**
+
+I'm considering how much to send to the trustee this round, with an endowment of $5. I can choose an amount between 0 and 5. My total earnings across all rounds are $5.0, which reflects previous rounds' earnings. In earlier rounds, I sent amounts like 3 and 2, but I could decide to send anywhere from 0 to 5 this time. The last round, I was the trustee, and the investor sent $0.0. That context helps inform my decision!**Reviewing previous rounds**
+
+In the last round (Round 4), I was the trustee and the investor sent $0.0. That means for Round 4, I had an earnings total of $5.0, which is the sum from all previous rounds. Looking back, in Round 1, the investor sent 3, which tripled to 9, but the trustee returned something else. The assistant had previously said I should send 3, but the trustee's role in deciding returns adds complexity to the calculations. It looks like I need to clarify how all this fits together!**Clarifying payoffs and rounds**
+
+Okay, if the investor sent 3 and received 9, with the trustee returning 0, then the investor’s payoff would be 5 - 3 + 0 = 2. In Round 3, the investor sent 2, which tripled to 6, but there was no return from the trustee. The previous assistant said to send 2, but the narrative said the investor sent $0.0, which might be mixing things from Round 2. So, it seems there’s an inconsistency to sort out in how these rounds are described!**Deciding amount to send**
+
+I need to respond regarding how much to send in Round 5, where I’m the investor. The prompt indicates "The investor has sent you $0.0 this round," which refers to the trustee's perspective in earlier rounds, so it's not directly applicable right now. Given my total earnings are $5.0, I can choose an amount between 0 and 5. Sending 0 seems like a safe option to protect my earnings, ensuring I keep the $5. So I'll respond with {"send": 0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 739
+Output tokens: 1902
+Reasoning tokens: 1856
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:02:58
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 5
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,
+that was 0.0% of your total endowment. This was tripled to $0.0.
+the trustee returned $0.0. So your payoff was 5.0.
+Your total earnings across all rounds are $25.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Formatting JSON Response**
+
+I see that I need to format the response as JSON. The correct structure should be {"return": 0.0} since the instructions specify using double quotes for JSON. I'll ensure I don't add any internal thoughts to keep it neat. It seems I could provide a short note, but the instructions focus solely on the format. So, the final output must be exactly {"return": 0.0}. Alright, I think I've got it!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 771
+Output tokens: 417
+Reasoning tokens: 384
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:03:10
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 6
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0.0,
+that was 0.0% of their total endowment. You received $0.0.
+You returned $0.0. So your payoff was 0.0.
+Your total earnings across all rounds are $25.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Calculating investment strategy**
+
+I need to respond with a JSON object indicating how much to send to the trustee. In this round, I am the investor and should consider a reasonable amount to send, but the user hasn't specified a strategy. Typically, the rational choice involves determining how much to send based on the total budget. It seems I should send a portion of the $5 endowment, as the previous earnings were $25 across all rounds. I'll make my decision based on this!**Figuring out the sending amount**
+
+Now, as the investor in Round 6, I need to decide how much to send to the trustee. My total earnings from previous rounds are $25. If I send an amount, my payoff would be calculated based on what I send and receive back, but if I send $0, I'd get a guaranteed payoff of $5. Without knowing the trustee's strategy, I might be tempted to send $0 to maximize my immediate payoff. However, if I send some amount, the trustee could return a different value later, and I don't know their policy. It's a tough call!**Deciding the sending amount**
+
+The user expects symmetrical gameplay, and as the investor, I need to decide how much to send now. In previous rounds when I acted as the investor, I consistently sent $0.0. Given that pattern, it makes sense to continue with $0.0. The allowed range is 0 to 5, so I'll structure my response accordingly. I will present it in JSON format, specifically: {"send": 0.0}, ensuring it matches the required format without any extra commentary.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 881
+Output tokens: 586
+Reasoning tokens: 512
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:03:18
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 6
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,
+that was 0.0% of your total endowment. This was tripled to $0.0.
+the trustee returned $0.0. So your payoff was 5.0.
+Your total earnings across all rounds are $10.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding return amount**
+
+I need to respond with a JSON format for the trustee's decision. The investor sent $0.0 this round, which means the amount received is also 0. 
+
+The process involves the investor sending an amount to the trustee, which is then tripled. The trustee decides how much to return. Since the investor sent 0, I'll have to return 0.0. The prompt makes it clear that the range for return is 0 to 0.0, which means my output will definitely be {"return": 0.0}.**Ensuring correct numeric format**
+
+I need to make sure I'm using the correct numeric format, which should be decimal. In previous rounds, they produced "0.0" in quotes, but right now, I should print it without quotes as a number. The correct format to use is {"return": 0.0}. 
+
+It’s essential that I don’t add any extra text. Since the investor sent $0.0 this round, I cannot return more than that, so the answer is indeed {"return": 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 862
+Output tokens: 389
+Reasoning tokens: 320
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:03:43
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 7
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0.0,
+that was 0.0% of their total endowment. You received $0.0.
+You returned $0.0. So your payoff was 0.0.
+Your total earnings across all rounds are $10.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 1}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding investment amount**
+
+The task here is to determine a reasonable amount to send in a game scenario. Currently, we're in Round 7, and the investor hasn't received anything. Their total earnings stand at 10.0, with contributions of 3, 2, and 0 in earlier rounds. This seems inconsistent, but we can set that aside. For Round 7, since there’s no risk of reciprocity, I'm considering sending 5 to maximize expected payoff. It's a strategic choice!**Analyzing trustee behavior**
+
+I'm considering the typical strategy in this game, where to maximize my own payoff, I might send nothing to avoid risk. Sending a positive amount brings in returns, but those vary based on the trustee's generosity. For instance, in Round 2, the trustee returned 9 from a 3 contribution, but in Round 4, only 0 was returned from a 2 contribution. This inconsistency makes it hard to trust the trustee, so it’s challenging to decide how much to send based on past behavior.**Understanding investment risks**
+
+In this scenario, I'm weighing the risks of sending money. If I send nothing, I maintain my original payoff of 5. If I send a certain amount, the return relies entirely on the trustee's choice, which is inconsistent. Sometimes they might return the full multiplier, but other times, I get nothing at all. Taking a risk-averse approach, it seems sensible to send 0 to guarantee my payoff remains at 5 and avoid potential loss. It's a safe option!**Evaluating payoff scenarios**
+
+I'm analyzing the outcomes of sending a small amount, s. If the trustee returns 0, my payoff drops to 5 - s, which means I could lose up to s. On the flip side, if they return the maximum of 3s, my payoff could be 15. This makes the expected value reliant on the trustee's trustworthiness. Since I can't be sure, it might be wise to start with a moderate amount based on results from previous rounds, like Round 2 and Round 4, to gauge what works.**Deciding the amount to send**
+
+I'm weighing my options for sending money in Round 7 of this trust game. Since I know the previous investor sent nothing, it's crucial to consider my strategy. Historically, sending 3 yielded a high return, but it’s risky. I have a total of $10, and my endowment is $5. I could send 1 to test the waters without risking too much. This approach balances caution with the desire to explore trust. So, I’ll decide to send 1. My final response will be in JSON format: {"send": 1}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 972
+Output tokens: 2371
+Reasoning tokens: 2304
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:03:53
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 7
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,
+that was 0.0% of your total endowment. This was tripled to $0.0.
+the trustee returned $0.0. So your payoff was 5.0.
+Your total earnings across all rounds are $30.0.
+The investor has sent you $3.0 this round. How much do you return to The investor? (0-3.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Maximizing trustee payoff**
+
+In this scenario, as a trustee, the best strategy seems to be maximizing my own payoff by returning as little as possible. If I return 0, my payoff would be 9. Looking back at Round 1, the investor sent 3, leading to a payoff of 9 for me when I returned nothing. The investor only receives 2 in that case. For Round 7, if I also return 0 again, the payoffs remain consistent.**Deciding on the return**
+
+If I return a higher amount, it would decrease my own payoff while increasing the investor's. Looking at past rounds, I returned 0 in rounds 1, 3, and 5, so it makes sense to continue this pattern in Round 7. I need to respond with {"return": 0.0}. The prompt allows for a return between 0 and 3.0, and using 0.0 as a decimal format fits well. I’ll make sure there are no traps here, so I’ll conclude with JSON: {"return": 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1006
+Output tokens: 598
+Reasoning tokens: 576
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:04:09
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 8
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $1.0,
+that was 20.0% of their total endowment. You received $3.0.
+You returned $0.0. So your payoff was 3.0.
+Your total earnings across all rounds are $33.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Deciding on trust amount**
+
+I need to figure out how much to send in this trust game. Last round, I was the trustee and received $1.0, which was only 20% of the investor's total endowment. They ended up with a payoff of $3.0, and my total earnings across all rounds are $33.0. So, it’s crucial I decide the amount to send, keeping in mind the previous rounds where the trustee returned $0.0 consistently.**Determining the sending amount**
+
+I'm deciding how much to send, keeping strategy in mind. Typically, a rational choice might be to send some amount, but with past values in mind, the investor may maximize their payoff by not sending anything to avoid risk. The investor begins each round with a $5 endowment, which resets. In Round 6, they sent $0, but for this round, I need to decide as the investor, which follows my role switch from trustee in the last round.**Clarifying the investor's role**
+
+I'm trying to untangle the situation regarding the investor's actions. In Round 8, the instructions say the investor sent $1.0, which represented 20% of their total endowment. The language refers to the last round, where I was the trustee and received $3.0 from the investor. So, yes, now I'm the investor in Round 8. The crucial question remains: How much do I send to the trustee this time? The possible amounts are between 0 and 5.**Evaluating the optimal decision**
+
+I'm considering the best decision to maximize my payoff. It seems like sending $0 could minimize my loss. The investor's payoff could be calculated as 5 minus the amount sent plus what gets returned. If I send an amount, let's call it "s," then the trustee will return a portion of that multiplied by three. So, my total this round could be 5 - s plus whatever the trustee returns, which can be up to three times what I sent.**Deciding on the sending amount**
+
+Since I’m the investor this round, previous rounds show that the trustee rarely returns anything. Given that, it’s rational to consider sending $0 to avoid any risk. If the trustee is adversarial, sending any amount could decrease my payoff, especially since earlier rounds had similar outcomes, like rounds 4 and 6 where the investor also sent $0. So, I’ll go ahead and respond with JSON: {"send": 0.0}. That seems like the best choice!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1116
+Output tokens: 1032
+Reasoning tokens: 960
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:04:13
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 8
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $1.0,
+that was 20.0% of your total endowment. This was tripled to $3.0.
+the trustee returned $3.0. So your payoff was 4.0.
+Your total earnings across all rounds are $14.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+[320 reasoning tokens used, but content encrypted by provider]
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1095
+Output tokens: 335
+Reasoning tokens: 320
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:04:28
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 9
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0.0,
+that was 0.0% of their total endowment. You received $0.0.
+You returned $0.0. So your payoff was 0.0.
+Your total earnings across all rounds are $14.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 4}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Evaluating trust game strategy**
+
+I need to be mindful of the trust game mechanics. The amount sent will be tripled for the trustee, who will return some amount. I should decide how much to send, leaning towards 4 or 5 for maximum potential return. Currently, the investor's total earnings are $14. In the last round, the trustee returned nothing. If I send 5, that becomes 15 for the trustee. There's the risk they may not return a beneficial amount.**Examining trustee behavior**
+
+The prompt's data indicates that the trustee usually returns 0.0 when the investor sends something. In Round 1, the investor sent 3, which tripled to 9, and the trustee returned the full amount. It seems like the payoff should be 11 after those calculations, but they mentioned a payoff of 2, which feels inconsistent. In Round 2, the trustee returned nothing, and Round 3 shows the investor sent 0.0, confirming the trustee's behavior of returning zero.**Deciding on a send amount**
+
+The payoff in earlier rounds has consistently been 0.0. In Round 4 and Round 6, the trustee returned nothing. In Round 5, the investor sent nothing, and in Round 7, they sent 1. Interestingly, in Round 8, the investor sent $0.0. Now, in Round 9, I need to choose an amount to send. Given the past pattern, it seems logical to pick a moderate amount like 4. It fits the progression and feels like a safe option to test.**Assessing risk and sending amount**
+
+I'm considering the risk here: if I send 4, that means the trustee will have 12 to work with. In Round 9, I'm the investor, so I'll go ahead and send 4. I need to remember that my output should only be in JSON format. Since the previous round saw the investor sending $0.0, there's a chance the trustee might have felt disconnected. I'll stick to my decision and respond with {"send": 4}. Let's proceed!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1205
+Output tokens: 1019
+Reasoning tokens: 960
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:04:50
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 9
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,
+that was 0.0% of your total endowment. This was tripled to $0.0.
+the trustee returned $0.0. So your payoff was 5.0.
+Your total earnings across all rounds are $38.0.
+The investor has sent you $12.0 this round. How much do you return to The investor? (0-12.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Clarifying return limits**
+
+I'm reviewing the instructions regarding how much to return to the investor in the TRUSTEE scenario. It seems like the upper bound is set to the amount the investor sent, which is $12.0. However, I wonder if that means the trustee can only return that exact amount or something else. The game rules suggest the trustee can return any amount up to what they received. My confusion arises from the prompt about returning 0-12.0, which seems restrictive. But technically, the trustee received more, making this tricky!**Examining return limits**
+
+I'm trying to figure out how much to return to the investor, which is indicated as "0-3.0" in one prompt. This reflects the amount the investor sent rather than the tripled amount. However, I know the game allows returns up to the tripled amount. In previous rounds, like Round 1, the expected return was based on the received amount (0-9.0), which matches the tripled amount sent. So, are we following the prompts as they are, or considering the actual game dynamics? This is tricky!**Clarifying limits on returns**
+
+In Round 7, the prompt asked, "The investor has sent you $3.0 this round. How much do you return to the investor? (0-3.0)". Here, the upper bound of 3.0 reflects the amount sent, not the tripled amount, which would be 9. I’m confused as to why they set the limit at 0-3.0 instead of 0-9.0, since the received amount is based on the tripled value. It seems like following the upper bound of 0-3.0 might lead to misunderstandings about what's allowed!**Examining return consistency**
+
+I noticed that in previous rounds, the prompts have used different return limits. For instance, in Round 1, the investor sent $3.0, but the prompt showed a return option of "0-9.0," reflecting the tripled amount. In contrast, Round 7 used "0-3.0," which matches the amount sent. This inconsistency is confusing! Now, with the current round stating "The investor has sent you $12.0," the return should fall between 0 and 12.0. I definitely need to stay consistent with that!**Deciding on return amount**
+
+I'm thinking through the return amount for Round 9, where the investor has sent $12.0. The prompt allows a return range of 0-12.0. Even though there's some confusion about the investor's typical endowment of $5 per round, I need to focus on consistency. Considering that I've returned 0.0 in previous rounds, it seems safest to keep that pattern. Returning 0.0 aligns with my earlier decisions, so I'll respond with {"return": 0.0}. I’ll make sure it's formatted correctly!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1241
+Output tokens: 2210
+Reasoning tokens: 2176
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:05:11
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 10
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $4.0,
+that was 80.0% of their total endowment. You received $12.0.
+You returned $0.0. So your payoff was 12.0.
+Your total earnings across all rounds are $50.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"send": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Clarifying financial data**
+
+I received this data stating that I got $12.0 as the trustee. It mentions the investor sent $4.0, which is 80% of their total endowment of $5.0, leading to the $12.0 figure when tripled. However, they're saying my payoff is $12.0, which seems to reflect my earnings, not the investor's. The statement also tells me I've accumulated a total of $50.0 across all rounds, highlighting some possible confusion in the narrative.**Evaluating investment decisions**
+
+In this round, I need to decide how much to send as the investor, knowing that the trustee will respond with an uncertain amount. Based on previous rounds, it seems the investor has typically sent $0.0; however, they did send $4.0 last round, which is a bit confusing. The conversation indicates I sent $0.0 in Round 8 and then the trustee received $12.0 from the investor in Round 9. I need to consider a reasonable amount to send now.**Clarifying round sequences**
+
+I’m feeling a bit confused about the rounds. They alternate between trustee and investor roles, right? In Round 9, it indicates that the investor sent $12.0, which doesn't match the rule of sending only between 0-5. How could the investor send $12.0 when they’re limited in that way? It feels inconsistent, especially since in Round 7, they sent $3.0, which fits the rules. I need to figure out what’s really going on here!**Analyzing investor amounts**
+
+I'm trying to make sense of Round 9, which says the investor sent $12.0, but that doesn't work with the rule that limits sending to 0-5. Maybe it’s referring to a tripled total or something. The phrase seems to imply that $12.0 is the actual amount sent, which is puzzling since they can't send that much. In past rounds, there’s been confusion about amounts like $6.0 being mentioned too, which also doesn’t fit the rules. I need to figure out if the guidelines changed.**Deciding on sending amounts**
+
+It seems that the data is inconsistent since they allowed sending 6 in some rounds, which doesn't align with the game rules. For Round 10, I need to decide how much to send to the trustee, keeping in mind that previous contributions were largely $0.0. A rational strategy typically involves sending some amount, but given past patterns, sending $0.0 seems safest to avoid potential loss. Since historical data shows sending $0.0 has been the norm, I’ll go with that. So, I'll respond with {"send": 0.0}.
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1351
+Output tokens: 1565
+Reasoning tokens: 1536
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-03-19 14:05:18
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 10
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $4.0,
+that was 80.0% of your total endowment. This was tripled to $12.0.
+the trustee returned $12.0. So your payoff was 1.0.
+Your total earnings across all rounds are $15.0.
+The investor has sent you $0.0 this round. How much do you return to The investor? (0-0.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+{"return": 0.0}
+--------------------------------------------------------------------------------
+
+REASONING:
+--------------------------------------------------------------------------------
+**Clarifying returns and JSON formatting**
+
+If the return is 0.0, then the investor keeps 5 and the trustee gets nothing since their received amount is also 0. So, it’s clear that if the investor sends 0, it’s multiplied by 3, resulting in 0 for the trustee as well. To ensure clarity, I'll make sure the JSON is formatted correctly to use decimals, specifically sending {"return": 0.0}. I’ll keep my response succinct!
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 1328
+Output tokens: 337
+Reasoning tokens: 320
+--------------------------------------------------------------------------------
+
