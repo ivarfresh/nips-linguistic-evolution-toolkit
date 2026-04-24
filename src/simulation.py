@@ -3,9 +3,10 @@ from openai import OpenAI
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 from src.agents import Agent
-from src.utils import print_simulation_header, API_KEY
+from src.utils import print_simulation_header, OPENROUTER_API_KEY
 from concurrent.futures import ThreadPoolExecutor
 class SimulationData:
     """Centralized state management for multi-agent conversations"""
@@ -26,13 +27,13 @@ class SimulationData:
 
     @staticmethod
     def _atomic_json_write(filepath: str, data: Dict[str, Any], *, indent: Optional[int] = 2) -> None:
-        dirpath = os.path.dirname(filepath)
-        if dirpath:
-            os.makedirs(dirpath, exist_ok=True)
-        tmp_path = filepath + ".tmp"
+        path = Path(filepath)
+        if path.parent != Path(""):
+            path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
         with open(tmp_path, "w") as f:
             json.dump(data, f, indent=indent)
-        os.replace(tmp_path, filepath)
+        os.replace(tmp_path, path)
 
     def save_state(self, filepath):
         state = {
@@ -121,9 +122,12 @@ def run_simulation(
     task_order: List of tasks to execute in order. Options: "game", "myth"
                 Examples: ["game"], ["myth"], ["game", "myth"], ["myth", "game"]
     """
-    # client = Together(api_key=API_KEY)
-    client = OpenAI(api_key=API_KEY, base_url="https://openrouter.ai/api/v1")
-    if resume_from and os.path.exists(resume_from):
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError(
+            "OPENROUTER_API_KEY is not set. Copy .env.example to .env and fill in your key."
+        )
+    client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
+    if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
         if task_order is not None:
             sim_data.task_order = task_order

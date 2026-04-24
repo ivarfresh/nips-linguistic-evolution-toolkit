@@ -2,44 +2,19 @@ import os
 import sys
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 from typing import Dict, Any, Tuple
 
 # Add project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
 
+from src.batch_utils import sanitize_for_filename as _sanitize_for_filename
+from src.batch_utils import unique_json_path as _unique_json_path
 from src.experiment_config import ExperimentConfig
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from games.trust_game import TrustGame
-
-def _unique_json_path(path: str) -> str:
-    """
-    If `path` exists, return `..._2.json`, `..._3.json`, ... (first free slot).
-    """
-    if not path.endswith(".json"):
-        raise ValueError(f"Expected a .json path, got: {path}")
-    if not os.path.exists(path):
-        return path
-    base = path[:-5]  # strip ".json"
-    n = 2
-    while True:
-        candidate = f"{base}_{n}.json"
-        if not os.path.exists(candidate):
-            return candidate
-        n += 1
-
-def _sanitize_for_filename(value: str) -> str:
-    """
-    Make a string safe-ish for filenames across OSes.
-    Keeps alphanumerics, dash, underscore, and dot; maps everything else to underscore.
-    """
-    if value is None:
-        return "none"
-    value = str(value).strip()
-    if value == "":
-        return "empty"
-    return "".join(ch if (ch.isalnum() or ch in "-_.") else "_" for ch in value)
 
 def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: int) -> Dict[str, Any]:
     """
@@ -83,7 +58,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
 
         # Create directory: data/json/{experiment_name}/{model}/{task_order}/
         save_dir = f"data/json/{experiment_name}/{model_name}/{task_order_str}"
-        os.makedirs(save_dir, exist_ok=True)
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
 
         # Only include myth_topic in filename if myth task is present
         if "myth" in combo["task_order"]:
@@ -103,7 +78,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         checkpoint_path = base_no_ext + ".checkpoint.json"
         log_path = base_no_ext + ".log"
 
-        resume_from = checkpoint_path if os.path.exists(checkpoint_path) else None
+        resume_from = checkpoint_path if Path(checkpoint_path).exists() else None
 
         # Initialize log file with header
         with open(log_path, 'w', encoding='utf-8') as f:
@@ -144,9 +119,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.save_state(save_path)
 
         # Cleanup checkpoint on success
-        if os.path.exists(checkpoint_path):
+        cp_path = Path(checkpoint_path)
+        if cp_path.exists():
             try:
-                os.remove(checkpoint_path)
+                cp_path.unlink()
             except OSError:
                 pass
 

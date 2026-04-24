@@ -14,7 +14,7 @@ python experiments/run_trust_game_batch.py persona_comparison
 
 # Run analyses for each experiment set
 echo "Running analyses on pilot data..."
-python analyses_clean/cooperativity_analysis.py --data-dir data/json/pilot/
+python analyses/cooperativity_analysis.py --data-dir data/json/pilot/
 
 echo "Running analyses on persona comparison data..."
-python analyses_clean/cooperativity_analysis.py --data-dir data/json/persona_comparison/
+python analyses/cooperativity_analysis.py --data-dir data/json/persona_comparison/

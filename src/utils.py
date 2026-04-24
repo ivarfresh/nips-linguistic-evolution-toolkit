@@ -1,26 +1,14 @@
 import os
-
-#together API key
-Together_API_KEY = "4f0440e2cc8baa37f8017270d398124bd4e477459f3500c74290591509b2e6b3"
-
-#openrouter API key
-API_KEY = "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"
-
-# Messages: yes contains messages
-# def call_llm(client, model, temperature, messages, logprobs=True, top_logprobs=5):
-#     """Call LLM and get response"""
-#     response = client.chat.completions.create(
-#         model=model,
-#         messages=messages,
-#         temperature=temperature,
-#         logprobs=logprobs,
-#         top_logprobs=top_logprobs
-#     )
-#     return response.choices[0].message.content
-
 import time
 import random
+
+from dotenv import load_dotenv
 from openai import APIError, RateLimitError, APIConnectionError
+
+load_dotenv()
+
+TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effort="medium"):
     """

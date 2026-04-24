@@ -29,7 +29,7 @@
 
 set -euo pipefail
 
-# Get script directory to find analyses_clean
+# Get script directory to find analyses
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -39,35 +39,35 @@ run_analysis() {
     case "$name" in
         cooperativity)
             echo "Running Cooperativity Analysis..."
-            python "$PROJECT_ROOT/analyses_clean/cooperativity_analysis.py"
+            python "$PROJECT_ROOT/analyses/cooperativity_analysis.py"
             ;;
         trajectory)
             echo "Running Trajectory Plotting..."
-            python "$PROJECT_ROOT/analyses_clean/trajectory_plotting.py"
+            python "$PROJECT_ROOT/analyses/trajectory_plotting.py"
             ;;
         similarity)
             echo "Running Myth Similarity Analysis..."
-            python "$PROJECT_ROOT/analyses_clean/myth_similarity.py"
+            python "$PROJECT_ROOT/analyses/myth_similarity.py"
             ;;
         plot_similarity)
             echo "Running Plot Myth Similarity..."
-            python "$PROJECT_ROOT/analyses_clean/plot_myth_similarity.py"
+            python "$PROJECT_ROOT/analyses/plot_myth_similarity.py"
             ;;
         embedding)
             echo "Running Myth Similarity Embedding..."
-            python "$PROJECT_ROOT/analyses_clean/myth_similarity_embedding.py"
+            python "$PROJECT_ROOT/analyses/myth_similarity_embedding.py"
             ;;
         wordchain)
             echo "Running Word Chain Evolution..."
-            python "$PROJECT_ROOT/analyses_clean/word_chain_evolution.py"
+            python "$PROJECT_ROOT/analyses/word_chain_evolution.py"
             ;;
         ngram)
             echo "Running N-gram Sentence Structure..."
-            python "$PROJECT_ROOT/analyses_clean/n_gram_sentence_structure.py"
+            python "$PROJECT_ROOT/analyses/n_gram_sentence_structure.py"
             ;;
         reciprocity)
             echo "Running Reciprocity Analysis..."
-            python "$PROJECT_ROOT/analyses_clean/reciprocity_analysis.py" "$ANALYSIS_INPUT_FILE" "$ANALYSIS_OUTPUT_DIR"
+            python "$PROJECT_ROOT/analyses/reciprocity_analysis.py" "$ANALYSIS_INPUT_FILE" "$ANALYSIS_OUTPUT_DIR"
             ;;
         *)
             echo "Error: Unknown analysis '$name'"
