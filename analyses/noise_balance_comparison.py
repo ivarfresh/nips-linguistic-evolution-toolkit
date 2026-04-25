@@ -733,23 +733,26 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Auto-discover from noise experiment dir + baseline dirs
+    # Auto-discover from noise experiment dir + baseline dirs.
+    # Convention: --output-dir points at <plot_dir>/<experiment>/_balance_comparison,
+    # one per noise-type experiment so bootstrap vs negative-5 don't collide.
     python analyses/noise_balance_comparison.py \\
-        --noise-dir data/json/noise_experiments/v2 \\
-        --baseline gpt-5-nano=data/json/10_runs_gpt5_myth_topics \\
+        --noise-dir data/json/noise_experiments/v2/noise_negative_mem3 \\
         --baseline claude-sonnet-4.5=data/json/10runs_model_comparison/claude-sonnet-4.5 \\
-        --baseline gemini-3.1-pro-preview=data/json/10runs_model_comparison/gemini-3-pro-preview
+        --baseline gemini-3.1-pro-preview=data/json/10runs_model_comparison/gemini-3-pro-preview \\
+        --output-dir data/plots/noise_experiments/v2_uniform_distribution_noise/noise_negative_mem3/_balance_comparison
 
-    python analyses/noise_balance_comparison.py --output-dir data/plots/custom
-    python analyses/noise_balance_comparison.py --target-round 10 --alpha 0.05
-        """,
+    python analyses/noise_balance_comparison.py ... --target-round 10 --alpha 0.05
+""",
     )
     parser.add_argument("--noise-dir", required=True,
                         help="Path to noise experiment directory (e.g. data/json/noise_experiments/v2)")
     parser.add_argument("--baseline", action="append", required=True,
                         help="Baseline (no-noise) data: model_name=path (repeatable). "
                              "Path should contain game/, game_myth/, myth_game/ subdirs.")
-    parser.add_argument("--output-dir", default=None, help="Output directory (default: data/plots/noise_balance_comparison)")
+    parser.add_argument("--output-dir", required=True,
+                        help="Output directory for this experiment's balance comparison. "
+                             "Convention: data/plots/noise_experiments/<version>/<experiment>/_balance_comparison")
     parser.add_argument("--alpha", type=float, default=0.05, help="Significance threshold (default: 0.05)")
     parser.add_argument("--target-round", type=int, default=10, help="Round to extract balance at (default: 10)")
 
@@ -767,7 +770,7 @@ Examples:
     global MODEL_DATA_PATHS
     MODEL_DATA_PATHS = build_model_data_paths(baseline_dirs, args.noise_dir)
 
-    output_dir = Path(args.output_dir) if args.output_dir else BASE_DIR / "data" / "plots" / "noise_experiments" / "noise_balance_comparison"
+    output_dir = Path(args.output_dir)
 
     print(f"Target round: {args.target_round}")
     print(f"Alpha: {args.alpha}")

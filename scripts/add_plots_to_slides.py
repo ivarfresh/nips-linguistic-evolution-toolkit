@@ -73,7 +73,7 @@ EXPERIMENTS = [
     },
 ]
 
-V2_BASE = 'data/plots/noise_experiments/v2'
+V2_BASE = 'data/plots/noise_experiments/v2_uniform_distribution_noise'
 
 
 def authenticate():
@@ -100,24 +100,15 @@ def authenticate():
 
 
 def get_noise_experiment_plots():
-    """Collect all noise experiment plots in presentation order (v2 structure)."""
-    plots = []
+    """Collect all noise experiment plots in presentation order (v2 structure).
 
-    # 1. Balance comparison plots (one set per model)
-    balance_dir = os.path.join(V2_BASE, 'noise_balance_comparison')
-    for model_dir in sorted(glob.glob(os.path.join(balance_dir, '*'))):
-        if not os.path.isdir(model_dir):
-            continue
-        model_name = os.path.basename(model_dir)
-        for plot_name in BALANCE_COMPARISON_PLOTS:
-            path = os.path.join(model_dir, plot_name)
-            if os.path.exists(path):
-                display_name = plot_name.replace('.png', '').replace('_', ' ').title()
-                plots.append({
-                    'path': path,
-                    'title': f"Balance Comparison | {model_name} | {display_name}",
-                })
-                print(f"  Found balance comparison: {model_name} / {plot_name}")
+    Layout assumptions:
+      {V2_BASE}/{experiment}/_balance_comparison/{model}/{balance_comparison,delta_comparison}.png
+      {V2_BASE}/{experiment}/{model}/boxplot/*.png
+      {V2_BASE}/{experiment}/{model}/{task_order}/{conditions_summary,conditions_trajectories}.png
+      {V2_BASE}/{experiment}/{model}/{task_order}/{condition}/<run_name>.png  (per-run trajectory)
+    """
+    plots = []
 
     for exp in EXPERIMENTS:
         label = exp['label']
@@ -126,21 +117,21 @@ def get_noise_experiment_plots():
         exp_base = os.path.join(V2_BASE, experiment)
         model_base = os.path.join(exp_base, model)
 
-        # 2. Top-level experiment boxplots (shared across models)
-        top_boxplots_dir = os.path.join(exp_base, '_boxplots')
-        if os.path.isdir(top_boxplots_dir):
-            for plot_name in BOXPLOT_FILES:
-                path = os.path.join(top_boxplots_dir, plot_name)
+        # 1. Balance comparison plots (per-experiment, per-model)
+        balance_model_dir = os.path.join(exp_base, '_balance_comparison', model)
+        if os.path.isdir(balance_model_dir):
+            for plot_name in BALANCE_COMPARISON_PLOTS:
+                path = os.path.join(balance_model_dir, plot_name)
                 if os.path.exists(path):
                     display_name = plot_name.replace('.png', '').replace('_', ' ').title()
                     plots.append({
                         'path': path,
-                        'title': f"{label} | {experiment} | {display_name}",
+                        'title': f"{label} | Balance Comparison | {display_name}",
                     })
-                    print(f"  Found top boxplot: {experiment} / {plot_name}")
+                    print(f"  Found balance comparison: {experiment} / {model} / {plot_name}")
 
-        # 3. Per-model boxplots
-        model_boxplots_dir = os.path.join(model_base, '_boxplots')
+        # 2. Per-model boxplots
+        model_boxplots_dir = os.path.join(model_base, 'boxplot')
         if os.path.isdir(model_boxplots_dir):
             for plot_name in BOXPLOT_FILES:
                 path = os.path.join(model_boxplots_dir, plot_name)
@@ -152,7 +143,7 @@ def get_noise_experiment_plots():
                     })
                     print(f"  Found model boxplot: {model} / {plot_name}")
 
-        # 4. Per task_order: summary plots + trajectory plots per condition
+        # 3. Per task_order: summary plots + flattened per-run trajectory PNGs
         for task_order in exp['task_orders']:
             task_dir = os.path.join(model_base, task_order)
             if not os.path.isdir(task_dir):
@@ -169,26 +160,22 @@ def get_noise_experiment_plots():
                     })
                     print(f"  Found summary: {model} / {task_order} / {plot_name}")
 
-            # Trajectory plots per condition
+            # Per-run trajectory plots (now flat PNGs directly under each condition dir)
             for condition in exp['conditions']:
-                traj_base = os.path.join(task_dir, condition, 'trajectories')
-                if not os.path.isdir(traj_base):
+                cond_dir = os.path.join(task_dir, condition)
+                if not os.path.isdir(cond_dir):
                     continue
 
-                # Find all experiment subdirectories, sorted
-                exp_dirs = sorted(glob.glob(os.path.join(traj_base, '*')))
-                for exp_dir in exp_dirs:
-                    if not os.path.isdir(exp_dir):
+                for run_png in sorted(glob.glob(os.path.join(cond_dir, '*.png'))):
+                    fname = os.path.basename(run_png)
+                    # Skip the aggregate file that shares a generic name
+                    if fname == 'trajectory_1_numerical.png':
                         continue
-                    traj_path = os.path.join(exp_dir, 'trajectory_1_numerical.png')
-                    if os.path.exists(traj_path):
-                        run_name = os.path.basename(exp_dir)
-                        plots.append({
-                            'path': traj_path,
-                            'title': f"{label} | {condition} | {task_order} | {run_name}",
-                        })
-                    else:
-                        print(f"  Warning: no trajectory plot in {exp_dir}")
+                    run_name = fname[:-len('.png')]
+                    plots.append({
+                        'path': run_png,
+                        'title': f"{label} | {condition} | {task_order} | {run_name}",
+                    })
 
         print(f"  {label}: collected so far = {len(plots)} total")
 
