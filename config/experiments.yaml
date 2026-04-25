@@ -22,6 +22,7 @@ base_models:
   grok_4: "x-ai/grok-4.1-fast"
   gemini_3_flash: "google/gemini-3-flash-preview"
   gemini_3_pro: "google/gemini-3-pro-preview"
+  gemini_3_1_pro: "google/gemini-3.1-pro-preview"
 
 # openrouter_key: set OPENROUTER_API_KEY in the environment (see docs); never commit real keys.
 
@@ -240,6 +241,72 @@ experiment_sets:
     #myth_topics: ["prosocial_religion_cultural_evolution", "sacred_oaths_and_covenants", "reputation_gossip_and_honor", "hospitality_and_guest_right", "trickster_betrayal_and_price"]
     myth_topics: ["anything", "trickster_betrayal_and_price"]
     
+  baseline_gemini31_n15_myth:
+    # Game+myth and myth+game baselines for gemini-3.1-pro-preview to match
+    # the noise experiments (topic "anything", N=15 per task order).
+    # 15 reps × 2 task orders = 30 runs, parallelized at --workers 8.
+    models: [
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro",
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro",
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro"
+    ]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params:
+      num_turns: 15
+
+  baseline_gpt_n2_topup:
+    # One more GPT run to bring N from 14 → 15. Listed twice for safety.
+    models: ["gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params:
+      num_turns: 15
+
+  baseline_gemini31_n2_topup:
+    # Single backfill for the parse-error failure in baseline_gemini31_n15_game.
+    # Listed twice in case one fails again.
+    models: ["gemini_3_1_pro", "gemini_3_1_pro"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params:
+      num_turns: 15
+
+  baseline_gemini31_n15_game:
+    # Re-run all 15 no-noise game-only Gemini runs on gemini-3.1-pro-preview
+    # because the original gemini-3-pro-preview endpoint is deprecated.
+    # Listed 15 times so one invocation produces 15 parallelizable combos.
+    models: [
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro",
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro",
+      "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro", "gemini_3_1_pro"
+    ]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params:
+      num_turns: 15
+
+  baseline_topup_n5_game:
+    # 5 additional no-noise game-only runs per model to bring N from 10 to 15
+    # so bootstrap CIs match the noise cells (which are N=15). Models listed
+    # 5 times each so one invocation produces 15 combos that the worker pool
+    # can parallelize.
+    models: [
+      "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45",
+      "gemini_3_pro",     "gemini_3_pro",     "gemini_3_pro",     "gemini_3_pro",     "gemini_3_pro",
+      "gpt5_nano",        "gpt5_nano",        "gpt5_nano",        "gpt5_nano",        "gpt5_nano"
+    ]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params:
+      num_turns: 15
+
   10runs_non_coop_model_comparison:                                                                                                                                     
     models: ["gemini_3_pro"]                                                                                                    
     templates: ["trust_game_default"]                                                                                                                                   
