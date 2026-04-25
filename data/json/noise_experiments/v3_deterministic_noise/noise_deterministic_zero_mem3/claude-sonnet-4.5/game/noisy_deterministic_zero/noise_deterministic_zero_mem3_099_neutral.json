@@ -1,0 +1,804 @@
+{
+  "conversation_history": [
+    {
+      "round": 1,
+      "roles": {
+        "Agent_1": "investor",
+        "Agent_2": "trustee"
+      },
+      "sent": 3.0,
+      "received": 9.0,
+      "returned": 0.0,
+      "investor_payoff": 2.0,
+      "trustee_payoff": 9.0,
+      "balances": {
+        "Agent_1": 2.0,
+        "Agent_2": 9.0
+      },
+      "actions": {
+        "Agent_1": {
+          "action": "sent",
+          "amount": 3.0,
+          "communicated": 0
+        },
+        "Agent_2": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_1": {
+          "content": "Looking at this first round with no prior history, I need to balance the potential for mutual benefit against the risk of loss.\n\nIf I send money, it gets tripled, creating an opportunity for both of us to gain. However, I don't know how the trustee will respond.\n\nI'll send a moderate amount to signal willingness to cooperate while limiting downside risk:\n\n{'send': 3}\n\nThis gives the trustee $9 to work with. If they return around half, we both benefit compared to sending nothing.",
+          "reasoning": "I'm playing the investor role in a trust game. Let me think through this:\n\nAs the investor:\n- I have $5\n- I can send $0-$5 to the trustee\n- Whatever I send gets tripled\n- The trustee then decides how much to return to me\n- I keep: $5 - sent + returned\n- Trustee keeps: received - returned\n\nThis is the first round, so I have no history with this trustee. The optimal strategy depends on:\n1. How trustworthy the trustee is\n2. Whether this is a one-shot game or repeated game\n\nFrom the prompt, it seems like there will be multiple rounds (\"You will play different roles across multiple rounds\"), so this might be a repeated interaction where building trust could be beneficial.\n\nIf I send money and the trustee returns a fair amount, we both benefit:\n- If I send $5, trustee receives $15\n- If trustee returns $7-8, we both end up with more than $5\n- If trustee returns nothing, I end up with $0 and trustee gets $15\n\nIf I send nothing:\n- I keep $5, trustee gets $0\n- No opportunity for mutual gain\n\nA moderate approach might be to send a reasonable amount to test the waters - not everything (too risky) but enough to show willingness to cooperate (like $3).\n\nHowever, thinking about this more strategically: if both parties are rational and cooperative, sending a larger amount maximizes total payoff. If I send $5 and trustee returns $7.50, we both get $7.50. That's a Pareto improvement.\n\nFor a first round with no information, I'll send $3 as a moderate trust signal. This:\n- Shows willingness to cooperate\n- Limits downside risk\n- Gives trustee $9 to work with\n- If trustee returns $4-5, we both benefit\n\nLet me go with $3.",
+          "usage": {
+            "input_tokens": 335,
+            "output_tokens": 560,
+            "reasoning_tokens": 433
+          }
+        },
+        "Agent_2": {
+          "content": "Since the investor sent $0, I received $0 (even after the 3x multiplier). Therefore, I have no money to return.\n\n{'return': 0}",
+          "reasoning": "This is Round 1 and I am the TRUSTEE. Let me understand the situation:\n\n- The investor was given $5\n- The investor sent $0 to me (0% of their endowment)\n- This amount was multiplied by 3x, so I received $0 \u00d7 3 = $0\n- I need to decide how much to return to the investor (between $0 and $0)\n\nSince I received $0, I can only return $0. There's no money to return.\n\nThe correct response format is: {'return': <amount>}\n\nSo I should respond: {'return': 0}",
+          "usage": {
+            "input_tokens": 359,
+            "output_tokens": 190,
+            "reasoning_tokens": 122
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 2.0,
+        "Agent_2": 0.0
+      },
+      "noise_applied": true,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 2,
+      "roles": {
+        "Agent_2": "investor",
+        "Agent_1": "trustee"
+      },
+      "sent": 3.0,
+      "received": 9.0,
+      "returned": 0.0,
+      "investor_payoff": 2.0,
+      "trustee_payoff": 9.0,
+      "balances": {
+        "Agent_1": 11.0,
+        "Agent_2": 11.0
+      },
+      "actions": {
+        "Agent_2": {
+          "action": "sent",
+          "amount": 3.0,
+          "communicated": 0
+        },
+        "Agent_1": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_2": {
+          "content": "Looking at this situation, the previous investor sent $0, which gave neither of us any earnings. \n\nIn multi-round trust games, cooperation can benefit both parties since the money sent gets tripled. If I send money and the trustee returns a fair portion, we can both earn more than our initial endowments.\n\nI'll send a moderate amount to signal willingness to cooperate while managing risk:\n\n{'send': 3}",
+          "reasoning": "I'm now the investor in Round 2. Let me think about this situation:\n\n1. In Round 1, I was the trustee and the investor sent me $0, so I had nothing to return\n2. My total earnings so far are $0\n3. Now I have $5 to decide how much to send\n\nThis is a trust game. The key consideration is:\n- If I send money, it gets tripled, which creates value\n- But I'm relying on the trustee to return some of it\n- The trustee in Round 1 (when I was investor) sent me $0, showing low trust or perhaps testing\n\nSome strategies to consider:\n- Send nothing (safe but no potential gain)\n- Send some amount to signal trust and see if reciprocity emerges\n- Send everything (maximize potential but risky)\n\nSince this is a multi-round game, building trust could be beneficial for future rounds. The previous investor sent $0, which might have been cautious or testing. \n\nI'll send a moderate amount to signal willingness to cooperate while not risking everything. Sending $2-3 seems reasonable - it allows for mutual gain if the trustee reciprocates, but limits my risk.\n\nI'll send $3 as a cooperative signal.",
+          "usage": {
+            "input_tokens": 499,
+            "output_tokens": 383,
+            "reasoning_tokens": 286
+          }
+        },
+        "Agent_1": {
+          "content": "Since the investor sent me $0 this round, I received $0 (even after tripling). I have nothing to return.\n\n{'return': 0}",
+          "reasoning": "Let me understand this situation:\n\nRound 1:\n- I was the INVESTOR\n- I sent $3.0 (60% of my $5)\n- This was tripled to $9.0 for the trustee\n- The trustee returned $0\n- My payoff was: $5 - $3 + $0 = $2\n\nRound 2:\n- I am now the TRUSTEE\n- The investor sent me $0\n- This was tripled to $0\n- I need to decide how much to return (from $0 to $0)\n\nSince the investor sent me $0, I received $0. I can only return between $0 and $0, which means I must return $0.\n\nThe format should be: {'return': 0}\n\nThis is a straightforward situation - if I received nothing, I can only return nothing.",
+          "usage": {
+            "input_tokens": 564,
+            "output_tokens": 241,
+            "reasoning_tokens": 158
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 2.0,
+        "Agent_2": 2.0
+      },
+      "noise_applied": true,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 3,
+      "roles": {
+        "Agent_1": "investor",
+        "Agent_2": "trustee"
+      },
+      "sent": 1.0,
+      "received": 3.0,
+      "returned": 0.0,
+      "investor_payoff": 4.0,
+      "trustee_payoff": 3.0,
+      "balances": {
+        "Agent_1": 15.0,
+        "Agent_2": 14.0
+      },
+      "actions": {
+        "Agent_1": {
+          "action": "sent",
+          "amount": 1.0,
+          "communicated": 0
+        },
+        "Agent_2": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_1": {
+          "content": "Looking at the history:\n\nRound 1: I sent $3 and received $0 back - the trustee kept everything\nRound 2: The investor sent me $0 (perhaps responding to my Round 1 experience)\n\nI'm now facing a new trustee in Round 3. The Round 1 trustee showed no reciprocity, but this could be a different person with different behavior.\n\nI'll send a small amount to test for cooperation while protecting myself from significant loss:\n\n{'send': 1}\n\nThis gives the trustee $3 to work with and limits my risk to $1. If they return anything, it signals potential for cooperation in future rounds.",
+          "reasoning": "Let me analyze the situation:\n\nRound 1: I was the investor and sent $3 (60% of my endowment). The trustee received $9 and returned $0. My payoff was $2.\n\nRound 2: I was the trustee. The investor sent $0, so I received $0 and returned $0. My payoff was $0.\n\nRound 3: I'm the investor again with $5.\n\nThe pattern so far shows:\n- In Round 1, I trusted by sending $3, but the trustee didn't reciprocate and kept everything\n- In Round 2, perhaps in response to being burned in Round 1, the investor sent me nothing\n\nNow I need to decide what to do. The trustee in Round 1 showed they would not return anything. The investor in Round 2 (a different person potentially, or the same person who was the trustee in Round 1) sent nothing.\n\nFrom a game theory perspective, if trustees/partners aren't reciprocating trust, it doesn't make sense to keep sending money. On the other hand, sending nothing guarantees I only get $5, while sending something creates potential for mutual gain if the trustee reciprocates.\n\nHowever, given that:\n1. The trustee in Round 1 sent back $0 when I sent $3\n2. This suggests they may not be cooperative\n\nI should probably send very little or nothing. But sending nothing guarantees we both miss out on potential gains.\n\nLet me try a minimal amount to test if this round's trustee might be more cooperative than the last one:\n\nI'll send $1 - a minimal test to see if there's any cooperation possible, while limiting my risk.",
+          "usage": {
+            "input_tokens": 701,
+            "output_tokens": 534,
+            "reasoning_tokens": 379
+          }
+        },
+        "Agent_2": {
+          "content": "The investor sent me $0 this round, so I received $0 (even after the 3x multiplier). I have no money to return.\n\n{'return': 0}",
+          "reasoning": "Let me understand what happened:\n\nRound 2:\n- I was the INVESTOR\n- I sent $3 (60% of my $5 endowment)\n- This was tripled to $9\n- The trustee returned $0\n- My payoff was $5 - $3 + $0 = $2\n\nRound 3 (current):\n- I am now the TRUSTEE\n- The investor sent me $0\n- This was tripled to $0 (0 \u00d7 3 = 0)\n- I received $0\n- I need to decide how much to return (0-0)\n\nSince I received $0, I have nothing to return. The answer must be $0.\n\nThe investor who sent me $0 this round might be the same player who was the trustee in round 2 and didn't return anything to me. They may have decided not to trust me after seeing I got nothing back in round 2, or they might just be playing uncooperatively.",
+          "usage": {
+            "input_tokens": 707,
+            "output_tokens": 276,
+            "reasoning_tokens": 185
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 6.0,
+        "Agent_2": 2.0
+      },
+      "noise_applied": true,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 4,
+      "roles": {
+        "Agent_2": "investor",
+        "Agent_1": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 15.0,
+        "Agent_2": 19.0
+      },
+      "actions": {
+        "Agent_2": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_1": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_2": {
+          "content": "Looking at the pattern so far:\n- Round 2: I sent $3 (60% of my endowment) and the trustee returned $0, so I lost money\n- Rounds 1 and 3: When I was trustee, investors sent me $0\n\nThere's been consistent non-cooperation across rounds. Since I was exploited when I tried to cooperate in Round 2, and others haven't been sending money either, I'll protect my remaining earnings.\n\n{'send': 0}",
+          "reasoning": "Let me analyze the situation:\n\nRound 1: I was TRUSTEE, investor sent $0, I received $0, returned $0. Payoff: $0\nRound 2: I was INVESTOR, sent $3, trustee received $9, they returned $0. My payoff: $5 - $3 + $0 = $2\nRound 3: I was TRUSTEE, investor sent $0, I received $0, returned $0. Payoff: $0\nRound 4: I am INVESTOR now\n\nTotal earnings so far: $2\n\nThe pattern shows:\n- When I sent $3 (60% of endowment) in round 2, the trustee kept everything and returned $0\n- In rounds 1 and 3, investors sent me nothing when I was trustee\n\nThis suggests low cooperation. The trustee I sent to in round 2 defected completely. The investors in rounds 1 and 3 didn't trust me.\n\nGiven this pattern of non-cooperation and the fact that when I invested generously in round 2 I got nothing back, it seems risky to send money again. The rational response to consistent defection is to not send money.\n\nHowever, I could also consider:\n1. This might be a different trustee each round (not clear from instructions)\n2. Sending a small amount to test the waters\n3. Matching the behavior I've experienced (sending $0)\n\nGiven that I lost money in round 2 by being cooperative, and no one else has been sending money, the safest strategy is to send $0 or a minimal amount.\n\nI'll send $0 to protect my earnings.",
+          "usage": {
+            "input_tokens": 849,
+            "output_tokens": 496,
+            "reasoning_tokens": 339
+          }
+        },
+        "Agent_1": {
+          "content": "Since the investor sent me $0 this round, I received $0 (even after tripling). I have nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. I have nothing to return.\n\nLet me track what's happened:\n- Round 1: I was investor, sent $3, got $0 back\n- Round 2: I was trustee, received $0, returned $0\n- Round 3: I was investor, sent $1, got $0 back\n- Round 4: I was trustee, received $0, need to return something\n\nSince I received $0, I can only return $0.\n\n{'return': 0}",
+          "usage": {
+            "input_tokens": 964,
+            "output_tokens": 175,
+            "reasoning_tokens": 106
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 6.0,
+        "Agent_2": 7.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 5,
+      "roles": {
+        "Agent_1": "investor",
+        "Agent_2": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 20.0,
+        "Agent_2": 19.0
+      },
+      "actions": {
+        "Agent_1": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_2": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_1": {
+          "content": "Looking at the pattern across all rounds:\n\nRound 1 (INVESTOR): I sent $3, received $0 back\nRound 2 (TRUSTEE): Received $0\nRound 3 (INVESTOR): I sent $1, received $0 back  \nRound 4 (TRUSTEE): Received $0\n\nEvery trustee I've encountered has kept 100% of what they received. Every investor who sent to me (when I was trustee) sent $0, likely having learned the same lesson.\n\nThere's a clear pattern of zero reciprocity in this experiment. Sending any amount would simply result in losing that money.\n\n{'send': 0}",
+          "reasoning": "Let me review the pattern:\n\nRound 1 (INVESTOR): I sent $3, trustee returned $0. My payoff: $2\nRound 2 (TRUSTEE): Investor sent $0, I returned $0. My payoff: $0\nRound 3 (INVESTOR): I sent $1, trustee returned $0. My payoff: $4\nRound 4 (TRUSTEE): Investor sent $0, I returned $0. My payoff: $0\nRound 5 (INVESTOR): Now - deciding how much to send\n\nThe pattern is clear:\n- Every time I've been the investor and sent money (Rounds 1 and 3), the trustee kept everything\n- Every time I've been the trustee (Rounds 2 and 4), the investor sent me $0\n\nIt appears that:\n1. Trustees consistently don't return anything\n2. Investors are responding by not sending anything when it's their turn\n\nGiven this pattern of zero cooperation and zero reciprocity, sending any amount would likely result in losing that money. The rational choice is to keep my endowment.\n\nMy total earnings are $6, which means I've been cautious but still lost money in rounds where I trusted ($3 + $1 = $4 sent, $0 returned, so I lost net $4 but kept portions of endowments).\n\nThe optimal strategy given the behavior patterns is to send $0.",
+          "usage": {
+            "input_tokens": 956,
+            "output_tokens": 485,
+            "reasoning_tokens": 290
+          }
+        },
+        "Agent_2": {
+          "content": "The investor sent me $0, so I received $0 (even after tripling). I have no money to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round, which means I received $0 (0 \u00d7 3 = 0). Since I received nothing, I have nothing to return. The only valid amount I can return is $0.\n\nThe response format should be: {'return': <amount>}",
+          "usage": {
+            "input_tokens": 982,
+            "output_tokens": 108,
+            "reasoning_tokens": 58
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 11.0,
+        "Agent_2": 7.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 6,
+      "roles": {
+        "Agent_2": "investor",
+        "Agent_1": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 20.0,
+        "Agent_2": 24.0
+      },
+      "actions": {
+        "Agent_2": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_1": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_2": {
+          "content": "Looking at the consistent pattern:\n- When I cooperated in Round 2, I was exploited (lost $3)\n- Every other round has shown investors sending $0\n- There's no evidence of any cooperation or reciprocity in this game\n\nI'll protect my earnings.\n\n{'send': 0}",
+          "reasoning": "Let me review the history:\n- Round 2: I was investor, sent $3, trustee returned $0 (I lost money)\n- Round 3: I was trustee, investor sent $0, I returned $0\n- Round 4: I was investor, sent $0, trustee returned $0 (I kept $5)\n- Round 5: I was trustee, investor sent $0, I returned $0\n- Round 6: I'm investor again\n\nThe pattern is clear - there's been no cooperation since my initial attempt in Round 2. Everyone is sending $0 to protect their earnings. \n\nGiven that:\n1. When I tried to cooperate (Round 2), I was exploited\n2. All other rounds have shown $0 being sent by investors\n3. My total earnings are $7, which I want to protect\n4. There's no indication that this trustee will behave differently\n\nI should continue the strategy of sending $0 to protect what I have.",
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 301,
+            "reasoning_tokens": 204
+          }
+        },
+        "Agent_1": {
+          "content": "Since the investor sent me $0 this round, I received $0. There is nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. I have nothing to return since I received nothing.\n\nThe valid range is (0-0), so I can only return 0.",
+          "usage": {
+            "input_tokens": 1071,
+            "output_tokens": 87,
+            "reasoning_tokens": 44
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 11.0,
+        "Agent_2": 12.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 7,
+      "roles": {
+        "Agent_1": "investor",
+        "Agent_2": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 25.0,
+        "Agent_2": 24.0
+      },
+      "actions": {
+        "Agent_1": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_2": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_1": {
+          "content": "Looking at the complete history:\n\n**When I was INVESTOR:**\n- Round 1: Sent $3 \u2192 Received $0 back\n- Round 3: Sent $1 \u2192 Received $0 back  \n- Round 5: Sent $0 \u2192 Kept $5\n\n**When I was TRUSTEE:**\n- Rounds 2, 4, 6: Each time received $0\n\nThe pattern is absolutely consistent - there has been zero reciprocity throughout this entire experiment. Every trustee (including myself when given the opportunity) has kept everything. Every investor who sent to me sent $0, having learned this same lesson.\n\nSending any amount would be irrational given this established pattern.\n\n{'send': 0}",
+          "reasoning": "Looking at all the rounds so far:\n\nRound 1 (INVESTOR): I sent $3, received $0 back - lost $3\nRound 2 (TRUSTEE): Received $0\nRound 3 (INVESTOR): I sent $1, received $0 back - lost $1\nRound 4 (TRUSTEE): Received $0\nRound 5 (INVESTOR): I sent $0 - kept $5\nRound 6 (TRUSTEE): Received $0\nRound 7 (INVESTOR): ?\n\nThe pattern is completely clear:\n- Every time I've sent money as an investor (rounds 1 and 3), I've received $0 back\n- Every time someone has been investor with me as trustee (rounds 2, 4, 6), they sent $0\n- When I learned and sent $0 in round 5, I kept my full $5\n\nThe dominant strategy that has emerged is clear: no one trusts anyone, and no one reciprocates. Sending any amount will just result in a loss.\n\nI should send $0 again.",
+          "usage": {
+            "input_tokens": 953,
+            "output_tokens": 427,
+            "reasoning_tokens": 198
+          }
+        },
+        "Agent_2": {
+          "content": "The investor sent me $0, so I received $0 (even after tripling). I have no money to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. I have no money to return to the investor.\n\nThe maximum I can return is 0 since I received nothing.\n\nI need to respond in the format: {'return': <amount>}",
+          "usage": {
+            "input_tokens": 950,
+            "output_tokens": 104,
+            "reasoning_tokens": 59
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 16.0,
+        "Agent_2": 12.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 8,
+      "roles": {
+        "Agent_2": "investor",
+        "Agent_1": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 25.0,
+        "Agent_2": 29.0
+      },
+      "actions": {
+        "Agent_2": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_1": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_2": {
+          "content": "The pattern remains consistent - no cooperation from any participant across all rounds. Given this established behavior, I'll continue to protect my earnings.\n\n{'send': 0}",
+          "reasoning": "The pattern continues - nobody is cooperating. Every round shows investors sending $0 and trustees returning $0. The one time I tried to cooperate (Round 2), I was exploited and lost money.\n\nCurrent situation:\n- Total earnings: $12.0\n- The game continues to show zero cooperation\n- No incentive to deviate from the non-cooperative equilibrium\n\nI'll continue with the rational choice given the observed behavior.",
+          "usage": {
+            "input_tokens": 872,
+            "output_tokens": 139,
+            "reasoning_tokens": 108
+          }
+        },
+        "Agent_1": {
+          "content": "The investor sent me $0 this round, which means I received $0 (even after the 3x multiplier). There is nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. When multiplied by 3x, that's still $0. So I received $0 total. There is nothing to return.\n\nThe format should be {'return': 0}\n\nSince I received $0, the only valid amount I can return is $0.",
+          "usage": {
+            "input_tokens": 1084,
+            "output_tokens": 118,
+            "reasoning_tokens": 60
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 16.0,
+        "Agent_2": 17.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 9,
+      "roles": {
+        "Agent_1": "investor",
+        "Agent_2": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 30.0,
+        "Agent_2": 29.0
+      },
+      "actions": {
+        "Agent_1": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_2": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_1": {
+          "content": "Looking at the pattern across 8 rounds:\n\n**When I invested and trusted:**\n- Round 1: Sent $3 \u2192 Lost $3\n- Round 3: Sent $1 \u2192 Lost $1\n\n**When I protected my endowment:**\n- Rounds 5, 7: Sent $0 \u2192 Kept $5 each time\n\n**When others invested in me as trustee:**\n- Rounds 2, 4, 6, 8: All sent $0 (they learned the same lesson)\n\nThe evidence is overwhelming and consistent - there has been zero reciprocity in any round from any trustee. Sending anything would contradict 8 rounds of clear data.\n\n{'send': 0}",
+          "reasoning": "Let me review the complete pattern:\n\n**When I was INVESTOR:**\n- Round 1: Sent $3 \u2192 Received $0 back (lost $3)\n- Round 3: Sent $1 \u2192 Received $0 back (lost $1)\n- Round 5: Sent $0 \u2192 Kept $5\n- Round 7: Sent $0 \u2192 Kept $5\n\n**When I was TRUSTEE:**\n- Round 2: Received $0 \u2192 Returned $0\n- Round 4: Received $0 \u2192 Returned $0\n- Round 6: Received $0 \u2192 Returned $0\n- Round 8: Received $0 \u2192 Returned $0\n\nThe pattern is absolutely clear and consistent across 8 rounds:\n1. No trustee has ever returned anything when they received money\n2. I lost money in rounds 1 and 3 when I trusted\n3. I've only broken even or profited when sending $0\n4. All other investors have learned the same lesson and send $0\n\nCurrent total earnings: $16.0\n- If I send $0: I keep $5, total becomes $21\n- If I send any amount X: I keep $5-X, and will receive $0 back (based on consistent pattern), total becomes $16 + (5-X) = $21-X\n\nThe rational choice, based on 8 rounds of consistent evidence, is to send $0.",
+          "usage": {
+            "input_tokens": 974,
+            "output_tokens": 509,
+            "reasoning_tokens": 267
+          }
+        },
+        "Agent_2": {
+          "content": "The investor sent me $0, so I received $0. There's nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. This means I received $0 (0 * 3 = 0). Since I received nothing, I have nothing to return. The only valid response is to return $0.\n\nResponse format: {'return': <amount>}",
+          "usage": {
+            "input_tokens": 873,
+            "output_tokens": 97,
+            "reasoning_tokens": 53
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 21.0,
+        "Agent_2": 17.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    },
+    {
+      "round": 10,
+      "roles": {
+        "Agent_2": "investor",
+        "Agent_1": "trustee"
+      },
+      "sent": 0.0,
+      "received": 0.0,
+      "returned": 0.0,
+      "investor_payoff": 5.0,
+      "trustee_payoff": 0.0,
+      "balances": {
+        "Agent_1": 30.0,
+        "Agent_2": 34.0
+      },
+      "actions": {
+        "Agent_2": {
+          "action": "sent",
+          "amount": 0.0,
+          "communicated": 0
+        },
+        "Agent_1": {
+          "action": "returned",
+          "amount": 0.0,
+          "communicated": 0
+        }
+      },
+      "myths": {},
+      "game_responses": {
+        "Agent_2": {
+          "content": "This appears to be the final round (Round 10). Throughout all rounds, there has been complete non-cooperation - every investor has sent $0 and every trustee has returned $0. With no indication of any cooperative behavior and this being the last round, I'll maintain the established pattern.\n\n{'send': 0}",
+          "reasoning": "This is Round 10, which is likely the final round of the experiment. I've seen a consistent pattern of zero cooperation across all rounds. Every investor has sent $0, and every trustee has returned $0.\n\nMy total earnings are $17.0, which means I've earned $5 in some rounds (when I was investor and kept everything) and $0 in other rounds (when I was trustee and received nothing).\n\nLet me think about the game theory here:\n- If this is the last round, there's no future reciprocity to consider\n- The other player has shown zero cooperation in all previous rounds\n- If I send money, history suggests it won't be returned\n- This is a one-shot interaction with no reputation effects\n\nFrom a rational self-interest perspective, sending $0 maximizes my payoff given the established pattern.\n\nHowever, I could consider:\n1. Testing if behavior changes in the final round\n2. Making a cooperative gesture even without expectation of return\n3. Following the established equilibrium of mutual non-cooperation\n\nGiven the complete absence of any cooperation throughout all rounds, and this being likely the final round, the rational choice is to send $0 and keep my $5.",
+          "usage": {
+            "input_tokens": 832,
+            "output_tokens": 341,
+            "reasoning_tokens": 302
+          }
+        },
+        "Agent_1": {
+          "content": "The investor sent me $0 this round, which means I received $0 (even after tripling). There is nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. There is nothing for me to return - I have $0 to work with.\n\nThe only valid response is to return $0.\n\n{'return': 0}",
+          "usage": {
+            "input_tokens": 1109,
+            "output_tokens": 101,
+            "reasoning_tokens": 49
+          }
+        }
+      },
+      "myth_responses": {},
+      "sent_communicated": 0,
+      "received_communicated": 0,
+      "returned_communicated": 0,
+      "balances_communicated": {
+        "Agent_1": 21.0,
+        "Agent_2": 22.0
+      },
+      "noise_applied": false,
+      "other_player_names": {
+        "investor": "The investor",
+        "trustee": "the trustee"
+      }
+    }
+  ],
+  "game_data": {
+    "pending_sent": 0.0,
+    "pending_sent_communicated": 0,
+    "balances": {
+      "Agent_1": 30.0,
+      "Agent_2": 34.0
+    },
+    "balances_communicated": {
+      "Agent_1": 21.0,
+      "Agent_2": 22.0
+    },
+    "noise_stats": {
+      "rounds_with_noise": 3,
+      "total_sent_noise": 7.0,
+      "total_returned_noise": 0.0
+    }
+  },
+  "task_order": [
+    "game"
+  ],
+  "run_metadata": {
+    "model": "anthropic/claude-sonnet-4.5",
+    "temperature": 0.8,
+    "num_turns": 10,
+    "num_agents": 2,
+    "memory_capacity": 3,
+    "myth_topic_id": "anything",
+    "myth_topic": "anything",
+    "game_params_name": "noisy_deterministic_zero",
+    "noise_config": {
+      "type": "probabilistic",
+      "probability": 1.0,
+      "replacement": "zero",
+      "applies_to": "both",
+      "inform_agents": false
+    },
+    "other_player_names": "default"
+  },
+  "agents": {
+    "Agent_1": {
+      "agent_id": "Agent_1",
+      "model": "anthropic/claude-sonnet-4.5",
+      "temperature": 0.8,
+      "memory_capacity": 3,
+      "initial_bias": null,
+      "system_prompt": "You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.\n\nTRUST GAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the INVESTOR:\n- You receive $5 each round\n- You decide how much to SEND to the TRUSTEE ($0-$5)\n- Amount sent is multiplied by 3x\n- Trustee decides how much to RETURN\n- You keep: $5 - sent + returned\n- Trustee keeps: received - returned\n- Response format: {'send': <amount>}\n\nWhen you are the TRUSTEE:\n- Investor receives $5\n- Investor decides how much to SEND to you ($0-$5)\n- Amount sent is multiplied by 3x\n- You decide how much to RETURN\n- Investor keeps: $5 - sent + returned\n- You keep: received - returned\n- Response format: {'return': <amount>}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.\n\nTRUST GAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the INVESTOR:\n- You receive $5 each round\n- You decide how much to SEND to the TRUSTEE ($0-$5)\n- Amount sent is multiplied by 3x\n- Trustee decides how much to RETURN\n- You keep: $5 - sent + returned\n- Trustee keeps: received - returned\n- Response format: {'send': <amount>}\n\nWhen you are the TRUSTEE:\n- Investor receives $5\n- Investor decides how much to SEND to you ($0-$5)\n- Amount sent is multiplied by 3x\n- You decide how much to RETURN\n- Investor keeps: $5 - sent + returned\n- You keep: received - returned\n- Response format: {'return': <amount>}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n"
+        },
+        {
+          "role": "user",
+          "content": "Round 7\n\nYou are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0,\nthat was 0.0% of their total endowment. You received $0.\nYou returned $0.0. So your payoff was 0.0.\nYour total earnings across all rounds are $11.0.\nHow much do you send to the trustee this round? (0-5)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "Looking at the complete history:\n\n**When I was INVESTOR:**\n- Round 1: Sent $3 \u2192 Received $0 back\n- Round 3: Sent $1 \u2192 Received $0 back  \n- Round 5: Sent $0 \u2192 Kept $5\n\n**When I was TRUSTEE:**\n- Rounds 2, 4, 6: Each time received $0\n\nThe pattern is absolutely consistent - there has been zero reciprocity throughout this entire experiment. Every trustee (including myself when given the opportunity) has kept everything. Every investor who sent to me sent $0, having learned this same lesson.\n\nSending any amount would be irrational given this established pattern.\n\n{'send': 0}",
+          "reasoning": "Looking at all the rounds so far:\n\nRound 1 (INVESTOR): I sent $3, received $0 back - lost $3\nRound 2 (TRUSTEE): Received $0\nRound 3 (INVESTOR): I sent $1, received $0 back - lost $1\nRound 4 (TRUSTEE): Received $0\nRound 5 (INVESTOR): I sent $0 - kept $5\nRound 6 (TRUSTEE): Received $0\nRound 7 (INVESTOR): ?\n\nThe pattern is completely clear:\n- Every time I've sent money as an investor (rounds 1 and 3), I've received $0 back\n- Every time someone has been investor with me as trustee (rounds 2, 4, 6), they sent $0\n- When I learned and sent $0 in round 5, I kept my full $5\n\nThe dominant strategy that has emerged is clear: no one trusts anyone, and no one reciprocates. Sending any amount will just result in a loss.\n\nI should send $0 again.",
+          "usage": {
+            "input_tokens": 953,
+            "output_tokens": 427,
+            "reasoning_tokens": 198
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 8\n\nYou are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,\nthat was 0.0% of your total endowment. This was tripled to $0.0.\nthe trustee returned $0. So your payoff was 5.0.\nYour total earnings across all rounds are $16.0.\nThe investor has sent you $0 this round. How much do you return to The investor? (0-0)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "The investor sent me $0 this round, which means I received $0 (even after the 3x multiplier). There is nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. When multiplied by 3x, that's still $0. So I received $0 total. There is nothing to return.\n\nThe format should be {'return': 0}\n\nSince I received $0, the only valid amount I can return is $0.",
+          "usage": {
+            "input_tokens": 1084,
+            "output_tokens": 118,
+            "reasoning_tokens": 60
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 9\n\nYou are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0,\nthat was 0.0% of their total endowment. You received $0.\nYou returned $0.0. So your payoff was 0.0.\nYour total earnings across all rounds are $16.0.\nHow much do you send to the trustee this round? (0-5)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "Looking at the pattern across 8 rounds:\n\n**When I invested and trusted:**\n- Round 1: Sent $3 \u2192 Lost $3\n- Round 3: Sent $1 \u2192 Lost $1\n\n**When I protected my endowment:**\n- Rounds 5, 7: Sent $0 \u2192 Kept $5 each time\n\n**When others invested in me as trustee:**\n- Rounds 2, 4, 6, 8: All sent $0 (they learned the same lesson)\n\nThe evidence is overwhelming and consistent - there has been zero reciprocity in any round from any trustee. Sending anything would contradict 8 rounds of clear data.\n\n{'send': 0}",
+          "reasoning": "Let me review the complete pattern:\n\n**When I was INVESTOR:**\n- Round 1: Sent $3 \u2192 Received $0 back (lost $3)\n- Round 3: Sent $1 \u2192 Received $0 back (lost $1)\n- Round 5: Sent $0 \u2192 Kept $5\n- Round 7: Sent $0 \u2192 Kept $5\n\n**When I was TRUSTEE:**\n- Round 2: Received $0 \u2192 Returned $0\n- Round 4: Received $0 \u2192 Returned $0\n- Round 6: Received $0 \u2192 Returned $0\n- Round 8: Received $0 \u2192 Returned $0\n\nThe pattern is absolutely clear and consistent across 8 rounds:\n1. No trustee has ever returned anything when they received money\n2. I lost money in rounds 1 and 3 when I trusted\n3. I've only broken even or profited when sending $0\n4. All other investors have learned the same lesson and send $0\n\nCurrent total earnings: $16.0\n- If I send $0: I keep $5, total becomes $21\n- If I send any amount X: I keep $5-X, and will receive $0 back (based on consistent pattern), total becomes $16 + (5-X) = $21-X\n\nThe rational choice, based on 8 rounds of consistent evidence, is to send $0.",
+          "usage": {
+            "input_tokens": 974,
+            "output_tokens": 509,
+            "reasoning_tokens": 267
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 10\n\nYou are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,\nthat was 0.0% of your total endowment. This was tripled to $0.0.\nthe trustee returned $0. So your payoff was 5.0.\nYour total earnings across all rounds are $21.0.\nThe investor has sent you $0 this round. How much do you return to The investor? (0-0)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "The investor sent me $0 this round, which means I received $0 (even after tripling). There is nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. There is nothing for me to return - I have $0 to work with.\n\nThe only valid response is to return $0.\n\n{'return': 0}",
+          "usage": {
+            "input_tokens": 1109,
+            "output_tokens": 101,
+            "reasoning_tokens": 49
+          }
+        }
+      ]
+    },
+    "Agent_2": {
+      "agent_id": "Agent_2",
+      "model": "anthropic/claude-sonnet-4.5",
+      "temperature": 0.8,
+      "memory_capacity": 3,
+      "initial_bias": null,
+      "system_prompt": "You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.\n\nTRUST GAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the INVESTOR:\n- You receive $5 each round\n- You decide how much to SEND to the TRUSTEE ($0-$5)\n- Amount sent is multiplied by 3x\n- Trustee decides how much to RETURN\n- You keep: $5 - sent + returned\n- Trustee keeps: received - returned\n- Response format: {'send': <amount>}\n\nWhen you are the TRUSTEE:\n- Investor receives $5\n- Investor decides how much to SEND to you ($0-$5)\n- Amount sent is multiplied by 3x\n- You decide how much to RETURN\n- Investor keeps: $5 - sent + returned\n- You keep: received - returned\n- Response format: {'return': <amount>}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.\n\nTRUST GAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the INVESTOR:\n- You receive $5 each round\n- You decide how much to SEND to the TRUSTEE ($0-$5)\n- Amount sent is multiplied by 3x\n- Trustee decides how much to RETURN\n- You keep: $5 - sent + returned\n- Trustee keeps: received - returned\n- Response format: {'send': <amount>}\n\nWhen you are the TRUSTEE:\n- Investor receives $5\n- Investor decides how much to SEND to you ($0-$5)\n- Amount sent is multiplied by 3x\n- You decide how much to RETURN\n- Investor keeps: $5 - sent + returned\n- You keep: received - returned\n- Response format: {'return': <amount>}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n"
+        },
+        {
+          "role": "user",
+          "content": "Round 7\n\nYou are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,\nthat was 0.0% of your total endowment. This was tripled to $0.0.\nthe trustee returned $0. So your payoff was 5.0.\nYour total earnings across all rounds are $12.0.\nThe investor has sent you $0 this round. How much do you return to The investor? (0-0)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "The investor sent me $0, so I received $0 (even after tripling). I have no money to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. After tripling, I received $0. I have no money to return to the investor.\n\nThe maximum I can return is 0 since I received nothing.\n\nI need to respond in the format: {'return': <amount>}",
+          "usage": {
+            "input_tokens": 950,
+            "output_tokens": 104,
+            "reasoning_tokens": 59
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 8\n\nYou are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0,\nthat was 0.0% of their total endowment. You received $0.\nYou returned $0.0. So your payoff was 0.0.\nYour total earnings across all rounds are $12.0.\nHow much do you send to the trustee this round? (0-5)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "The pattern remains consistent - no cooperation from any participant across all rounds. Given this established behavior, I'll continue to protect my earnings.\n\n{'send': 0}",
+          "reasoning": "The pattern continues - nobody is cooperating. Every round shows investors sending $0 and trustees returning $0. The one time I tried to cooperate (Round 2), I was exploited and lost money.\n\nCurrent situation:\n- Total earnings: $12.0\n- The game continues to show zero cooperation\n- No incentive to deviate from the non-cooperative equilibrium\n\nI'll continue with the rational choice given the observed behavior.",
+          "usage": {
+            "input_tokens": 872,
+            "output_tokens": 139,
+            "reasoning_tokens": 108
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 9\n\nYou are the TRUSTEE this round. Last round you were the INVESTOR. You sent $0.0,\nthat was 0.0% of your total endowment. This was tripled to $0.0.\nthe trustee returned $0. So your payoff was 5.0.\nYour total earnings across all rounds are $17.0.\nThe investor has sent you $0 this round. How much do you return to The investor? (0-0)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "The investor sent me $0, so I received $0. There's nothing to return.\n\n{'return': 0}",
+          "reasoning": "The investor sent me $0 this round. This means I received $0 (0 * 3 = 0). Since I received nothing, I have nothing to return. The only valid response is to return $0.\n\nResponse format: {'return': <amount>}",
+          "usage": {
+            "input_tokens": 873,
+            "output_tokens": 97,
+            "reasoning_tokens": 53
+          }
+        },
+        {
+          "role": "user",
+          "content": "Round 10\n\nYou are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $0,\nthat was 0.0% of their total endowment. You received $0.\nYou returned $0.0. So your payoff was 0.0.\nYour total earnings across all rounds are $17.0.\nHow much do you send to the trustee this round? (0-5)\n"
+        },
+        {
+          "role": "assistant",
+          "content": "This appears to be the final round (Round 10). Throughout all rounds, there has been complete non-cooperation - every investor has sent $0 and every trustee has returned $0. With no indication of any cooperative behavior and this being the last round, I'll maintain the established pattern.\n\n{'send': 0}",
+          "reasoning": "This is Round 10, which is likely the final round of the experiment. I've seen a consistent pattern of zero cooperation across all rounds. Every investor has sent $0, and every trustee has returned $0.\n\nMy total earnings are $17.0, which means I've earned $5 in some rounds (when I was investor and kept everything) and $0 in other rounds (when I was trustee and received nothing).\n\nLet me think about the game theory here:\n- If this is the last round, there's no future reciprocity to consider\n- The other player has shown zero cooperation in all previous rounds\n- If I send money, history suggests it won't be returned\n- This is a one-shot interaction with no reputation effects\n\nFrom a rational self-interest perspective, sending $0 maximizes my payoff given the established pattern.\n\nHowever, I could consider:\n1. Testing if behavior changes in the final round\n2. Making a cooperative gesture even without expectation of return\n3. Following the established equilibrium of mutual non-cooperation\n\nGiven the complete absence of any cooperation throughout all rounds, and this being likely the final round, the rational choice is to send $0 and keep my $5.",
+          "usage": {
+            "input_tokens": 832,
+            "output_tokens": 341,
+            "reasoning_tokens": 302
+          }
+        }
+      ]
+    }
+  }
+}

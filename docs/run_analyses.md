@@ -26,16 +26,16 @@ Use the shell script to run all analyses for a specific task order:
 
 ```bash
 # Run analyses for game-only data
-./scripts/run_analyses_clean.sh "game"
+./scripts/run_analyses.sh "game"
 
 # Run analyses for myth-only data
-./scripts/run_analyses_clean.sh "myth"
+./scripts/run_analyses.sh "myth"
 
 # Run analyses for game-then-myth data
-./scripts/run_analyses_clean.sh "game,myth"
+./scripts/run_analyses.sh "game,myth"
 
 # Run analyses for myth-then-game data
-./scripts/run_analyses_clean.sh "myth,game"
+./scripts/run_analyses.sh "myth,game"
 ```
 
 **Input**: `data/json/main_loop/task_order/{TASK_ORDER}.json`
@@ -44,7 +44,7 @@ Use the shell script to run all analyses for a specific task order:
 ### 2. Batch Processing (All Task Orders)
 Use the Jupyter notebook to run analyses for all task orders:
 
-1. Open `analyses_clean/run_all_analyses.ipynb`
+1. Open `analyses/run_all_analyses.ipynb`
 2. Run all cells
 3. Results will be generated for all task orders automatically
 
@@ -56,25 +56,25 @@ Each script can be run individually with default paths:
 
 ```bash
 # Trajectory plotting
-python analyses_clean/trajectory_plotting.py
+python analyses/trajectory_plotting.py
 
 # Word chain evolution
-python analyses_clean/word_chain_evolution.py
+python analyses/word_chain_evolution.py
 
 # Cooperativity analysis
-python analyses_clean/cooperativity_analysis.py
+python analyses/cooperativity_analysis.py
 
 # Myth similarity (LLM-based)
-python analyses_clean/myth_similarity.py
+python analyses/myth_similarity.py
 
 # Myth similarity (embedding-based)
-python analyses_clean/myth_similarity_embedding.py
+python analyses/myth_similarity_embedding.py
 
 # Plot myth similarity results
-python analyses_clean/plot_myth_similarity.py
+python analyses/plot_myth_similarity.py
 
 # N-gram sentence structure
-python analyses_clean/n_gram_sentence_structure.py
+python analyses/n_gram_sentence_structure.py
 ```
 
 **Default Input**: `data/json/main_loop/Only_myths_Trust_simulation_state.json`
@@ -89,7 +89,7 @@ Set environment variables to use custom input/output paths:
 ANALYSIS_INPUT_FILE="/path/to/your/data.json" \
 ANALYSIS_OUTPUT_DIR="/path/to/output/folder" \
 ANALYSIS_TASK_NAME="my_experiment" \
-python analyses_clean/trajectory_plotting.py
+python analyses/trajectory_plotting.py
 ```
 
 ## Analysis Script Details
@@ -145,11 +145,11 @@ project/
 │       ├── myth/
 │       ├── game,myth/
 │       └── myth,game/
-├── analyses_clean/
+├── analyses/
 │   ├── *.py (analysis scripts)
 │   └── run_all_analyses.ipynb
 └── scripts/
-    └── run_analyses_clean.sh
+    └── run_analyses.sh
 ```
 
 ## Environment Variables
@@ -179,7 +179,7 @@ python -m spacy download en_core_web_sm
 ### Permission Errors
 ```bash
 # Make shell script executable
-chmod +x scripts/run_analyses_clean.sh
+chmod +x scripts/run_analyses.sh
 ```
 
 ### API Key Issues (Myth Similarity)

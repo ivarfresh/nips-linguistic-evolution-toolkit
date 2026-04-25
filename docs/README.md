@@ -23,7 +23,7 @@ This framework uses a modular, configuration-based architecture that separates e
 ├── experiments/
 │   ├── run_trust_game.py    # Single experiment runner
 │   └── run_trust_game_batch.py  # Batch experiment runner
-└── analyses_clean/          # Analysis and visualization tools
+└── analyses/          # Analysis and visualization tools
 ```
 
 ## Key Features
@@ -178,7 +178,7 @@ Each experiment saves complete simulation state including:
 2. Ensure model compatibility in `src/agents.py`
 
 ### Adding New Analyses
-1. Create analysis scripts in `analyses_clean/`
+1. Create analysis scripts in `analyses/`
 2. Use saved simulation states from `data/json/`
 3. Follow existing patterns for visualization and reporting
 

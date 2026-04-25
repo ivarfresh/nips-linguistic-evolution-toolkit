@@ -45,9 +45,25 @@ python experiments/run_trust_game.py
 # Virtual environment is in .venv (Python 3.11)
 source .venv/bin/activate
 
-# Analysis dependencies
-pip install -r analyses_clean/requirements.txt
+# Main framework dependencies
+pip install -r requirements.txt
+
+# Analysis-only dependencies (spaCy, sentence-transformers, seaborn, ...)
+pip install -r analyses/requirements.txt
 ```
+
+### API keys (`.env`)
+
+Secrets are loaded from `.env` at the repo root. Start from the template:
+
+```bash
+cp .env.example .env
+# Then fill in OPENROUTER_API_KEY and (optionally) TOGETHER_API_KEY
+```
+
+`src/utils.py` calls `load_dotenv()` at import time, so any entry point that
+imports from `src/` will pick up the keys automatically. The loader exposes
+them as `OPENROUTER_API_KEY` and `TOGETHER_API_KEY`.
 
 ## Parallelization
 
@@ -161,7 +177,8 @@ The entire experimental framework is driven by a single YAML configuration file 
 2. **simulation.py**: Main orchestration - runs game/myth tasks in specified order, manages checkpointing/resuming, coordinates agents
 3. **agents.py**: Simple Agent class with memory capacity (recency bias via message truncation)
 4. **myth_writer.py**: Handles myth prompting (first round vs. later rounds with agent's previous myth + other agent's myth)
-5. **utils.py**: LLM API calls with retry logic, contains API keys
+5. **utils.py**: LLM API calls with retry logic. Loads `OPENROUTER_API_KEY` and `TOGETHER_API_KEY` from `.env` via `python-dotenv` (see "API keys" above).
+6. **batch_utils.py**: `unique_json_path()` and `sanitize_for_filename()`, shared between `experiments/run_trust_game_batch.py` and `experiments/run_noisy_batch.py`.
 
 ### Game System (games/)
 
@@ -194,7 +211,7 @@ This enables studying cross-task influence (does cooperation in game affect crea
 
 Agents have configurable `memory_capacity` (number of conversation turns to remember). When capacity is exceeded, oldest messages are truncated (keeping system prompt). This creates recency bias where recent interactions have more impact.
 
-### Analysis System (analyses_clean/)
+### Analysis System (analyses/)
 
 Python scripts that load saved simulation states and generate plots/statistics:
 - **cooperativity_analysis.py**: Measures cooperation patterns, mimicry between agents
@@ -205,8 +222,9 @@ Python scripts that load saved simulation states and generate plots/statistics:
 - **n_gram_sentence_structure.py**: Linguistic pattern analysis
 - **word_chain_evolution.py**: Tracks word usage evolution
 - **transaction_flow_plots.py**: Game transaction visualizations
+- **_shared.py**: `configure_matplotlib()`, `load_simulation_data()`, `extract_game_metrics()` — shared helpers used by multiple analysis scripts. Prefer extending this module over re-implementing locally.
 
-All analyses read from `data/json/` and write to `data/plots/`.
+All analyses read from `data/json/` and write to `data/plots/`. Default paths in each script are relative (e.g. `./data/json/...`); run scripts from the repo root.
 
 ## Key Implementation Details
 
@@ -248,7 +266,11 @@ When `"myth"` is in task order, the framework iterates over all specified myth t
 
 ### API Keys
 
-Stored directly in `src/utils.py` (Together_API_KEY and API_KEY for OpenRouter). The LLM client is initialized in `simulation.py` using these keys.
+Loaded from `.env` at the repo root via `python-dotenv`. `src/utils.py` calls `load_dotenv()` at import time and exposes `OPENROUTER_API_KEY` and `TOGETHER_API_KEY`. `src/simulation.py` uses `OPENROUTER_API_KEY` to instantiate the OpenAI client (pointed at `https://openrouter.ai/api/v1`) and fails fast with a clear error if the key is missing. Start from `.env.example`.
+
+### Archive (`archive/`)
+
+Hold-out for files that are no longer wired into the live code but weren't deleted (old game implementations, ephemeral configs, credentials to review). Nothing under `archive/` is imported by the main framework. See `archive/README.md` for the inventory.
 
 ## Common Development Patterns
 
@@ -276,7 +298,7 @@ Stored directly in `src/utils.py` (Together_API_KEY and API_KEY for OpenRouter).
 
 ### Adding a New Analysis
 
-1. Create script in `analyses_clean/`
+1. Create script in `analyses/`
 2. Load simulation state from JSON using `SimulationData.load_state()`
 3. Access game data via `sim_data.game_data` and conversation history via `sim_data.conversation_history`
 4. Add to `scripts/run_all_analyses.sh` in the `run_analysis()` function
