@@ -8,6 +8,22 @@
 - Note the analytical asymmetry in the existing literature: behavioural outcomes (donations, cooperation rates, payoffs) are the dependent variable; the natural-language exchange between agents is treated either as instrumental scaffolding or as background. [@akata2023; @leng2023; @fontana2024; @lore2024]
 - Pose the substantive question: when LLM dyads talk while they cooperate, is what they say *load-bearing* — does it shape the cooperation — or epiphenomenal?
 
+
+<!-- loose/rough — candidate alternative opener (2026-04-23 brainstorm); not yet integrated -->
+<!-- Compared with the phenomenon-first opener above (multi-agent LLM deployments), this is a debate-first opener: sets up the cheap-talk vs narrative-as-cooperation-tech disagreement, then bridges to LLMs as adjudication site, then lands the ambitious thesis. Decision deferred to draft curation. -->
+
+> Economic models of cooperation typically treat communication as cheap talk — strategically inert unless backed by commitment. A parallel tradition in anthropology and cultural evolution treats narrative as cooperation technology: cheap to transmit, hard to misremember, and designed to coordinate groups too large for reciprocity alone. Large language models let us adjudicate this disagreement, because the linguistic channel between agents can be engineered, ablated, and observed in ways no human field site permits. We find that narrative exchange between LLM dyads is a coordination device, not a payoff device: iterated storytelling does not reliably raise cooperation, but it consolidates the equilibrium a dyad settles on — evidence that inter-agent language carries load through coordination rather than incentive change.
+
+<!-- Flags for curator:
+  - S4 is the ambitious thesis variant (see materials/brainstorming/intro-thesis-after-s2-scope.md).
+    If results come in inconsistent on variance too, soften to "operates as a coordination device
+    more than a payoff device" or swap "We find" → "We ask whether" and move finding later.
+  - If kept, §1.2 Premise may need to lose its "one-sentence framing of the paper's central thesis"
+    line (currently in 1.2 ¶2), since the thesis will already have landed in 1.1.
+  - Needs citation markers: S1 (cheap talk — Farrell/Rabin or game-theory textbook);
+    S2 (anthropology — already has smith2017, boyd2011, henrich2016 in §2.3 bibliography).
+-->
+
 **1.2 Premise — in humans, cooperation runs on shared narrative, not just payoffs.**
 
 - Sketch the cultural-evolution view: norms, myths, and shared stories are coordination devices — compact, transmissible, and adaptable units that align expectations and stabilise cooperation in the absence of explicit contracts. [@smith2017; @boyd2011; @brinkmann2023]

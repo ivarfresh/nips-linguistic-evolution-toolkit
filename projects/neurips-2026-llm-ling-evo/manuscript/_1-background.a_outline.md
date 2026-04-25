@@ -11,6 +11,23 @@
 
 ## 2.2 Cultural evolution and iterated learning in artificial agents
 - The classical paradigm: iterated learning. A long tradition of human laboratory studies shows that cumulative cultural transmission, imposed under a learnability bottleneck, drives communicative systems toward compositional structure and compression rather than mere convergence [@kirby2008; @kirby2015; @tamariz2016; @raviv2019]. The paradigm has two features we inherit: round-by-round transmission with adaptation pressure, and systematic study of what the transmitted artefact looks like across generations.
+
+<!-- loose/rough — revision note on the "two features we inherit" claim (2026-04-23 brainstorm); not yet integrated -->
+<!-- Three problems with the current framing:
+  1. "Adaptation pressure" is overstated. In iterated-learning terminology, this denotes a learnability bottleneck that selects for compressible/compositional structure. Our setup has no bottleneck, no differential reproduction, no selection in the IL sense — two persistent agents exchange myths each round with full context. A reviewer from the IL community will pull on this.
+  2. "Generations" doesn't fit. The design is a persistent two-agent dyad with bidirectional exchange, not a generational chain. "Across rounds" / "over repeated exchange" is the honest term.
+  3. Same overclaim is repeated at line 16 ("we adopt the iterated-learning paradigm's form (round-by-round transmission with adaptation pressure)"). Both instances need flagging.
+
+  What the setup actually has: iterated exposure (each agent conditions on the partner's prior myth — produces drift/convergence, not selection); coupling to a payoff-bearing task (narrative anchored to the trust game when interleaved); partner responsiveness (writing while knowing the partner will read and respond). -->
+
+> *We borrow one feature of the paradigm — round-by-round transmission where each turn conditions on the last — without inheriting the learnability bottleneck that drives classic iterated-learning results. What replaces the bottleneck in our design is coupling to a payoff-bearing task: myths are produced alongside (or interleaved with) a repeated trust game, so the linguistic channel has a functional anchor rather than a compression-selective one.*
+
+<!-- Flags for curator:
+  - If this replacement is adopted, line 16 ("The measurement asymmetry, and our move") also needs updating to drop its parenthetical "(round-by-round transmission with adaptation pressure)" — same overclaim, second occurrence.
+  - §2.2 ¶1 of `_1-background.c_final.md` carries the same sentence and will need a matching update. Per project rules, that must go via ms-writer reading an updated b_draft — not a direct edit to c_final.
+  - Benefit of the replacement: more honest, pre-empts the IL-community reviewer objection, and clarifies why §3 doesn't promise Kirby-style compression/compositionality results.
+-->
+
 - The machine-culture extension. A recent research agenda treats LLM populations as substrates where the same transmission–drift–selection dynamics can be studied on artefacts humans recognise as cultural [@brinkmann2023; @perez2024]. The substrate is attractive because natural language comes for free — we do not need to engineer a communication channel or wait for one to emerge.
 - Direct precedents. Three strands bear directly on our design. Transmission-chain experiments with LLMs reproduce known human content biases, showing that the substrate carries culturally relevant structure [@acerbi2023]. Multi-generational LLM populations exhibit cultural-evolution-like dynamics over time [@perez2024]. And Vallinder & Hughes extend the paradigm to cooperation itself, demonstrating that cooperative dispositions can undergo cultural evolution across generations of LLM agents in a donor game [@vallinder2024].
 - The measurement asymmetry, and our move. Taken together, these two traditions divide the measurement space. Iterated-learning studies analyse the form of what is transmitted — structure, regularity, compression — but remove payoff pressure from the design. LLM cultural-evolution-of-cooperation studies measure payoff outcomes — cooperation rates, survival of cooperative lineages — but leave the transmitted linguistic content unanalysed. Our design closes this gap: we adopt the iterated-learning paradigm's form (round-by-round transmission with adaptation pressure) and apply it inside a payoff-bearing game, so that the linguistic content and the cooperation outcome become measurable within a single experiment.
