@@ -1,0 +1,197 @@
+"""Run only missing outputs for a configured noisy experiment batch.
+
+This is a resumable wrapper around experiments/run_noisy_batch.py. It computes
+the canonical final JSON path for every configured combination, skips paths that
+already exist, and runs only the missing jobs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from typing import Any
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from experiments.run_noisy_batch import NoisyExperimentConfig, run_single_experiment
+from src.batch_utils import sanitize_for_filename
+
+
+def expected_output_path(
+    combo: dict[str, Any],
+    experiment_name: str,
+    index: int,
+    output_subdir: str,
+) -> Path:
+    model_name = combo["model"].split("/")[-1] if "/" in combo["model"] else combo["model"]
+    task_order_str = "_".join(combo["task_order"])
+    game_params_name = combo.get("game_params_name", "default")
+
+    save_dir = (
+        PROJECT_ROOT
+        / "data"
+        / "json"
+        / "noise_experiments"
+        / output_subdir
+        / experiment_name
+        / model_name
+        / task_order_str
+        / game_params_name
+    )
+
+    myth_topic_str = ""
+    if "myth" in combo["task_order"]:
+        myth_topic_str = "_" + sanitize_for_filename(combo.get("myth_topic_id", ""))
+
+    filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{myth_topic_str}.json"
+    return save_dir / filename
+
+
+def run_missing_job(
+    combo: dict[str, Any],
+    experiment_name: str,
+    index: int,
+    output_subdir: str,
+    log_root: str,
+) -> dict[str, Any]:
+    log_dir = Path(log_root) / experiment_name
+    log_dir.mkdir(parents=True, exist_ok=True)
+    worker_log = log_dir / f"{experiment_name}_{index:03d}.out"
+
+    with worker_log.open("w", encoding="utf-8") as handle:
+        with redirect_stdout(handle), redirect_stderr(handle):
+            result = run_single_experiment(combo, experiment_name, index, output_subdir)
+
+    result["index"] = index
+    result["worker_log"] = str(worker_log)
+    return result
+
+
+def load_combinations(experiment_name: str, config_path: str | None) -> list[dict[str, Any]]:
+    if config_path is None:
+        config_path = str(PROJECT_ROOT / "config" / "experiments_noisy.yaml")
+
+    config = NoisyExperimentConfig(config_path)
+    return config.get_experiment_combinations(experiment_name)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run only missing noisy experiment outputs.")
+    parser.add_argument("experiment_name", help="Experiment set from config/experiments_noisy.yaml")
+    parser.add_argument("--workers", type=int, default=1, help="Parallel workers")
+    parser.add_argument("--config", default=None, help="Optional config file path")
+    parser.add_argument(
+        "--output-subdir",
+        default="v2",
+        help="Subdirectory under data/json/noise_experiments/",
+    )
+    parser.add_argument(
+        "--log-dir",
+        default="/tmp/nlet-runs",
+        help="Directory for per-worker stdout/stderr logs",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional maximum number of missing jobs to run",
+    )
+
+    args = parser.parse_args()
+
+    combinations = load_combinations(args.experiment_name, args.config)
+    missing: list[tuple[int, dict[str, Any], Path]] = []
+
+    for index, combo in enumerate(combinations):
+        expected_path = expected_output_path(
+            combo,
+            args.experiment_name,
+            index,
+            args.output_subdir,
+        )
+        if not expected_path.exists():
+            missing.append((index, combo, expected_path))
+
+    if args.limit is not None:
+        missing = missing[: args.limit]
+
+    print(
+        f"{args.experiment_name}: total={len(combinations)} "
+        f"missing={len(missing)} workers={args.workers}",
+        flush=True,
+    )
+
+    if not missing:
+        return 0
+
+    failed: list[dict[str, Any]] = []
+    completed = 0
+
+    if args.workers == 1:
+        for index, combo, _expected_path in missing:
+            result = run_missing_job(
+                combo,
+                args.experiment_name,
+                index,
+                args.output_subdir,
+                args.log_dir,
+            )
+            completed += 1
+            if result["success"]:
+                print(f"[{completed}/{len(missing)}] ok {index:03d} -> {result['file_path']}", flush=True)
+            else:
+                failed.append(result)
+                print(f"[{completed}/{len(missing)}] FAIL {index:03d} -> {result['worker_log']}", flush=True)
+    else:
+        with ProcessPoolExecutor(max_workers=args.workers) as executor:
+            future_to_index = {
+                executor.submit(
+                    run_missing_job,
+                    combo,
+                    args.experiment_name,
+                    index,
+                    args.output_subdir,
+                    args.log_dir,
+                ): index
+                for index, combo, _expected_path in missing
+            }
+
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                completed += 1
+                try:
+                    result = future.result()
+                except Exception as exc:
+                    result = {
+                        "success": False,
+                        "index": index,
+                        "worker_log": None,
+                        "error": repr(exc),
+                    }
+
+                if result["success"]:
+                    print(f"[{completed}/{len(missing)}] ok {index:03d} -> {result['file_path']}", flush=True)
+                else:
+                    failed.append(result)
+                    print(f"[{completed}/{len(missing)}] FAIL {index:03d} -> {result.get('worker_log')}", flush=True)
+
+    if failed:
+        summary_path = Path(args.log_dir) / args.experiment_name / "failed.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps(failed, indent=2), encoding="utf-8")
+        print(f"failed={len(failed)} summary={summary_path}", flush=True)
+        return 1
+
+    print(f"complete={completed} failed=0", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
