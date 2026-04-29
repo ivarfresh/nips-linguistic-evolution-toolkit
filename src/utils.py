@@ -2,6 +2,9 @@ import os
 import random
 import re
 import time
+import json
+import urllib.error
+import urllib.request
 
 from dotenv import load_dotenv
 from openai import APIConnectionError, APIError, OpenAI, RateLimitError
@@ -17,10 +20,12 @@ TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "auto").strip().lower() or "auto"
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-VALID_PROVIDER_MODES = {"auto", "direct", "openrouter", "openai", "anthropic"}
+GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+VALID_PROVIDER_MODES = {"auto", "direct", "openrouter", "openai", "anthropic", "google", "gemini"}
 
 DIRECT_MODEL_ALIASES = {
     # OpenRouter-style Anthropic slugs used in repo configs -> direct Anthropic API IDs.
@@ -34,6 +39,10 @@ DIRECT_MODEL_ALIASES = {
     "anthropic/claude-opus-4.1": "claude-opus-4-1-20250805",
     "anthropic/claude-opus-4.5": "claude-opus-4-5-20251101",
     "anthropic/claude-opus-4.6": "claude-opus-4-6",
+    # OpenRouter-style Google slugs used in repo configs -> direct Gemini API IDs.
+    "google/gemini-3-flash-preview": "gemini-3-flash-preview",
+    "google/gemini-3-pro-preview": "gemini-3.1-pro-preview",
+    "google/gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
 }
 
 
@@ -57,6 +66,8 @@ def _provider_for_model(model):
         return "openai"
     if model.startswith("anthropic/"):
         return "anthropic"
+    if model.startswith("google/"):
+        return "google"
     return "openrouter"
 
 
@@ -90,8 +101,8 @@ def create_llm_client(model, provider=None):
 
     LLM_PROVIDER modes:
       - auto: direct OpenAI/Anthropic when the matching key exists, else OpenRouter.
-      - direct: require a direct provider for openai/* or anthropic/* models.
-      - openrouter/openai/anthropic: force that provider.
+      - direct: require a direct provider for openai/*, anthropic/*, or google/* models.
+      - openrouter/openai/anthropic/google/gemini: force that provider.
     """
     selected = (provider or _env("LLM_PROVIDER") or LLM_PROVIDER or "auto").strip().lower()
     if selected not in VALID_PROVIDER_MODES:
@@ -108,27 +119,34 @@ def create_llm_client(model, provider=None):
         return _create_openai_client()
     if selected == "anthropic":
         return _create_anthropic_client()
+    if selected in {"google", "gemini"}:
+        return _create_gemini_client()
 
     if selected == "direct":
         if model_provider == "openai":
             return _create_openai_client()
         if model_provider == "anthropic":
             return _create_anthropic_client()
+        if model_provider == "google":
+            return _create_gemini_client()
         raise RuntimeError(
             f"LLM_PROVIDER=direct cannot run model {model!r}. Direct routing is "
-            "implemented for openai/* and anthropic/* models only."
+            "implemented for openai/*, anthropic/*, and google/* models only."
         )
 
     if model_provider == "openai" and _env("OPENAI_API_KEY"):
         return _create_openai_client()
     if model_provider == "anthropic" and _env("ANTHROPIC_API_KEY"):
         return _create_anthropic_client()
+    if model_provider == "google" and _gemini_api_key():
+        return _create_gemini_client()
     if _env("OPENROUTER_API_KEY"):
         return _create_openrouter_client()
 
     raise RuntimeError(
         f"No usable API key found for model {model!r}. Set OPENAI_API_KEY for "
-        "openai/* models, ANTHROPIC_API_KEY for anthropic/* models, or "
+        "openai/* models, ANTHROPIC_API_KEY for anthropic/* models, "
+        "GEMINI_API_KEY or GOOGLE_API_KEY for google/* models, or "
         "OPENROUTER_API_KEY for OpenRouter fallback."
     )
 
@@ -159,6 +177,17 @@ def _create_anthropic_client():
             "The anthropic package is not installed. Run: pip install -r requirements.txt"
         )
     return LLMClient("anthropic", anthropic.Anthropic(api_key=api_key))
+
+
+def _gemini_api_key():
+    return _env("GEMINI_API_KEY") or _env("GOOGLE_API_KEY") or _env("GOOGLE_GENERATIVE_AI_API_KEY")
+
+
+def _create_gemini_client():
+    api_key = _gemini_api_key()
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY or GOOGLE_API_KEY is not set.")
+    return LLMClient("google", {"api_key": api_key, "base_url": GEMINI_API_BASE_URL})
 
 
 def _unwrap_client(client):
@@ -194,6 +223,28 @@ def _anthropic_messages(messages):
     return system, chat_messages
 
 
+def _gemini_messages(messages):
+    system_parts = []
+    contents = []
+    for message in messages:
+        role = message.get("role")
+        content = message.get("content")
+        if content is None:
+            continue
+        if role == "system":
+            system_parts.append(content)
+        elif role in {"user", "assistant"}:
+            contents.append({
+                "role": "model" if role == "assistant" else "user",
+                "parts": [{"text": content}],
+            })
+
+    system_instruction = None
+    if system_parts:
+        system_instruction = {"parts": [{"text": "\n\n".join(system_parts)}]}
+    return system_instruction, contents
+
+
 def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effort="medium"):
     """
     Call LLM with retry logic and provider-specific message adaptation.
@@ -212,6 +263,14 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
     provider, api_client = _unwrap_client(client)
     if provider == "anthropic":
         return _call_anthropic(
+            api_client,
+            resolve_model_for_provider(client, model),
+            temperature,
+            messages,
+            max_retries,
+        )
+    if provider == "google":
+        return _call_gemini(
             api_client,
             resolve_model_for_provider(client, model),
             temperature,
@@ -457,6 +516,116 @@ def _should_retry_anthropic(error):
         name in {"RateLimitError", "APIConnectionError", "APITimeoutError"}
         or (status_code is not None and status_code >= 500)
     )
+
+
+def _call_gemini(client, provider_model, temperature, messages, max_retries):
+    api_key = client["api_key"]
+    base_url = client["base_url"].rstrip("/")
+    system_instruction, contents = _gemini_messages(messages)
+    if not contents:
+        raise ValueError("No user/assistant messages available for Gemini call.")
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": temperature,
+        },
+    }
+    if system_instruction:
+        payload["system_instruction"] = system_instruction
+
+    thinking_level = _env("GEMINI_THINKING_LEVEL")
+    if thinking_level:
+        payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking_level}
+
+    url = f"{base_url}/models/{provider_model}:generateContent"
+
+    for attempt in range(max_retries):
+        try:
+            request = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": api_key,
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(request, timeout=120) as response:
+                response_data = json.loads(response.read().decode("utf-8"))
+
+            content = _gemini_text(response_data)
+            if not content:
+                raise ValueError(f"Empty response from Gemini: {_gemini_finish_reason(response_data)}")
+
+            usage = _gemini_usage(response_data)
+            return {
+                "content": content,
+                "reasoning": None,
+                "usage": usage,
+            }
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            if _should_retry_gemini_http(e.code) and attempt < max_retries - 1:
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                print(f"⚠️  Gemini API retryable error ({e.code}). Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue
+            print(f"❌ Gemini API error ({e.code}): {_redact_gemini_error(body)}")
+            raise
+
+        except (urllib.error.URLError, TimeoutError) as e:
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                print(f"⚠️  Gemini connection error. Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue
+            print(f"❌ Gemini connection error after {max_retries} attempts: {type(e).__name__}: {e}")
+            raise
+
+    raise Exception(f"Failed to get Gemini response after {max_retries} attempts")
+
+
+def _gemini_text(response_data):
+    texts = []
+    for candidate in response_data.get("candidates", []) or []:
+        for part in (candidate.get("content") or {}).get("parts", []) or []:
+            text = part.get("text")
+            if text:
+                texts.append(text)
+    return "\n".join(texts).strip()
+
+
+def _gemini_finish_reason(response_data):
+    reasons = []
+    for candidate in response_data.get("candidates", []) or []:
+        reason = candidate.get("finishReason")
+        if reason:
+            reasons.append(reason)
+    prompt_feedback = response_data.get("promptFeedback")
+    if prompt_feedback:
+        reasons.append(f"promptFeedback={prompt_feedback}")
+    return ", ".join(reasons) or "unknown finish reason"
+
+
+def _gemini_usage(response_data):
+    usage = response_data.get("usageMetadata")
+    if not usage:
+        return None
+    return {
+        "input_tokens": int(usage.get("promptTokenCount") or 0),
+        "output_tokens": int(usage.get("candidatesTokenCount") or 0),
+        "reasoning_tokens": int(usage.get("thoughtsTokenCount") or 0),
+    }
+
+
+def _should_retry_gemini_http(status_code):
+    return status_code in {408, 409, 429} or status_code >= 500
+
+
+def _redact_gemini_error(body):
+    return re.sub(r"(AIza|AIzaSy)[A-Za-z0-9_\\-]+", "[redacted-google-api-key]", body)
 
 
 def print_simulation_header(game, num_turns, num_agents, memory_capacity, agent_biases):
