@@ -4,7 +4,7 @@
 # Separate config for noise experiments - doesn't modify main experiments.yaml
 #
 # Key features:
-# 1. Amount noise: Distort communicated amounts vs actual amounts
+# 1. Amount noise: Environmental perturbations on actual transferred amounts
 # 2. Asymmetric naming: OTHER player's role shown with mythological names
 # ============================================================================
 
@@ -79,7 +79,7 @@ prompt_templates:
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
-    NOTE: There may be communication noise in this game. The amounts you see may differ from what was actually sent/returned. Can you filter out the noise?
+    NOTE: Transfer amounts may be perturbed by the environment after you choose them. Your earnings are based on the amounts that actually arrive.
 
     MYTH WRITING:
     You may also be asked to write short myths (stories) on various topics.
@@ -170,11 +170,11 @@ game_params:
   # ----------------------------------------------------------------------------
   # NOISE CONDITIONS (Aron's design)
   # ----------------------------------------------------------------------------
-  # Key principle: agents see correct amounts they RECEIVED, but not what
-  # the other agent INTENDED to send/return. Noise distorts perceived intentions.
+  # Key principle: noise is an environmental perturbation on transfers.
+  # Agent decisions are logged separately; sent/received/returned/balances are
+  # the real perturbed ledger.
 
   # Bidirectional uniform noise: ±$1 on both sent and returned
-  # Agents see accurate receipts but noised intentions
   noisy_bidirectional:
     endowment: 5
     multiplier: 3
@@ -204,9 +204,8 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # Negative-only noise (-$3): communicated amounts always ≤ actual
-  # Makes the other player appear less generous than they are
-  # $3 on $5 endowment = up to 60% reduction in perceived generosity
+  # Negative-only noise (-$5): real transfers are lowered by up to the full
+  # endowment/pot range, then clamped to the available budget.
   noisy_negative_5:
     endowment: 5
     multiplier: 3
@@ -252,9 +251,41 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # Cooperation bootstrap: returned amount always reported as 100% return
-  # Targets GPT-5-Nano's defection spiral by making investor believe
-  # trustee fully reciprocated, encouraging continued sending
+  # Positive-only noise (+$5): real transfers are raised by up to the full
+  # endowment/pot range, then clamped to the available budget.
+  noisy_positive_5:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_positive_5_informed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  # Cooperation bootstrap: returned amount is perturbed to a 100% return
+  # Targets GPT-5-Nano's defection spiral by making the investor actually
+  # receive full reciprocation, encouraging continued sending
   noisy_bootstrap_cooperation:
     endowment: 5
     multiplier: 3
@@ -287,7 +318,7 @@ game_params:
     other_player_names: "default"
 
   # ---- Deterministic-noise variants (v3) ----
-  # All sends and returns communicated as $0 (every round, both agents see $0)
+  # All sends and returns are perturbed to $0
   noisy_deterministic_zero:
     endowment: 5
     multiplier: 3
@@ -318,8 +349,8 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # All sends and returns communicated as max
-  # (sent shown as endowment $5; returned shown as full received = 3 × actual_sent)
+  # All sends and returns are perturbed to max
+  # (sent = endowment $5; returned = full received = 3 × sent)
   noisy_deterministic_max:
     endowment: 5
     multiplier: 3
@@ -386,7 +417,7 @@ experiment_sets:
     game_params_list:
       - "noisy_bootstrap_cooperation"
       - "noisy_bootstrap_cooperation_informed"
-    num_runs: 10
+    num_runs: 15
 
   # # Bidirectional noise for ceiling-locked models (Gemini, Claude)
   # noise_bidirectional_mem3:
@@ -401,7 +432,6 @@ experiment_sets:
   #   num_runs: 10
 
   # Negative-only noise for ceiling-locked models (Gemini, Claude)
-  # Communicated amounts always ≤ actual — partner appears less generous
   noise_negative_mem3:
     models: ["gemini_3_1_pro", "claude_sonnet_45"]
     templates: ["trust_game_default"]
@@ -411,7 +441,19 @@ experiment_sets:
     game_params_list:
       - "noisy_negative_5"
       - "noisy_negative_5_informed"
-    num_runs: 10
+    num_runs: 15
+
+  # Positive-only noise for ceiling-locked models (Gemini, Claude)
+  noise_positive_mem3:
+    models: ["gemini_3_1_pro", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_positive_5"
+      - "noisy_positive_5_informed"
+    num_runs: 15
 
   noise_negative_mem3_gpt5_nano:
     models: ["gpt5_nano"]
@@ -434,7 +476,7 @@ experiment_sets:
   #     - "noisy_bootstrap_cooperation"
   #   num_runs: 1
 
-  # Pilots — 1-run smoke tests for verifying deterministic communicated values
+  # Pilots — 1-run smoke tests for verifying deterministic perturbed values
   noise_deterministic_zero_pilot:
     models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
@@ -451,7 +493,7 @@ experiment_sets:
     game_params_list: ["noisy_deterministic_max"]
     num_runs: 1
 
-  # Deterministic-zero noise (every send & return communicated as $0)
+  # Deterministic-zero noise (every send & return perturbed to $0)
   # Target: ceiling-locked models. Use with --output-subdir v3_deterministic_noise
   noise_deterministic_zero_mem3:
     models: ["gemini_3_1_pro", "claude_sonnet_45"]
@@ -464,7 +506,7 @@ experiment_sets:
       - "noisy_deterministic_zero_informed"
     num_runs: 15
 
-  # Deterministic-max noise (every send & return communicated as max)
+  # Deterministic-max noise (every send & return perturbed to max)
   # Target: floor-locked GPT-5-nano. Use with --output-subdir v3_deterministic_noise
   noise_deterministic_max_mem3_gpt5_nano:
     models: ["gpt5_nano"]
