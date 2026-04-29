@@ -1,51 +1,258 @@
 import os
-import time
 import random
+import re
+import time
 
 from dotenv import load_dotenv
-from openai import APIError, RateLimitError, APIConnectionError
+from openai import APIConnectionError, APIError, OpenAI, RateLimitError
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 load_dotenv()
 
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "auto").strip().lower() or "auto"
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+VALID_PROVIDER_MODES = {"auto", "direct", "openrouter", "openai", "anthropic"}
+
+DIRECT_MODEL_ALIASES = {
+    # OpenRouter-style Anthropic slugs used in repo configs -> direct Anthropic API IDs.
+    "anthropic/claude-3-haiku": "claude-3-haiku-20240307",
+    "anthropic/claude-3.5-sonnet": "claude-3-5-sonnet-latest",
+    "anthropic/claude-haiku-4.5": "claude-haiku-4-5-20251001",
+    "anthropic/claude-sonnet-4": "claude-sonnet-4-20250514",
+    "anthropic/claude-sonnet-4.5": "claude-sonnet-4-5-20250929",
+    "anthropic/claude-sonnet-4.6": "claude-sonnet-4-6",
+    "anthropic/claude-opus-4": "claude-opus-4-20250514",
+    "anthropic/claude-opus-4.1": "claude-opus-4-1-20250805",
+    "anthropic/claude-opus-4.5": "claude-opus-4-5-20251101",
+    "anthropic/claude-opus-4.6": "claude-opus-4-6",
+}
+
+
+class LLMClient:
+    """Small provider wrapper around the concrete SDK client."""
+
+    def __init__(self, provider, client):
+        self.provider = provider
+        self.client = client
+
+    def __getattr__(self, name):
+        return getattr(self.client, name)
+
+
+def _env(name):
+    return os.environ.get(name, "")
+
+
+def _provider_for_model(model):
+    if model.startswith("openai/"):
+        return "openai"
+    if model.startswith("anthropic/"):
+        return "anthropic"
+    return "openrouter"
+
+
+def _direct_model_override_name(model):
+    normalized = re.sub(r"[^A-Z0-9]+", "_", model.upper()).strip("_")
+    return f"LLM_DIRECT_MODEL_{normalized}"
+
+
+def resolve_model_for_provider(client, model):
+    """Return the model ID that should be sent to the selected provider."""
+    provider, _ = _unwrap_client(client)
+    if provider == "openrouter":
+        return model
+
+    override = _env(_direct_model_override_name(model))
+    if override:
+        return override
+
+    if model in DIRECT_MODEL_ALIASES:
+        return DIRECT_MODEL_ALIASES[model]
+
+    prefix = f"{provider}/"
+    if model.startswith(prefix):
+        return model[len(prefix):]
+    return model
+
+
+def create_llm_client(model, provider=None):
+    """
+    Create a provider client for the given repo model slug.
+
+    LLM_PROVIDER modes:
+      - auto: direct OpenAI/Anthropic when the matching key exists, else OpenRouter.
+      - direct: require a direct provider for openai/* or anthropic/* models.
+      - openrouter/openai/anthropic: force that provider.
+    """
+    selected = (provider or _env("LLM_PROVIDER") or LLM_PROVIDER or "auto").strip().lower()
+    if selected not in VALID_PROVIDER_MODES:
+        raise RuntimeError(
+            f"Unsupported LLM_PROVIDER={selected!r}. Expected one of: "
+            f"{', '.join(sorted(VALID_PROVIDER_MODES))}."
+        )
+
+    model_provider = _provider_for_model(model)
+
+    if selected == "openrouter":
+        return _create_openrouter_client()
+    if selected == "openai":
+        return _create_openai_client()
+    if selected == "anthropic":
+        return _create_anthropic_client()
+
+    if selected == "direct":
+        if model_provider == "openai":
+            return _create_openai_client()
+        if model_provider == "anthropic":
+            return _create_anthropic_client()
+        raise RuntimeError(
+            f"LLM_PROVIDER=direct cannot run model {model!r}. Direct routing is "
+            "implemented for openai/* and anthropic/* models only."
+        )
+
+    if model_provider == "openai" and _env("OPENAI_API_KEY"):
+        return _create_openai_client()
+    if model_provider == "anthropic" and _env("ANTHROPIC_API_KEY"):
+        return _create_anthropic_client()
+    if _env("OPENROUTER_API_KEY"):
+        return _create_openrouter_client()
+
+    raise RuntimeError(
+        f"No usable API key found for model {model!r}. Set OPENAI_API_KEY for "
+        "openai/* models, ANTHROPIC_API_KEY for anthropic/* models, or "
+        "OPENROUTER_API_KEY for OpenRouter fallback."
+    )
+
+
+def _create_openrouter_client():
+    api_key = _env("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is not set.")
+    return LLMClient(
+        "openrouter",
+        OpenAI(api_key=api_key, base_url=OPENROUTER_BASE_URL),
+    )
+
+
+def _create_openai_client():
+    api_key = _env("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set.")
+    return LLMClient("openai", OpenAI(api_key=api_key))
+
+
+def _create_anthropic_client():
+    api_key = _env("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is not set.")
+    if anthropic is None:
+        raise RuntimeError(
+            "The anthropic package is not installed. Run: pip install -r requirements.txt"
+        )
+    return LLMClient("anthropic", anthropic.Anthropic(api_key=api_key))
+
+
+def _unwrap_client(client):
+    if isinstance(client, LLMClient):
+        return client.provider, client.client
+    return getattr(client, "provider", "openrouter"), getattr(client, "client", client)
+
+
+def _chat_messages(messages):
+    sanitized = []
+    for message in messages:
+        role = message.get("role")
+        content = message.get("content")
+        if role in {"system", "user", "assistant"} and content is not None:
+            sanitized.append({"role": role, "content": content})
+    return sanitized
+
+
+def _anthropic_messages(messages):
+    system_parts = []
+    chat_messages = []
+    for message in messages:
+        role = message.get("role")
+        content = message.get("content")
+        if content is None:
+            continue
+        if role == "system":
+            system_parts.append(content)
+        elif role in {"user", "assistant"}:
+            chat_messages.append({"role": role, "content": content})
+
+    system = "\n\n".join(system_parts) if system_parts else None
+    return system, chat_messages
+
 
 def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effort="medium"):
     """
-    Call LLM with retry logic and error handling.
+    Call LLM with retry logic and provider-specific message adaptation.
 
     Args:
-        client: OpenAI client instance
-        model: Model name
+        client: LLMClient wrapper or OpenAI-compatible client instance
+        model: Repo model slug
         temperature: Temperature setting
         messages: Conversation messages
         max_retries: Maximum number of retry attempts (default: 3)
-        reasoning_effort: Reasoning effort level for models that support it (default: "medium")
+        reasoning_effort: Reasoning effort level for OpenRouter models that support it
 
     Returns:
         dict: Structured response with content, reasoning, and usage data
-            {
-                "content": str,
-                "reasoning": str or None,
-                "usage": dict or None
-            }
-
-    Raises:
-        Exception: If all retries fail or non-retryable error occurs
     """
+    provider, api_client = _unwrap_client(client)
+    if provider == "anthropic":
+        return _call_anthropic(
+            api_client,
+            resolve_model_for_provider(client, model),
+            temperature,
+            messages,
+            max_retries,
+        )
+    return _call_openai_compatible(
+        provider,
+        api_client,
+        resolve_model_for_provider(client, model),
+        temperature,
+        messages,
+        max_retries,
+        reasoning_effort,
+    )
+
+
+def _call_openai_compatible(
+    provider,
+    client,
+    provider_model,
+    temperature,
+    messages,
+    max_retries,
+    reasoning_effort,
+):
     for attempt in range(max_retries):
         try:
-            # Build request parameters
             request_params = {
-                "model": model,
-                "messages": messages,
+                "model": provider_model,
+                "messages": _chat_messages(messages),
                 "temperature": temperature,
             }
 
-            # Add reasoning parameter if supported (OpenRouter extended reasoning)
-            # Skip for models that don't support it (e.g., OpenAI models via Azure)
+            # OpenRouter-only extension. Direct OpenAI calls use standard OpenAI params.
             models_without_reasoning = ["openai/", "meta-llama/"]
-            if reasoning_effort and not any(model.startswith(prefix) for prefix in models_without_reasoning):
+            if (
+                provider == "openrouter"
+                and reasoning_effort
+                and not any(provider_model.startswith(prefix) for prefix in models_without_reasoning)
+            ):
                 request_params["extra_body"] = {
                     "reasoning": {
                         "effort": reasoning_effort
@@ -54,20 +261,15 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
 
             response = client.chat.completions.create(**request_params)
 
-            # Check if response is valid
             if not response.choices or not response.choices[0].message.content:
                 raise ValueError("Empty response from LLM")
 
-            # Extract reasoning if available (check multiple locations)
             reasoning = None
             msg = response.choices[0].message
 
-            # Method 1: Direct reasoning attribute (works for Claude, some Gemini responses)
             if hasattr(msg, "reasoning") and msg.reasoning:
                 reasoning = msg.reasoning
 
-            # Method 2: Extract from reasoning_details array (Gemini format)
-            # reasoning_details contains objects with type 'reasoning.text' or 'reasoning.encrypted'
             if reasoning is None and hasattr(msg, "reasoning_details") and msg.reasoning_details:
                 reasoning_texts = []
                 for detail in msg.reasoning_details:
@@ -78,13 +280,10 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
                 if reasoning_texts:
                     reasoning = "\n".join(reasoning_texts)
 
-            # Method 3: Check model_extra (where OpenAI SDK stores non-standard fields)
             if reasoning is None and hasattr(msg, "model_extra") and msg.model_extra:
                 extra = msg.model_extra
-                # Check for reasoning in model_extra
                 if "reasoning" in extra and extra["reasoning"]:
                     reasoning = extra["reasoning"]
-                # Check for reasoning_details in model_extra
                 elif "reasoning_details" in extra and extra["reasoning_details"]:
                     reasoning_texts = []
                     for detail in extra["reasoning_details"]:
@@ -95,7 +294,6 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
                     if reasoning_texts:
                         reasoning = "\n".join(reasoning_texts)
 
-            # Fallback: If reasoning tokens were used but content is encrypted/not returned
             if reasoning is None and hasattr(response, "usage"):
                 reasoning_tokens = 0
                 if hasattr(response.usage, "output_tokens_details") and hasattr(
@@ -108,13 +306,10 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
                     reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
 
                 if reasoning_tokens and reasoning_tokens > 0:
-                    # Reasoning was used but content was encrypted/not returned
                     reasoning = f"[{reasoning_tokens} reasoning tokens used, but content encrypted by provider]"
 
-            # Extract usage information if available
             usage = None
             if hasattr(response, "usage"):
-                # Extract reasoning tokens from nested structure (check both locations)
                 reasoning_tokens = 0
                 if hasattr(response.usage, "output_tokens_details") and hasattr(
                     response.usage.output_tokens_details, "reasoning_tokens"
@@ -131,59 +326,119 @@ def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effo
                     "reasoning_tokens": reasoning_tokens
                 }
 
-            # Return structured response
             return {
                 "content": response.choices[0].message.content,
                 "reasoning": reasoning,
                 "usage": usage
             }
-            
+
         except RateLimitError as e:
-            # Rate limit: wait longer, then retry
-            wait_time = (2 ** attempt) + random.uniform(0, 1)  # Exponential backoff with jitter
+            wait_time = (2 ** attempt) + random.uniform(0, 1)
             if attempt < max_retries - 1:
                 print(f"⚠️  Rate limit hit. Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
                 time.sleep(wait_time)
                 continue
-            else:
-                print(f"❌ Rate limit error after {max_retries} attempts: {e}")
-                raise
-        
+            print(f"❌ Rate limit error after {max_retries} attempts: {e}")
+            raise
+
         except APIConnectionError as e:
-            # Network error: retry with backoff
             wait_time = (2 ** attempt) + random.uniform(0, 1)
             if attempt < max_retries - 1:
                 print(f"⚠️  Connection error. Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
                 time.sleep(wait_time)
                 continue
-            else:
-                print(f"❌ Connection error after {max_retries} attempts: {e}")
-                raise
-        
+            print(f"❌ Connection error after {max_retries} attempts: {e}")
+            raise
+
         except APIError as e:
-            # Other API errors: check if retryable
             if e.status_code and e.status_code >= 500:
-                # Server error: retry
                 wait_time = (2 ** attempt) + random.uniform(0, 1)
                 if attempt < max_retries - 1:
                     print(f"⚠️  Server error ({e.status_code}). Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
                     time.sleep(wait_time)
                     continue
-                else:
-                    print(f"❌ Server error after {max_retries} attempts: {e}")
-                    raise
-            else:
-                # Client error (4xx): don't retry
-                print(f"❌ Client error ({e.status_code}): {e}")
+                print(f"❌ Server error after {max_retries} attempts: {e}")
                 raise
-        
+            print(f"❌ Client error ({e.status_code}): {e}")
+            raise
+
         except Exception as e:
-            # Unexpected errors: log and raise
             print(f"❌ Unexpected error in LLM call: {type(e).__name__}: {e}")
             raise
-    
-    # Should never reach here, but just in case
+
     raise Exception(f"Failed to get LLM response after {max_retries} attempts")
+
+
+def _call_anthropic(client, provider_model, temperature, messages, max_retries):
+    if anthropic is None:
+        raise RuntimeError(
+            "The anthropic package is not installed. Run: pip install -r requirements.txt"
+        )
+
+    max_tokens = int(_env("ANTHROPIC_MAX_TOKENS") or "1024")
+    system, chat_messages = _anthropic_messages(messages)
+
+    for attempt in range(max_retries):
+        try:
+            request_params = {
+                "model": provider_model,
+                "messages": chat_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if system:
+                request_params["system"] = system
+
+            response = client.messages.create(**request_params)
+            content = _anthropic_text(response)
+            if not content:
+                raise ValueError("Empty response from LLM")
+
+            usage = None
+            if hasattr(response, "usage") and response.usage:
+                usage = {
+                    "input_tokens": getattr(response.usage, "input_tokens", 0),
+                    "output_tokens": getattr(response.usage, "output_tokens", 0),
+                    "reasoning_tokens": 0,
+                }
+
+            return {
+                "content": content,
+                "reasoning": None,
+                "usage": usage,
+            }
+
+        except Exception as e:
+            if _should_retry_anthropic(e) and attempt < max_retries - 1:
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                print(f"⚠️  Anthropic API retryable error. Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue
+            print(f"❌ Anthropic API error: {type(e).__name__}: {e}")
+            raise
+
+    raise Exception(f"Failed to get LLM response after {max_retries} attempts")
+
+
+def _anthropic_text(response):
+    texts = []
+    for block in getattr(response, "content", []) or []:
+        if isinstance(block, dict):
+            if block.get("type") == "text" and block.get("text"):
+                texts.append(block["text"])
+        elif getattr(block, "type", None) == "text" and getattr(block, "text", None):
+            texts.append(block.text)
+    return "\n".join(texts).strip()
+
+
+def _should_retry_anthropic(error):
+    name = type(error).__name__
+    status_code = getattr(error, "status_code", None)
+    return (
+        name in {"RateLimitError", "APIConnectionError", "APITimeoutError"}
+        or (status_code is not None and status_code >= 500)
+    )
+
 
 def print_simulation_header(game, num_turns, num_agents, memory_capacity, agent_biases):
     """Print simulation configuration header"""

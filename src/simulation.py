@@ -1,12 +1,10 @@
-from together import Together
-from openai import OpenAI
 import json
 import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from src.agents import Agent
-from src.utils import print_simulation_header, OPENROUTER_API_KEY
+from src.utils import create_llm_client, print_simulation_header
 from concurrent.futures import ThreadPoolExecutor
 class SimulationData:
     """Centralized state management for multi-agent conversations"""
@@ -122,11 +120,7 @@ def run_simulation(
     task_order: List of tasks to execute in order. Options: "game", "myth"
                 Examples: ["game"], ["myth"], ["game", "myth"], ["myth", "game"]
     """
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError(
-            "OPENROUTER_API_KEY is not set. Copy .env.example to .env and fill in your key."
-        )
-    client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
+    client = create_llm_client(model)
     if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
         if task_order is not None:
