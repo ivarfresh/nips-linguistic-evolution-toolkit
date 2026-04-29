@@ -246,6 +246,8 @@ def _call_openai_compatible(
             }
             if _supports_custom_temperature(provider, provider_model):
                 request_params["temperature"] = temperature
+            if _supports_reasoning_effort(provider, provider_model):
+                request_params["reasoning_effort"] = _direct_openai_reasoning_effort()
 
             # OpenRouter-only extension. Direct OpenAI calls use standard OpenAI params.
             models_without_reasoning = ["openai/", "meta-llama/"]
@@ -376,6 +378,14 @@ def _supports_custom_temperature(provider, provider_model):
     # Direct OpenAI GPT-5 family Chat Completions currently accepts only the
     # default temperature, so omit the parameter rather than sending 0.8.
     return not provider_model.startswith("gpt-5")
+
+
+def _supports_reasoning_effort(provider, provider_model):
+    return provider == "openai" and provider_model.startswith("gpt-5")
+
+
+def _direct_openai_reasoning_effort():
+    return _env("OPENAI_REASONING_EFFORT") or "minimal"
 
 
 def _call_anthropic(client, provider_model, temperature, messages, max_retries):
