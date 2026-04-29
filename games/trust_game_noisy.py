@@ -378,7 +378,13 @@ Your earnings are based on the amounts that actually arrive."""
 
         received = sent * self.multiplier
 
-        returned_decision = self._extract_amount(agent_responses[trustee_id], "return")
+        try:
+            returned_decision = self._extract_amount(agent_responses[trustee_id], "return")
+        except ValueError:
+            if received == 0:
+                returned_decision = 0.0
+            else:
+                raise
         returned, returned_noise_draw = self._apply_action_noise("returned", returned_decision, received)
 
         # Calculate payoffs using the real perturbed amounts.
