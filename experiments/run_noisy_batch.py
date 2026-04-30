@@ -81,10 +81,17 @@ class NoisyExperimentConfig:
 
             # Get game params from the named set
             game_params = self._get_game_params(game_param_name)
+            round_prompt_template_names = {
+                "round1_investor": exp_set.get("round1_investor_template", "trust_game_round1_investor"),
+                "round1_trustee": exp_set.get("round1_trustee_template", "trust_game_round1_trustee"),
+                "later_investor": exp_set.get("later_investor_template", "trust_game_later_investor"),
+                "later_trustee": exp_set.get("later_trustee_template", "trust_game_later_trustee"),
+            }
 
             for run in range(num_runs):
                 combo = {
                     "model": self.config["base_models"][model],
+                    "template_name": template,
                     "template": self.config["prompt_templates"][template],
                     "persona": self.config["personas"][persona],
                     "task_order": order,
@@ -94,10 +101,11 @@ class NoisyExperimentConfig:
                     "myth_topic": myth_topic,
                     "run_number": run,
                     # Prompt templates
-                    "trust_game_round1_investor": self.config["prompt_templates"].get("trust_game_round1_investor"),
-                    "trust_game_round1_trustee": self.config["prompt_templates"].get("trust_game_round1_trustee"),
-                    "trust_game_later_investor": self.config["prompt_templates"].get("trust_game_later_investor"),
-                    "trust_game_later_trustee": self.config["prompt_templates"].get("trust_game_later_trustee"),
+                    "round_prompt_template_names": round_prompt_template_names,
+                    "trust_game_round1_investor": self.config["prompt_templates"].get(round_prompt_template_names["round1_investor"]),
+                    "trust_game_round1_trustee": self.config["prompt_templates"].get(round_prompt_template_names["round1_trustee"]),
+                    "trust_game_later_investor": self.config["prompt_templates"].get(round_prompt_template_names["later_investor"]),
+                    "trust_game_later_trustee": self.config["prompt_templates"].get(round_prompt_template_names["later_trustee"]),
                     "myth_writing_default": self.config["prompt_templates"].get("myth_writing_default"),
                     "myth_writing_later_rounds": self.config["prompt_templates"].get("myth_writing_later_rounds"),
                 }
@@ -189,6 +197,8 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Experiment: {experiment_name}\n")
             f.write(f"Index: {index:03d}\n")
             f.write(f"Model: {combo['model']}\n")
+            f.write(f"System Prompt Template: {combo.get('template_name', 'unknown')}\n")
+            f.write(f"Round Prompt Templates: {combo.get('round_prompt_template_names', {})}\n")
             f.write(f"Persona: {combo['persona']['description']}\n")
             f.write(f"Task Order: {combo['task_order']}\n")
             f.write(f"Game Params: {game_params_name}\n")
@@ -221,6 +231,8 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["game_params_name"] = game_params_name
         sim_data.run_metadata["noise_config"] = game_params.get("noise_config")
         sim_data.run_metadata["other_player_names"] = game_params.get("other_player_names", "default")
+        sim_data.run_metadata["system_prompt_template"] = combo.get("template_name")
+        sim_data.run_metadata["round_prompt_templates"] = combo.get("round_prompt_template_names")
 
         # Save final state
         sim_data.save_state(save_path)

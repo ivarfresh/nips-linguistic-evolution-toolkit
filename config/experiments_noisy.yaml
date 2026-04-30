@@ -86,6 +86,37 @@ prompt_templates:
 
     IMPORTANT: Provide your decision in the correct JSON format.
 
+  # Neutral framing: avoids trust-game role labels and loaded "investor/trustee" wording.
+  # JSON keys remain send/return because the parser expects those fields.
+  trust_game_neutral_framing: |
+    You are an agent participating in a multi-task experiment. You will play an allocation task and may also be asked to write myths.
+
+    ALLOCATION TASK:
+    You will alternate between two roles across multiple rounds.
+
+    When you are ROLE A:
+    - You receive {endowment} tokens each round
+    - You decide how many tokens to allocate to ROLE B (0-{endowment})
+    - The allocated amount is multiplied by {multiplier}
+    - ROLE B decides how many of the received tokens to allocate back
+    - You keep: {endowment} - allocated + allocated back
+    - ROLE B keeps: received - allocated back
+    - Response format: {{'send': <amount>}}
+
+    When you are ROLE B:
+    - ROLE A receives {endowment} tokens
+    - ROLE A decides how many tokens to allocate to you (0-{endowment})
+    - The allocated amount is multiplied by {multiplier}
+    - You decide how many of the received tokens to allocate back
+    - ROLE A keeps: {endowment} - allocated + allocated back
+    - You keep: received - allocated back
+    - Response format: {{'return': <amount>}}
+
+    MYTH WRITING:
+    You may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.
+
+    IMPORTANT: Provide your decision in the correct JSON format.
+
   # Round 1 investor (standard - no other player reference needed)
   trust_game_round1_investor: |
     Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
@@ -115,6 +146,32 @@ prompt_templates:
     {trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.
     Your total earnings across all rounds are ${agent_balance}.
     {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
+
+  # Neutral-framing round prompts. Internally these are still the trust-game
+  # investor/trustee moves, but the participant sees ROLE A/ROLE B language.
+  trust_game_neutral_round1_investor: |
+    Round 1: You are ROLE A. You have {endowment} tokens. How many tokens do you allocate to the other participant? (0-{endowment})
+
+  trust_game_neutral_round1_trustee: |
+    Round 1: You are ROLE B. The other participant allocated {sent} tokens to you, that is {percentage:.1f}% of their available tokens. After multiplication, you received {received} tokens. How many tokens do you allocate back? (0-{received})
+
+  trust_game_neutral_later_investor: |
+    Round {turn}
+
+    You are ROLE A this round. Last round you were ROLE B. The other participant allocated {last_round_sent} tokens,
+    that was {last_round_sent_percentage:.1f}% of their available tokens. After multiplication, you received {last_round_received} tokens.
+    You allocated back {last_round_returned} tokens. So your payoff was {last_round_trustee_payoff}.
+    Your total earnings across all rounds are {agent_balance} tokens.
+    How many tokens do you allocate to the other participant this round? (0-{endowment})
+
+  trust_game_neutral_later_trustee: |
+    Round {turn}
+
+    You are ROLE B this round. Last round you were ROLE A. You allocated {last_round_sent} tokens,
+    that was {last_round_sent_percentage:.1f}% of your available tokens. After multiplication, the other participant received {last_round_received} tokens.
+    The other participant allocated back {last_round_returned} tokens. So your payoff was {last_round_investor_payoff}.
+    Your total earnings across all rounds are {agent_balance} tokens.
+    The other participant has allocated {received} tokens to you this round after multiplication. How many tokens do you allocate back? (0-{received})
 
   # Myth writing prompts (same as main config)
   myth_writing_default: |
@@ -283,6 +340,127 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
+  # Smaller directional uniform noise for sensitivity checks.
+  noisy_negative_1:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_negative_1_informed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_positive_1:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_positive_1_informed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_negative_2:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_negative_2_informed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_positive_2:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_positive_2_informed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "positive"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
   # Cooperation bootstrap: returned amount is perturbed to a 100% return
   # Targets GPT-5-Nano's defection spiral by making the investor actually
   # receive full reciprocation, encouraging continued sending
@@ -394,6 +572,72 @@ experiment_sets:
     task_orders: [["game"]]
     game_params_list: ["noisy_bidirectional"]
     num_runs: 8
+
+  # Matched 10-turn, memory-3 direct-provider no-noise baseline for v4 noise runs.
+  baseline_v4_mem3_direct:
+    models: ["gpt5_nano", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list: ["default"]
+    num_runs: 15
+
+  # Neutral-framing pilot: same mechanics as default, but ROLE A/ROLE B wording.
+  neutral_framing_v4_pilot:
+    models: ["gpt5_nano", "claude_sonnet_45"]
+    templates: ["trust_game_neutral_framing"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list: ["default"]
+    round1_investor_template: "trust_game_neutral_round1_investor"
+    round1_trustee_template: "trust_game_neutral_round1_trustee"
+    later_investor_template: "trust_game_neutral_later_investor"
+    later_trustee_template: "trust_game_neutral_later_trustee"
+    num_runs: 3
+
+  # Full neutral-framing follow-up, if the pilot shows a meaningful shift.
+  neutral_framing_v4_mem3:
+    models: ["gpt5_nano", "claude_sonnet_45"]
+    templates: ["trust_game_neutral_framing"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list: ["default"]
+    round1_investor_template: "trust_game_neutral_round1_investor"
+    round1_trustee_template: "trust_game_neutral_round1_trustee"
+    later_investor_template: "trust_game_neutral_later_investor"
+    later_trustee_template: "trust_game_neutral_later_trustee"
+    num_runs: 15
+
+  # Smaller directional noise sensitivity checks. These are deliberately
+  # separate from k=5 because k=5 creates heavy floor/ceiling clipping.
+  noise_directional_k1_mem3:
+    models: ["gpt5_nano", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_1"
+      - "noisy_negative_1_informed"
+      - "noisy_positive_1"
+      - "noisy_positive_1_informed"
+    num_runs: 15
+
+  noise_directional_k2_mem3:
+    models: ["gpt5_nano", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2"
+      - "noisy_negative_2_informed"
+      - "noisy_positive_2"
+      - "noisy_positive_2_informed"
+    num_runs: 15
 
   # Bootstrap noise for floor-locked model (GPT-5-Nano)
   # noise_bootstrap:
