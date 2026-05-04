@@ -2,6 +2,9 @@
 # MYTH WRITING
 # ============================================================================
 
+from src.shared_context import build_previous_round_shared_context
+
+
 class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
@@ -17,7 +20,13 @@ class MythWriter:
                 "No prompt provided. Provide prompt in config/experiments.yaml under "
                 "prompt_templates, named 'myth_writing_default'"
             )
-        return self.round1_template.format(myth_topic=self.myth_topic)
+        shared_context_block = build_previous_round_shared_context(
+            agent_id, sim_data, turn
+        )
+        return self.round1_template.format(
+            myth_topic=self.myth_topic,
+            shared_context_block=shared_context_block,
+        )
 
     def get_myth_prompt_round_later(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing with the agent's previous myth"""
@@ -50,8 +59,12 @@ class MythWriter:
             raise ValueError(f"OTHER AGENT MYTH ERROR: No previous myth found for {agent_id} (other agent) in round {turn - 1}. Cannot generate later round prompt.")
 
         return self.later_rounds_template.format(
+            myth_topic=self.myth_topic,
             last_myth=last_myth,
-            other_agent_myth=other_agent_myth
+            other_agent_myth=other_agent_myth,
+            shared_context_block=build_previous_round_shared_context(
+                agent_id, sim_data, turn
+            ),
         )
 
 

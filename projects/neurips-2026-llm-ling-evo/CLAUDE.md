@@ -61,6 +61,8 @@ References are CSL-JSON files in `projects/<slug>/references/bib/<firstauthoryea
 
 ## Render
 
+**Before rendering: check `manuscript/index.qmd` includes.** It declares which stage of each section gets rendered (`*.a_outline.md`, `*.b_draft.md`, or `*.c_final.md`) and does **not** auto-detect — every freshly finalised section needs a manual swap. Whenever `ms-writer` produces a new `*.c_final.md`, advance that section's include from `*.b_draft.md` → `*.c_final.md` (or from `*.a_outline.md` → `*.b_draft.md` when a human curates a draft). Otherwise the render silently keeps showing the older stage. The main agent may edit `index.qmd` directly — it is a Quarto config, not manuscript prose.
+
 ```bash
 python3 .claude/skills/ms-render/render.py          # PDF (default)
 python3 .claude/skills/ms-render/render.py --html    # HTML

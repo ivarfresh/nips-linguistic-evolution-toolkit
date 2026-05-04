@@ -1,0 +1,110 @@
+# Source patch for games/trust_game_noisy.py to support {other_agent_last_myth}
+# placeholder in trust-game prompt templates.
+#
+# Apply with:
+#   cd /Users/aron/nips-linguistic-evolution-toolkit
+#   patch -p1 < projects/neurips-2026-llm-ling-evo/analysis/A1_A3_package/trust_game_noisy.partner_myth.patch
+#
+# Or apply manually — the diff is small enough that copy-paste is fine.
+
+--- a/games/trust_game_noisy.py
++++ b/games/trust_game_noisy.py
+@@ -210,11 +210,29 @@ class TrustGameNoisy(Game):
+             base_prompt += noise_info
+
+         return base_prompt
+
++    def _get_other_agent_last_myth(self, agent_id, sim_data):
++        """Return the most recent myth text written by the OTHER agent
++        (the partner of agent_id), or empty string if none yet.
++
++        Used to populate {other_agent_last_myth} in trust-game prompts
++        for the A1 (partner-myth injection) experiment variants.
++        """
++        partner_id = (
++            self.agent_2_id if agent_id == self.agent_1_id else self.agent_1_id
++        )
++        for entry in reversed(sim_data.conversation_history):
++            myths = entry.get("myths") or {}
++            partner_myth = myths.get(partner_id)
++            if isinstance(partner_myth, str) and partner_myth.strip():
++                return partner_myth.strip()
++        return ""
++
+     def get_game_prompt_round_1(self, agent_id, agent, turn):
+         """First turn"""
+         roles = self.get_roles_for_round(turn)
+
++        other_agent_last_myth = self._get_other_agent_last_myth(
++            agent_id, self.sim_data_ref
++        ) if hasattr(self, "sim_data_ref") and self.sim_data_ref else ""
+         if agent_id == roles["investor"]:
+             if not self.round1_investor_template:
+                 raise ValueError(
+@@ -222,7 +240,8 @@ class TrustGameNoisy(Game):
+                     "prompt_templates, named 'trust_game_round1_investor'"
+                 )
+             return self.round1_investor_template.format(
+-                endowment=self.endowment
++                endowment=self.endowment,
++                other_agent_last_myth=other_agent_last_myth,
+             )
+         else:
+             # Trustee gets prompted after investor, using the real perturbed transfer.
+@@ -253,12 +272,14 @@ class TrustGameNoisy(Game):
+                     sent=sent,
+                     percentage=percentage,
+                     received=received,
+-                    investor_name=investor_display_name
++                    investor_name=investor_display_name,
++                    other_agent_last_myth=other_agent_last_myth,
+                 )
+             else:
+                 # Fallback to standard template
+                 return template.format(
+                     sent=sent,
+                     percentage=percentage,
+-                    received=received
++                    received=received,
++                    other_agent_last_myth=other_agent_last_myth,
+                 )
+
+@@ -276,6 +297,8 @@ class TrustGameNoisy(Game):
+
+         agent_balance = sim_data.game_data["balances"][agent_id]
+
++        other_agent_last_myth = self._get_other_agent_last_myth(agent_id, sim_data)
++
+         # Get asymmetric names
+         investor_display_name = self.other_player_names["investor"]
+         trustee_display_name = self.other_player_names["trustee"]
+@@ -301,7 +324,8 @@ class TrustGameNoisy(Game):
+                 agent_balance=agent_balance,
+                 endowment=self.endowment,
+                 investor_name=investor_display_name,
+-                trustee_name=trustee_display_name
++                trustee_name=trustee_display_name,
++                other_agent_last_myth=other_agent_last_myth,
+             )
+         else:
+             # Current round: pending_sent is the real perturbed transfer.
+@@ -331,5 +355,6 @@ class TrustGameNoisy(Game):
+                 agent_balance=agent_balance,
+                 received=received,
+                 investor_name=investor_display_name,
+-                trustee_name=trustee_display_name
++                trustee_name=trustee_display_name,
++                other_agent_last_myth=other_agent_last_myth,
+             )
+
+# NOTES
+# - Templates that don't reference {other_agent_last_myth} are unaffected
+#   (Python str.format() silently ignores extra kwargs).
+# - Templates that DO reference it must handle the empty-string case
+#   (e.g., the round-1 investor under task_order ["game", "myth"] sees no
+#   prior myth). The supplied templates handle this with a conditional
+#   prefix line.
+# - This patch only modifies trust_game_noisy.py (the noise-aware game).
+#   Plain trust_game.py is not used in the v4_direct_provider runs and
+#   therefore not patched. If a vanilla no-noise A1 run is needed, mirror
+#   the same diff into trust_game.py.

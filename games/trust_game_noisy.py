@@ -15,9 +15,18 @@ Asymmetric naming:
 - The OTHER player's role can be mythological ("Prometheus sent you $3...")
 """
 
+import glob
+import hashlib
+import json
+import os
 import random
 import re
 from games.base_game import Game
+from src.control_text_pool import get_filler_text
+from src.shared_context import build_previous_round_shared_context
+
+
+VALID_MYTH_INJECTION_MODES = ("partner", "own", "shuffled", "filler")
 
 
 # ============================================================================
@@ -43,7 +52,9 @@ class TrustGameNoisy(Game):
     def __init__(self, endowment, multiplier, system_prompt_template=None, personas=None,
                  round1_investor_template=None, round1_trustee_template=None,
                  later_investor_template=None, later_trustee_template=None,
-                 noise_config=None, other_player_names="default"):
+                 noise_config=None, other_player_names="default",
+                 myth_injection_mode="partner", shuffled_myth_pool_path=None,
+                 run_seed=None):
         """
         Initialize Trust Game with noise support.
 
@@ -66,6 +77,19 @@ class TrustGameNoisy(Game):
                     "inform_agents": bool     # whether to tell agents about noise
                 }
             other_player_names: Key from OTHER_PLAYER_NAMES dict for asymmetric naming
+            myth_injection_mode: Which text to bind to {other_agent_last_myth_block}
+                in A1-style game prompts. One of:
+                  "partner" — partner's most recent myth (default A1 behaviour)
+                  "own"     — agent's own most recent myth (self-anchoring control)
+                  "shuffled" — partner-position myth sampled from a different
+                              dyad's run on disk (cross-dyad control)
+                  "filler"  — length-matched non-myth reference paragraph
+                              (any-text control)
+            shuffled_myth_pool_path: Glob or directory used to build the pool of
+                external myth strings when myth_injection_mode == "shuffled".
+            run_seed: Optional integer used as part of the deterministic
+                seed_key for "shuffled" and "filler" sampling so that the same
+                experiment seed selects the same control texts on re-runs.
         """
         super().__init__()
         self.endowment = endowment
@@ -92,6 +116,89 @@ class TrustGameNoisy(Game):
         # Agent IDs (fixed)
         self.agent_1_id = "Agent_1"
         self.agent_2_id = "Agent_2"
+
+        # Myth-injection mode (default "partner" preserves the original A1
+        # behaviour). Validate and stash; load shuffled pool lazily / once.
+        if myth_injection_mode not in VALID_MYTH_INJECTION_MODES:
+            raise ValueError(
+                f"Unknown myth_injection_mode {myth_injection_mode!r}. "
+                f"Must be one of {VALID_MYTH_INJECTION_MODES}."
+            )
+        self.myth_injection_mode = myth_injection_mode
+        self.shuffled_myth_pool_path = shuffled_myth_pool_path
+        self.run_seed = run_seed
+        self._shuffled_myth_pool = None
+        if myth_injection_mode == "shuffled":
+            self._shuffled_myth_pool = self._load_shuffled_myth_pool(
+                shuffled_myth_pool_path
+            )
+
+    @staticmethod
+    def _load_shuffled_myth_pool(pool_path):
+        """Load the cross-dyad myth pool used by mode=='shuffled'.
+
+        pool_path may be either a directory (recursively scanned for *.json)
+        or a glob expression. Only main run files are considered: checkpoint,
+        results, and error files are skipped. Each non-empty per-round myth
+        string is added to the pool exactly as it appears in
+        conversation_history[*].myths[agent_id]. Returns the pool as a tuple
+        so it is hashable and shareable across worker processes.
+        """
+        if not pool_path:
+            raise ValueError(
+                "myth_injection_mode='shuffled' requires shuffled_myth_pool_path."
+            )
+
+        candidates = []
+        if os.path.isdir(pool_path):
+            for root, _dirs, files in os.walk(pool_path):
+                for name in files:
+                    if not name.endswith(".json"):
+                        continue
+                    if any(skip in name for skip in (".checkpoint.", ".results.", ".error.")):
+                        continue
+                    candidates.append(os.path.join(root, name))
+        else:
+            for path in glob.glob(pool_path, recursive=True):
+                if not path.endswith(".json"):
+                    continue
+                if any(skip in path for skip in (".checkpoint.", ".results.", ".error.")):
+                    continue
+                candidates.append(path)
+
+        pool = []
+        for fp in candidates:
+            try:
+                with open(fp, "r") as f:
+                    data = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                continue
+            for entry in data.get("conversation_history", []) or []:
+                myths = entry.get("myths") or {}
+                for myth in myths.values():
+                    if isinstance(myth, str) and myth.strip():
+                        pool.append(myth.strip())
+
+        if not pool:
+            raise ValueError(
+                f"Shuffled myth pool at {pool_path!r} is empty. "
+                "Check the path and that the runs contain non-empty myths."
+            )
+        return tuple(pool)
+
+    def _make_seed_key(self, agent_id, sim_data, turn):
+        """Build a deterministic seed key for sampling control texts."""
+        seed_parts = [
+            str(self.run_seed) if self.run_seed is not None else "no_seed",
+            agent_id,
+            str(turn),
+        ]
+        # Include the run's task order if accessible so two runs that differ
+        # only in task order still pick different filler/shuffled selections.
+        task_order = getattr(sim_data, "task_order", None) if sim_data else None
+        if task_order:
+            seed_parts.append("_".join(task_order))
+        return "|".join(seed_parts)
 
     @staticmethod
     def _clamp_amount(amount, max_amount):
@@ -212,9 +319,90 @@ Your earnings are based on the amounts that actually arrive."""
 
         return base_prompt
 
+    def _get_other_agent_last_myth(self, agent_id, sim_data, turn=None):
+        """Return (text, block) bound into A1-style game prompts.
+
+        Behaviour depends on ``self.myth_injection_mode``:
+          - "partner"  — partner's most recent myth from this run (default).
+          - "own"      — agent's own most recent myth from this run.
+          - "shuffled" — a myth sampled from the cross-dyad pool.
+          - "filler"   — a length-matched non-myth reference paragraph.
+
+        The returned wrapper text ("Your partner's most recent story:") is
+        identical across modes so all four conditions remain prompt-shape
+        comparable. ``text`` is the raw inner string and ``block`` is the
+        wrapped form (or both empty when no source myth exists yet, e.g.
+        round 1 of game→myth).
+        """
+        if sim_data is None and self.myth_injection_mode in ("partner", "own"):
+            return "", ""
+
+        text = ""
+        if self.myth_injection_mode == "partner":
+            partner_id = (
+                self.agent_2_id if agent_id == self.agent_1_id else self.agent_1_id
+            )
+            text = self._latest_myth_for(partner_id, sim_data)
+        elif self.myth_injection_mode == "own":
+            text = self._latest_myth_for(agent_id, sim_data)
+        elif self.myth_injection_mode == "shuffled":
+            text = self._sample_shuffled_myth(agent_id, sim_data, turn)
+        elif self.myth_injection_mode == "filler":
+            text = self._sample_filler(agent_id, sim_data, turn)
+
+        if not text:
+            return "", ""
+        block = "Your partner's most recent story:\n" f'"{text}"\n\n'
+        return text, block
+
+    @staticmethod
+    def _latest_myth_for(target_agent_id, sim_data):
+        if sim_data is None:
+            return ""
+        for entry in reversed(sim_data.conversation_history):
+            myths = entry.get("myths") or {}
+            myth = myths.get(target_agent_id)
+            if isinstance(myth, str) and myth.strip():
+                return myth.strip()
+        return ""
+
+    def _sample_shuffled_myth(self, agent_id, sim_data, turn):
+        if not self._shuffled_myth_pool:
+            return ""
+        if turn is None:
+            turn = self._infer_turn(sim_data)
+        seed_key = self._make_seed_key(agent_id, sim_data, turn)
+        digest = hashlib.sha256(seed_key.encode("utf-8")).digest()
+        idx = int.from_bytes(digest[:8], "big") % len(self._shuffled_myth_pool)
+        return self._shuffled_myth_pool[idx]
+
+    def _sample_filler(self, agent_id, sim_data, turn):
+        if turn is None:
+            turn = self._infer_turn(sim_data)
+        seed_key = self._make_seed_key(agent_id, sim_data, turn)
+        return get_filler_text(seed_key)
+
+    @staticmethod
+    def _infer_turn(sim_data):
+        """Best-effort turn inference when callers don't pass it explicitly."""
+        if sim_data is None:
+            return 0
+        history = getattr(sim_data, "conversation_history", []) or []
+        if not history:
+            return 1
+        return history[-1].get("round", len(history))
+
     def get_game_prompt_round_1(self, agent_id, agent, turn):
         """First turn"""
         roles = self.get_roles_for_round(turn)
+
+        sim_data = getattr(self, "sim_data_ref", None)
+        other_agent_last_myth, other_agent_last_myth_block = (
+            self._get_other_agent_last_myth(agent_id, sim_data, turn)
+        )
+        shared_context_block = build_previous_round_shared_context(
+            agent_id, sim_data, turn
+        )
 
         if agent_id == roles["investor"]:
             if not self.round1_investor_template:
@@ -223,7 +411,10 @@ Your earnings are based on the amounts that actually arrive."""
                     "prompt_templates, named 'trust_game_round1_investor'"
                 )
             return self.round1_investor_template.format(
-                endowment=self.endowment
+                endowment=self.endowment,
+                other_agent_last_myth=other_agent_last_myth,
+                other_agent_last_myth_block=other_agent_last_myth_block,
+                shared_context_block=shared_context_block,
             )
         else:
             # Trustee gets prompted after investor, using the real perturbed transfer.
@@ -252,14 +443,20 @@ Your earnings are based on the amounts that actually arrive."""
                     sent=sent,
                     percentage=percentage,
                     received=received,
-                    investor_name=investor_display_name
+                    investor_name=investor_display_name,
+                    other_agent_last_myth=other_agent_last_myth,
+                    other_agent_last_myth_block=other_agent_last_myth_block,
+                    shared_context_block=shared_context_block,
                 )
             else:
                 # Fallback to standard template
                 return template.format(
                     sent=sent,
                     percentage=percentage,
-                    received=received
+                    received=received,
+                    other_agent_last_myth=other_agent_last_myth,
+                    other_agent_last_myth_block=other_agent_last_myth_block,
+                    shared_context_block=shared_context_block,
                 )
 
     def get_game_prompt_later_round(self, agent_id, turn, sim_data, last_responses):
@@ -278,6 +475,13 @@ Your earnings are based on the amounts that actually arrive."""
             return self.get_game_prompt_round_1(agent_id, None, turn)
 
         agent_balance = sim_data.game_data["balances"][agent_id]
+
+        other_agent_last_myth, other_agent_last_myth_block = (
+            self._get_other_agent_last_myth(agent_id, sim_data, turn)
+        )
+        shared_context_block = build_previous_round_shared_context(
+            agent_id, sim_data, turn
+        )
 
         # Get asymmetric names
         investor_display_name = self.other_player_names["investor"]
@@ -306,7 +510,10 @@ Your earnings are based on the amounts that actually arrive."""
                 agent_balance=agent_balance,
                 endowment=self.endowment,
                 investor_name=investor_display_name,
-                trustee_name=trustee_display_name
+                trustee_name=trustee_display_name,
+                other_agent_last_myth=other_agent_last_myth,
+                other_agent_last_myth_block=other_agent_last_myth_block,
+                shared_context_block=shared_context_block,
             )
         else:
             # Current round: pending_sent is the real perturbed transfer.
@@ -335,7 +542,10 @@ Your earnings are based on the amounts that actually arrive."""
                 agent_balance=agent_balance,
                 received=received,
                 investor_name=investor_display_name,
-                trustee_name=trustee_display_name
+                trustee_name=trustee_display_name,
+                other_agent_last_myth=other_agent_last_myth,
+                other_agent_last_myth_block=other_agent_last_myth_block,
+                shared_context_block=shared_context_block,
             )
 
     def process_intermediate_response(self, agent_id, response, turn, sim_data):

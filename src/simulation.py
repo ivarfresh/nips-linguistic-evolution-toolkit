@@ -6,6 +6,34 @@ from typing import Any, Dict, Optional
 from src.agents import Agent
 from src.utils import create_llm_client, print_simulation_header
 from concurrent.futures import ThreadPoolExecutor
+
+
+def _format_initial_system_prompt(game, template, agent_id, agent):
+    """Format an optional non-game initial system prompt.
+
+    Used for myth-first blind variants where agents should write the first myth
+    without seeing the trust-game system prompt. Noise warnings are intentionally
+    not appended here; they are introduced only when the game system prompt is
+    applied.
+    """
+    base_prompt = template.format(
+        endowment=getattr(game, "endowment", ""),
+        multiplier=getattr(game, "multiplier", ""),
+    )
+    personas = getattr(game, "personas", {}) or {}
+    if agent_id in personas and personas[agent_id].get("system_addition"):
+        base_prompt += f"\n\n{personas[agent_id]['system_addition']}"
+    return base_prompt
+
+
+def _replace_agent_system_prompt(agent, system_prompt):
+    agent.system_prompt = system_prompt
+    if agent.messages and agent.messages[0].get("role") == "system":
+        agent.messages[0] = {"role": "system", "content": system_prompt}
+    else:
+        agent.messages.insert(0, {"role": "system", "content": system_prompt})
+
+
 class SimulationData:
     """Centralized state management for multi-agent conversations"""
 
@@ -112,6 +140,8 @@ def run_simulation(
     checkpoint_every: int = 10,
     resume_from: Optional[str] = None,
     log_file: Optional[str] = None,
+    initial_system_prompt_template: Optional[str] = None,
+    switch_to_game_system_before_game: bool = False,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -134,7 +164,12 @@ def run_simulation(
             agent_id = f"Agent_{i+1}"
             bias = agent_biases[i] if agent_biases and i < len(agent_biases) else None
             agent = Agent(agent_id, model, temperature, client, memory_capacity=memory_capacity, initial_bias=bias, log_file=log_file)
-            system_prompt = game.get_system_prompt(agent_id, agent)
+            if initial_system_prompt_template:
+                system_prompt = _format_initial_system_prompt(
+                    game, initial_system_prompt_template, agent_id, agent
+                )
+            else:
+                system_prompt = game.get_system_prompt(agent_id, agent)
             agent.system_prompt = system_prompt
             agent.messages.append({"role": "system", "content": system_prompt})
             sim_data.add_agent(agent_id, agent)
@@ -147,6 +182,8 @@ def run_simulation(
             "num_turns": num_turns,
             "num_agents": num_agents,
             "memory_capacity": memory_capacity,
+            "initial_system_prompt_overridden": bool(initial_system_prompt_template),
+            "switch_to_game_system_before_game": bool(switch_to_game_system_before_game),
         }
     )
 
@@ -157,6 +194,8 @@ def run_simulation(
     start_turn = len(sim_data.conversation_history) + 1 if sim_data.conversation_history else 1
     if start_turn > num_turns:
         return sim_data
+
+    game_system_applied = not switch_to_game_system_before_game
 
     for turn in range(start_turn, num_turns + 1):
         print("\n" + "=" * 80)
@@ -196,6 +235,17 @@ def run_simulation(
             # Execute tasks in specified order
             for task in task_order:
                 if task == "game":
+                    if switch_to_game_system_before_game and not game_system_applied:
+                        for switch_agent_id, switch_agent in sim_data.agents.items():
+                            game_system_prompt = game.get_system_prompt(
+                                switch_agent_id, switch_agent
+                            )
+                            _replace_agent_system_prompt(
+                                switch_agent, game_system_prompt
+                            )
+                        sim_data.run_metadata["game_system_prompt_applied_at_round"] = turn
+                        game_system_applied = True
+
                     # PHASE 1: GAME PLAY
                     print("\n--- PHASE 1: GAME PLAY ---")
 

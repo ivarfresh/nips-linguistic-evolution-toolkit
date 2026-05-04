@@ -87,6 +87,11 @@ class NoisyExperimentConfig:
                 "later_investor": exp_set.get("later_investor_template", "trust_game_later_investor"),
                 "later_trustee": exp_set.get("later_trustee_template", "trust_game_later_trustee"),
             }
+            myth_prompt_template_names = {
+                "round1": exp_set.get("myth_writing_default_template", "myth_writing_default"),
+                "later": exp_set.get("myth_writing_later_rounds_template", "myth_writing_later_rounds"),
+            }
+            initial_system_template_name = exp_set.get("initial_system_template")
 
             for run in range(num_runs):
                 combo = {
@@ -106,8 +111,20 @@ class NoisyExperimentConfig:
                     "trust_game_round1_trustee": self.config["prompt_templates"].get(round_prompt_template_names["round1_trustee"]),
                     "trust_game_later_investor": self.config["prompt_templates"].get(round_prompt_template_names["later_investor"]),
                     "trust_game_later_trustee": self.config["prompt_templates"].get(round_prompt_template_names["later_trustee"]),
-                    "myth_writing_default": self.config["prompt_templates"].get("myth_writing_default"),
-                    "myth_writing_later_rounds": self.config["prompt_templates"].get("myth_writing_later_rounds"),
+                    "myth_prompt_template_names": myth_prompt_template_names,
+                    "myth_writing_default": self.config["prompt_templates"].get(myth_prompt_template_names["round1"]),
+                    "myth_writing_later_rounds": self.config["prompt_templates"].get(myth_prompt_template_names["later"]),
+                    "initial_system_template_name": initial_system_template_name,
+                    "initial_system_prompt_template": (
+                        self.config["prompt_templates"].get(initial_system_template_name)
+                        if initial_system_template_name
+                        else None
+                    ),
+                    "switch_to_game_system_before_game": exp_set.get("switch_to_game_system_before_game", False),
+                    # A1-control plumbing (defaults preserve original A1 behaviour
+                    # when not set in the experiment_set).
+                    "myth_injection_mode": exp_set.get("myth_injection_mode", "partner"),
+                    "shuffled_myth_pool_path": exp_set.get("shuffled_myth_pool_path"),
                 }
                 combinations.append(combo)
 
@@ -154,7 +171,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             later_investor_template=combo['trust_game_later_investor'],
             later_trustee_template=combo['trust_game_later_trustee'],
             noise_config=game_params.get('noise_config'),
-            other_player_names=game_params.get('other_player_names', 'default')
+            other_player_names=game_params.get('other_player_names', 'default'),
+            myth_injection_mode=combo.get('myth_injection_mode', 'partner'),
+            shuffled_myth_pool_path=combo.get('shuffled_myth_pool_path'),
+            run_seed=index,
         )
 
         myth_writer = MythWriter(
@@ -198,13 +218,18 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Index: {index:03d}\n")
             f.write(f"Model: {combo['model']}\n")
             f.write(f"System Prompt Template: {combo.get('template_name', 'unknown')}\n")
+            f.write(f"Initial System Prompt Template: {combo.get('initial_system_template_name', 'None')}\n")
+            f.write(f"Switch To Game System Before Game: {combo.get('switch_to_game_system_before_game', False)}\n")
             f.write(f"Round Prompt Templates: {combo.get('round_prompt_template_names', {})}\n")
+            f.write(f"Myth Prompt Templates: {combo.get('myth_prompt_template_names', {})}\n")
             f.write(f"Persona: {combo['persona']['description']}\n")
             f.write(f"Task Order: {combo['task_order']}\n")
             f.write(f"Game Params: {game_params_name}\n")
             f.write(f"Noise Config: {game_params.get('noise_config', 'None')}\n")
             f.write(f"Other Player Names: {game_params.get('other_player_names', 'default')}\n")
             f.write(f"Myth Topic ID: {combo.get('myth_topic_id', 'N/A')}\n")
+            f.write(f"Myth Injection Mode: {combo.get('myth_injection_mode', 'partner')}\n")
+            f.write(f"Shuffled Myth Pool Path: {combo.get('shuffled_myth_pool_path', 'None')}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
@@ -222,7 +247,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             checkpoint_path=checkpoint_path,
             checkpoint_every=10,
             resume_from=resume_from,
-            log_file=log_path
+            log_file=log_path,
+            initial_system_prompt_template=combo.get("initial_system_prompt_template"),
+            switch_to_game_system_before_game=combo.get("switch_to_game_system_before_game", False),
         )
 
         # Store metadata
@@ -232,7 +259,12 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["noise_config"] = game_params.get("noise_config")
         sim_data.run_metadata["other_player_names"] = game_params.get("other_player_names", "default")
         sim_data.run_metadata["system_prompt_template"] = combo.get("template_name")
+        sim_data.run_metadata["initial_system_template"] = combo.get("initial_system_template_name")
+        sim_data.run_metadata["switch_to_game_system_before_game"] = combo.get("switch_to_game_system_before_game", False)
         sim_data.run_metadata["round_prompt_templates"] = combo.get("round_prompt_template_names")
+        sim_data.run_metadata["myth_prompt_templates"] = combo.get("myth_prompt_template_names")
+        sim_data.run_metadata["myth_injection_mode"] = combo.get("myth_injection_mode", "partner")
+        sim_data.run_metadata["shuffled_myth_pool_path"] = combo.get("shuffled_myth_pool_path")
 
         # Save final state
         sim_data.save_state(save_path)

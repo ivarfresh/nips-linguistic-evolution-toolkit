@@ -1,0 +1,664 @@
+================================================================================
+NOISE EXPERIMENT LOG
+================================================================================
+Experiment: gpt5nano_forced_reasoning
+Index: 030
+Model: openai/gpt-5-nano
+System Prompt Template: trust_game_noisy_aware_with_reasoning
+Round Prompt Templates: {'round1_investor': 'trust_game_round1_investor', 'round1_trustee': 'trust_game_round1_trustee', 'later_investor': 'trust_game_later_investor', 'later_trustee': 'trust_game_later_trustee'}
+Persona: neutral
+Task Order: ['game']
+Game Params: noisy_bootstrap_cooperation
+Noise Config: {'type': 'probabilistic', 'probability': 1.0, 'replacement': 'max', 'applies_to': 'returned', 'inform_agents': False}
+Other Player Names: default
+Myth Topic ID: anything
+================================================================================
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:20
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 1: You are the INVESTOR. You have $5. How much do you send? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+I want to balance risk and potential gain. Sending more increases the trustee’s potential return, but I risk losing more if they return little. A moderate amount could maximize expected value given the lack of trustworthiness information.
+
+{"send": 3}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 330
+Output tokens: 58
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:21
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 1: You are the TRUSTEE. The investor sent $3.0, that is 60.0% of their total endowment. You received $9.0. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: I received 9 from the investor, which is 3 times the amount sent (3 x 3 = 9). I should decide how much to return to maximize fairness while keeping some for myself, but since there’s no constraint beyond 0-9, I’ll return a portion that balances trust and gain. I’ll return 4 to the investor, leaving me with 5. 
+
+{"return": 4}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 358
+Output tokens: 98
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:23
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 2
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $0.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor should consider balancing risk and potential gain. Sending more increases potential return if the trustee then returns a fair amount, but if the trustee withholds, the investor could lose. Since there’s no external constraint, I’ll send a moderate amount to test the trustee's reciprocity while preserving some endowment.
+
+{"send": 3}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 549
+Output tokens: 80
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:24
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 2
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $11.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which becomes 27.0 received by the trustee. The trustee should consider balancing generosity and self-interest; returning a portion that rewards trust without depleting too much is prudent. A moderate return preserves trust and could encourage better rounds, but returning too little risks future cooperation.
+
+{"return": 6}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 496
+Output tokens: 81
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:25
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 3
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $11.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: With a prior sequence showing moderate returns and a total of $11 earned, I want to test moderate risk again while keeping room for profitable outcomes. Sending a mid-range amount should balance potential gain against potential loss if the trustee returns little.
+
+{"send": 3}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 670
+Output tokens: 65
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:27
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 3
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $11.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which is 3x the 3.0 sent from their endowment, and I as trustee must decide how much to return. To balance fairness and maximize my own gain, I should return a substantial amount but not all, ensuring the investor benefits enough to continue trust in future rounds.
+
+{"return": 6}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 737
+Output tokens: 84
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:28
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 4
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $11.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: To balance risk and potential gain, I want to send enough to give the trustee a meaningful amount (tripled to potentially return), but not so much that I risk ending with little if the trustee returns little. I’ll choose a moderate amount that preserves some endowment for future rounds.
+
+{"send": 2}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 914
+Output tokens: 75
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:29
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 4
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $22.0.
+The investor has sent you $6.0 this round. How much do you return to The investor? (0-6.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 6.0, which becomes 18.0 received by the trustee. I should balance generosity with self-interest: returning a portion that reinforces trust without depleting too much. Returning a moderate amount like 4.0 or 5.0 keeps cooperation favorable for future rounds. I'll choose a moderate return that still rewards trust.
+
+{"return": 5}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 843
+Output tokens: 89
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:31
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 5
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $2.0,
+that was 40.0% of their total endowment. You received $6.0.
+You returned $6.0. So your payoff was 0.0.
+Your total earnings across all rounds are $22.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: With total earnings at $22 and a history of modest but positive cooperation, I want to test a slightly lower risk approach. Sending a moderate amount around 2.5 keeps potential upside while protecting funds for future rounds. I'll choose 2.5 as a balanced, cautious amount.
+
+{"send": 2.5}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 940
+Output tokens: 77
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:32
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 5
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $2.0,
+that was 40.0% of your total endowment. This was tripled to $6.0.
+the trustee returned $6.0. So your payoff was 9.0.
+Your total earnings across all rounds are $20.0.
+The investor has sent you $7.5 this round. How much do you return to The investor? (0-7.5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 7.5, which becomes 22.5 after tripling. I should return a portion that preserves some of my gain but maintains fairness and potential for future trust. Returning a moderate amount around one-third to one-half of the received could balance incentives; I’ll return a fair amount without giving away all gains.
+
+{"return": 9}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 944
+Output tokens: 85
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:33
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 6
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $2.5,
+that was 50.0% of their total endowment. You received $7.5.
+You returned $7.5. So your payoff was 0.0.
+Your total earnings across all rounds are $20.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor has limited endowment remaining and must consider the risk of the trustee returning little. I should send a modest amount that still gives the trustee enough to potentially return a meaningful portion, while keeping some endowment for future rounds.
+
+{"send": 2.5}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 949
+Output tokens: 66
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:34
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 6
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $2.5,
+that was 50.0% of your total endowment. This was tripled to $7.5.
+the trustee returned $7.5. So your payoff was 10.0.
+Your total earnings across all rounds are $32.0.
+The investor has sent you $7.5 this round. How much do you return to The investor? (0-7.5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 7.5, which becomes 22.5 received by the trustee. To maintain a cooperative tone while preserving some self-interest, I should return a substantial portion but not exceed half. Returning 6.0 seems fair, rewarding trust while leaving room for future rounds.
+
+{"return": 6}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 936
+Output tokens: 76
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:36
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 7
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $2.5,
+that was 50.0% of their total endowment. You received $7.5.
+You returned $7.5. So your payoff was 0.0.
+Your total earnings across all rounds are $32.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: With a record of returning full amounts in prior round, I want to test a modest increase in risk while preserving capital for future rounds. Sending a slightly higher amount could boost trust and potential returns, but I’ll keep it conservative to safeguard earnings.
+
+{"send": 3.0}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 947
+Output tokens: 69
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:38
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 7
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $2.5,
+that was 50.0% of your total endowment. This was tripled to $7.5.
+the trustee returned $7.5. So your payoff was 10.0.
+Your total earnings across all rounds are $30.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which becomes 27.0 after tripling. I should return a portion that rewards trust but retains some gain for myself. Returning a moderate amount around one-third to one-half of the received seems fair and keeps incentive for future rounds.
+
+{"return": 12}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 931
+Output tokens: 73
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:39
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 8
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $30.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor has a moderate endowment left but should balance risk of the trustee. To encourage trust while preserving some funds for future rounds, a mid-sized send seems sensible. I’ll send a moderate amount that can yield a meaningful return if the trustee behaves well.
+
+{"send": 3}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 929
+Output tokens: 70
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:41
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 8
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $43.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which becomes 27.0 received by the trustee. To reinforce cooperation while balancing personal gain, I will return a substantial portion but not the full amount. Returning 7.5 seems fair and keeps momentum for future trust.
+
+{"return": 7.5}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 927
+Output tokens: 73
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:42
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 9
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $43.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: Having just received a zero payoff last round by returning the entire amount, I want to test a slightly higher risk stance to potentially improve future round returns, while keeping enough in reserve to avoid jeopardizing total earnings.
+
+{"send": 3.0}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 923
+Output tokens: 62
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:44
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 9
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $41.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which becomes 27.0 after tripling. I should return a portion that rewards trust but allows me to retain some benefit. Returning around one-half of the received amount balances generosity with self-interest and maintains ongoing incentive.
+
+{"return": 13}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 914
+Output tokens: 70
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:45
+AGENT: Agent_2
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 10
+
+You are the INVESTOR this round. Last round you were the TRUSTEE. The investor sent $3.0,
+that was 60.0% of their total endowment. You received $9.0.
+You returned $9.0. So your payoff was 0.0.
+Your total earnings across all rounds are $41.0.
+How much do you send to the trustee this round? (0-5)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: With $9.0 in hand from the previous round and a goal to balance risk with future gains, sending a moderate amount can maintain trust while leaving room for potential larger returns if the trustee behaves well. A mid-level send keeps options open for subsequent rounds.
+
+{"send": 3}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 918
+Output tokens: 70
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+TIMESTAMP: 2026-05-02 00:40:47
+AGENT: Agent_1
+MODEL: openai/gpt-5-nano
+================================================================================
+
+PROMPT:
+--------------------------------------------------------------------------------
+Round 10
+
+You are the TRUSTEE this round. Last round you were the INVESTOR. You sent $3.0,
+that was 60.0% of your total endowment. This was tripled to $9.0.
+the trustee returned $9.0. So your payoff was 11.0.
+Your total earnings across all rounds are $54.0.
+The investor has sent you $9.0 this round. How much do you return to The investor? (0-9.0)
+
+--------------------------------------------------------------------------------
+
+RESPONSE:
+--------------------------------------------------------------------------------
+Reasoning: The investor sent 9.0, which becomes 27.0 received by me. To sustain trust and future collaboration, I’ll return a substantial portion while keeping some for myself. Returning 15.0 seems fair to reward cooperation and encourage continued trust.
+
+{"return": 15.0}
+--------------------------------------------------------------------------------
+
+USAGE:
+--------------------------------------------------------------------------------
+Input tokens: 909
+Output tokens: 72
+Reasoning tokens: 0
+--------------------------------------------------------------------------------
+

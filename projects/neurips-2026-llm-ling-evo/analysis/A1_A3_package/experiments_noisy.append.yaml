@@ -1,0 +1,274 @@
+# Append these blocks to config/experiments_noisy.yaml.
+#
+# Three additions:
+#   1. New prompt templates (under prompt_templates:) — for A1 and A3
+#   2. New experiment_sets entries (under experiment_sets:)
+#
+# Section 1 goes anywhere inside `prompt_templates:`. Suggested location:
+# right after `myth_writing_later_rounds` (~line 190).
+#
+# Section 2 goes inside `experiment_sets:`. Suggested location: right
+# after `targeted_myth_k2_gpt5nano` (find that block first).
+
+# ─────────────────────────────────────────────────────────────────────
+# SECTION 1 — Prompt templates
+# ─────────────────────────────────────────────────────────────────────
+
+  # ------------ A3 — Forced reasoning prose (system prompt) ------------
+
+  # System prompt that requires reasoning before the JSON action.
+  # Identical to trust_game_default with one paragraph added at the end.
+  trust_game_with_reasoning: |
+    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+
+    TRUST GAME:
+    You will play different roles across multiple rounds.
+
+    When you are the INVESTOR:
+    - You receive ${endowment} each round
+    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - Amount sent is multiplied by {multiplier}x
+    - Trustee decides how much to RETURN
+    - You keep: ${endowment} - sent + returned
+    - Trustee keeps: received - returned
+    - Response format: {{'send': <amount>}}
+
+    When you are the TRUSTEE:
+    - Investor receives ${endowment}
+    - Investor decides how much to SEND to you ($0-${endowment})
+    - Amount sent is multiplied by {multiplier}x
+    - You decide how much to RETURN
+    - Investor keeps: ${endowment} - sent + returned
+    - You keep: received - returned
+    - Response format: {{'return': <amount>}}
+
+    MYTH WRITING:
+    You may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.
+
+    REASONING REQUIREMENT: Before each game decision, write 2-3 sentences explaining your reasoning. Then provide the JSON decision on a new line. Do NOT skip the reasoning — both parts are required.
+
+    IMPORTANT: Provide your decision in the correct JSON format.
+
+  # System prompt with both noise-aware AND forced-reasoning addenda.
+  trust_game_noisy_aware_with_reasoning: |
+    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+
+    TRUST GAME:
+    You will play different roles across multiple rounds.
+
+    When you are the INVESTOR:
+    - You receive ${endowment} each round
+    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - Amount sent is multiplied by {multiplier}x
+    - Trustee decides how much to RETURN
+    - You keep: ${endowment} - sent + returned
+    - Trustee keeps: received - returned
+    - Response format: {{'send': <amount>}}
+
+    When you are the TRUSTEE:
+    - Investor receives ${endowment}
+    - Investor decides how much to SEND to you ($0-${endowment})
+    - Amount sent is multiplied by {multiplier}x
+    - You decide how much to RETURN
+    - Investor keeps: ${endowment} - sent + returned
+    - You keep: received - returned
+    - Response format: {{'return': <amount>}}
+
+    NOTE: Transfer amounts may be perturbed by the environment after you choose them. Your earnings are based on the amounts that actually arrive.
+
+    MYTH WRITING:
+    You may also be asked to write short myths (stories) on various topics.
+
+    REASONING REQUIREMENT: Before each game decision, write 2-3 sentences explaining your reasoning. Then provide the JSON decision on a new line. Do NOT skip the reasoning — both parts are required.
+
+    IMPORTANT: Provide your decision in the correct JSON format.
+
+  # ------------ A1 — Partner-myth injection round prompts ------------
+  # These templates inject the partner's most-recent myth into the trust-game
+  # prompt. They use the {other_agent_last_myth} placeholder, which is
+  # populated by the patched games/trust_game_noisy.py.
+  #
+  # Templates are written so the empty-string case (no prior myth) reads
+  # naturally — the "Your partner's most recent story:" header is
+  # dropped if the body is empty.
+
+  trust_game_round1_investor_with_partner_myth: |
+    {other_agent_last_myth_block}Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
+
+  trust_game_round1_trustee_with_partner_myth: |
+    {other_agent_last_myth_block}Round 1: You are the TRUSTEE. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
+
+  trust_game_later_investor_with_partner_myth: |
+    {other_agent_last_myth_block}Round {turn}
+
+    You are the INVESTOR this round. Last round you were the TRUSTEE. {investor_name} sent ${last_round_sent},
+    that was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.
+    You returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.
+    Your total earnings across all rounds are ${agent_balance}.
+    How much do you send to {trustee_name} this round? (0-{endowment})
+
+  trust_game_later_trustee_with_partner_myth: |
+    {other_agent_last_myth_block}Round {turn}
+
+    You are the TRUSTEE this round. Last round you were the INVESTOR. You sent ${last_round_sent},
+    that was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.
+    {trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.
+    Your total earnings across all rounds are ${agent_balance}.
+    {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
+
+# IMPORTANT: the {other_agent_last_myth_block} placeholder requires a tiny
+# additional code change to wrap the raw myth text in a header. Two options:
+#
+# Option (a) — KEEP THE PATCH SIMPLE:
+#   Replace `{other_agent_last_myth_block}` with `{other_agent_last_myth}\n\n`
+#   in all four templates above. Then the patched code passes the raw myth
+#   text. Empty case = leading "\n\n" (harmless).
+#
+# Option (b) — ADD A WRAPPER:
+#   Modify the patch to compute:
+#     other_agent_last_myth_block = (
+#         f'Your partner\\'s most recent story:\\n"{partner_myth}"\\n\\n'
+#         if partner_myth.strip() else ""
+#     )
+#   and pass `other_agent_last_myth_block` instead. Cleaner UX.
+#
+# Recommendation: option (b). Diff for the patch follows here so you can
+# splice it in:
+
+# In games/trust_game_noisy.py:
+# Replace the helper to also produce a pre-wrapped block:
+#
+#   def _get_other_agent_last_myth(self, agent_id, sim_data):
+#       partner_id = (
+#           self.agent_2_id if agent_id == self.agent_1_id else self.agent_1_id
+#       )
+#       for entry in reversed(sim_data.conversation_history):
+#           myths = entry.get("myths") or {}
+#           partner_myth = myths.get(partner_id)
+#           if isinstance(partner_myth, str) and partner_myth.strip():
+#               text = partner_myth.strip()
+#               block = f'Your partner\'s most recent story:\n"{text}"\n\n'
+#               return text, block
+#       return "", ""
+#
+# Then unpack at each call site:
+#   text, block = self._get_other_agent_last_myth(agent_id, sim_data)
+# and pass BOTH:
+#   .format(..., other_agent_last_myth=text, other_agent_last_myth_block=block)
+
+# ─────────────────────────────────────────────────────────────────────
+# SECTION 2 — New experiment_sets
+# ─────────────────────────────────────────────────────────────────────
+
+  # ------------ A3 — Forced reasoning prose (4 noise conditions) ------------
+
+  # GPT-5-Nano with forced reasoning prose. 3 task orders × 4 noise
+  # conditions × 10 seeds ≈ 120 runs.
+  gpt5nano_forced_reasoning:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_noisy_aware_with_reasoning"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_positive_5"
+      - "noisy_positive_5_informed"
+      - "noisy_negative_5"
+      - "noisy_bootstrap_cooperation"
+    num_runs: 10
+
+  # ------------ A1 — Partner-myth injection (4 noise conditions) ------------
+
+  # GPT-5-Nano with partner-myth injected into the game prompt. Skips
+  # the game-only task order (no partner myth to inject without a myth
+  # task in the cycle). Uses the new round_prompt_templates set.
+  gpt5nano_partner_myth_injection:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]   # base system prompt (no reasoning forcing)
+    personas: ["neutral"]
+    task_orders: [["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_positive_5"
+      - "noisy_positive_5_informed"
+      - "noisy_negative_5"
+      - "noisy_bootstrap_cooperation"
+    num_runs: 15
+    # Override the default round-prompt templates to use the
+    # partner-myth-injection variants.
+    round_prompt_templates:
+      round1_investor: "trust_game_round1_investor_with_partner_myth"
+      round1_trustee: "trust_game_round1_trustee_with_partner_myth"
+      later_investor: "trust_game_later_investor_with_partner_myth"
+      later_trustee: "trust_game_later_trustee_with_partner_myth"
+
+  # ------------ A1+A3 combined — Partner-myth injection + forced reasoning -
+
+  # If you want the cleanest test where the game prompt has the partner's
+  # myth AND the agent emits prose. Slightly more runs but most informative.
+  gpt5nano_partner_myth_plus_reasoning:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_noisy_aware_with_reasoning"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_positive_5"
+      - "noisy_positive_5_informed"
+      - "noisy_negative_5"
+      - "noisy_bootstrap_cooperation"
+    num_runs: 10
+    round_prompt_templates:
+      round1_investor: "trust_game_round1_investor_with_partner_myth"
+      round1_trustee: "trust_game_round1_trustee_with_partner_myth"
+      later_investor: "trust_game_later_investor_with_partner_myth"
+      later_trustee: "trust_game_later_trustee_with_partner_myth"
+
+  # ------------ Phase 5 — Targeted myth × bootstrap (mechanism test) -------
+
+  # The §5.2 mechanism-discriminating test. The current finding is that
+  # GPT-5-Nano × bootstrap shows myth destabilization (mean -7 to -10,
+  # variance up 5×–8×). The "competing prior" interpretation predicts:
+  # if the myth content is itself COOPERATIVE (the reciprocity_oath topic),
+  # it should compete EVEN HARDER with bootstrap noise's contradictory
+  # signal — making things worse, not better. If instead targeted-cooperative
+  # myth RESCUES the destabilization, the mechanism story is wrong and we
+  # have a different, more interesting interpretation.
+  #
+  # 4 cells × 15 seeds = 60 runs.
+  targeted_myth_bootstrap_gpt5nano:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_noisy_aware"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["reciprocity_oath"]
+    game_params_list:
+      - "noisy_bootstrap_cooperation"
+      - "noisy_bootstrap_cooperation_informed"
+    num_runs: 15
+
+  # ------------ A2 — Self-myth recall (post-A1 follow-up) ------------------
+
+  # If A1 (partner-myth) doesn't lift cooperation, A2 tests the within-agent
+  # variant: quote the agent's OWN previous myth in the game prompt instead
+  # of the partner's. Discriminates internal-anchoring from social-perception
+  # mechanisms. Currently NOT in the overnight queue — uncomment in
+  # overnight_queue.sh Phase 6 if Phase 1 (A1) finishes early.
+  #
+  # Requires a separate set of templates with {own_last_myth} placeholder
+  # and a corresponding patch in trust_game_noisy.py. Not yet implemented;
+  # flagged as the next-step option if A1 produces a clean null.
+  #
+  # gpt5nano_self_myth_recall:
+  #   models: ["gpt5_nano"]
+  #   templates: ["trust_game_default"]
+  #   personas: ["neutral"]
+  #   task_orders: [["game", "myth"], ["myth", "game"]]
+  #   myth_topics: ["anything"]
+  #   game_params_list:
+  #     - "noisy_positive_5"
+  #     - "noisy_positive_5_informed"
+  #     - "noisy_negative_5"
+  #     - "noisy_bootstrap_cooperation"
+  #   num_runs: 10
+  #   round_prompt_templates: ...with_own_myth variants...
