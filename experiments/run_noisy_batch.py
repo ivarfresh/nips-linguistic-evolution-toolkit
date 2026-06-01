@@ -18,6 +18,7 @@ Usage:
 import os
 import sys
 import argparse
+import contextlib
 import yaml
 from itertools import product
 from pathlib import Path
@@ -68,19 +69,62 @@ class NoisyExperimentConfig:
         # Number of runs per combination
         num_runs = exp_set.get('num_runs', 1)
 
+        # Myth prompt variants/arms. This mirrors the main batch runner so noisy
+        # prompt-arm pilots can isolate myth_control vs myth_game_directive.
+        myth_prompt_prefix = exp_set.get("myth_prompt_prefix", "")
+        myth_default_key = exp_set.get(
+            "myth_default_prompt_key",
+            f"{myth_prompt_prefix}myth_writing_default",
+        )
+        myth_later_keys = exp_set.get("myth_later_prompt_keys")
+        if myth_later_keys is None:
+            myth_later_keys = [
+                exp_set.get(
+                    "myth_later_prompt_key",
+                    f"{myth_prompt_prefix}myth_writing_later_rounds",
+                )
+            ]
+        else:
+            myth_later_keys = self._as_list(myth_later_keys)
+
+        myth_prompt_arms = exp_set.get("myth_prompt_arms")
+        if myth_prompt_arms is None:
+            myth_prompt_arms = [
+                {
+                    "id": myth_later_key,
+                    "default": myth_default_key,
+                    "later": myth_later_key,
+                }
+                for myth_later_key in myth_later_keys
+            ]
+        else:
+            myth_prompt_arms = [
+                {
+                    "id": arm["id"],
+                    "default": arm.get("default", myth_default_key),
+                    "later": arm.get("later", f"{myth_prompt_prefix}myth_writing_later_rounds"),
+                }
+                for arm in myth_prompt_arms
+            ]
+
         # Generate all combinations
         combinations = []
-        for model, template, persona, order, myth_topic_id, game_param_name in product(
-            models, templates, personas, task_orders, myth_topic_ids, game_params_list
+        for model, template, persona, order, myth_topic_id, game_param_name, myth_prompt_arm in product(
+            models, templates, personas, task_orders, myth_topic_ids, game_params_list, myth_prompt_arms
         ):
             # Keep non-myth task orders from multiplying across all topics
             if "myth" not in order and myth_topic_id != myth_topic_ids[0]:
+                continue
+            # Keep non-myth task orders from multiplying across myth prompt variants
+            if "myth" not in order and myth_prompt_arm != myth_prompt_arms[0]:
                 continue
 
             myth_topic = "" if myth_topic_id == "" else self.config["myth_topics"].get(myth_topic_id, "")
 
             # Get game params from the named set
             game_params = self._get_game_params(game_param_name)
+            active_myth_default_key = myth_prompt_arm["default"]
+            active_myth_later_key = myth_prompt_arm["later"]
 
             for run in range(num_runs):
                 combo = {
@@ -98,8 +142,12 @@ class NoisyExperimentConfig:
                     "trust_game_round1_trustee": self.config["prompt_templates"].get("trust_game_round1_trustee"),
                     "trust_game_later_investor": self.config["prompt_templates"].get("trust_game_later_investor"),
                     "trust_game_later_trustee": self.config["prompt_templates"].get("trust_game_later_trustee"),
-                    "myth_writing_default": self.config["prompt_templates"].get("myth_writing_default"),
-                    "myth_writing_later_rounds": self.config["prompt_templates"].get("myth_writing_later_rounds"),
+                    "replicate_id": run if num_runs > 1 else None,
+                    "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
+                    "myth_default_prompt_key": active_myth_default_key,
+                    "myth_later_prompt_key": active_myth_later_key,
+                    "myth_writing_default": self._get_prompt_template(active_myth_default_key),
+                    "myth_writing_later_rounds": self._get_prompt_template(active_myth_later_key),
                 }
                 combinations.append(combo)
 
@@ -109,6 +157,17 @@ class NoisyExperimentConfig:
         if param == "all":
             return list(self.config[config_key].keys())
         return param
+
+    def _as_list(self, value):
+        if isinstance(value, list):
+            return value
+        return [value]
+
+    def _get_prompt_template(self, template_key: str) -> str:
+        try:
+            return self.config["prompt_templates"][template_key]
+        except KeyError as exc:
+            raise KeyError(f"Missing prompt template '{template_key}' in noise config") from exc
 
     def _get_game_params(self, param_name: str) -> Dict:
         """Get game parameters from a named parameter set."""
@@ -129,11 +188,8 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     try:
         game_params = combo['game_params']
 
-        # Prepare personas dict for both agents
-        personas = {
-            'Agent_1': combo['persona'],
-            'Agent_2': combo['persona']
-        }
+        agent_ids = [f"Agent_{i+1}" for i in range(game_params['num_agents'])]
+        personas = {agent_id: combo['persona'] for agent_id in agent_ids}
 
         # Create noisy trust game with noise config and other_player_names
         game = TrustGameNoisy(
@@ -169,7 +225,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         else:
             myth_topic_str = ""
 
-        filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{myth_topic_str}.json"
+        replicate = combo.get("replicate_id")
+        replicate_str = f"_rep{replicate:02d}" if replicate is not None else ""
+        myth_arm = combo.get("myth_prompt_arm_id")
+        myth_arm_str = f"_{_sanitize_for_filename(myth_arm)}" if myth_arm else ""
+        filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{replicate_str}{myth_arm_str}{myth_topic_str}.json"
         save_path = f"{save_dir}/{filename}"
         save_path = _unique_json_path(save_path)
 
@@ -195,25 +255,37 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Noise Config: {game_params.get('noise_config', 'None')}\n")
             f.write(f"Other Player Names: {game_params.get('other_player_names', 'default')}\n")
             f.write(f"Myth Topic ID: {combo.get('myth_topic_id', 'N/A')}\n")
+            f.write(f"Replicate ID: {combo.get('replicate_id') if combo.get('replicate_id') is not None else 'none'}\n")
+            f.write(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}\n")
+            f.write(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}\n")
+            f.write(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
-        sim_data = run_simulation(
-            game=game,
-            model=combo['model'],
-            temperature=game_params.get('temperature', 0.8),
-            num_turns=game_params['num_turns'],
-            num_agents=game_params['num_agents'],
-            memory_capacity=game_params['memory_capacity'],
-            agent_biases="",
-            myth_writer=myth_writer,
-            task_order=combo['task_order'],
-            results_path=results_path,
-            checkpoint_path=checkpoint_path,
-            checkpoint_every=10,
-            resume_from=resume_from,
-            log_file=log_path
-        )
+        run_kwargs = {
+            "game": game,
+            "model": combo['model'],
+            "temperature": game_params.get('temperature', 0.8),
+            "num_turns": game_params['num_turns'],
+            "num_agents": game_params['num_agents'],
+            "memory_capacity": game_params['memory_capacity'],
+            "agent_biases": "",
+            "myth_writer": myth_writer,
+            "task_order": combo['task_order'],
+            "results_path": results_path,
+            "checkpoint_path": checkpoint_path,
+            "checkpoint_every": 10,
+            "resume_from": resume_from,
+            "log_file": log_path,
+            "agent_names": game_params.get("agent_names"),
+        }
+        quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
+        if quiet_batch:
+            with open(log_path, "a", encoding="utf-8") as log_stream:
+                with contextlib.redirect_stdout(log_stream):
+                    sim_data = run_simulation(**run_kwargs)
+        else:
+            sim_data = run_simulation(**run_kwargs)
 
         # Store metadata
         sim_data.run_metadata["myth_topic_id"] = combo.get("myth_topic_id", "")
@@ -221,6 +293,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["game_params_name"] = game_params_name
         sim_data.run_metadata["noise_config"] = game_params.get("noise_config")
         sim_data.run_metadata["other_player_names"] = game_params.get("other_player_names", "default")
+        sim_data.run_metadata["replicate_id"] = combo.get("replicate_id")
+        sim_data.run_metadata["myth_prompt_arm_id"] = combo.get("myth_prompt_arm_id")
+        sim_data.run_metadata["myth_default_prompt_key"] = combo.get("myth_default_prompt_key", "myth_writing_default")
+        sim_data.run_metadata["myth_later_prompt_key"] = combo.get("myth_later_prompt_key", "myth_writing_later_rounds")
 
         # Save final state
         sim_data.save_state(save_path)
@@ -242,6 +318,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
                 "task_order": combo['task_order'],
                 "game_params": game_params_name,
                 "myth_topic_id": combo.get('myth_topic_id', ''),
+                "replicate_id": combo.get("replicate_id"),
+                "myth_prompt_arm_id": combo.get("myth_prompt_arm_id"),
+                "myth_default_prompt_key": combo.get("myth_default_prompt_key", "myth_writing_default"),
+                "myth_later_prompt_key": combo.get("myth_later_prompt_key", "myth_writing_later_rounds"),
             }
         }
 
@@ -257,6 +337,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
                 "task_order": combo.get('task_order', []),
                 "game_params": combo.get('game_params_name', 'unknown'),
                 "myth_topic_id": combo.get('myth_topic_id', ''),
+                "replicate_id": combo.get("replicate_id"),
+                "myth_prompt_arm_id": combo.get("myth_prompt_arm_id"),
+                "myth_default_prompt_key": combo.get("myth_default_prompt_key", "myth_writing_default"),
+                "myth_later_prompt_key": combo.get("myth_later_prompt_key", "myth_writing_later_rounds"),
             }
         }
 
@@ -293,6 +377,10 @@ def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str 
             print(f"Game Params: {combo.get('game_params_name', 'default')}")
             print(f"Noise Config: {combo['game_params'].get('noise_config', 'None')}")
             print(f"Other Player Names: {combo['game_params'].get('other_player_names', 'default')}")
+            print(f"Replicate ID: {combo.get('replicate_id') if combo.get('replicate_id') is not None else 'none'}")
+            print(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}")
+            print(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}")
+            print(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
 
             result = run_single_experiment(combo, experiment_name, i, output_subdir)
 
@@ -323,13 +411,15 @@ def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str 
                     if result['success']:
                         print(f"[{completed}/{len(combinations)}] {result['combo_info']['model']} / "
                               f"{result['combo_info']['game_params']} / "
-                              f"{result['combo_info']['task_order']}")
+                              f"{result['combo_info']['task_order']} / "
+                              f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'}")
                         print(f"    -> {result['file_path']}")
                     else:
                         failed += 1
                         failed_experiments.append(result)
                         print(f"[{completed}/{len(combinations)}] FAILED: {result['combo_info']['model']} / "
-                              f"{result['combo_info']['game_params']}")
+                              f"{result['combo_info']['game_params']} / "
+                              f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'}")
                         print(f"    Error: {result['error'][:200]}")
 
                 except Exception as e:

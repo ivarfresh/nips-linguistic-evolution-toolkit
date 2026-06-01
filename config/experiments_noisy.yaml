@@ -26,26 +26,26 @@ base_models:
 prompt_templates:
   # Standard system prompt (unchanged)
   trust_game_default: |
-    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+    You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.
 
-    TRUST GAME:
+    GAME:
     You will play different roles across multiple rounds.
 
-    When you are the INVESTOR:
+    When you are the SENDER:
     - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - You decide how much to SEND to the RECEIVER ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
+    - Receiver decides how much to RETURN
     - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
+    - Receiver keeps: received - returned
     - Response format: {{'send': <amount>}}
 
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
+    When you are the RECEIVER:
+    - Sender receives ${endowment}
+    - Sender decides how much to SEND to you ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
     - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
+    - Sender keeps: ${endowment} - sent + returned
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
@@ -56,26 +56,26 @@ prompt_templates:
 
   # System prompt with noise warning
   trust_game_noisy_aware: |
-    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+    You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.
 
-    TRUST GAME:
+    GAME:
     You will play different roles across multiple rounds.
 
-    When you are the INVESTOR:
+    When you are the SENDER:
     - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - You decide how much to SEND to the RECEIVER ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
+    - Receiver decides how much to RETURN
     - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
+    - Receiver keeps: received - returned
     - Response format: {{'send': <amount>}}
 
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
+    When you are the RECEIVER:
+    - Sender receives ${endowment}
+    - Sender decides how much to SEND to you ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
     - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
+    - Sender keeps: ${endowment} - sent + returned
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
@@ -88,18 +88,18 @@ prompt_templates:
 
   # Round 1 investor (standard - no other player reference needed)
   trust_game_round1_investor: |
-    Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
+    Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})
 
   # Round 1 trustee - with asymmetric naming support
   # {investor_name} is replaced with mythological name if configured
   trust_game_round1_trustee: |
-    Round 1: You are the TRUSTEE. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
+    Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
 
   # Later round investor - with asymmetric naming support
   trust_game_later_investor: |
     Round {turn}
 
-    You are the INVESTOR this round. Last round you were the TRUSTEE. {investor_name} sent ${last_round_sent},
+    You are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},
     that was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.
     You returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.
     Your total earnings across all rounds are ${agent_balance}.
@@ -110,15 +110,23 @@ prompt_templates:
   trust_game_later_trustee: |
     Round {turn}
 
-    You are the TRUSTEE this round. Last round you were the INVESTOR. You sent ${last_round_sent},
+    You are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},
     that was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.
     {trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.
     Your total earnings across all rounds are ${agent_balance}.
-    {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
+    This round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})
 
   # Myth writing prompts (same as main config)
   myth_writing_default: |
     Write a myth about {myth_topic}. Write 200 words.
+
+  myth_writing_default_game_directive: |
+    Write a myth about {myth_topic}. In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects the game you have been playing up to this point.
+    Write 200 words.
+
+  myth_writing_default_game_normative: |
+    Write a myth about {myth_topic}. In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played.
+    Write 200 words.
 
   myth_writing_later_rounds: |
     Here is the myth you wrote in the previous round:
@@ -128,6 +136,30 @@ prompt_templates:
     {other_agent_myth}
 
     Write your own myth. Use your previous myth as inspiration, but adapt it in your own way.
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_directive: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_normative: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game you have been playing up to this point should be played.
+
     Write 200 words. Format exactly:
     Myth: [your story here].
 
@@ -222,6 +254,21 @@ game_params:
       inform_agents: false
     other_player_names: "default"
 
+  noisy_negative_5_myth_causal_8:
+    endowment: 5
+    multiplier: 3
+    num_turns: 8
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
   # noisy_negative_5_pilot:
   #   endowment: 5
   #   multiplier: 3
@@ -247,6 +294,51 @@ game_params:
     noise_config:
       type: "uniform"
       range: 5.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_negative_5_informed_myth_causal_8:
+    endowment: 5
+    multiplier: 3
+    num_turns: 8
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_negative_2_informed_myth_causal_8:
+    endowment: 5
+    multiplier: 3
+    num_turns: 8
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_negative_2_informed_myth_causal_10:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
       direction: "negative"
       applies_to: "both"
       inform_agents: true
@@ -363,6 +455,128 @@ experiment_sets:
     task_orders: [["game"]]
     game_params_list: ["noisy_bidirectional"]
     num_runs: 8
+
+  myth_causal_noise_negative_claude_pilot:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_5_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 3
+
+  myth_causal_noise_negative_informed_claude_pilot:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_5_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 3
+
+  myth_causal_noise_negative2_informed_claude_pilot:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 3
+
+  myth_causal_noise_negative2_informed_claude_topup:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 7
+
+  myth_causal_noise_negative2_informed_claude_r10:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 10
+
+  myth_causal_neutral_noise_negative2_informed_claude_r10_n10:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 10
+
+  myth_causal_normative_noise_negative2_informed_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
 
   # Bootstrap noise for floor-locked model (GPT-5-Nano)
   # noise_bootstrap:
