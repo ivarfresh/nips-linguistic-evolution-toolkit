@@ -89,6 +89,7 @@ class ExperimentConfig:
                 persona,
                 exp_set.get("system_addition_key"),
             )
+            game_prompt_addition = self._get_game_prompt_addition(order)
 
             combo = {
                 "model": self.config["base_models"][model],
@@ -102,10 +103,22 @@ class ExperimentConfig:
                 "myth_topic": myth_topic,
                 "replicate_id": replicate_id if repetitions > 1 else None,
                 # Add all prompt templates for games and myths
-                "trust_game_round1_investor": self.config["prompt_templates"].get("trust_game_round1_investor"),
-                "trust_game_round1_trustee": self.config["prompt_templates"].get("trust_game_round1_trustee"),
-                "trust_game_later_investor": self.config["prompt_templates"].get("trust_game_later_investor"),
-                "trust_game_later_trustee": self.config["prompt_templates"].get("trust_game_later_trustee"),
+                "trust_game_round1_investor": self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get("trust_game_round1_investor"),
+                    game_prompt_addition,
+                ),
+                "trust_game_round1_trustee": self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get("trust_game_round1_trustee"),
+                    game_prompt_addition,
+                ),
+                "trust_game_later_investor": self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get("trust_game_later_investor"),
+                    game_prompt_addition,
+                ),
+                "trust_game_later_trustee": self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get("trust_game_later_trustee"),
+                    game_prompt_addition,
+                ),
                 "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
                 "myth_default_prompt_key": active_myth_default_key,
                 "myth_later_prompt_key": active_myth_later_key,
@@ -139,6 +152,16 @@ class ExperimentConfig:
             return self.config["prompt_templates"][key]
         except KeyError as exc:
             raise KeyError(f"Unknown prompt template key: {key}") from exc
+
+    def _get_game_prompt_addition(self, task_order) -> str:
+        if "game" not in task_order or "myth" not in task_order:
+            return ""
+        return self.config.get("game_prompt_additions", {}).get("myth_decision_link", "")
+
+    def _with_game_prompt_addition(self, template: str, addition: str) -> str:
+        if not template or not addition:
+            return template
+        return f"{template.rstrip()}\n\n{addition.strip()}\n"
 
     def _get_persona_config(self, persona_key: str, system_addition_key: str = None) -> Dict:
         persona = dict(self.config["personas"][persona_key])

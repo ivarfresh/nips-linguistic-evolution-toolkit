@@ -54,6 +54,11 @@ PALETTE = {
 }
 
 
+def present_prompt_order(df: pd.DataFrame) -> list[str]:
+    present = set(df["Prompt Arm"].dropna().unique())
+    return [prompt for prompt in PROMPT_ORDER if prompt in present]
+
+
 def is_primary_json(path: Path) -> bool:
     return (
         path.suffix == ".json"
@@ -129,7 +134,13 @@ def collect_records(roots: list[Path], noise_condition: str, target_round: int |
     return rows
 
 
-def add_significance_brackets(ax, df: pd.DataFrame, y_top: float, noise_order: list[str]) -> None:
+def add_significance_brackets(
+    ax,
+    df: pd.DataFrame,
+    y_top: float,
+    noise_order: list[str],
+    prompt_order: list[str],
+) -> None:
     if len(noise_order) != 2:
         return
 
@@ -138,7 +149,7 @@ def add_significance_brackets(ax, df: pd.DataFrame, y_top: float, noise_order: l
     bracket_step = y_range * 0.035
     text_pad = y_range * 0.008
 
-    for x_index, prompt in enumerate(PROMPT_ORDER):
+    for x_index, prompt in enumerate(prompt_order):
         values_a = df[
             (df["Prompt Arm"] == prompt) & (df["Noise Condition"] == noise_order[0])
         ]["mean_cumulative_balance"].to_numpy()
@@ -173,6 +184,7 @@ def add_significance_brackets(ax, df: pd.DataFrame, y_top: float, noise_order: l
 def plot(df: pd.DataFrame, output_path: Path, title: str, note: str | None = None) -> None:
     sns.set_theme(style="whitegrid", context="talk")
     noise_order = [label for label in NOISE_ORDER if label in set(df["Noise Condition"])]
+    prompt_order = present_prompt_order(df)
 
     fig, ax = plt.subplots(figsize=(14, 9))
     sns.boxplot(
@@ -180,7 +192,7 @@ def plot(df: pd.DataFrame, output_path: Path, title: str, note: str | None = Non
         x="Prompt Arm",
         y="mean_cumulative_balance",
         hue="Noise Condition",
-        order=PROMPT_ORDER,
+        order=prompt_order,
         hue_order=noise_order,
         palette=PALETTE,
         width=0.75,
@@ -192,7 +204,7 @@ def plot(df: pd.DataFrame, output_path: Path, title: str, note: str | None = Non
         x="Prompt Arm",
         y="mean_cumulative_balance",
         hue="Noise Condition",
-        order=PROMPT_ORDER,
+        order=prompt_order,
         hue_order=noise_order,
         palette=PALETTE,
         dodge=True,
@@ -221,7 +233,7 @@ def plot(df: pd.DataFrame, output_path: Path, title: str, note: str | None = Non
     y_max = float(df["mean_cumulative_balance"].max())
     y_top = max(100.0, math.ceil((y_max + 6.0) / 10.0) * 10.0)
     ax.set_ylim(0, y_top)
-    add_significance_brackets(ax, df, y_top, noise_order)
+    add_significance_brackets(ax, df, y_top, noise_order, prompt_order)
 
     fig.suptitle(title, fontsize=22, fontweight="bold", y=0.985)
     if note:

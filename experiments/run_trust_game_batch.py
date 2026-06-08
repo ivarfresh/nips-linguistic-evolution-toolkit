@@ -41,7 +41,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             round1_trustee_template=combo['trust_game_round1_trustee'],
             later_investor_template=combo['trust_game_later_investor'],
             later_trustee_template=combo['trust_game_later_trustee'],
-            multiplier_distribution=game_params.get('multiplier_distribution')
+            multiplier_distribution=game_params.get('multiplier_distribution'),
+            history_policy=game_params.get('history_policy', 'minimal'),
+            self_history_window=game_params.get('self_history_window', 1),
+            coplayer_history_window=game_params.get('coplayer_history_window', 0),
+            show_agent_names=game_params.get('show_agent_names', True),
         )
 
         myth_writer = MythWriter(
@@ -135,9 +139,15 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["myth_later_prompt_key"] = combo.get("myth_later_prompt_key", "myth_writing_later_rounds")
         sim_data.run_metadata["system_addition_key"] = combo.get("system_addition_key")
         sim_data.run_metadata["replicate_id"] = combo.get("replicate_id")
+        sim_data.run_metadata["history_policy"] = game_params.get("history_policy", "minimal")
+        sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
+        sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)
+        sim_data.run_metadata["show_agent_names"] = game_params.get("show_agent_names", True)
 
         # Save final full state
         sim_data.save_state(save_path)
+        transcript_path = base_no_ext + ".transcript.pdf"
+        sim_data.save_transcript_pdf(transcript_path, source_path=save_path)
 
         # Cleanup checkpoint on success
         cp_path = Path(checkpoint_path)
@@ -150,6 +160,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         return {
             "success": True,
             "file_path": save_path,
+            "transcript_path": transcript_path,
             "error": None,
             "combo_info": {
                 "model": combo['model'],
@@ -216,6 +227,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
 
             if result['success']:
                 print(f"✓ Saved to {result['file_path']}")
+                print(f"✓ Transcript PDF: {result['transcript_path']}")
             else:
                 print(f"✗ FAILED: {result['error']}")
 
@@ -247,6 +259,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                               f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'} / "
                               f"{result['combo_info'].get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
                         print(f"    → {result['file_path']}")
+                        print(f"    → {result['transcript_path']}")
                     else:
                         failed += 1
                         failed_experiments.append(result)

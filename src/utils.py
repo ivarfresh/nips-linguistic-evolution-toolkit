@@ -212,5 +212,5 @@ def print_simulation_header(game, num_turns, num_agents, memory_capacity, agent_
     if num_agents == 2:
         print("Role swapping: ENABLED (agents alternate roles each round)")
     else:
-        print("Pairing mode: RANDOM DYADS (repeats allowed)")
+        print("Pairing mode: FULL-POOL RANDOM DYADS (role repeats allowed)")
     print("-" * 80)

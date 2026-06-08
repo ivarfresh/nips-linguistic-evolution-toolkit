@@ -1,3 +1,4 @@
+import copy
 from src.utils import call_llm
 import datetime
 
@@ -14,6 +15,7 @@ class Agent:
         self.initial_bias = initial_bias
         self.system_prompt = system_prompt
         self.log_file = log_file
+        self.interaction_history = []
     
 
     def _log_interaction(self, prompt, response_data):
@@ -49,8 +51,34 @@ class Agent:
 
                 f.write(f"\n")
 
+    def _record_interaction(self, prompt, messages_sent, response_data=None, transcript_metadata=None, error=None):
+        """Store the exact request/response payload for full transcripts."""
+        event = {
+            "interaction_index": len(self.interaction_history) + 1,
+            "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
+            "agent_id": self.agent_id,
+            "model": self.model,
+            "temperature": self.temperature,
+            "memory_capacity": self.memory_capacity,
+            "metadata": transcript_metadata or {},
+            "prompt": prompt,
+            "messages_sent": messages_sent,
+        }
+        if response_data is not None:
+            event["response"] = {
+                "content": response_data.get("content", ""),
+                "reasoning": response_data.get("reasoning"),
+                "usage": response_data.get("usage"),
+            }
+        if error is not None:
+            event["error"] = {
+                "type": type(error).__name__,
+                "message": str(error),
+            }
+        self.interaction_history.append(event)
+
     # Response with messages
-    def respond(self, prompt):
+    def respond(self, prompt, transcript_metadata=None):
         """Respond to a prompt with the LLM. The truncation effectuates
         a short term memory effect; earlier interactions are forgotten. Thus introduces recency bias;
         recent interactions have more impact than older ones. Remove if unwanted"""
@@ -60,9 +88,20 @@ class Agent:
             self.messages = [self.messages[0]] + self.messages[-(self.memory_capacity * 2):]
 
         self.messages.append({"role": "user", "content": prompt})
+        messages_sent = copy.deepcopy(self.messages)
 
         # Call the LLM and get structured response
-        response_data = call_llm(self.client, self.model, self.temperature, self.messages)
+        try:
+            response_data = call_llm(self.client, self.model, self.temperature, self.messages)
+        except Exception as exc:
+            self._record_interaction(
+                prompt,
+                messages_sent,
+                response_data=None,
+                transcript_metadata=transcript_metadata,
+                error=exc,
+            )
+            raise
 
         # Log the interaction
         self._log_interaction(prompt, response_data)
@@ -74,5 +113,11 @@ class Agent:
             "reasoning": response_data.get("reasoning"),
             "usage": response_data.get("usage")
         })
+        self._record_interaction(
+            prompt,
+            messages_sent,
+            response_data=response_data,
+            transcript_metadata=transcript_metadata,
+        )
 
         return response_data  # Return full structure, not just content

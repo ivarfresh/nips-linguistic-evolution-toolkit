@@ -29,6 +29,10 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         later_trustee_template=None,
         noise_config=None,
         other_player_names="default",
+        history_policy="minimal",
+        self_history_window=1,
+        coplayer_history_window=0,
+        show_agent_names=True,
     ):
         super().__init__()
         self.endowment = endowment
@@ -40,6 +44,10 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self.later_trustee_template = later_trustee_template
         self.personas = personas or {}
         self.noise_config = noise_config or {}
+        self.history_policy = history_policy or "minimal"
+        self.self_history_window = self._coerce_history_window(self_history_window, 1)
+        self.coplayer_history_window = self._coerce_history_window(coplayer_history_window, 0)
+        self.set_prompt_name_visibility(show_agent_names)
 
         if isinstance(other_player_names, str):
             self.other_player_names = OTHER_PLAYER_NAMES.get(
@@ -92,6 +100,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
     def _role_display_name(self, pairing, role):
         agent_id = pairing[role]
         if len(self.agent_ids) > 2:
+            if not self.names_visible_in_prompts():
+                return "the sender" if role == "investor" else "the receiver"
             return self.get_agent_display_name(agent_id)
         return self.other_player_names[role]
 
@@ -131,8 +141,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 )
             prompt = self.round1_investor_template.format(
                 endowment=self.endowment,
-                agent_name=self.get_agent_display_name(agent_id),
-                opponent_name=self.get_agent_display_name(opponent_id),
+                agent_name=self.self_prompt_label(agent_id),
+                opponent_name=self.current_coplayer_label(opponent_id),
                 investor_name=self._role_display_name(pairing, "investor"),
                 trustee_name=self._role_display_name(pairing, "trustee"),
             )
@@ -159,8 +169,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             sent=sent_communicated,
             percentage=percentage,
             received=received,
-            agent_name=self.get_agent_display_name(agent_id),
-            opponent_name=self.get_agent_display_name(opponent_id),
+            agent_name=self.self_prompt_label(agent_id),
+            opponent_name=self.current_coplayer_label(opponent_id),
             investor_name=self._role_display_name(pairing, "investor"),
             trustee_name=self._role_display_name(pairing, "trustee"),
         )
@@ -207,8 +217,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 last_round_trustee_payoff=lr_trustee_payoff,
                 agent_balance=agent_balance,
                 endowment=self.endowment,
-                agent_name=self.get_agent_display_name(agent_id),
-                opponent_name=self.get_agent_display_name(opponent_id),
+                agent_name=self.self_prompt_label(agent_id),
+                opponent_name=self.current_coplayer_label(opponent_id),
                 investor_name=self._role_display_name(pairing, "investor"),
                 trustee_name=self._role_display_name(pairing, "trustee"),
             )
@@ -236,8 +246,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             current_round_sent=sent_communicated,
             current_round_sent_percentage=sent_communicated / self.endowment * 100,
             received=received,
-            agent_name=self.get_agent_display_name(agent_id),
-            opponent_name=self.get_agent_display_name(opponent_id),
+            agent_name=self.self_prompt_label(agent_id),
+            opponent_name=self.current_coplayer_label(opponent_id),
             investor_name=self._role_display_name(pairing, "investor"),
             trustee_name=self._role_display_name(pairing, "trustee"),
         )
@@ -249,40 +259,16 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         role = pairing["roles"][agent_id]
         balances = sim_data.game_data.get("balances_communicated") or sim_data.game_data["balances"]
         agent_balance = balances[agent_id]
-        last_dyad = self.find_last_completed_dyad_for_agent(agent_id, turn, sim_data)
-
-        history = "No previous game round involving you has been completed."
-        if last_dyad:
-            last_opponent_id = self.get_opponent_from_dyad(last_dyad, agent_id)
-            last_opponent_name = self.get_agent_display_name(last_opponent_id)
-            last_role = last_dyad["roles"].get(agent_id)
-            if last_role == "investor":
-                lr_returned = last_dyad.get("returned_communicated", last_dyad["returned"])
-                lr_payoff = self.endowment - last_dyad["sent"] + lr_returned
-                history = (
-                    f"In your most recent previous game round, you were the SENDER "
-                    f"against {last_opponent_name}. You sent ${last_dyad['sent']}, "
-                    f"it became ${last_dyad['received']}, and you saw them return "
-                    f"${lr_returned} to you. Your visible payoff was ${lr_payoff}."
-                )
-            elif last_role == "trustee":
-                lr_sent = last_dyad.get("sent_communicated", last_dyad["sent"])
-                lr_received = last_dyad.get("received_communicated", lr_sent * self.multiplier)
-                lr_payoff = lr_received - last_dyad["returned"]
-                history = (
-                    f"In your most recent previous game round, you were the RECEIVER "
-                    f"against {last_opponent_name}. You saw them send ${lr_sent}, "
-                    f"it became ${lr_received}, and you returned ${last_dyad['returned']}. "
-                    f"Your visible payoff was ${lr_payoff}."
-                )
+        history = self._format_multi_agent_history(agent_id, opponent_id, turn, sim_data)
 
         if role == "investor":
             prompt = (
                 f"Round {turn}\n\n"
                 f"{history}\n"
                 f"Your total visible earnings across all rounds are ${agent_balance}.\n\n"
-                f"This round, you are the SENDER against {self.get_agent_display_name(opponent_id)}. "
-                f"You have ${self.endowment}. How much do you send? (0-{self.endowment})"
+                f"This round, you are the SENDER against {self.current_coplayer_label(opponent_id)}. "
+                f"You have ${self.endowment}. How much do you send? (0-{self.endowment})\n"
+                f"Respond exactly as JSON: {{'send': <amount>}}"
             )
         else:
             sent_actual = sim_data.game_data["pending_sents"].get(pairing["dyad_id"])
@@ -294,12 +280,134 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 f"Round {turn}\n\n"
                 f"{history}\n"
                 f"Your total visible earnings across all rounds are ${agent_balance}.\n\n"
-                f"This round, you are the RECEIVER against {self.get_agent_display_name(opponent_id)}. "
+                f"This round, you are the RECEIVER against {self.current_coplayer_label(opponent_id)}. "
                 f"They sent you ${sent_communicated}, so you received ${received}. "
-                f"How much do you return? (0-{received})"
+                f"How much do you return? (0-{received})\n"
+                f"Respond exactly as JSON: {{'return': <amount>}}"
             )
 
         return self.with_prompt_context(prompt, agent_id, opponent_id)
+
+    def _coerce_history_window(self, value, default):
+        try:
+            return max(0, int(value))
+        except (TypeError, ValueError):
+            return default
+
+    def _format_multi_agent_history(self, agent_id, opponent_id, turn, sim_data):
+        if self.history_policy != "self_and_coplayer":
+            return self._format_most_recent_self_history(
+                agent_id,
+                turn,
+                sim_data,
+                current_coplayer_id=opponent_id,
+            )
+
+        self_history = self.find_completed_dyads_for_agent(
+            agent_id,
+            turn,
+            sim_data,
+            limit=self.self_history_window,
+        )
+        coplayer_history = self.find_completed_dyads_for_agent(
+            opponent_id,
+            turn,
+            sim_data,
+            limit=self.coplayer_history_window,
+        )
+
+        lines = ["Visible history before this round:"]
+        lines.append(f"Your last {self.self_history_window} game(s):")
+        if self_history:
+            lines.extend(
+                f"- {self._format_visible_history_entry_for_agent(agent_id, dyad, current_coplayer_id=opponent_id)}"
+                for dyad in self_history
+            )
+        else:
+            lines.append("- No previous completed games involving you.")
+
+        opponent_name = self.current_coplayer_label(opponent_id)
+        lines.append(f"{self.coplayer_history_heading(opponent_id)} last {self.coplayer_history_window} game(s):")
+        if coplayer_history:
+            lines.extend(
+                f"- {self._format_visible_history_entry_for_agent(opponent_id, dyad, observer_agent_id=agent_id)}"
+                for dyad in coplayer_history
+            )
+        else:
+            lines.append(f"- No previous completed games involving {opponent_name}.")
+
+        return "\n".join(lines)
+
+    def _format_most_recent_self_history(
+        self,
+        agent_id,
+        turn,
+        sim_data,
+        current_coplayer_id=None,
+    ):
+        last_dyad = self.find_last_completed_dyad_for_agent(agent_id, turn, sim_data)
+        if not last_dyad:
+            return "No previous game round involving you has been completed."
+
+        last_opponent_id = self.get_opponent_from_dyad(last_dyad, agent_id)
+        last_opponent_name = self.history_coplayer_label(
+            last_opponent_id,
+            current_coplayer_id=current_coplayer_id,
+        )
+        last_role = last_dyad["roles"].get(agent_id)
+        if last_role == "investor":
+            lr_returned = last_dyad.get("returned_communicated", last_dyad["returned"])
+            lr_payoff = self.endowment - last_dyad["sent"] + lr_returned
+            return (
+                f"In your most recent previous game round, you were the SENDER "
+                f"against {last_opponent_name}. You sent ${last_dyad['sent']}, "
+                f"it became ${last_dyad['received']}, and you saw them return "
+                f"${lr_returned} to you. Your visible payoff was ${lr_payoff}."
+            )
+        if last_role == "trustee":
+            lr_sent = last_dyad.get("sent_communicated", last_dyad["sent"])
+            lr_received = last_dyad.get("received_communicated", lr_sent * self.multiplier)
+            lr_payoff = lr_received - last_dyad["returned"]
+            return (
+                f"In your most recent previous game round, you were the RECEIVER "
+                f"against {last_opponent_name}. You saw them send ${lr_sent}, "
+                f"it became ${lr_received}, and you returned ${last_dyad['returned']}. "
+                f"Your visible payoff was ${lr_payoff}."
+            )
+        return "No previous game round involving you has been completed."
+
+    def _format_visible_history_entry_for_agent(
+        self,
+        agent_id,
+        dyad,
+        observer_agent_id=None,
+        current_coplayer_id=None,
+    ):
+        round_number = dyad.get("round", "?")
+        opponent_id = self.get_opponent_from_dyad(dyad, agent_id)
+        opponent_name = self.history_coplayer_label(
+            opponent_id,
+            observer_agent_id=observer_agent_id,
+            current_coplayer_id=current_coplayer_id,
+        )
+        role = dyad["roles"].get(agent_id)
+        visible_payoff = dyad.get("payoffs_communicated", {}).get(agent_id)
+        if role == "investor":
+            returned = dyad.get("returned_communicated", dyad["returned"])
+            return (
+                f"Round {round_number} against {opponent_name}, as SENDER: "
+                f"sent ${dyad['sent']}, it became ${dyad['received']}, "
+                f"saw ${returned} returned, visible payoff ${visible_payoff}."
+            )
+        if role == "trustee":
+            sent = dyad.get("sent_communicated", dyad["sent"])
+            received = dyad.get("received_communicated", sent * self.multiplier)
+            return (
+                f"Round {round_number} against {opponent_name}, as RECEIVER: "
+                f"saw ${sent} sent, it became ${received}, "
+                f"returned ${dyad['returned']}, visible payoff ${visible_payoff}."
+            )
+        return f"Round {round_number} against {opponent_name}: role and payoff unavailable."
 
     def _communicated_sent_for_prompt(self, sim_data, pairing, sent_actual):
         dyad_id = pairing["dyad_id"]
@@ -319,7 +427,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         if agent_id != pairing["investor"]:
             return
 
-        sent_amount = self._extract_amount(response, "send")
+        sent_raw = self._extract_amount(response, "send")
+        sent_amount, _ = self._bounded_amount(sent_raw, self.endowment)
         sim_data.game_data.setdefault("pending_sents", {})[pairing["dyad_id"]] = sent_amount
         sim_data.game_data["pending_sent"] = sent_amount
         self.sim_data_ref = sim_data
@@ -336,8 +445,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         for pairing in pairings:
             investor_id = pairing["investor"]
             trustee_id = pairing["trustee"]
-            sent_actual = self._extract_amount(agent_responses[investor_id], "send")
-            returned_actual = self._extract_amount(agent_responses[trustee_id], "return")
+            sent_raw = self._extract_amount(agent_responses[investor_id], "send")
+            sent_actual, sent_clamped = self._bounded_amount(sent_raw, self.endowment)
 
             sent_communicated = sim_data.game_data.get("pending_sents_communicated", {}).get(
                 pairing["dyad_id"],
@@ -345,6 +454,11 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             )
             received_actual = sent_actual * self.multiplier
             received_communicated = sent_communicated * self.multiplier
+            returned_raw = self._extract_amount(agent_responses[trustee_id], "return")
+            returned_actual, returned_clamped = self._bounded_amount(
+                returned_raw,
+                received_actual,
+            )
 
             if self._should_apply_noise_to("returned"):
                 returned_communicated, _ = self._apply_noise(returned_actual, received_actual)
@@ -370,6 +484,38 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 stats["rounds_with_noise"] += 1
                 stats["total_sent_noise"] += abs(sent_communicated - sent_actual)
                 stats["total_returned_noise"] += abs(returned_communicated - returned_actual)
+            action_validation = {
+                "sent": {
+                    "raw": sent_raw,
+                    "amount": sent_actual,
+                    "min": 0,
+                    "max": self.endowment,
+                    "clamped": sent_clamped,
+                },
+                "returned": {
+                    "raw": returned_raw,
+                    "amount": returned_actual,
+                    "min": 0,
+                    "max": received_actual,
+                    "clamped": returned_clamped,
+                },
+            }
+            investor_action = {
+                "action": "sent",
+                "amount": sent_actual,
+                "communicated": sent_communicated,
+            }
+            trustee_action = {
+                "action": "returned",
+                "amount": returned_actual,
+                "communicated": returned_communicated,
+            }
+            if sent_clamped:
+                investor_action["raw_amount"] = sent_raw
+                investor_action["clamped"] = True
+            if returned_clamped:
+                trustee_action["raw_amount"] = returned_raw
+                trustee_action["clamped"] = True
 
             dyad = {
                 **pairing,
@@ -394,18 +540,11 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 "balances": dict(sim_data.game_data["balances"]),
                 "balances_communicated": dict(sim_data.game_data["balances_communicated"]),
                 "noise_applied": noise_applied,
+                "action_validation": action_validation,
                 "other_player_names": self.other_player_names,
                 "actions": {
-                    investor_id: {
-                        "action": "sent",
-                        "amount": sent_actual,
-                        "communicated": sent_communicated,
-                    },
-                    trustee_id: {
-                        "action": "returned",
-                        "amount": returned_actual,
-                        "communicated": returned_communicated,
-                    },
+                    investor_id: investor_action,
+                    trustee_id: trustee_action,
                 },
             }
             dyads.append(dyad)
@@ -479,6 +618,9 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             entry["balances"] = dict(sim_data.game_data["balances"])
             entry["balances_communicated"] = dict(sim_data.game_data["balances_communicated"])
             entry["actions"] = round_actions
+            entry["action_validation"] = {
+                dyad["dyad_id"]: dyad["action_validation"] for dyad in dyads
+            }
             entry["other_player_names"] = self.other_player_names
 
             if len(dyads) == 1:
@@ -514,16 +656,38 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                     entry[key] = None
             break
 
+    def _bounded_amount(self, amount, max_amount):
+        max_amount = max(0, max_amount)
+        bounded = max(0, min(amount, max_amount))
+        return bounded, bounded != amount
+
     def _extract_amount(self, response_data, key):
         if isinstance(response_data, str):
             content = response_data
         else:
             content = response_data.get("content", "")
 
-        pattern = rf"'{key}':\s*(\d+\.?\d*)|" + rf'"{key}":\s*(\d+\.?\d*)'
-        match = re.search(pattern, content, re.IGNORECASE)
-        if match:
-            return float(match.group(1) or match.group(2))
+        number = r"(-?\d+(?:\.\d*)?|-?\.\d+)"
+        pattern = rf"'{key}':\s*{number}|" + rf'"{key}":\s*{number}'
+        matches = list(re.finditer(pattern, content, re.IGNORECASE))
+        if matches:
+            return float(next(group for group in matches[0].groups() if group is not None))
+
+        # Sonnet occasionally answers a sender prompt with {"return": 0}, or
+        # vice versa, when the surrounding text clearly describes the requested
+        # action. Treat this as recoverable only when there is exactly one
+        # opposite action amount and the expected key is absent.
+        alternate_key = {"send": "return", "return": "send"}.get(key)
+        if alternate_key:
+            alternate_pattern = (
+                rf"'{alternate_key}':\s*{number}|"
+                + rf'"{alternate_key}":\s*{number}'
+            )
+            alternate_matches = list(re.finditer(alternate_pattern, content, re.IGNORECASE))
+            if len(alternate_matches) == 1:
+                return float(
+                    next(group for group in alternate_matches[0].groups() if group is not None)
+                )
         raise ValueError(f"Could not extract {key} from: {content[:200]}")
 
     def print_turn_summary(self, turn, agent_responses, sim_data):

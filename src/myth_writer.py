@@ -17,7 +17,17 @@ class MythWriter:
                 "No prompt provided. Provide prompt in config/experiments.yaml under "
                 "prompt_templates, named 'myth_writing_default'"
             )
-        return self.round1_template.format(myth_topic=self.myth_topic)
+        return self.round1_template.format(
+            myth_topic=self.myth_topic,
+            topic_instruction=self._get_topic_instruction(),
+        )
+
+    def _get_topic_instruction(self):
+        """Render the myth topic without making the default "anything" literal."""
+        topic = (self.myth_topic or "").strip()
+        if not topic or topic.lower() == "anything":
+            return "You may choose any mythic setting, characters, or symbols."
+        return f"Use this topic: {topic}."
 
     def get_myth_prompt_round_later(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing with the agent's previous myth"""

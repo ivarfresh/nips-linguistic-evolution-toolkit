@@ -125,6 +125,7 @@ class NoisyExperimentConfig:
             game_params = self._get_game_params(game_param_name)
             active_myth_default_key = myth_prompt_arm["default"]
             active_myth_later_key = myth_prompt_arm["later"]
+            game_prompt_addition = self._get_game_prompt_addition(order)
 
             for run in range(num_runs):
                 combo = {
@@ -138,10 +139,22 @@ class NoisyExperimentConfig:
                     "myth_topic": myth_topic,
                     "run_number": run,
                     # Prompt templates
-                    "trust_game_round1_investor": self.config["prompt_templates"].get("trust_game_round1_investor"),
-                    "trust_game_round1_trustee": self.config["prompt_templates"].get("trust_game_round1_trustee"),
-                    "trust_game_later_investor": self.config["prompt_templates"].get("trust_game_later_investor"),
-                    "trust_game_later_trustee": self.config["prompt_templates"].get("trust_game_later_trustee"),
+                    "trust_game_round1_investor": self._with_game_prompt_addition(
+                        self.config["prompt_templates"].get("trust_game_round1_investor"),
+                        game_prompt_addition,
+                    ),
+                    "trust_game_round1_trustee": self._with_game_prompt_addition(
+                        self.config["prompt_templates"].get("trust_game_round1_trustee"),
+                        game_prompt_addition,
+                    ),
+                    "trust_game_later_investor": self._with_game_prompt_addition(
+                        self.config["prompt_templates"].get("trust_game_later_investor"),
+                        game_prompt_addition,
+                    ),
+                    "trust_game_later_trustee": self._with_game_prompt_addition(
+                        self.config["prompt_templates"].get("trust_game_later_trustee"),
+                        game_prompt_addition,
+                    ),
                     "replicate_id": run if num_runs > 1 else None,
                     "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
                     "myth_default_prompt_key": active_myth_default_key,
@@ -168,6 +181,16 @@ class NoisyExperimentConfig:
             return self.config["prompt_templates"][template_key]
         except KeyError as exc:
             raise KeyError(f"Missing prompt template '{template_key}' in noise config") from exc
+
+    def _get_game_prompt_addition(self, task_order) -> str:
+        if "game" not in task_order or "myth" not in task_order:
+            return ""
+        return self.config.get("game_prompt_additions", {}).get("myth_decision_link", "")
+
+    def _with_game_prompt_addition(self, template: str, addition: str) -> str:
+        if not template or not addition:
+            return template
+        return f"{template.rstrip()}\n\n{addition.strip()}\n"
 
     def _get_game_params(self, param_name: str) -> Dict:
         """Get game parameters from a named parameter set."""
@@ -202,7 +225,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             later_investor_template=combo['trust_game_later_investor'],
             later_trustee_template=combo['trust_game_later_trustee'],
             noise_config=game_params.get('noise_config'),
-            other_player_names=game_params.get('other_player_names', 'default')
+            other_player_names=game_params.get('other_player_names', 'default'),
+            history_policy=game_params.get('history_policy', 'minimal'),
+            self_history_window=game_params.get('self_history_window', 1),
+            coplayer_history_window=game_params.get('coplayer_history_window', 0),
+            show_agent_names=game_params.get('show_agent_names', True),
         )
 
         myth_writer = MythWriter(
@@ -297,9 +324,15 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["myth_prompt_arm_id"] = combo.get("myth_prompt_arm_id")
         sim_data.run_metadata["myth_default_prompt_key"] = combo.get("myth_default_prompt_key", "myth_writing_default")
         sim_data.run_metadata["myth_later_prompt_key"] = combo.get("myth_later_prompt_key", "myth_writing_later_rounds")
+        sim_data.run_metadata["history_policy"] = game_params.get("history_policy", "minimal")
+        sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
+        sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)
+        sim_data.run_metadata["show_agent_names"] = game_params.get("show_agent_names", True)
 
         # Save final state
         sim_data.save_state(save_path)
+        transcript_path = base_no_ext + ".transcript.pdf"
+        sim_data.save_transcript_pdf(transcript_path, source_path=save_path)
 
         # Cleanup checkpoint
         if os.path.exists(checkpoint_path):
@@ -311,6 +344,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         return {
             "success": True,
             "file_path": save_path,
+            "transcript_path": transcript_path,
             "error": None,
             "combo_info": {
                 "model": combo['model'],
@@ -386,6 +420,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str 
 
             if result['success']:
                 print(f"Saved to {result['file_path']}")
+                print(f"Transcript PDF: {result['transcript_path']}")
             else:
                 print(f"FAILED: {result['error']}")
 
@@ -414,6 +449,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str 
                               f"{result['combo_info']['task_order']} / "
                               f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'}")
                         print(f"    -> {result['file_path']}")
+                        print(f"    -> {result['transcript_path']}")
                     else:
                         failed += 1
                         failed_experiments.append(result)

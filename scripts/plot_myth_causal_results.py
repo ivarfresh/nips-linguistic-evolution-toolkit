@@ -49,6 +49,14 @@ PALETTE = {
 }
 
 
+def present_condition_order(runs: list["RunRecord"] | pd.DataFrame) -> list[str]:
+    if isinstance(runs, pd.DataFrame):
+        present = set(runs["condition"].dropna().unique())
+    else:
+        present = {run.condition for run in runs}
+    return [condition for condition in CONDITION_ORDER if condition in present]
+
+
 @dataclass
 class RunRecord:
     path: Path
@@ -182,6 +190,7 @@ def write_tables(runs: list[RunRecord], output_dir: Path) -> None:
 def plot_trajectory_summary(runs: list[RunRecord], output_dir: Path) -> None:
     out = output_dir / "trajectory_plotting"
     out.mkdir(parents=True, exist_ok=True)
+    condition_order = present_condition_order(runs)
 
     rows = []
     for run_idx, run in enumerate(runs):
@@ -219,7 +228,7 @@ def plot_trajectory_summary(runs: list[RunRecord], output_dir: Path) -> None:
             x="round",
             y=metric,
             hue="condition",
-            hue_order=CONDITION_ORDER,
+            hue_order=condition_order,
             palette=PALETTE,
             estimator="mean",
             errorbar=("se", 1),
@@ -248,7 +257,7 @@ def plot_trajectory_summary(runs: list[RunRecord], output_dir: Path) -> None:
             x="round",
             y=metric,
             hue="condition",
-            hue_order=CONDITION_ORDER,
+            hue_order=condition_order,
             units="run_idx",
             estimator=None,
             palette=PALETTE,
@@ -284,9 +293,11 @@ def plot_balance_comparison(runs: list[RunRecord], output_dir: Path, note: str |
     out = output_dir / "_balance_comparison" / "claude-sonnet-4.5"
     out.mkdir(parents=True, exist_ok=True)
     df = runs_dataframe(runs)
+    condition_order = present_condition_order(df)
+    condition_labels = [CONDITION_LABELS[c] for c in condition_order]
     df["condition_label"] = pd.Categorical(
         df["condition_label"],
-        [CONDITION_LABELS[c] for c in CONDITION_ORDER],
+        condition_labels,
         ordered=True,
     )
 
@@ -303,9 +314,9 @@ def plot_balance_comparison(runs: list[RunRecord], output_dir: Path, note: str |
             x="condition_label",
             y=metric,
             hue="condition_label",
-            order=[CONDITION_LABELS[c] for c in CONDITION_ORDER],
-            hue_order=[CONDITION_LABELS[c] for c in CONDITION_ORDER],
-            palette={CONDITION_LABELS[c]: PALETTE[c] for c in CONDITION_ORDER},
+            order=condition_labels,
+            hue_order=condition_labels,
+            palette={CONDITION_LABELS[c]: PALETTE[c] for c in condition_order},
             legend=False,
             ax=ax,
         )
@@ -313,7 +324,7 @@ def plot_balance_comparison(runs: list[RunRecord], output_dir: Path, note: str |
             data=df,
             x="condition_label",
             y=metric,
-            order=[CONDITION_LABELS[c] for c in CONDITION_ORDER],
+            order=condition_labels,
             color="black",
             size=4,
             alpha=0.65,
@@ -336,6 +347,7 @@ def plot_delta_comparison(runs: list[RunRecord], output_dir: Path) -> None:
     out = output_dir / "_balance_comparison" / "claude-sonnet-4.5"
     out.mkdir(parents=True, exist_ok=True)
     df = runs_dataframe(runs)
+    condition_order = present_condition_order(df)
     baselines = df[df["condition"] == "game_only"]
     base_median = {
         "avg_sent": float(baselines["avg_sent"].median()),
@@ -344,7 +356,7 @@ def plot_delta_comparison(runs: list[RunRecord], output_dir: Path) -> None:
     }
 
     rows = []
-    for condition in [c for c in CONDITION_ORDER if c != "game_only"]:
+    for condition in [c for c in condition_order if c != "game_only"]:
         subset = df[df["condition"] == condition]
         for metric, label in [
             ("avg_sent", "Mean Sent"),

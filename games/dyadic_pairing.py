@@ -1,4 +1,5 @@
 import random
+from collections import Counter, defaultdict
 
 
 class DyadicPairingMixin:
@@ -9,7 +10,10 @@ class DyadicPairingMixin:
     def _init_dyadic_agents(self):
         self.agent_ids = ["Agent_1", "Agent_2"]
         self.agent_names = {agent_id: agent_id for agent_id in self.agent_ids}
+        if not hasattr(self, "show_agent_names"):
+            self.show_agent_names = True
         self._round_pairings = {}
+        self._balanced_pairing_schedule = {}
         self._sync_agent_aliases()
 
     def configure_agents(self, agent_ids, agent_names=None):
@@ -29,6 +33,7 @@ class DyadicPairingMixin:
             raise ValueError("Agent display names must be unique.")
 
         self._round_pairings = {}
+        self._balanced_pairing_schedule = {}
         self._sync_agent_aliases()
 
     def _sync_agent_aliases(self):
@@ -37,6 +42,59 @@ class DyadicPairingMixin:
 
     def get_agent_display_name(self, agent_id):
         return self.agent_names.get(agent_id, agent_id)
+
+    def _coerce_bool(self, value, default=True):
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return default
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "off"}:
+                return False
+        return default
+
+    def set_prompt_name_visibility(self, show_agent_names=True):
+        self.show_agent_names = self._coerce_bool(show_agent_names, True)
+
+    def names_visible_in_prompts(self):
+        return self._coerce_bool(getattr(self, "show_agent_names", True), True)
+
+    def current_coplayer_label(self, agent_id):
+        if self.names_visible_in_prompts():
+            return self.get_agent_display_name(agent_id)
+        return "your current co-player"
+
+    def self_prompt_label(self, agent_id):
+        if self.names_visible_in_prompts():
+            return self.get_agent_display_name(agent_id)
+        return "you"
+
+    def role_prompt_label(self, agent_id, role):
+        if self.names_visible_in_prompts():
+            return self.get_agent_display_name(agent_id)
+        return "the sender" if role == "investor" else "the receiver"
+
+    def history_coplayer_label(
+        self,
+        agent_id,
+        observer_agent_id=None,
+        current_coplayer_id=None,
+    ):
+        if self.names_visible_in_prompts():
+            return self.get_agent_display_name(agent_id)
+        if observer_agent_id and agent_id == observer_agent_id:
+            return "you"
+        if current_coplayer_id and agent_id == current_coplayer_id:
+            return "your current co-player"
+        return "another agent"
+
+    def coplayer_history_heading(self, agent_id):
+        if self.names_visible_in_prompts():
+            return f"{self.get_agent_display_name(agent_id)}'s"
+        return "Your current co-player's"
 
     def get_round_pairings(self, turn, sim_data=None):
         if turn in self._round_pairings:
@@ -52,11 +110,12 @@ class DyadicPairingMixin:
                 raw_pairs = [(self.agent_1_id, self.agent_2_id)]
             else:
                 raw_pairs = [(self.agent_2_id, self.agent_1_id)]
+        elif sim_data is not None:
+            pairings = self._get_balanced_multi_agent_pairings(turn, sim_data)
+            self._round_pairings[turn] = pairings
+            return pairings
         else:
-            investor_ids, trustee_ids = self._role_cohorts_for_turn(turn, sim_data)
-            random.shuffle(investor_ids)
-            random.shuffle(trustee_ids)
-            raw_pairs = list(zip(investor_ids, trustee_ids))
+            raw_pairs = self._random_multi_agent_pairs()
 
         pairings = []
         for idx, (investor_id, trustee_id) in enumerate(raw_pairs, start=1):
@@ -65,60 +124,214 @@ class DyadicPairingMixin:
         self._round_pairings[turn] = pairings
         return pairings
 
-    def _role_cohorts_for_turn(self, turn, sim_data=None):
-        if turn <= 1:
-            return self._initial_role_cohorts()
+    def _get_balanced_multi_agent_pairings(self, turn, sim_data):
+        total_rounds = self._get_total_rounds(turn, sim_data)
+        schedule = self._get_or_create_balanced_pairing_schedule(total_rounds, sim_data)
+        scheduled = schedule.get(str(turn))
+        if scheduled is None:
+            scheduled = self._build_balanced_remaining_schedule(
+                total_rounds,
+                sim_data,
+            ).get(str(turn))
+        if scheduled is None:
+            raw_pairs = self._random_multi_agent_pairs()
+            return [
+                self._pairing_record(turn, idx, investor_id, trustee_id)
+                for idx, (investor_id, trustee_id) in enumerate(raw_pairs, start=1)
+            ]
+        return [
+            self._normalize_pairing(turn, idx, pairing)
+            for idx, pairing in enumerate(scheduled, start=1)
+        ]
 
-        previous_roles = self._get_previous_roles(turn, sim_data)
-        if not previous_roles:
-            return self._initial_role_cohorts()
+    def _get_total_rounds(self, turn, sim_data):
+        metadata = getattr(sim_data, "run_metadata", {}) or {}
+        try:
+            return max(turn, int(metadata.get("num_turns") or turn))
+        except (TypeError, ValueError):
+            return turn
 
-        investor_ids = []
-        trustee_ids = []
-        for agent_id in self.agent_ids:
-            previous_role = previous_roles.get(agent_id)
-            if previous_role == "investor":
-                trustee_ids.append(agent_id)
-            elif previous_role == "trustee":
-                investor_ids.append(agent_id)
+    def _get_or_create_balanced_pairing_schedule(self, total_rounds, sim_data):
+        game_data = getattr(sim_data, "game_data", {}) or {}
+        schedule_data = game_data.get("dyadic_pairing_schedule") or {}
+        if self._schedule_data_matches(schedule_data, total_rounds):
+            self._balanced_pairing_schedule = schedule_data.get("rounds", {})
+            return self._balanced_pairing_schedule
+
+        role_targets = self._role_targets_for_schedule(total_rounds, sim_data)
+        schedule = self._build_balanced_remaining_schedule(
+            total_rounds,
+            sim_data,
+            role_targets,
+        )
+        game_data["dyadic_pairing_schedule"] = {
+            "strategy": "balanced_random_roles_v1",
+            "num_turns": total_rounds,
+            "agent_ids": list(self.agent_ids),
+            "role_targets": role_targets,
+            "rounds": schedule,
+        }
+        self._balanced_pairing_schedule = schedule
+        return schedule
+
+    def _schedule_data_matches(self, schedule_data, total_rounds):
+        return (
+            schedule_data.get("strategy") == "balanced_random_roles_v1"
+            and schedule_data.get("num_turns") == total_rounds
+            and schedule_data.get("agent_ids") == list(self.agent_ids)
+            and isinstance(schedule_data.get("rounds"), dict)
+        )
+
+    def _build_balanced_remaining_schedule(self, total_rounds, sim_data, role_targets=None):
+        existing_by_turn = self._existing_pairings_by_turn(sim_data)
+        role_targets = role_targets or self._role_targets_for_schedule(total_rounds, sim_data)
+        sender_counts = Counter()
+        partner_counts = defaultdict(int)
+        schedule = {}
+
+        for round_number in range(1, total_rounds + 1):
+            existing = existing_by_turn.get(round_number)
+            if existing:
+                pairings = [
+                    self._normalize_pairing(round_number, idx, pairing)
+                    for idx, pairing in enumerate(existing, start=1)
+                ]
             else:
-                raise ValueError(
-                    f"Cannot alternate roles for {agent_id}; no previous role found before round {turn}."
+                pairings = self._build_balanced_round_pairings(
+                    round_number,
+                    role_targets,
+                    sender_counts,
+                    partner_counts,
                 )
 
-        if len(investor_ids) != len(trustee_ids):
-            raise ValueError(
-                "Cannot alternate roles because previous round did not have equal "
-                "numbers of senders and receivers."
+            schedule[str(round_number)] = pairings
+            self._accumulate_pairing_counts(pairings, sender_counts, partner_counts)
+
+        return schedule
+
+    def _role_targets_for_schedule(self, total_rounds, sim_data):
+        existing_sender_counts = Counter()
+        for pairings in self._existing_pairings_by_turn(sim_data).values():
+            for pairing in pairings:
+                investor_id = pairing.get("investor")
+                if investor_id in self.agent_ids:
+                    existing_sender_counts[investor_id] += 1
+
+        total_sender_slots = total_rounds * (len(self.agent_ids) // 2)
+        targets = {agent_id: existing_sender_counts[agent_id] for agent_id in self.agent_ids}
+
+        while sum(targets.values()) < total_sender_slots:
+            min_count = min(targets.values())
+            candidates = [agent_id for agent_id, count in targets.items() if count == min_count]
+            targets[random.choice(candidates)] += 1
+
+        return targets
+
+    def _existing_pairings_by_turn(self, sim_data):
+        existing_by_turn = {}
+        if sim_data is None:
+            return existing_by_turn
+
+        for entry in getattr(sim_data, "conversation_history", []) or []:
+            try:
+                turn = int(entry.get("round"))
+            except (TypeError, ValueError):
+                continue
+            pairings = entry.get("pairings")
+            if pairings:
+                existing_by_turn[turn] = [
+                    self._normalize_pairing(turn, idx, pairing)
+                    for idx, pairing in enumerate(pairings, start=1)
+                ]
+                continue
+
+            dyads = entry.get("dyads")
+            if dyads:
+                existing_by_turn[turn] = [
+                    self._normalize_pairing(turn, idx, dyad)
+                    for idx, dyad in enumerate(dyads, start=1)
+                ]
+                continue
+
+            roles = entry.get("roles") or {}
+            investor_id = next((aid for aid, role in roles.items() if role == "investor"), None)
+            trustee_id = next((aid for aid, role in roles.items() if role == "trustee"), None)
+            if investor_id and trustee_id:
+                existing_by_turn[turn] = [self._pairing_record(turn, 1, investor_id, trustee_id)]
+
+        return existing_by_turn
+
+    def _build_balanced_round_pairings(
+        self,
+        turn,
+        role_targets,
+        sender_counts,
+        partner_counts,
+    ):
+        sender_slots = len(self.agent_ids) // 2
+        remaining_sender_need = {
+            agent_id: role_targets.get(agent_id, 0) - sender_counts[agent_id]
+            for agent_id in self.agent_ids
+        }
+        shuffled_agents = list(self.agent_ids)
+        random.shuffle(shuffled_agents)
+        senders = sorted(
+            shuffled_agents,
+            key=lambda agent_id: remaining_sender_need[agent_id],
+            reverse=True,
+        )[:sender_slots]
+        receivers = [agent_id for agent_id in self.agent_ids if agent_id not in set(senders)]
+
+        random.shuffle(senders)
+        random.shuffle(receivers)
+        pairs = []
+        available_receivers = set(receivers)
+        for sender in senders:
+            best_receivers = self._least_repeated_receivers(
+                sender,
+                available_receivers,
+                partner_counts,
             )
+            receiver = random.choice(best_receivers)
+            available_receivers.remove(receiver)
+            pairs.append((sender, receiver))
 
-        return investor_ids, trustee_ids
+        random.shuffle(pairs)
+        return [
+            self._pairing_record(turn, idx, investor_id, trustee_id)
+            for idx, (investor_id, trustee_id) in enumerate(pairs, start=1)
+        ]
 
-    def _initial_role_cohorts(self):
+    def _least_repeated_receivers(self, sender, available_receivers, partner_counts):
+        min_count = min(
+            partner_counts[frozenset((sender, receiver))]
+            for receiver in available_receivers
+        )
+        return [
+            receiver
+            for receiver in available_receivers
+            if partner_counts[frozenset((sender, receiver))] == min_count
+        ]
+
+    def _accumulate_pairing_counts(self, pairings, sender_counts, partner_counts):
+        for pairing in pairings:
+            investor_id = pairing.get("investor")
+            trustee_id = pairing.get("trustee")
+            if investor_id in self.agent_ids:
+                sender_counts[investor_id] += 1
+            if investor_id in self.agent_ids and trustee_id in self.agent_ids:
+                partner_counts[frozenset((investor_id, trustee_id))] += 1
+
+    def _random_multi_agent_pairs(self):
         shuffled = list(self.agent_ids)
         random.shuffle(shuffled)
-        midpoint = len(shuffled) // 2
-        return shuffled[:midpoint], shuffled[midpoint:]
 
-    def _get_previous_roles(self, turn, sim_data):
-        if sim_data is None:
-            return None
-
-        for entry in reversed(sim_data.conversation_history):
-            if entry.get("round", 0) >= turn:
-                continue
-            roles = entry.get("roles") or {}
-            if all(agent_id in roles for agent_id in self.agent_ids):
-                return roles
-
-            pairings = entry.get("pairings") or entry.get("dyads") or []
-            pairing_roles = {}
-            for pairing in pairings:
-                pairing_roles.update(pairing.get("roles") or {})
-            if all(agent_id in pairing_roles for agent_id in self.agent_ids):
-                return pairing_roles
-
-        return None
+        raw_pairs = []
+        for idx in range(0, len(shuffled), 2):
+            pair = shuffled[idx:idx + 2]
+            random.shuffle(pair)
+            raw_pairs.append(tuple(pair))
+        return raw_pairs
 
     def _get_existing_pairings(self, turn, sim_data):
         if sim_data is None:
@@ -218,6 +431,8 @@ class DyadicPairingMixin:
     def with_prompt_context(self, prompt, agent_id, opponent_id=None):
         if len(self.agent_ids) <= 2:
             return prompt
+        if not self.names_visible_in_prompts():
+            return prompt
 
         lines = [
             f"Your name in this experiment is {self.get_agent_display_name(agent_id)}."
@@ -237,12 +452,21 @@ class DyadicPairingMixin:
             prompt
             + "\n\nMULTI-AGENT SETTING:\n"
             + f"- There are {len(self.agent_ids)} agents in this run.\n"
-            + "- Each round, agents are randomly paired into dyads. Pairings may repeat.\n"
+            + "- Each round, all agents are paired into dyads from the full pool. Pairings are randomized, but the schedule balances sender and receiver roles across the run.\n"
             + "- You play one sender-receiver game with your paired opponent each round.\n"
-            + "- You alternate roles each round: if you are sender in one round, "
-            + "you are receiver in the next, and vice versa.\n"
-            + "- You will be told your opponent's name in each round.\n"
-            + f"- Your name in this experiment is {self.get_agent_display_name(agent_id)}."
+            + "- Your role may repeat across consecutive rounds, but by the end of the run every agent will have acted as sender and receiver equally often when the round count allows it.\n"
+            + self._system_name_context(agent_id)
+        )
+
+    def _system_name_context(self, agent_id):
+        if self.names_visible_in_prompts():
+            return (
+                "- You will be told your opponent's name in each round.\n"
+                + f"- Your name in this experiment is {self.get_agent_display_name(agent_id)}."
+            )
+        return (
+            "- Agent names are hidden in this run.\n"
+            "- Your paired opponent is referred to as your current co-player."
         )
 
     def iter_completed_dyads(self, entry):
@@ -279,12 +503,42 @@ class DyadicPairingMixin:
 
     def find_last_completed_dyad_for_agent(self, agent_id, turn, sim_data):
         for entry in reversed(sim_data.conversation_history):
-            if entry.get("round", 0) >= turn:
+            try:
+                entry_round = int(entry.get("round", 0))
+            except (TypeError, ValueError):
+                continue
+            if entry_round >= turn:
                 continue
             for dyad in self.iter_completed_dyads(entry):
                 if agent_id in (dyad.get("agents") or []):
                     return dyad
         return None
+
+    def find_completed_dyads_for_agent(self, agent_id, turn, sim_data, limit=None):
+        dyads = []
+        for entry in getattr(sim_data, "conversation_history", []) or []:
+            try:
+                entry_round = int(entry.get("round", 0))
+            except (TypeError, ValueError):
+                continue
+            if entry_round >= turn:
+                continue
+            for dyad in self.iter_completed_dyads(entry):
+                if agent_id not in (dyad.get("agents") or []):
+                    continue
+                dyad_with_round = dict(dyad)
+                dyad_with_round.setdefault("round", entry_round)
+                dyads.append(dyad_with_round)
+
+        if limit is None:
+            return dyads
+        try:
+            limit = int(limit)
+        except (TypeError, ValueError):
+            return dyads
+        if limit <= 0:
+            return []
+        return dyads[-limit:]
 
     def get_opponent_from_dyad(self, dyad, agent_id):
         agents = dyad.get("agents") or []

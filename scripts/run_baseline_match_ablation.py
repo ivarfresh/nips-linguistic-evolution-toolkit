@@ -250,6 +250,8 @@ def run_job(job: dict[str, Any], log_root: str, timeout_seconds: int) -> dict[st
                     }
                 )
                 sim_data.save_state(str(save_path))
+                transcript_path = str(base_no_ext) + ".transcript.pdf"
+                sim_data.save_transcript_pdf(transcript_path, source_path=str(save_path))
 
                 cp_path = Path(checkpoint_path)
                 if cp_path.exists():
@@ -261,6 +263,7 @@ def run_job(job: dict[str, Any], log_root: str, timeout_seconds: int) -> dict[st
             "run": run,
             "task_order": list(task_order),
             "file_path": str(save_path),
+            "transcript_path": transcript_path,
             "worker_log": str(worker_log),
         }
     except Exception as exc:

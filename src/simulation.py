@@ -98,6 +98,13 @@ def _roles_by_agent(pairings):
     return roles
 
 
+def _pairing_for_agent(pairings, agent_id):
+    for pairing in pairings:
+        if agent_id in (pairing.get("agents") or []):
+            return pairing
+    return None
+
+
 def _unique_order(agent_ids):
     seen = set()
     ordered = []
@@ -115,6 +122,38 @@ def _role_label(role):
     if role == "trustee":
         return "Receiver"
     return "Agent"
+
+
+def _interaction_metadata(turn, task, agent_id, roles_by_agent, pairings, task_index, move_index):
+    role = roles_by_agent.get(agent_id)
+    pairing = _pairing_for_agent(pairings, agent_id)
+    metadata = {
+        "round": turn,
+        "task": task,
+        "task_index": task_index,
+        "move_index": move_index,
+        "role": role,
+        "role_label": _role_label(role),
+    }
+    if pairing:
+        opponent_id = next(
+            (other_id for other_id in pairing.get("agents", []) if other_id != agent_id),
+            None,
+        )
+        metadata.update(
+            {
+                "dyad_id": pairing.get("dyad_id"),
+                "opponent_id": opponent_id,
+                "pairing": {
+                    "agents": pairing.get("agents"),
+                    "investor": pairing.get("investor"),
+                    "trustee": pairing.get("trustee"),
+                    "roles": pairing.get("roles"),
+                    "agent_names": pairing.get("agent_names"),
+                },
+            }
+        )
+    return metadata
 
 
 class SimulationData:
@@ -144,13 +183,15 @@ class SimulationData:
             json.dump(data, f, indent=indent)
         os.replace(tmp_path, path)
 
-    def save_state(self, filepath):
+    def to_state(self, include_agent_histories: bool = True):
         state = {
             "conversation_history": self.conversation_history,
             "game_data": self.game_data,
             "task_order": self.task_order, # Include task_order in saved state
             "run_metadata": self.run_metadata,
-            "agents": {
+        }
+        if include_agent_histories:
+            state["agents"] = {
                 agent_id: {
                     "agent_id": agent.agent_id,
                     "display_name": getattr(agent, "display_name", agent.agent_id),
@@ -159,22 +200,28 @@ class SimulationData:
                     "memory_capacity": agent.memory_capacity,
                     "initial_bias": agent.initial_bias,
                     "system_prompt": agent.system_prompt,
-                    "messages": agent.messages
+                    "messages": agent.messages,
+                    "interaction_history": getattr(agent, "interaction_history", []),
                 }
                 for agent_id, agent in self.agents.items()
             }
-        }
-        self._atomic_json_write(filepath, state, indent=2)
+        return state
+
+    def save_state(self, filepath):
+        self._atomic_json_write(filepath, self.to_state(include_agent_histories=True), indent=2)
 
     def save_results_only(self, filepath):
         """Lightweight save: results/state only (no agent message histories)."""
-        state = {
-            "conversation_history": self.conversation_history,
-            "game_data": self.game_data,
-            "task_order": self.task_order,
-            "run_metadata": self.run_metadata,
-        }
-        self._atomic_json_write(filepath, state, indent=2)
+        self._atomic_json_write(filepath, self.to_state(include_agent_histories=False), indent=2)
+
+    def save_transcript_pdf(self, filepath, source_path: Optional[str] = None):
+        from src.transcript import write_pdf_transcript
+
+        write_pdf_transcript(
+            self.to_state(include_agent_histories=True),
+            filepath,
+            source_path=source_path,
+        )
 
     @classmethod
     def load_state(cls, filepath: str, client, log_file: Optional[str] = None) -> "SimulationData":
@@ -204,6 +251,7 @@ class SimulationData:
             )
             # Preserve message history exactly for faithful resume
             agent.messages = a.get("messages", [])
+            agent.interaction_history = a.get("interaction_history", [])
             agent.display_name = a.get("display_name", agent.agent_id)
             sim_data.add_agent(agent_id, agent)
 
@@ -343,12 +391,12 @@ def run_simulation(
             agent_myths = {}
 
             # Execute tasks in specified order
-            for task in task_order:
+            for task_index, task in enumerate(task_order):
                 if task == "game":
                     # PHASE 1: GAME PLAY
                     print("\n--- PHASE 1: GAME PLAY ---")
 
-                    for agent_id in move_order:
+                    for move_index, agent_id in enumerate(move_order):
                         agent = sim_data.agents[agent_id]
                         role_name = _role_label(roles_by_agent.get(agent_id))
 
@@ -357,7 +405,18 @@ def run_simulation(
                         else:
                             prompt = game.get_game_prompt_later_round(agent_id, turn, sim_data, last_responses)
 
-                        response_data = agent.respond(prompt)
+                        response_data = agent.respond(
+                            prompt,
+                            transcript_metadata=_interaction_metadata(
+                                turn,
+                                "game",
+                                agent_id,
+                                roles_by_agent,
+                                pairings,
+                                task_index,
+                                move_index,
+                            ),
+                        )
                         agent_responses[agent_id] = response_data
 
                         # Store full game response data in round_entry
@@ -392,8 +451,24 @@ def run_simulation(
 
                     # Parallelize LLM calls for myth writing
                     with ThreadPoolExecutor(max_workers=len(active_agent_order)) as executor:
+                        myth_metadata = {
+                            agent_id: _interaction_metadata(
+                                turn,
+                                "myth",
+                                agent_id,
+                                roles_by_agent,
+                                pairings,
+                                task_index,
+                                move_index,
+                            )
+                            for move_index, agent_id in enumerate(active_agent_order)
+                        }
                         futures = {
-                            agent_id: executor.submit(sim_data.agents[agent_id].respond, prompts[agent_id])
+                            agent_id: executor.submit(
+                                sim_data.agents[agent_id].respond,
+                                prompts[agent_id],
+                                myth_metadata[agent_id],
+                            )
                             for agent_id in active_agent_order
                         }
 
@@ -405,7 +480,10 @@ def run_simulation(
                             except Exception as e:
                                 print(f"⚠️  Myth writing failed for {agent_id}: {type(e).__name__}: {e}. Retrying once...")
                                 time.sleep(1.0)
-                                myth_response_data = sim_data.agents[agent_id].respond(prompts[agent_id])
+                                myth_response_data = sim_data.agents[agent_id].respond(
+                                    prompts[agent_id],
+                                    myth_metadata[agent_id],
+                                )
                                 agent_myths[agent_id] = myth_response_data
 
                             # Store full myth response data in round_entry

@@ -19,6 +19,7 @@ base_models:
   claude_sonnet_45: "anthropic/claude-sonnet-4.5"
   deepseek_v3: "deepseek/deepseek-chat-v3-0324"
   gemini_3_flash: "google/gemini-3-flash-preview"
+  gemini_3_1_flash_lite: "google/gemini-3.1-flash-lite"
   gemini_3_1_pro: "google/gemini-3.1-pro-preview"
 
 # Prompt Templates
@@ -118,15 +119,15 @@ prompt_templates:
 
   # Myth writing prompts (same as main config)
   myth_writing_default: |
-    Write a myth about {myth_topic}. Write 200 words.
+    Write a 200-word myth. {topic_instruction}
 
   myth_writing_default_game_directive: |
-    Write a myth about {myth_topic}. In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects the game you have been playing up to this point.
-    Write 200 words.
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.
 
   myth_writing_default_game_normative: |
-    Write a myth about {myth_topic}. In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played.
-    Write 200 words.
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played.
 
   myth_writing_later_rounds: |
     Here is the myth you wrote in the previous round:
@@ -146,7 +147,7 @@ prompt_templates:
     Here is the myth the other agent wrote in the previous round:
     {other_agent_myth}
 
-    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect the game you have been playing up to this point.
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
 
     Write 200 words. Format exactly:
     Myth: [your story here].
@@ -182,6 +183,10 @@ personas:
   selfish:
     description: "selfish"
     system_addition: "You prioritize your own interests and payoffs above all else."
+
+# Game-prompt additions applied automatically by task order.
+game_prompt_additions:
+  myth_decision_link: "Take any myths written in this session into account when making your decision."
 
 # ============================================================================
 # GAME PARAMETERS - Noise and Framing Variations
@@ -343,6 +348,39 @@ game_params:
       applies_to: "both"
       inform_agents: true
     other_player_names: "default"
+
+  noisy_negative_2_informed_myth_causal_10_8agents:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  noisy_negative_2_informed_myth_causal_10_8agents_history3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 3
+    coplayer_history_window: 3
 
   # Cooperation bootstrap: returned amount always reported as 100% return
   # Targets GPT-5-Nano's defection spiral by making investor believe
@@ -577,6 +615,94 @@ experiment_sets:
         default: "myth_writing_default_game_normative"
         later: "myth_writing_later_rounds_normative"
     num_runs: 5
+
+  sonnet45_directive_normative_noise_negative2_informed_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
+
+  myth_causal_normative_noise_negative2_informed_gemini31_flashlite_r10_n5:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
+
+  gemini31_flashlite_8agent_noise_negative2_informed_r10_smoke:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10_8agents"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 1
+
+  sonnet45_8agent_directive_noise_negative2_informed_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10_8agents_history3"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 5
+
+  myth_causal_normative_noise_negative2_informed_gemini31_flashlite_r10_topup_n15:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 15
 
   # Bootstrap noise for floor-locked model (GPT-5-Nano)
   # noise_bootstrap:

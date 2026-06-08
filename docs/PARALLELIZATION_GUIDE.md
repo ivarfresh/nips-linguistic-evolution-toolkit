@@ -163,6 +163,7 @@ Checkpointing works identically in parallel and sequential modes:
 ```
 experiment_name_001_model_persona_task_order.json          # Final output
 experiment_name_001_model_persona_task_order.results.json  # Lightweight state
+experiment_name_001_model_persona_task_order.transcript.pdf # Full PDF transcript
 experiment_name_001_model_persona_task_order.checkpoint.json  # Resume point
 ```
 
