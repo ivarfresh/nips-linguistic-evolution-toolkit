@@ -175,7 +175,8 @@ def visualize_keyword_evolution(evolution: Dict[str, Dict[int, List[Tuple[str, i
         evolution: Keyword evolution data
         output_file: Output file path for the plot
     """
-    fig = plt.figure(figsize=(16, 10))
+    n_agents = len(evolution)
+    fig = plt.figure(figsize=(16, 5 * n_agents))
 
     for idx, (agent_id, rounds) in enumerate(sorted(evolution.items())):
         # Select top keywords by total frequency
@@ -197,7 +198,7 @@ def visualize_keyword_evolution(evolution: Dict[str, Dict[int, List[Tuple[str, i
                 freq_matrix[i, j] = keyword_dict.get(keyword, 0)
 
         # Create heatmap
-        ax = plt.subplot(2, 2, idx*2 + 1)
+        ax = plt.subplot(n_agents, 2, idx*2 + 1)
         im = ax.imshow(freq_matrix, aspect='auto', cmap='YlOrRd', interpolation='nearest')
 
         ax.set_xticks(range(len(round_nums)))
@@ -214,7 +215,7 @@ def visualize_keyword_evolution(evolution: Dict[str, Dict[int, List[Tuple[str, i
         cbar.set_label('Frequency', rotation=270, labelpad=20)
 
         # Create line plot for temporal patterns
-        ax2 = plt.subplot(2, 2, idx*2 + 2)
+        ax2 = plt.subplot(n_agents, 2, idx*2 + 2)
 
         # Plot only the most interesting keywords (those with variation)
         variances = np.var(freq_matrix, axis=1)
@@ -248,7 +249,9 @@ def create_narrative_arc_visualization(evolution: Dict[str, Dict[int, List[Tuple
         evolution: Keyword evolution data
         output_file: Output file path
     """
-    fig, axes = plt.subplots(2, 1, figsize=(16, 10), sharex=True)
+    n_agents = len(evolution)
+    fig, axes = plt.subplots(n_agents, 1, figsize=(16, 5 * n_agents), sharex=True)
+    axes = np.atleast_1d(axes)
 
     # Define thematic categories
     positive_words = {'trust', 'cooperation', 'harmony', 'bond', 'golden', 'gift', 'prosperity', 'reciprocity'}

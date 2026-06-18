@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import contextlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Any, Tuple
@@ -28,11 +29,13 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         # Configure game
         game_params = combo['game_params']
 
-        # Prepare personas dict for both agents
-        personas = {
-            'Agent_1': combo['persona'],
-            'Agent_2': combo['persona']  # Both agents use same persona for now
-        }
+        agent_ids = [f"Agent_{i+1}" for i in range(game_params['num_agents'])]
+        personas = {agent_id: combo['persona'] for agent_id in agent_ids}
+        defector_seed = game_params.get("defector_seed")
+        if defector_seed is None:
+            defector_seed = combo.get("replicate_id")
+        if defector_seed is None:
+            defector_seed = 0
 
         game = TrustGame(
             endowment=game_params['endowment'],
@@ -43,7 +46,15 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             round1_trustee_template=combo['trust_game_round1_trustee'],
             later_investor_template=combo['trust_game_later_investor'],
             later_trustee_template=combo['trust_game_later_trustee'],
-            multiplier_distribution=game_params.get('multiplier_distribution')
+            multiplier_distribution=game_params.get('multiplier_distribution'),
+            history_policy=game_params.get('history_policy', 'minimal'),
+            self_history_window=game_params.get('self_history_window', 1),
+            coplayer_history_window=game_params.get('coplayer_history_window', 0),
+            show_agent_names=game_params.get('show_agent_names', True),
+            defector_ratio=game_params.get("defector_ratio", 0.0),
+            defector_agent_ids=game_params.get("defector_agent_ids"),
+            defector_seed=defector_seed,
+            defector_prompt_template=combo.get("defector_game_instruction"),
         )
 
         myth_writer = MythWriter(
@@ -66,7 +77,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         else:
             myth_topic_str = ""
 
-        filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{myth_topic_str}.json"
+        replicate = combo.get("replicate_id")
+        replicate_str = f"_rep{replicate:02d}" if replicate is not None else ""
+        myth_arm = combo.get("myth_prompt_arm_id")
+        myth_arm_str = f"_{_sanitize_for_filename(myth_arm)}" if myth_arm else ""
+        filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{replicate_str}{myth_arm_str}{myth_topic_str}.json"
         save_path = f"{save_dir}/{filename}"
 
         # If a run already exists, create filename_2.json / filename_3.json / ...
@@ -89,34 +104,62 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Index: {index:03d}\n")
             f.write(f"Model: {combo['model']}\n")
             f.write(f"Persona: {combo['persona']['description']}\n")
+            f.write(f"System Addition Key: {combo.get('system_addition_key') or 'none'}\n")
             f.write(f"Task Order: {combo['task_order']}\n")
             f.write(f"Myth Topic ID: {combo.get('myth_topic_id', 'N/A')}\n")
             f.write(f"Myth Topic: {combo.get('myth_topic', 'N/A')}\n")
+            f.write(f"Replicate ID: {combo.get('replicate_id') if combo.get('replicate_id') is not None else 'none'}\n")
+            f.write(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}\n")
+            f.write(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}\n")
+            f.write(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}\n")
+            f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
+            f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
+            f.write(f"Defector Seed: {defector_seed}\n")
             f.write(f"{'='*80}\n\n")
 
-        # Run simulation
-        sim_data = run_simulation(
-            game=game,
-            model=combo['model'],
-            temperature=game_params.get('temperature', 0.8),
-            num_turns=game_params['num_turns'],
-            num_agents=game_params['num_agents'],
-            memory_capacity=game_params['memory_capacity'],
-            agent_biases="",
-            myth_writer=myth_writer,
-            task_order=combo['task_order'],
-            results_path=results_path,
-            checkpoint_path=checkpoint_path,
-            checkpoint_every=10,
-            resume_from=resume_from,
-            log_file=log_path
-        )
+        # Run simulation. TRUST_BATCH_QUIET keeps verbose per-round transcripts
+        # in the run log instead of streaming child-process stdout.
+        run_kwargs = {
+            "game": game,
+            "model": combo['model'],
+            "temperature": game_params.get('temperature', 0.8),
+            "num_turns": game_params['num_turns'],
+            "num_agents": game_params['num_agents'],
+            "memory_capacity": game_params['memory_capacity'],
+            "agent_biases": "",
+            "myth_writer": myth_writer,
+            "task_order": combo['task_order'],
+            "results_path": results_path,
+            "checkpoint_path": checkpoint_path,
+            "checkpoint_every": 10,
+            "resume_from": resume_from,
+            "log_file": log_path,
+            "agent_names": game_params.get("agent_names"),
+        }
+        quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
+        if quiet_batch:
+            with open(log_path, "a", encoding="utf-8") as log_stream:
+                with contextlib.redirect_stdout(log_stream):
+                    sim_data = run_simulation(**run_kwargs)
+        else:
+            sim_data = run_simulation(**run_kwargs)
 
         sim_data.run_metadata["myth_topic_id"] = combo.get("myth_topic_id", "")
         sim_data.run_metadata["myth_topic"] = combo.get("myth_topic", "")
+        sim_data.run_metadata["myth_prompt_arm_id"] = combo.get("myth_prompt_arm_id")
+        sim_data.run_metadata["myth_default_prompt_key"] = combo.get("myth_default_prompt_key", "myth_writing_default")
+        sim_data.run_metadata["myth_later_prompt_key"] = combo.get("myth_later_prompt_key", "myth_writing_later_rounds")
+        sim_data.run_metadata["system_addition_key"] = combo.get("system_addition_key")
+        sim_data.run_metadata["replicate_id"] = combo.get("replicate_id")
+        sim_data.run_metadata["history_policy"] = game_params.get("history_policy", "minimal")
+        sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
+        sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)
+        sim_data.run_metadata["show_agent_names"] = game_params.get("show_agent_names", True)
 
         # Save final full state
         sim_data.save_state(save_path)
+        transcript_path = base_no_ext + ".transcript.pdf"
+        sim_data.save_transcript_pdf(transcript_path, source_path=save_path)
 
         # Cleanup checkpoint on success
         cp_path = Path(checkpoint_path)
@@ -129,12 +172,17 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         return {
             "success": True,
             "file_path": save_path,
+            "transcript_path": transcript_path,
             "error": None,
             "combo_info": {
                 "model": combo['model'],
                 "persona": combo['persona']['description'],
                 "task_order": combo['task_order'],
                 "myth_topic_id": combo.get('myth_topic_id', ''),
+                "replicate_id": combo.get("replicate_id"),
+                "myth_prompt_arm_id": combo.get("myth_prompt_arm_id"),
+                "myth_default_prompt_key": combo.get("myth_default_prompt_key", "myth_writing_default"),
+                "myth_later_prompt_key": combo.get("myth_later_prompt_key", "myth_writing_later_rounds"),
             }
         }
 
@@ -148,6 +196,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
                 "persona": combo['persona']['description'],
                 "task_order": combo['task_order'],
                 "myth_topic_id": combo.get('myth_topic_id', ''),
+                "replicate_id": combo.get("replicate_id"),
+                "myth_prompt_arm_id": combo.get("myth_prompt_arm_id"),
+                "myth_default_prompt_key": combo.get("myth_default_prompt_key", "myth_writing_default"),
+                "myth_later_prompt_key": combo.get("myth_later_prompt_key", "myth_writing_later_rounds"),
             }
         }
 
@@ -178,11 +230,16 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
             print(f"Task Order: {combo['task_order']}")
             print(f"Myth Topic ID: {combo.get('myth_topic_id', '')}")
             print(f"Myth Topic: {combo.get('myth_topic', '')}")
+            print(f"Replicate ID: {combo.get('replicate_id') if combo.get('replicate_id') is not None else 'none'}")
+            print(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}")
+            print(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}")
+            print(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
 
             result = run_single_experiment(combo, experiment_name, i)
 
             if result['success']:
                 print(f"✓ Saved to {result['file_path']}")
+                print(f"✓ Transcript PDF: {result['transcript_path']}")
             else:
                 print(f"✗ FAILED: {result['error']}")
 
@@ -210,14 +267,19 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                     if result['success']:
                         print(f"[{completed}/{len(combinations)}] ✓ {result['combo_info']['model']} / "
                               f"{result['combo_info']['persona']} / "
-                              f"{result['combo_info']['task_order']}")
+                              f"{result['combo_info']['task_order']} / "
+                              f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'} / "
+                              f"{result['combo_info'].get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
                         print(f"    → {result['file_path']}")
+                        print(f"    → {result['transcript_path']}")
                     else:
                         failed += 1
                         failed_experiments.append(result)
                         print(f"[{completed}/{len(combinations)}] ✗ FAILED: {result['combo_info']['model']} / "
                               f"{result['combo_info']['persona']} / "
-                              f"{result['combo_info']['task_order']}")
+                              f"{result['combo_info']['task_order']} / "
+                              f"{result['combo_info'].get('myth_prompt_arm_id') or 'no_myth'} / "
+                              f"{result['combo_info'].get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
                         print(f"    Error: {result['error']}")
 
                 except Exception as e:

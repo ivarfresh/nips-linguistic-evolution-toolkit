@@ -5,6 +5,7 @@
 The batch experiment runner now:
 1. **Organizes outputs** by `{experiment_name}/{model}/{task_order}/`
 2. **Creates detailed log files** with full prompts and responses for every LLM interaction
+3. **Creates PDF transcripts** with exact per-call model inputs, including system prompts and retained agent message history
 
 ## New Directory Structure
 
@@ -25,6 +26,7 @@ data/json/
     │   ├── task_order1/
     │   │   ├── experiment_name_000_persona_myth.json
     │   │   ├── experiment_name_000_persona_myth.log          ← NEW!
+    │   │   ├── experiment_name_000_persona_myth.transcript.pdf ← NEW!
     │   │   └── experiment_name_000_persona_myth.results.json
     │   └── task_order2/
     │       └── ...
@@ -201,7 +203,7 @@ grep -A 3 "USAGE:" data/json/10runs_model_comparison/gpt-5-nano/game/10runs_mode
 
 ## File Types
 
-Each experiment generates 3 files:
+Each experiment generates 4 files:
 
 1. **`.json`** - Complete experiment data (conversation history, game data, agent messages)
    - Size: ~50-100KB
@@ -215,6 +217,22 @@ Each experiment generates 3 files:
    - Size: ~20-40KB
    - Use for: Quick results review, progress tracking during long runs
 
+4. **`.transcript.pdf`** - Human-readable full run transcript
+   - Size: varies with number of rounds and retained message history
+   - Use for: Auditing exact model inputs/outputs, parsed game decisions, and written myths
+   - Includes: run metadata, agent system prompts, round summaries, exact `messages` sent to the model for each LLM call, assistant output, reasoning, usage, game decisions, payoffs, balances, and myths
+
+### Generating a Transcript for an Existing State File
+
+```bash
+python scripts/generate_transcript_pdf.py data/json/path/to/run.json
+
+# Optional explicit output path
+python scripts/generate_transcript_pdf.py data/json/path/to/run.json -o /tmp/run.transcript.pdf
+```
+
+Older state files that do not contain `interaction_history` can still be converted, but the PDF can only show saved round data and final saved agent message histories.
+
 ## Implementation Details
 
 ### Code Changes
@@ -223,16 +241,19 @@ Each experiment generates 3 files:
    - Added `log_file` parameter to `Agent` class
    - Added `_log_interaction()` method to write prompts/responses
    - Every `respond()` call automatically logs
+   - Records `interaction_history` snapshots with the exact chat messages sent to the model
 
 2. **`src/simulation.py`**
    - Added `log_file` parameter to `run_simulation()`
    - Passes log file to agents during creation
    - Handles logging for resumed experiments
+   - Saves transcript PDFs via `SimulationData.save_transcript_pdf()`
 
 3. **`experiments/run_trust_game_batch.py`**
    - Changed directory structure to `{experiment}/{model}/{task_order}/`
    - Creates log file with experiment header
    - Passes log file path to simulation
+   - Writes a `.transcript.pdf` next to each completed run JSON
 
 ### Backward Compatibility
 

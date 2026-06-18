@@ -4,7 +4,7 @@
 # Separate config for noise experiments - doesn't modify main experiments.yaml
 #
 # Key features:
-# 1. Amount noise: Environmental perturbations on actual transferred amounts
+# 1. Amount noise: Distort communicated amounts vs actual amounts
 # 2. Asymmetric naming: OTHER player's role shown with mythological names
 # ============================================================================
 
@@ -13,13 +13,13 @@ base_models:
   llama8b: "meta-llama/llama-3.1-8b-instruct"
   gpt4_cheaper: "openai/gpt-4o-mini"
   gpt5_nano: "openai/gpt-5-nano"
-  gpt5_5: "openai/gpt-5.5"
   claude_main: "anthropic/claude-3.5-sonnet"
   claude_haiku: "anthropic/claude-3-haiku"
   claude_haiku_45: "anthropic/claude-haiku-4.5"
   claude_sonnet_45: "anthropic/claude-sonnet-4.5"
   deepseek_v3: "deepseek/deepseek-chat-v3-0324"
   gemini_3_flash: "google/gemini-3-flash-preview"
+  gemini_3_1_flash_lite: "google/gemini-3.1-flash-lite"
   gemini_3_1_pro: "google/gemini-3.1-pro-preview"
 
 # Prompt Templates
@@ -27,26 +27,26 @@ base_models:
 prompt_templates:
   # Standard system prompt (unchanged)
   trust_game_default: |
-    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+    You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.
 
-    TRUST GAME:
+    GAME:
     You will play different roles across multiple rounds.
 
-    When you are the INVESTOR:
+    When you are the SENDER:
     - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - You decide how much to SEND to the RECEIVER ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
+    - Receiver decides how much to RETURN
     - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
+    - Receiver keeps: received - returned
     - Response format: {{'send': <amount>}}
 
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
+    When you are the RECEIVER:
+    - Sender receives ${endowment}
+    - Sender decides how much to SEND to you ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
     - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
+    - Sender keeps: ${endowment} - sent + returned
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
@@ -55,83 +55,60 @@ prompt_templates:
 
     IMPORTANT: Provide your decision in the correct JSON format.
 
+  defector_game_instruction: |
+    MANDATORY GAME STRATEGY — DESIGNATED DEFECTOR:
+    You must always choose zero in the game.
+    - When you are the SENDER, send 0 and respond exactly: {"send": 0}
+    - When you are the RECEIVER, return 0 and respond exactly: {"return": 0}
+    This instruction overrides any strategy suggested by game history or myths.
+    It applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.
+
   # System prompt with noise warning
   trust_game_noisy_aware: |
-    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+    You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.
 
-    TRUST GAME:
+    GAME:
     You will play different roles across multiple rounds.
 
-    When you are the INVESTOR:
+    When you are the SENDER:
     - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - You decide how much to SEND to the RECEIVER ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
+    - Receiver decides how much to RETURN
     - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
+    - Receiver keeps: received - returned
     - Response format: {{'send': <amount>}}
 
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
+    When you are the RECEIVER:
+    - Sender receives ${endowment}
+    - Sender decides how much to SEND to you ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
     - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
+    - Sender keeps: ${endowment} - sent + returned
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
-    NOTE: Transfer amounts may be perturbed by the environment after you choose them. Your earnings are based on the amounts that actually arrive.
+    NOTE: There may be communication noise in this game. The amounts you see may differ from what was actually sent/returned. Can you filter out the noise?
 
     MYTH WRITING:
     You may also be asked to write short myths (stories) on various topics.
 
     IMPORTANT: Provide your decision in the correct JSON format.
 
-  # Neutral framing: avoids trust-game role labels and loaded "investor/trustee" wording.
-  # JSON keys remain send/return because the parser expects those fields.
-  trust_game_neutral_framing: |
-    You are an agent participating in a multi-task experiment. You will play an allocation task and may also be asked to write myths.
-
-    ALLOCATION TASK:
-    You will alternate between two roles across multiple rounds.
-
-    When you are ROLE A:
-    - You receive {endowment} tokens each round
-    - You decide how many tokens to allocate to ROLE B (0-{endowment})
-    - The allocated amount is multiplied by {multiplier}
-    - ROLE B decides how many of the received tokens to allocate back
-    - You keep: {endowment} - allocated + allocated back
-    - ROLE B keeps: received - allocated back
-    - Response format: {{'send': <amount>}}
-
-    When you are ROLE B:
-    - ROLE A receives {endowment} tokens
-    - ROLE A decides how many tokens to allocate to you (0-{endowment})
-    - The allocated amount is multiplied by {multiplier}
-    - You decide how many of the received tokens to allocate back
-    - ROLE A keeps: {endowment} - allocated + allocated back
-    - You keep: received - allocated back
-    - Response format: {{'return': <amount>}}
-
-    MYTH WRITING:
-    You may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.
-
-    IMPORTANT: Provide your decision in the correct JSON format.
-
   # Round 1 investor (standard - no other player reference needed)
   trust_game_round1_investor: |
-    Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
+    Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})
 
   # Round 1 trustee - with asymmetric naming support
   # {investor_name} is replaced with mythological name if configured
   trust_game_round1_trustee: |
-    Round 1: You are the TRUSTEE. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
+    Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
 
   # Later round investor - with asymmetric naming support
   trust_game_later_investor: |
     Round {turn}
 
-    You are the INVESTOR this round. Last round you were the TRUSTEE. {investor_name} sent ${last_round_sent},
+    You are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},
     that was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.
     You returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.
     Your total earnings across all rounds are ${agent_balance}.
@@ -142,41 +119,23 @@ prompt_templates:
   trust_game_later_trustee: |
     Round {turn}
 
-    You are the TRUSTEE this round. Last round you were the INVESTOR. You sent ${last_round_sent},
+    You are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},
     that was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.
     {trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.
     Your total earnings across all rounds are ${agent_balance}.
-    {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
-
-  # Neutral-framing round prompts. Internally these are still the trust-game
-  # investor/trustee moves, but the participant sees ROLE A/ROLE B language.
-  trust_game_neutral_round1_investor: |
-    Round 1: You are ROLE A. You have {endowment} tokens. How many tokens do you allocate to the other participant? (0-{endowment})
-
-  trust_game_neutral_round1_trustee: |
-    Round 1: You are ROLE B. The other participant allocated {sent} tokens to you, that is {percentage:.1f}% of their available tokens. After multiplication, you received {received} tokens. How many tokens do you allocate back? (0-{received})
-
-  trust_game_neutral_later_investor: |
-    Round {turn}
-
-    You are ROLE A this round. Last round you were ROLE B. The other participant allocated {last_round_sent} tokens,
-    that was {last_round_sent_percentage:.1f}% of their available tokens. After multiplication, you received {last_round_received} tokens.
-    You allocated back {last_round_returned} tokens. So your payoff was {last_round_trustee_payoff}.
-    Your total earnings across all rounds are {agent_balance} tokens.
-    How many tokens do you allocate to the other participant this round? (0-{endowment})
-
-  trust_game_neutral_later_trustee: |
-    Round {turn}
-
-    You are ROLE B this round. Last round you were ROLE A. You allocated {last_round_sent} tokens,
-    that was {last_round_sent_percentage:.1f}% of your available tokens. After multiplication, the other participant received {last_round_received} tokens.
-    The other participant allocated back {last_round_returned} tokens. So your payoff was {last_round_investor_payoff}.
-    Your total earnings across all rounds are {agent_balance} tokens.
-    The other participant has allocated {received} tokens to you this round after multiplication. How many tokens do you allocate back? (0-{received})
+    This round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})
 
   # Myth writing prompts (same as main config)
   myth_writing_default: |
-    Write a myth about {myth_topic}. Write 200 words.
+    Write a 200-word myth. {topic_instruction}
+
+  myth_writing_default_game_directive: |
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.
+
+  myth_writing_default_game_normative: |
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played.
 
   myth_writing_later_rounds: |
     Here is the myth you wrote in the previous round:
@@ -189,118 +148,28 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
-  # Prompt-variant battery (2026-05-04): myth-writing without the trust-game
-  # frame in the initial system prompt, and a less constrained myth prompt.
-  myth_only_system_prompt: |
-    You are an agent participating in a writing task. You may be asked to write short myths. Follow the instructions provided in each prompt.
-
-  myth_writing_unconstrained_default: |
-    Write a short myth. Choose any characters, setting, conflict, and lesson. Write about 200 words. Format exactly:
-    Myth: [your story here].
-
-  myth_writing_unconstrained_later_rounds: |
+  myth_writing_later_rounds_directive: |
     Here is the myth you wrote in the previous round:
     {last_myth}
 
     Here is the myth the other agent wrote in the previous round:
     {other_agent_myth}
 
-    Write a new short myth. You may keep, transform, or ignore themes from these previous myths. Choose any characters, setting, conflict, and lesson.
-    Write about 200 words. Format exactly:
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
     Myth: [your story here].
 
-  # ==========================================================================
-  # A1/A3 (added 2026-05-01) — partner-myth injection + forced reasoning
-  # ==========================================================================
+  myth_writing_later_rounds_normative: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
 
-  # A3: System prompt with forced reasoning prose addendum (noisy-aware base).
-  trust_game_noisy_aware_with_reasoning: |
-    You are an agent participating in a multi-task experiment. You will play a trust game and may also be asked to write myths.
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
 
-    TRUST GAME:
-    You will play different roles across multiple rounds.
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game you have been playing up to this point should be played.
 
-    When you are the INVESTOR:
-    - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
-    - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
-    - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
-    - Response format: {{'send': <amount>}}
-
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
-    - Amount sent is multiplied by {multiplier}x
-    - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
-    - You keep: received - returned
-    - Response format: {{'return': <amount>}}
-
-    NOTE: Transfer amounts may be perturbed by the environment after you choose them. Your earnings are based on the amounts that actually arrive.
-
-    MYTH WRITING:
-    You may also be asked to write short myths (stories) on various topics.
-
-    REASONING REQUIREMENT: Before each game decision, write 2-3 sentences explaining your reasoning. Then provide the JSON decision on a new line. Do NOT skip the reasoning — both parts are required.
-
-    IMPORTANT: Provide your decision in the correct JSON format.
-
-  # A1: round prompts that inject the partner's most-recent myth.
-  # The {other_agent_last_myth_block} placeholder is filled by the patched
-  # games/trust_game_noisy.py — it includes a "Your partner's most recent
-  # story:" header and is empty when no prior myth exists.
-  trust_game_round1_investor_with_partner_myth: |
-    {other_agent_last_myth_block}Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
-
-  trust_game_round1_trustee_with_partner_myth: |
-    {other_agent_last_myth_block}Round 1: You are the TRUSTEE. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
-
-  trust_game_later_investor_with_partner_myth: |
-    {other_agent_last_myth_block}Round {turn}
-
-    You are the INVESTOR this round. Last round you were the TRUSTEE. {investor_name} sent ${last_round_sent},
-    that was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.
-    You returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.
-    Your total earnings across all rounds are ${agent_balance}.
-    How much do you send to {trustee_name} this round? (0-{endowment})
-
-  trust_game_later_trustee_with_partner_myth: |
-    {other_agent_last_myth_block}Round {turn}
-
-    You are the TRUSTEE this round. Last round you were the INVESTOR. You sent ${last_round_sent},
-    that was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.
-    {trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.
-    Your total earnings across all rounds are ${agent_balance}.
-    {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
-
-  # A4: shared-context prompts. Both game-play and myth-writing prompts receive
-  # the same public previous-round context block: previous game ledger, own
-  # previous myth, and partner previous myth. Hidden decisions and private
-  # reasoning are intentionally excluded.
-  trust_game_round1_investor_with_shared_context: |
-    {shared_context_block}Round 1: You are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
-
-  trust_game_round1_trustee_with_shared_context: |
-    {shared_context_block}Round 1: You are the TRUSTEE. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})
-
-  trust_game_later_investor_with_shared_context: |
-    {shared_context_block}Round {turn}
-
-    You are the INVESTOR this round. You have ${endowment}. How much do you send to {trustee_name} this round? (0-{endowment})
-
-  trust_game_later_trustee_with_shared_context: |
-    {shared_context_block}Round {turn}
-
-    You are the TRUSTEE this round. {investor_name} has sent you ${received} this round. How much do you return to {investor_name}? (0-{received})
-
-  myth_writing_default_with_shared_context: |
-    {shared_context_block}Write a myth about {myth_topic}. Write 200 words.
-
-  myth_writing_later_rounds_with_shared_context: |
-    {shared_context_block}Write your own myth for this round. Use the shared context above as inspiration, but adapt it in your own way.
-    Keep the myth about {myth_topic}. Write 200 words. Format exactly:
+    Write 200 words. Format exactly:
     Myth: [your story here].
 
 # Myth topics
@@ -308,8 +177,6 @@ myth_topics:
   anything: "anything"
   prosocial_religion_cultural_evolution: "the rise and spread of moralizing supernatural agents"
   trickster_betrayal_and_price: "a trickster who exploits others and the price that follows"
-  reciprocity_oath: "a community whose prosperity depends on honoring reciprocal obligations, returning gifts, and punishing betrayal"
-  trickster_exploitation: "a community where trusting strangers leads to exploitation by a trickster who keeps resources for themselves"
 
 # Personas
 personas:
@@ -324,6 +191,10 @@ personas:
   selfish:
     description: "selfish"
     system_addition: "You prioritize your own interests and payoffs above all else."
+
+# Game-prompt additions applied automatically by task order.
+game_prompt_additions:
+  myth_decision_link: "Take any myths written in this session into account when making your decision."
 
 # ============================================================================
 # GAME PARAMETERS - Noise and Framing Variations
@@ -344,11 +215,11 @@ game_params:
   # ----------------------------------------------------------------------------
   # NOISE CONDITIONS (Aron's design)
   # ----------------------------------------------------------------------------
-  # Key principle: noise is an environmental perturbation on transfers.
-  # Agent decisions are logged separately; sent/received/returned/balances are
-  # the real perturbed ledger.
+  # Key principle: agents see correct amounts they RECEIVED, but not what
+  # the other agent INTENDED to send/return. Noise distorts perceived intentions.
 
   # Bidirectional uniform noise: ±$1 on both sent and returned
+  # Agents see accurate receipts but noised intentions
   noisy_bidirectional:
     endowment: 5
     multiplier: 3
@@ -378,12 +249,28 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # Negative-only noise (-$5): real transfers are lowered by up to the full
-  # endowment/pot range, then clamped to the available budget.
+  # Negative-only noise (-$3): communicated amounts always ≤ actual
+  # Makes the other player appear less generous than they are
+  # $3 on $5 endowment = up to 60% reduction in perceived generosity
   noisy_negative_5:
     endowment: 5
     multiplier: 3
     num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+
+  noisy_negative_5_myth_causal_8:
+    endowment: 5
+    multiplier: 3
+    num_turns: 8
     num_agents: 2
     temperature: 0.8
     memory_capacity: 3
@@ -425,103 +312,25 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # Positive-only noise (+$5): real transfers are raised by up to the full
-  # endowment/pot range, then clamped to the available budget.
-  noisy_positive_5:
+  noisy_negative_5_informed_myth_causal_8:
     endowment: 5
     multiplier: 3
-    num_turns: 10
+    num_turns: 8
     num_agents: 2
     temperature: 0.8
     memory_capacity: 3
     noise_config:
       type: "uniform"
       range: 5.0
-      direction: "positive"
-      applies_to: "both"
-      inform_agents: false
-    other_player_names: "default"
-
-  noisy_positive_5_informed:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 5.0
-      direction: "positive"
-      applies_to: "both"
-      inform_agents: true
-    other_player_names: "default"
-
-  # Smaller directional uniform noise for sensitivity checks.
-  noisy_negative_1:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 1.0
-      direction: "negative"
-      applies_to: "both"
-      inform_agents: false
-    other_player_names: "default"
-
-  noisy_negative_1_informed:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 1.0
       direction: "negative"
       applies_to: "both"
       inform_agents: true
     other_player_names: "default"
 
-  noisy_positive_1:
+  noisy_negative_2_informed_myth_causal_8:
     endowment: 5
     multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 1.0
-      direction: "positive"
-      applies_to: "both"
-      inform_agents: false
-    other_player_names: "default"
-
-  noisy_positive_1_informed:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 1.0
-      direction: "positive"
-      applies_to: "both"
-      inform_agents: true
-    other_player_names: "default"
-
-  noisy_negative_2:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
+    num_turns: 8
     num_agents: 2
     temperature: 0.8
     memory_capacity: 3
@@ -530,10 +339,10 @@ game_params:
       range: 2.0
       direction: "negative"
       applies_to: "both"
-      inform_agents: false
+      inform_agents: true
     other_player_names: "default"
 
-  noisy_negative_2_informed:
+  noisy_negative_2_informed_myth_causal_10:
     endowment: 5
     multiplier: 3
     num_turns: 10
@@ -548,39 +357,42 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  noisy_positive_2:
+  noisy_negative_2_informed_myth_causal_10_8agents:
     endowment: 5
     multiplier: 3
     num_turns: 10
-    num_agents: 2
+    num_agents: 8
     temperature: 0.8
     memory_capacity: 3
     noise_config:
       type: "uniform"
       range: 2.0
-      direction: "positive"
-      applies_to: "both"
-      inform_agents: false
-    other_player_names: "default"
-
-  noisy_positive_2_informed:
-    endowment: 5
-    multiplier: 3
-    num_turns: 10
-    num_agents: 2
-    temperature: 0.8
-    memory_capacity: 3
-    noise_config:
-      type: "uniform"
-      range: 2.0
-      direction: "positive"
+      direction: "negative"
       applies_to: "both"
       inform_agents: true
     other_player_names: "default"
 
-  # Cooperation bootstrap: returned amount is perturbed to a 100% return
-  # Targets GPT-5-Nano's defection spiral by making the investor actually
-  # receive full reciprocation, encouraging continued sending
+  noisy_negative_2_informed_myth_causal_10_8agents_history3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 3
+    coplayer_history_window: 3
+
+  # Cooperation bootstrap: returned amount always reported as 100% return
+  # Targets GPT-5-Nano's defection spiral by making investor believe
+  # trustee fully reciprocated, encouraging continued sending
   noisy_bootstrap_cooperation:
     endowment: 5
     multiplier: 3
@@ -613,7 +425,7 @@ game_params:
     other_player_names: "default"
 
   # ---- Deterministic-noise variants (v3) ----
-  # All sends and returns are perturbed to $0
+  # All sends and returns communicated as $0 (every round, both agents see $0)
   noisy_deterministic_zero:
     endowment: 5
     multiplier: 3
@@ -644,8 +456,8 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
-  # All sends and returns are perturbed to max
-  # (sent = endowment $5; returned = full received = 3 × sent)
+  # All sends and returns communicated as max
+  # (sent shown as endowment $5; returned shown as full received = 3 × actual_sent)
   noisy_deterministic_max:
     endowment: 5
     multiplier: 3
@@ -690,149 +502,214 @@ experiment_sets:
     game_params_list: ["noisy_bidirectional"]
     num_runs: 8
 
-  # Matched 10-turn, memory-3 direct-provider no-noise baseline for v4 noise runs.
-  baseline_v4_mem3_direct:
-    models: ["gpt5_nano", "claude_sonnet_45"]
+  myth_causal_noise_negative_claude_pilot:
+    models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
     personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    task_orders: [["game"], ["myth", "game"]]
     myth_topics: ["anything"]
-    game_params_list: ["default"]
-    num_runs: 15
-
-  # Neutral-framing pilot: same mechanics as default, but ROLE A/ROLE B wording.
-  neutral_framing_v4_pilot:
-    models: ["gpt5_nano", "claude_sonnet_45"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list: ["default"]
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
+    game_params_list:
+      - "noisy_negative_5_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
     num_runs: 3
 
-  # Full neutral-framing follow-up, if the pilot shows a meaningful shift.
-  neutral_framing_v4_mem3:
-    models: ["gpt5_nano", "claude_sonnet_45"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list: ["default"]
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 15
-
-  # Targeted myth pilot: compare game-only with myths that should push in
-  # opposite directions before/after the trust game.
-  targeted_myth_neutral_pilot:
-    models: ["gpt5_nano", "claude_sonnet_45"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath", "trickster_exploitation"]
-    game_params_list: ["default"]
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 5
-
-  # GPT-only version of the targeted myth pilot, used when Anthropic budget is
-  # exhausted or when we want a cheap same-design comparison.
-  targeted_myth_neutral_gpt5nano:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath", "trickster_exploitation"]
-    game_params_list: ["default"]
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 5
-
-  # Mild-noise follow-up for the targeted myths. Prefer k=1 before k=2: it
-  # avoids the heavy clipping we saw under k=5 while still perturbing behavior.
-  targeted_myth_k1_pilot:
-    models: ["gpt5_nano", "claude_sonnet_45"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath", "trickster_exploitation"]
-    game_params_list:
-      - "noisy_negative_1"
-      - "noisy_positive_1"
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 5
-
-  # GPT-only k=1 follow-up for the targeted myth pilot.
-  targeted_myth_k1_gpt5nano:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath", "trickster_exploitation"]
-    game_params_list:
-      - "noisy_negative_1"
-      - "noisy_positive_1"
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 5
-
-  # GPT-only k=2 follow-up after the targeted k=1 run.
-  targeted_myth_k2_gpt5nano:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_neutral_framing"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath", "trickster_exploitation"]
-    game_params_list:
-      - "noisy_negative_2"
-      - "noisy_positive_2"
-    round1_investor_template: "trust_game_neutral_round1_investor"
-    round1_trustee_template: "trust_game_neutral_round1_trustee"
-    later_investor_template: "trust_game_neutral_later_investor"
-    later_trustee_template: "trust_game_neutral_later_trustee"
-    num_runs: 5
-
-  # Smaller directional noise sensitivity checks. These are deliberately
-  # separate from k=5 because k=5 creates heavy floor/ceiling clipping.
-  noise_directional_k1_mem3:
-    models: ["gpt5_nano", "claude_sonnet_45"]
+  myth_causal_noise_negative_informed_claude_pilot:
+    models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
     personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    task_orders: [["game"], ["myth", "game"]]
     myth_topics: ["anything"]
     game_params_list:
-      - "noisy_negative_1"
-      - "noisy_negative_1_informed"
-      - "noisy_positive_1"
-      - "noisy_positive_1_informed"
-    num_runs: 15
+      - "noisy_negative_5_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 3
 
-  noise_directional_k2_mem3:
-    models: ["gpt5_nano", "claude_sonnet_45"]
+  myth_causal_noise_negative2_informed_claude_pilot:
+    models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
     personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    task_orders: [["game"], ["myth", "game"]]
     myth_topics: ["anything"]
     game_params_list:
-      - "noisy_negative_2"
-      - "noisy_negative_2_informed"
-      - "noisy_positive_2"
-      - "noisy_positive_2_informed"
+      - "noisy_negative_2_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 3
+
+  myth_causal_noise_negative2_informed_claude_topup:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_8"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 7
+
+  myth_causal_noise_negative2_informed_claude_r10:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 10
+
+  myth_causal_neutral_noise_negative2_informed_claude_r10_n10:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 10
+
+  myth_causal_normative_noise_negative2_informed_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
+
+  sonnet45_directive_normative_noise_negative2_informed_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
+
+  myth_causal_normative_noise_negative2_informed_gemini31_flashlite_r10_n5:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 5
+
+  gemini31_flashlite_8agent_noise_negative2_informed_r10_smoke:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10_8agents"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    num_runs: 1
+
+  sonnet45_8agent_directive_noise_negative2_informed_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10_8agents_history3"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 5
+
+  myth_causal_normative_noise_negative2_informed_gemini31_flashlite_r10_topup_n15:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy_negative_2_informed_myth_causal_10"
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
     num_runs: 15
 
   # Bootstrap noise for floor-locked model (GPT-5-Nano)
@@ -857,7 +734,7 @@ experiment_sets:
     game_params_list:
       - "noisy_bootstrap_cooperation"
       - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
+    num_runs: 10
 
   # # Bidirectional noise for ceiling-locked models (Gemini, Claude)
   # noise_bidirectional_mem3:
@@ -872,6 +749,7 @@ experiment_sets:
   #   num_runs: 10
 
   # Negative-only noise for ceiling-locked models (Gemini, Claude)
+  # Communicated amounts always ≤ actual — partner appears less generous
   noise_negative_mem3:
     models: ["gemini_3_1_pro", "claude_sonnet_45"]
     templates: ["trust_game_default"]
@@ -881,63 +759,7 @@ experiment_sets:
     game_params_list:
       - "noisy_negative_5"
       - "noisy_negative_5_informed"
-    num_runs: 15
-
-  noise_negative_mem3_claude_sonnet_45:
-    models: ["claude_sonnet_45"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-
-  # Positive-only noise for ceiling-locked models (Gemini, Claude)
-  noise_positive_mem3:
-    models: ["gemini_3_1_pro", "claude_sonnet_45"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-
-  noise_positive_mem3_claude_sonnet_45:
-    models: ["claude_sonnet_45"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-
-  noise_positive_mem3_gemini_3_1_pro:
-    models: ["gemini_3_1_pro"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-
-  noise_positive_mem3_gpt5_nano:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
+    num_runs: 10
 
   noise_negative_mem3_gpt5_nano:
     models: ["gpt5_nano"]
@@ -960,7 +782,7 @@ experiment_sets:
   #     - "noisy_bootstrap_cooperation"
   #   num_runs: 1
 
-  # Pilots — 1-run smoke tests for verifying deterministic perturbed values
+  # Pilots — 1-run smoke tests for verifying deterministic communicated values
   noise_deterministic_zero_pilot:
     models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
@@ -977,7 +799,7 @@ experiment_sets:
     game_params_list: ["noisy_deterministic_max"]
     num_runs: 1
 
-  # Deterministic-zero noise (every send & return perturbed to $0)
+  # Deterministic-zero noise (every send & return communicated as $0)
   # Target: ceiling-locked models. Use with --output-subdir v3_deterministic_noise
   noise_deterministic_zero_mem3:
     models: ["gemini_3_1_pro", "claude_sonnet_45"]
@@ -990,7 +812,7 @@ experiment_sets:
       - "noisy_deterministic_zero_informed"
     num_runs: 15
 
-  # Deterministic-max noise (every send & return perturbed to max)
+  # Deterministic-max noise (every send & return communicated as max)
   # Target: floor-locked GPT-5-nano. Use with --output-subdir v3_deterministic_noise
   noise_deterministic_max_mem3_gpt5_nano:
     models: ["gpt5_nano"]
@@ -1002,701 +824,3 @@ experiment_sets:
       - "noisy_deterministic_max"
       - "noisy_deterministic_max_informed"
     num_runs: 15
-
-  # ==========================================================================
-  # A1/A3 (added 2026-05-01) — GPT-5-Nano only
-  # ==========================================================================
-
-  # A3 — Forced reasoning prose. 3 task orders × 4 noise conditions × 10 seeds ≈ 120 runs.
-  gpt5nano_forced_reasoning:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware_with_reasoning"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-      - "noisy_negative_5"
-      - "noisy_bootstrap_cooperation"
-    num_runs: 10
-
-  # A1 — Partner-myth injection. 2 task orders × 4 noise × 15 seeds ≈ 120 runs.
-  gpt5nano_partner_myth_injection:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-      - "noisy_negative_5"
-      - "noisy_bootstrap_cooperation"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # A1 + A3 combined — open channel + forced reasoning.
-  gpt5nano_partner_myth_plus_reasoning:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware_with_reasoning"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-      - "noisy_negative_5"
-      - "noisy_bootstrap_cooperation"
-    num_runs: 10
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # Phase 5 — Targeted (cooperative) myth × bootstrap noise.
-  # Mechanism test for §5.2 destabilization story.
-  targeted_myth_bootstrap_gpt5nano:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-
-  # Smoke test (added 2026-05-01) — single-run validation of A1 plumbing.
-  gpt5nano_smoke_partner_myth:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-    num_runs: 1
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # Phase 6 — A1 partner-myth injection × TARGETED (cooperative) myth × bootstrap.
-  # Tests content × visibility interaction: does cooperative-themed myth
-  # content amplify or saturate A1's bootstrap-rescue effect?
-  # (A1 + anything-myth already showed Δmean -7.7 → +1.5, std ~3 collapse.)
-  # 3 task orders × 2 noise variants × 10 seeds = 60 runs.
-  gpt5nano_partner_myth_targeted_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 10
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # ==========================================================================
-  # 2026-05-02 morning — A1 follow-ups
-  # ==========================================================================
-
-  # #2 — A1 partner-myth injection × no-noise baseline (null check).
-  # Does opening the channel produce any effect when there is no noise to
-  # rescue from? 2 task orders × 1 game_params × 15 seeds = 30 runs.
-  gpt5nano_partner_myth_no_noise:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "default"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # #3 — A1 partner-myth injection × ADVERSARIAL myth content × bootstrap.
-  # Tests whether content direction matters when channel is open. Phase 6
-  # showed cooperative-themed content adds ~+2 on top of A1's ~+9 rescue.
-  # If adversarial-themed content subtracts (or even reverses the rescue),
-  # content direction matters more than Phase 5+6 implied. If it doesn't,
-  # the visibility-only mechanism is even cleaner.
-  # 2 task orders × 2 noise variants × 15 seeds = 60 runs.
-  gpt5nano_partner_myth_adversarial_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["trickster_exploitation"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # A4 — Shared public context in BOTH game and myth prompts.
-  # Both tasks receive the previous round's public ledger outcome plus the
-  # agent's own and partner's previous myths. This tests whether symmetric
-  # game<->myth context produces cross-pollination beyond A1's partner-myth
-  # visibility intervention.
-  # Pilot: 3 task orders x 2 bootstrap variants x 3 seeds = 18 runs.
-  gpt5nano_shared_context_bootstrap_pilot:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 3
-    round1_investor_template: "trust_game_round1_investor_with_shared_context"
-    round1_trustee_template: "trust_game_round1_trustee_with_shared_context"
-    later_investor_template: "trust_game_later_investor_with_shared_context"
-    later_trustee_template: "trust_game_later_trustee_with_shared_context"
-    myth_writing_default_template: "myth_writing_default_with_shared_context"
-    myth_writing_later_rounds_template: "myth_writing_later_rounds_with_shared_context"
-
-  # 3 task orders x 2 bootstrap variants x 10 seeds = 60 runs.
-  gpt5nano_shared_context_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 10
-    round1_investor_template: "trust_game_round1_investor_with_shared_context"
-    round1_trustee_template: "trust_game_round1_trustee_with_shared_context"
-    later_investor_template: "trust_game_later_investor_with_shared_context"
-    later_trustee_template: "trust_game_later_trustee_with_shared_context"
-    myth_writing_default_template: "myth_writing_default_with_shared_context"
-    myth_writing_later_rounds_template: "myth_writing_later_rounds_with_shared_context"
-
-  # ==========================================================================
-  # 2026-05-02 afternoon — A1 defensive controls (C1/C2/C3)
-  # ==========================================================================
-  # Each control reuses the A1 *_with_partner_myth prompt templates verbatim
-  # and only swaps what text is bound to {other_agent_last_myth_block} via
-  # myth_injection_mode. Identical templates → controls are apples-to-apples
-  # with the real A1 condition (gpt5nano_partner_myth_injection bootstrap cells).
-  #
-  # Outcome interpretation:
-  #   C1, C2, C3 all ≪ A1 → A1 needs THIS dyad's partner-authored myth.
-  #   C1 ≈ A1            → cross-dyad coherent myths transfer; co-construction
-  #                         not the active ingredient.
-  #   C2 ≈ A1            → ANY length-matched prose suffices; effect is
-  #                         prompt-volume / engagement, not narrative content.
-  #   C3 ≈ A1            → channel is self-anchoring, not partner-channel.
-  #
-  # Each cell: 15 seeds × 2 myth-inclusive task orders × 2 bootstrap variants
-  # (uninformed + informed) = 60 runs. Three controls = 180 runs total.
-
-  # C1 — Cross-dyad shuffled-myth control.
-  gpt5nano_partner_myth_shuffled_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "shuffled"
-    shuffled_myth_pool_path: "data/json/noise_experiments/v4_direct_provider_baseline/baseline_v4_mem3_direct/gpt-5-nano"
-
-  # C2 — Length-matched generic-prose control.
-  gpt5nano_partner_myth_filler_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "filler"
-
-  # C3 — Own-myth injection (self-anchoring control).
-  gpt5nano_partner_myth_own_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "own"
-
-  # Smoke tests — single-seed validation of each control mode's plumbing.
-  gpt5nano_smoke_partner_myth_shuffled:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-    num_runs: 1
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "shuffled"
-    shuffled_myth_pool_path: "data/json/noise_experiments/v4_direct_provider_baseline/baseline_v4_mem3_direct/gpt-5-nano"
-
-  gpt5nano_smoke_partner_myth_filler:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-    num_runs: 1
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "filler"
-
-  gpt5nano_smoke_partner_myth_own:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-    num_runs: 1
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "own"
-
-  # ==========================================================================
-  # 2026-05-02 evening — C2 filler control in positive_5 noise (boundary test)
-  # ==========================================================================
-  # The bootstrap controls showed C2_filler matches or exceeds real-A1's
-  # rescue (Δ +23 vs +18 dyad), invalidating the "partner-myth specifically"
-  # claim. This boundary test checks whether filler also lifts cooperation
-  # in positive_5 cells, where real-A1 already showed no effect (Δ < 0.2).
-  # If filler also shows no effect in positive_5, the prompt-volume mechanism
-  # saturates only under bootstrap. If filler DOES lift positive_5, the
-  # prompt-volume effect is more general and the bootstrap finding becomes
-  # one instance of a broader pattern.
-  # 15 seeds × 2 task orders × 2 noise variants = 60 runs.
-  gpt5nano_partner_myth_filler_positive_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "filler"
-
-  # ==========================================================================
-  # 2026-05-03 — Complete the control × noise matrix
-  # ==========================================================================
-  # Tier 1: C1 + C3 in positive_5 (boundary completion — C2 filler positive_5
-  # already exists). 15 seeds × 2 task orders × 2 noise variants = 60 runs each.
-  gpt5nano_partner_myth_shuffled_positive_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "shuffled"
-    shuffled_myth_pool_path: "data/json/noise_experiments/v4_direct_provider_baseline/baseline_v4_mem3_direct/gpt-5-nano"
-
-  gpt5nano_partner_myth_own_positive_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "own"
-
-  # Tier 2: All three controls in negative_5 (most informative — completes
-  # the noise dimension). 15 seeds × 2 task orders × 2 noise variants = 60 runs each.
-  gpt5nano_partner_myth_filler_negative_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "filler"
-
-  gpt5nano_partner_myth_shuffled_negative_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "shuffled"
-    shuffled_myth_pool_path: "data/json/noise_experiments/v4_direct_provider_baseline/baseline_v4_mem3_direct/gpt-5-nano"
-
-  gpt5nano_partner_myth_own_negative_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "own"
-
-  # Tier 3: All three controls in no-noise (boundary test — A1 already null at
-  # no-noise; if controls also null, the prompt-volume rescue is noise-specific).
-  # 15 seeds × 2 task orders × 1 noise variant = 30 runs each.
-  gpt5nano_partner_myth_filler_no_noise:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "default"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "filler"
-
-  gpt5nano_partner_myth_shuffled_no_noise:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "default"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "shuffled"
-    shuffled_myth_pool_path: "data/json/noise_experiments/v4_direct_provider_baseline/baseline_v4_mem3_direct/gpt-5-nano"
-
-  gpt5nano_partner_myth_own_no_noise:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "default"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-    myth_injection_mode: "own"
-
-  # ==========================================================================
-  # 2026-05-03 — Cross-model probe at headline cell (Apr 27 commitment)
-  # ==========================================================================
-  # Single-model GPT-5.5 check on the bootstrap × game_myth × {no-inj, A1-inj}
-  # comparison. Mirrors the nano setup verbatim (trust_game_default for no-inj
-  # baseline, trust_game_noisy_aware for A1) so cross-model deltas are direct.
-  # 15 seeds × 2 cells = 30 runs.
-  gpt5_5_bootstrap_baseline_probe:
-    models: ["gpt5_5"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-    num_runs: 15
-
-  gpt5_5_bootstrap_a1_probe:
-    models: ["gpt5_5"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # ==========================================================================
-  # 2026-05-03 Batch 2 — Adversarial myth × non-bootstrap noise (mechanism)
-  # ==========================================================================
-  # We have A1 adversarial × bootstrap (still rescues, content direction
-  # doesn't matter). Now extend across noise conditions to confirm the story
-  # holds: does adversarial+inj also produce no effect in positive_5 (already
-  # ceiling), and does it follow A1's negative_5 pattern?
-  # 15 seeds × 2 task orders × 2 noise variants = 60 runs each.
-  gpt5nano_partner_myth_adversarial_positive_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["trickster_exploitation"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  gpt5nano_partner_myth_adversarial_negative_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["trickster_exploitation"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  gpt5nano_partner_myth_adversarial_no_noise:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["trickster_exploitation"]
-    game_params_list:
-      - "default"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # Also: targeted (cooperative) myth × non-bootstrap noise w/ injection
-  # (Phase 6 covered cooperative+inj × bootstrap; extend across noise.)
-  gpt5nano_partner_myth_targeted_positive_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  gpt5nano_partner_myth_targeted_negative_5:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_noisy_aware"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["reciprocity_oath"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-    round1_investor_template: "trust_game_round1_investor_with_partner_myth"
-    round1_trustee_template: "trust_game_round1_trustee_with_partner_myth"
-    later_investor_template: "trust_game_later_investor_with_partner_myth"
-    later_trustee_template: "trust_game_later_trustee_with_partner_myth"
-
-  # ==========================================================================
-  # 2026-05-03 — Ivar missing-conditions model sweep (non-Claude)
-  # ==========================================================================
-  # Main v4 pattern: 3 task orders x 2 noise variants x 15 seeds = 90 runs/set.
-  # Gemini positive already exists above; run_noisy_missing backfills only the
-  # missing finals for that set.
-  noise_positive_mem3_gpt5_5:
-    models: ["gpt5_5"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_positive_5"
-      - "noisy_positive_5_informed"
-    num_runs: 15
-
-  noise_negative_mem3_gpt5_5:
-    models: ["gpt5_5"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-
-  noise_bootstrap_mem3_gpt5_5:
-    models: ["gpt5_5"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-
-  noise_negative_mem3_gemini_3_1_pro:
-    models: ["gemini_3_1_pro"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_negative_5"
-      - "noisy_negative_5_informed"
-    num_runs: 15
-
-  noise_bootstrap_mem3_gemini_3_1_pro:
-    models: ["gemini_3_1_pro"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-
-  # ==========================================================================
-  # 2026-05-04 — GPT-5-Nano prompt variants for Ivar prompt concerns
-  # ==========================================================================
-  # Priority order:
-  # 1. Less constrained myth prompt under the normal task system.
-  # 2. Myth-first blind: first myth is written before the game system prompt.
-  # 3. Combination of blind + unconstrained.
-
-  # 2 task orders x 2 bootstrap variants x 15 seeds = 60 runs.
-  gpt5nano_prompt_unconstrained_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["game", "myth"], ["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    myth_writing_default_template: "myth_writing_unconstrained_default"
-    myth_writing_later_rounds_template: "myth_writing_unconstrained_later_rounds"
-
-  # 1 task order x 2 bootstrap variants x 15 seeds = 30 runs.
-  gpt5nano_myth_first_blind_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    initial_system_template: "myth_only_system_prompt"
-    switch_to_game_system_before_game: true
-
-  # 1 task order x 2 bootstrap variants x 15 seeds = 30 runs.
-  gpt5nano_myth_first_blind_unconstrained_bootstrap:
-    models: ["gpt5_nano"]
-    templates: ["trust_game_default"]
-    personas: ["neutral"]
-    task_orders: [["myth", "game"]]
-    myth_topics: ["anything"]
-    game_params_list:
-      - "noisy_bootstrap_cooperation"
-      - "noisy_bootstrap_cooperation_informed"
-    num_runs: 15
-    myth_writing_default_template: "myth_writing_unconstrained_default"
-    myth_writing_later_rounds_template: "myth_writing_unconstrained_later_rounds"
-    initial_system_template: "myth_only_system_prompt"
-    switch_to_game_system_before_game: true

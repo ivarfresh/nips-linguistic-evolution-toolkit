@@ -18,6 +18,8 @@ load_dotenv()
 
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MAX_TOKENS = os.environ.get("OPENROUTER_MAX_TOKENS", "")
+OPENROUTER_REASONING_EFFORT = os.environ.get("OPENROUTER_REASONING_EFFORT", "").strip()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
@@ -308,16 +310,29 @@ def _call_openai_compatible(
             if _supports_reasoning_effort(provider, provider_model):
                 request_params["reasoning_effort"] = _direct_openai_reasoning_effort()
 
+            if provider == "openrouter" and OPENROUTER_MAX_TOKENS:
+                request_params["max_tokens"] = int(OPENROUTER_MAX_TOKENS)
+
             # OpenRouter-only extension. Direct OpenAI calls use standard OpenAI params.
+            # OPENROUTER_REASONING_EFFORT=none disables the extra reasoning body
+            # for low-budget runs where short direct answers are sufficient.
+            active_reasoning_effort = (
+                OPENROUTER_REASONING_EFFORT
+                if OPENROUTER_REASONING_EFFORT
+                else reasoning_effort
+            )
+            if isinstance(active_reasoning_effort, str) and active_reasoning_effort.lower() in {"", "none", "false", "0", "off"}:
+                active_reasoning_effort = None
+
             models_without_reasoning = ["openai/", "meta-llama/"]
             if (
                 provider == "openrouter"
-                and reasoning_effort
+                and active_reasoning_effort
                 and not any(provider_model.startswith(prefix) for prefix in models_without_reasoning)
             ):
                 request_params["extra_body"] = {
                     "reasoning": {
-                        "effort": reasoning_effort
+                        "effort": active_reasoning_effort
                     }
                 }
 
@@ -638,5 +653,8 @@ def print_simulation_header(game, num_turns, num_agents, memory_capacity, agent_
     print(f"Memory capacity: {memory_capacity}")
     if agent_biases:
         print(f"Agent biases: {agent_biases}")
-    print(f"Role swapping: ENABLED (agents alternate roles each round)")
+    if num_agents == 2:
+        print("Role swapping: ENABLED (agents alternate roles each round)")
+    else:
+        print("Pairing mode: FULL-POOL RANDOM DYADS (role repeats allowed)")
     print("-" * 80)

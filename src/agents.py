@@ -1,10 +1,11 @@
+import copy
 from src.utils import call_llm
 import datetime
 
 class Agent:
     """Represents a single LLM agent with memory capacity"""
 
-    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None, memory_mode="normal"): #system prompt is none, so it can be set later.
+    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None): #system prompt is none, so it can be set later.
         self.agent_id = agent_id
         self.model = model
         self.temperature = temperature
@@ -14,11 +15,7 @@ class Agent:
         self.initial_bias = initial_bias
         self.system_prompt = system_prompt
         self.log_file = log_file
-        # memory_mode: "normal" = standard memory_capacity truncation;
-        #              "m1"     = wipe messages to [system, fake-user, seed-myth]
-        #                        before every respond() call (memory-transplant
-        #                        ablation — see docs/memory_transplant_ablation_design.md §6).
-        self.memory_mode = memory_mode
+        self.interaction_history = []
     
 
     def _log_interaction(self, prompt, response_data):
@@ -54,26 +51,57 @@ class Agent:
 
                 f.write(f"\n")
 
+    def _record_interaction(self, prompt, messages_sent, response_data=None, transcript_metadata=None, error=None):
+        """Store the exact request/response payload for full transcripts."""
+        event = {
+            "interaction_index": len(self.interaction_history) + 1,
+            "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
+            "agent_id": self.agent_id,
+            "model": self.model,
+            "temperature": self.temperature,
+            "memory_capacity": self.memory_capacity,
+            "metadata": transcript_metadata or {},
+            "prompt": prompt,
+            "messages_sent": messages_sent,
+        }
+        if response_data is not None:
+            event["response"] = {
+                "content": response_data.get("content", ""),
+                "reasoning": response_data.get("reasoning"),
+                "usage": response_data.get("usage"),
+            }
+        if error is not None:
+            event["error"] = {
+                "type": type(error).__name__,
+                "message": str(error),
+            }
+        self.interaction_history.append(event)
+
     # Response with messages
-    def respond(self, prompt):
+    def respond(self, prompt, transcript_metadata=None):
         """Respond to a prompt with the LLM. The truncation effectuates
         a short term memory effect; earlier interactions are forgotten. Thus introduces recency bias;
         recent interactions have more impact than older ones. Remove if unwanted"""
-        # M1 ablation: wipe everything except [system, fake-user, seed-myth-assistant]
-        # so the agent's only inheritance each round is the seed myth.
-        # See docs/memory_transplant_ablation_design.md §6.
-        if self.memory_mode == "m1":
-            self.messages = self.messages[:3]  # keep system + seed exchange only
-
         # Truncate oldest messages if memory is full (but keep system prompt)
         if len(self.messages) > self.memory_capacity * 2 + 1:  # *2 for user and assistant messages, +1 for system prompt
             # Keep system prompt (first message) and last N messages
             self.messages = [self.messages[0]] + self.messages[-(self.memory_capacity * 2):]
 
         self.messages.append({"role": "user", "content": prompt})
+        messages_sent = copy.deepcopy(self.messages)
 
         # Call the LLM and get structured response
-        response_data = call_llm(self.client, self.model, self.temperature, self.messages)
+        try:
+            response_data = call_llm(self.client, self.model, self.temperature, self.messages)
+        except Exception as exc:
+            self._record_interaction(
+                prompt,
+                messages_sent,
+                response_data=None,
+                transcript_metadata=transcript_metadata,
+                error=exc,
+            )
+            raise
 
         # Log the interaction
         self._log_interaction(prompt, response_data)
@@ -85,5 +113,11 @@ class Agent:
             "reasoning": response_data.get("reasoning"),
             "usage": response_data.get("usage")
         })
+        self._record_interaction(
+            prompt,
+            messages_sent,
+            response_data=response_data,
+            transcript_metadata=transcript_metadata,
+        )
 
         return response_data  # Return full structure, not just content
