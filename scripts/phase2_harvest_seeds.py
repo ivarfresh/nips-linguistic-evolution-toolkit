@@ -161,19 +161,39 @@ def harvest(source_dir, num_per_pool, output_path):
     if filler_pool_path.exists():
         with open(filler_pool_path) as f:
             filler_pool = json.load(f)
-        filler_pool = sorted(
-            filler_pool, key=lambda item: abs(len(item["text"].split()) - mean_len)
-        )
-        for item in filler_pool[:num_per_pool]:
+        target_lo = mean_len * 0.9
+        target_hi = mean_len * 1.1
+        # Concatenate paragraphs (round-robin slug order) until each filler
+        # entry hits the target length window. Avoid reusing the same slug
+        # within one entry.
+        import random
+        rng = random.Random(20260618)
+        slugs = [item for item in filler_pool]
+        for fi in range(num_per_pool):
+            chosen = []
+            used = set()
+            tokens = 0
+            shuffled = list(slugs)
+            rng.shuffle(shuffled)
+            for item in shuffled:
+                slug = item.get("slug")
+                if slug in used:
+                    continue
+                chosen.append(item)
+                used.add(slug)
+                tokens += item["tokens"]
+                if tokens >= target_lo:
+                    break
+            text = "\n\n".join(item["text"].strip() for item in chosen)
             s_filler.append(
                 {
                     "source_run": None,
                     "agent_id": None,
                     "round": None,
                     "joint_at_source": None,
-                    "text": item["text"].strip(),
-                    "tokens": len(item["text"].split()),
-                    "source": item.get("source"),
+                    "text": text,
+                    "tokens": len(text.split()),
+                    "source": [item.get("source") for item in chosen],
                 }
             )
 
