@@ -463,6 +463,17 @@ Your earnings are based on the amounts that actually arrive."""
         """Subsequent turns with noise and asymmetric naming"""
         roles = self.get_roles_for_round(turn)
 
+        # M1 memory-transplant ablation: when the agent's memory is wiped to the
+        # seed exchange each round, the round-N user prompt also must not leak
+        # last-round game state. Dispatch to the round-1 template every round.
+        # See docs/memory_transplant_ablation_design.md §6.
+        agent = sim_data.agents.get(agent_id)
+        if agent is not None and getattr(agent, "memory_mode", "normal") == "m1":
+            # Keep sim_data_ref fresh so get_game_prompt_round_1 can read
+            # pending_sent for the trustee path.
+            self.sim_data_ref = sim_data
+            return self.get_game_prompt_round_1(agent_id, agent, turn)
+
         # Find the last round that contains actual game data (sent is not None)
         last_round = None
         for entry in reversed(sim_data.conversation_history):
