@@ -8,6 +8,8 @@ Status: Phase 1 — complete (see §16) · Scope: dyadic. Soc-pop is now technic
 > **2026-06-18 update.** The multi-agent dyadic-pairing layer (`games/dyadic_pairing.py`, `DyadicPairingMixin`) was merged from `origin/codex/push-current-changes-20260601`. The toolkit now supports arbitrary even-N agent pools with role-balanced random pairing per round, unique display names, and anonymous variants — i.e., the "Soc-pop" future-work item in §14 is no longer blocked on infrastructure.
 >
 > The Phase 1 ablation-specific code (`memory_mode="m1"`, `seed_myth` / `seed_user_prompt` plumbing in `src/agents.py` and `src/simulation.py`, the M1 round-1-template dispatch in `games/trust_game.py`, the `experiments/run_ablation.py` cell dispatcher and `scripts/harvest_seeds.py`) was **rolled back** as part of that merge. The Phase 1 results in §16 stand as a historical record. To re-run the ablation under the new multi-agent codebase, the §6 / §15 footprint would need to be re-applied on top of the dyadic-pairing architecture (see "Re-implementation notes" at end of §6).
+>
+> **Phase 2 design is locked in §17**, calibrated to be comparable to the `sonnet45_8agent_myth_directive_history3_anon_r10_n5` baseline (Claude Sonnet 4.5, 8 agents, `history_policy="self_and_coplayer"` windows 3/3, anonymous co-players, directive myth arm). §§1–16 below describe the Phase 1 work as designed and run; §17 supersedes §§5, 7, 11, 13, 15 for any future runs.
 
 Fixed parameters (Phase 1): model **Claude Sonnet 4.5** · **N = 2** agents · **10 rounds** per run · both agents seeded **identically** · **5 reps per seeded cell** · negative-noise condition (`noisy_negative_5`) · seeds harvested from existing v4 direct-provider Sonnet 4.5 runs.
 
@@ -472,3 +474,97 @@ n=5 has SE ≈ σ/2.2 ≈ 3 (at within-cell σ ~6.5). The pre-spec thresholds (c
 - Investigate the counter-current myth finding directly: in source runs, do agents in low-coop runs write progressively more moralizing myths over rounds?
 - **The noise-memory destruction effect (+13 joint over M2 baseline) is itself a substantive finding deserving its own study** — independent of the myth question.
 - Re-run on the no-noise condition (per the 2026-02-26 ceiling-lock check, Claude saturates near-max). Would test whether the regime effect persists when memory has nothing to destroy.
+
+---
+
+## 17. Phase 2 — comparable to anon-history3-directive 8-agent baseline
+
+**Calibrated 2026-06-18.** Phase 2 retargets the ablation onto the current "normal" baseline so seed manipulations can be read against a like-for-like no-seed control. The baseline is `sonnet45_8agent_myth_directive_history3_anon_r10_n5` (`config/experiments.yaml`): Claude Sonnet 4.5, 8 agents, 10 rounds, `task_order=["myth","game"]`, directive myth arm (`myth_writing_default_game_directive` / `myth_writing_later_rounds_directive`), `history_policy="self_and_coplayer"` with `self_history_window=3` and `coplayer_history_window=3`, `show_agent_names=false` (opponents addressed as "your current co-player"), neutral persona, 5 reps. Each rep is an 8-agent population playing 80 dyad-rounds (8 agents × 10 rounds, 4 dyads/round) with role-balanced random pairing — see `games/dyadic_pairing.py:_get_balanced_multi_agent_pairings`.
+
+### 17.1 Why M1 is dropped in Phase 2
+
+Under the new code, `_get_multi_agent_later_prompt` (`games/trust_game.py:226–260`) embeds the self+coplayer history block directly into the round-N user prompt text from `sim_data.conversation_history`. Wiping `agent.messages` to `[system, fake-user, seed-myth]` (the Phase 1 M1 mechanism) does not remove the history block — the agent sees its history3 record every round regardless. To make M1 work under N>2 history3 you would have to also strip the history block from the prompt, which diverges from baseline on the dimension the user explicitly wants held constant. Phase 1 §16 already established that the M1 lift was driven by noise+memory destruction, not myth content, so dropping M1 also costs nothing on the central "do myths cause cooperation" question. **Phase 2 is M2-only** (seeded-start; normal history3 progression). The old M1 footprint and verification protocol in §6 remain as a historical record.
+
+### 17.2 Baseline distribution (n=5, computed 2026-06-18)
+
+From `data/json/sonnet45_8agent_myth_directive_history3_anon_r10_n5/`:
+
+| Statistic | Joint balance (all 8 agents) | Per-agent balance |
+|---|---|---|
+| n | 5 runs | 40 agents (5 × 8) |
+| Mean (±std) | 584.80 (±20.72) | 73.10 (±4.63) |
+| Range | [548, 596] | [60.5, 80.0] |
+| Per-run joints | 548, 590, 594, 596, 596 | — |
+
+**Ceiling check.** Endowment $5, multiplier 3, 80 dyad-rounds. Mutual-cooperation per dyad-round = investor sends $5 → trustee receives $15 → returns ≥$5 to equalize → pie per dyad-round = $15. Joint ceiling ≈ **$600**. Baseline mean 584.80 is **97.5% of ceiling**; four of five runs are at 590+. This is a Phase-1-style ceiling problem: a positive seed manipulation has at most ~15 joint points of headroom. **Implication for §17.5 thresholds:** a sufficiency contrast against this baseline is heavily one-sided — there is much more room to *decrease* cooperation (e.g., S-end−, S-anti) than to *increase* it. Either (a) accept the asymmetry and frame Phase 2 as primarily testing whether anti-cooperative seeds *suppress* cooperation, or (b) add a noise condition (see §17.6 "open decisions" — this becomes a third fork). Do not lock thresholds until this is resolved.
+
+### 17.3 Locked decisions (Phase 2)
+
+| # | Decision | Phase 2 choice | Differs from §13 row |
+|---|---|---|---|
+| 1 | Memory regime | **M2 only** (seeded-start; normal history3 truncation). M1 dropped (see §17.1). | row 1 |
+| 2 | Society / N | **N = 8** dyadic pool with balanced random pairing per round | row 2 |
+| 3 | Rounds per run | **10** | row 5 (unchanged) |
+| 4 | Model | **Claude Sonnet 4.5** | row 6 (unchanged) |
+| 5 | Noise condition | **No noise.** Matches baseline. Open ceiling concern in §17.2. | row 7 |
+| 6 | History policy | **`self_and_coplayer`**, `self_history_window=3`, `coplayer_history_window=3` | new |
+| 7 | Agent names | **`show_agent_names: false`** (anon). Opponents rendered as "your current co-player". | new |
+| 8 | Personas | **`neutral`** | new |
+| 9 | Myth arm | **directive** (`myth_writing_default_game_directive` / `myth_writing_later_rounds_directive`) | new |
+| 10 | Seeding symmetry | **All 8 agents seeded identically with the same myth string.** Preserves §13 row 3's sufficiency framing. Soc-one diffusion is a Phase 3 follow-up, not a Phase 2 cell. | row 3 (extended to N=8) |
+| 11 | Reps per cell | **5** initial (matches baseline n). Scale to 15 on pivotal cells if pilot σ_host is small enough to require it. | row equivalent to §7 |
+| 12 | Fake user prompt slot for seed injection | **`myth_writing_default_game_directive`** rendered with `topic_instruction` for `myth_topic="anything"` (i.e., `"You may choose any mythic setting, characters, or symbols."`). Updates §6's `myth_writing_default + topic="anything"` rule for prompt-structure parity with the directive baseline. | row 14 |
+
+### 17.4 Source pool — retargeted
+
+§11 harvested seeds from v4 N=2 negative-noise Sonnet runs. Phase 2 seeds must come from the **same population as the baseline** to keep "what kind of myth carries cooperation" interpretable:
+
+- **Source:** `data/json/sonnet45_8agent_myth_directive_history3_anon_r10_n5/` — only 5 reps × 8 agents × 10 rounds. Each run produces myths in every round (`task_order=["myth","game"]` writes a myth in every round). Per-rep myth pool ≈ 80 myths (8 agents × 10 rounds). Across 5 reps: ≈ 400 candidate myths.
+- **S-start:** round-1 myths only. Each agent writes round 1 unconditioned on a previous self-myth (the directive prompt asks them to write a myth that reflects how the game *should be played*). Pool ≈ 40 myths (5 reps × 8 agents). Draw 5.
+- **S-end+ / S-end−:** rank source *runs* by joint balance, then draw round-10 myths from top vs bottom runs. **n=5 baseline is too thin to split into stable top/bottom quartiles** (you'd have 1–2 runs per quartile). Two options for Phase 2:
+  - (a) Top-and-bottom split off the joint distribution as it stands — 1 top run (596), 1 bottom run (548) — and accept the selection is on n=1; document this honestly.
+  - (b) **Generate more baseline reps** before harvesting (e.g., scale baseline to n=15 first) so quartiles have ≥3 source runs each.
+  Recommended: (b). The baseline reps double as the §17.6 S-none comparator at no extra cost.
+- **S-filler:** unchanged from §11 (Simple English Wikipedia first paragraphs of country/animal/element articles). Length-matched ±10% to the round-1 directive-myth length distribution.
+- **Per-agent selection within a source run:** no `Agent_1` privilege at N=8. Replace §13 row 18 with "for each source run, pick the agent whose round-10 myth's source-run-joint-rank is closest to the run's mean per-agent balance" (deterministic, avoids accidental selection on either extreme) or pick a fixed display-name slot uniformly. Document the choice; both are defensible.
+- **Pool-level text-feature pre-registration (item from §11)** still applies. Compare round-10 myths in top vs bottom source runs on token length, Brysbaert concreteness, and naive LLM-judge cooperativeness *before* drawing.
+
+### 17.5 Run plan (Phase 2)
+
+| Cell | Seed | n (initial) |
+|---|---|---|
+| **S-none** | no seed; baseline `sonnet45_8agent_myth_directive_history3_anon_r10_n5` | 5 (already run) → consider scaling to 15 for source pool depth |
+| **S-start** | round-1 myth from baseline source-run agents | 5 |
+| **S-end+** | round-10 myth from highest-joint baseline source runs | 5 |
+| **S-end−** | round-10 myth from lowest-joint baseline source runs | 5 |
+| **S-filler** | length-matched Wikipedia first paragraph | 5 |
+
+Pre-spec contrasts (mirroring §9):
+- **H1 (sufficiency):** S-end+ vs S-none — myth carries cooperation?
+- **H2 (content vs warm-up):** S-end+ vs S-filler — narrative content or just extra tokens?
+- **H3 (cooperative content):** S-end+ vs S-end− — *cooperative* content specifically?
+- **H4 (refinement):** S-end+ vs S-start — myths accumulate carrying capacity?
+- **H5 (graded):** judge-rated cooperativeness × resulting joint balance (Spearman ρ).
+
+**Thresholds:** **do not lock** until baseline is scaled and σ_host is measured on the new condition. Phase 1's locked thresholds (§9) used σ_host = 3.47 from an N=2 negative-noise S-none × M2 cell; that number does not transfer to N=8 no-noise history3. Run the baseline scale-up first, compute σ_host on the 15-rep S-none, then plug into the threshold formulas. Carry forward Phase 1's framing: ≥1 σ_host = "reproduces", ≤0.5 σ_host with overlapping CI = "null".
+
+### 17.6 Open decisions (pending user input — do not lock until resolved)
+
+**A. Task order.** Baseline uses `task_order=["myth","game"]`: agents write a myth every round, then play. Two options for the seeded cells:
+- *Match baseline (myth-then-game).* Pre-inject the seed at round 0 (as a fake assistant message), then let agents write their own myths from round 1 onward as in baseline. The seed influences round-1 myth and round-1 game play; from round 2+ it scrolls out of memory under truncation but its trace persists in the round-1 myth the agent itself wrote. Task-structure-identical to baseline, **but the seed manipulation is effectively round-1-only** — a much weaker test of "myths carry cooperation" than Phase 1's myth-only-memory version.
+- *Drop to `task_order=["game"]`.* Seed is the agent's *entire* myth content for the whole run; the agent never writes a myth. Clean transplant logic, but **requires building a new comparator baseline**: `sonnet45_8agent_game_directive_history3_anon_r10_n5` does not yet exist (the named variant `..._game_directive_history3_r10_n5` exists but it is not anonymous). Cost: +5 reps for the new game-only anon baseline. Recommended by the advisor for testing the Phase 1 hypothesis under the new conditions.
+
+**B. Seed scope at N=8.** Phase 2 locks "all 8 agents seeded identically" (§17.3 row 10) to keep the sufficiency framing intact. The §14 future-work item "Soc-one diffusion" (seeding 1 of 8, asking whether the norm spreads) is a different experiment; flagging it here as Phase 3 follow-up, not a competing Phase 2 cell. **Decision needed only if the user wants to swap the default.**
+
+**C. Ceiling problem (§17.2).** Baseline mean is at 97.5% of cooperation ceiling. Either accept the asymmetric headroom (Phase 2 is primarily a *can negative seeds suppress cooperation* test) or add a noise condition (revives §2's logic in the new code; would require a matched `noisy_negative_*` 8-agent history3 anon baseline, currently nonexistent).
+
+### 17.7 Implementation footprint (Phase 2)
+
+Re-implementing the §6 mechanism on the current codebase needs the three adjustments documented in §6's "Re-implementation notes" plus:
+
+- New baseline config: `sonnet45_8agent_game_directive_history3_anon_r10_n5` if fork A resolves to "game-only" (set the existing named config's `show_agent_names: false`).
+- Seed-injection plumbing in `src/simulation.py`: when an `agent_names: false` 8-agent run is started with a seed, inject `[fake-user, seed-myth]` at `messages[1:3]` for every agent at construction. The new `_configure_game_agents` / `_build_agent_names` path runs before message initialization, so the injection slot is `simulation.py:run_simulation`'s init-agents loop right after the system-prompt append.
+- A new harvest script that scans the 8-agent anon-history3 source pool by agent-id × round-number, not by `Agent_1`-fixed.
+- The cell dispatcher (`experiments/run_ablation.py` or equivalent) needs to pass `history_policy`, `self_history_window`, `coplayer_history_window`, `show_agent_names`, `task_order` from the cell config through to `run_simulation`.
+
+Total: ~100 LoC of code changes + the new game-only anon baseline run (if fork A picks game-only). Slightly larger than Phase 1's footprint because the multi-agent path has more knobs that need to be threaded through.
