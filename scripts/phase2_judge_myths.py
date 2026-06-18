@@ -26,7 +26,7 @@ Score on a 0–10 scale:
 - 5: neutral or mixed
 - 10: strongly pro-cooperative (cooperation/generosity/reciprocity as central value)
 
-Respond with exactly one integer 0–10 in JSON: {"score": <int>}
+Respond with exactly one integer 0–10 in JSON: {{"score": <int>}}
 
 Text to score:
 \"\"\"
