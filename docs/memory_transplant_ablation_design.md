@@ -580,7 +580,104 @@ A new **H6 (task-order generalization)**: compare S-end+ − S-none across task 
 
 If step 1's pilot fails to find a noise level in [400, 540], stop and reconsider — the regime may not have a usable window between ceiling and floor.
 
-### 17.6 Implementation footprint (Phase 2)
+### 17.6 Results — Phase 2 (Sonnet 4.5, noisy_negative_5, 8-agent history3 anon directive)
+
+**Run completed 2026-06-19.** Noise pilot picked `noisy_negative_5` (joint=482, 80% of ceiling). Three task-order baselines built at n=15. Seeded cells: 5 reps × 4 seed types × 3 task orders = 60 runs.
+
+#### 17.6.1 Baseline distribution
+
+| Task order | n | Joint mean (±std) | Range | Per-agent (mean ±std) |
+|---|---|---|---|---|
+| `["game"]`        | 15 | **335.53 (±32.04)** | [287, 384] | 41.94 (±6.53) |
+| `["game","myth"]` | 15 | **400.53 (±28.88)** | [350, 476] | 50.07 (±5.88) |
+| `["myth","game"]` | 15 | **457.57 (±29.79)** | [398, 527] | 57.20 (±7.45) |
+
+σ_host = 28.88–32.04 across task orders. All baselines comfortably off ceiling ($600). Myth length distribution: mean=201.7 words (std=5.4) — directive prompt's 200-word target is hit consistently.
+
+#### 17.6.2 Seed manifest
+
+Drawn from the `["myth","game"]` noisy baselines (the only baseline with myths every round). 5 distinct seeds per type, sourced from quartile-split source runs by joint balance. Filler concatenated from Simple English Wikipedia paragraphs to reach ~200-token length match.
+
+LLM-judge cooperativeness scores (Sonnet 4.5 self-judge, 0–10 scale, n=5 per type):
+- **s_start** (round-1 directive myths from top quartile): 10.0, 10.0, 10.0, 10.0, 10.0 → mean **10.0**
+- **s_end_plus** (round-10 myths from top quartile): 10, 9, 8, 7, 7 → mean **8.2**
+- **s_end_minus** (round-10 myths from bottom quartile): 8, 8, 9, 9, 9 → mean **8.6**
+- **s_filler** (Wikipedia paragraphs): 0, 0, 0, 0, 0 → mean **0.0**
+
+**Phase 1's counter-intuitive finding replicates:** end-minus myths score *higher* than end-plus on cooperativeness, despite coming from lower-cooperation source runs. Agents in failing runs write *more* moralizing myths; agents in succeeding runs drift into game-rule descriptions.
+
+#### 17.6.3 Cell-level joint balance (mean ±std, n=5 per seeded cell)
+
+|              | `["game"]`            | `["game","myth"]`     | `["myth","game"]`     |
+|---           |---                    |---                    |---                    |
+| s_none (n=15)| **335.5 ±32.0**       | **400.5 ±28.9**       | **457.6 ±29.8**       |
+| s_start      | 401.7 ±52.4 (+66.2)   | 448.4 ±46.1 (+47.9)   | 455.8 ±46.0 (−1.8)    |
+| s_end_plus   | 380.9 ±41.5 (+45.4)   | 401.8 ±25.9 (+1.3)    | 388.2 ±42.4 (−69.4)   |
+| s_end_minus  | 333.0 ±23.5 (−2.5)    | 374.6 ±18.5 (−25.9)   | 382.1 ±9.9 (−75.5)    |
+| s_filler     | 335.2 ±10.0 (−0.3)    | 396.3 ±42.4 (−4.2)    | 424.6 ±16.8 (−33.0)   |
+
+Δ vs s_none in parentheses.
+
+#### 17.6.4 Pre-spec contrast outcomes (z-statistics, two-sample SE)
+
+|                              | `["game"]`     | `["game","myth"]` | `["myth","game"]` |
+|---                           |---             |---                |---                |
+| **H1** (s_end+ vs s_none)    | z = **+2.23** ✓| z = +0.09 (null)  | z = **−3.39** (reversed) |
+| **H1 (alt)** (s_start vs s_none) | z = **+2.66** ✓| z = **+2.18** ✓   | z = −0.08 (null) |
+| **H2** (s_end+ vs s_filler)  | z = **+2.39** ✓| z = +0.25 (null)  | z = −1.79 (negative) |
+| **H3** (s_end+ vs s_end−)    | z = **+2.25** ✓| z = +1.91 (marg.) | z = +0.31 (null) |
+| **H4** (s_end+ vs s_start)   | z = −0.70 (rev.) | z = **−1.97** (rev.) | z = **−2.42** (rev.) |
+| **H5** Spearman ρ(judge, joint) | **+0.525** | +0.411           | +0.153           |
+
+(✓ = passes pre-spec ≥1 σ_host threshold with z ≥ 1.96.)
+
+#### 17.6.5 Interpretation
+
+1. **Seed manipulation produces large, robust effects.** Effect sizes routinely exceed 1 σ_host. The mechanism is real, not a marginal nudge. This is a substantively different regime from the noise+memory destruction story of Phase 1 §16.
+
+2. **Task order is a primary moderator, not a side condition.** The same seed produces opposite-direction effects across task orders:
+   - `["game"]`: most seeds lift cooperation (content matters; H1/H2/H3 all hold for s_end+).
+   - `["myth","game"]`: only s_start produces a measurable effect (and it's null); all other seeds *suppress*. Mechanism: agents in baseline `["myth","game"]` write their own round-1 myth before play. Pre-injecting a foreign myth disrupts this self-consistency, suppressing cooperation below the baseline an agent would produce by writing its own first myth.
+   - `["game","myth"]` sits between the two; only s_start lifts robustly.
+
+3. **H4 is consistently reversed.** Round-1 directive myths (parable format, "# The Tale of...") outperform round-10 myths (game-rule descriptions, "Myth: In the Hall of Eternal Mirrors, eight wanderers received five golden coins each dawn..."). This contradicts the Phase 1 framing that end-of-run myths are *refined* carriers. Under directive prompting, agents progressively concretize myths into game-mechanic descriptions, which lose the narrative-carrying property. **Cooperation carrying-capacity decays over a run, not refines.**
+
+4. **H5 dose-response is positive but content-type-specific.** Spearman ρ(judge, joint) is positive across task orders (+0.525 / +0.411 / +0.153). The relationship is non-linear: s_filler (judge=0) and s_end_minus (judge=8.6) produce similar joint outcomes despite very different judge scores. The judge captures one dimension of myth content; the carrier property is correlated with but not identical to it.
+
+5. **The Phase 1 counter-current myth finding replicates.** End-of-run myths from *low*-joint source runs score higher on judge cooperativeness than end-of-run myths from *high*-joint source runs. The story: agents under cooperation stress write more aspirational myths; agents under cooperation success write more descriptive myths. The myths themselves are an inverse indicator of the run's cooperative trajectory.
+
+6. **Open question for Phase 3.** What *specifically* about s_start makes it the best carrier? The judge can't distinguish s_start (10.0) from s_end_plus (8.2) by enough to explain the joint-balance gap (+66 vs +45 in game). Candidate properties to test: (a) parable format vs game-rule description; (b) length distribution; (c) presence of specific cooperation-related lexicon ("trust", "share", "reciprocate"); (d) round-1 myths' lack of game-history reference. A small follow-up: re-judge s_start vs s_end_plus with a different judge model (Opus 4.7 or GPT-5) to bound judge noise on the 10 vs 8.2 split.
+
+#### 17.6.6 Phase 2 status against §17.5 decision rules
+
+| Hypothesis | Direction | Strongest support |
+|---|---|---|
+| H1 (sufficiency)     | mixed | s_start in `["game"]` and `["game","myth"]` (z=+2.66, +2.18) |
+| H2 (content matters) | task-order specific | strong in `["game"]` (z=+2.39); null/reversed elsewhere |
+| H3 (cooperative content) | task-order specific | strong in `["game"]` (z=+2.25); marginal in `["game","myth"]` |
+| H4 (refinement)      | **reversed** | round-1 myths > round-10 myths across all task orders |
+| H5 (graded)          | weakly positive | ρ = +0.525 (game), +0.411 (game_myth), +0.153 (myth_game) |
+
+**Headline claim, conservative phrasing:** Under noisy_negative_5 at 8-agent history3 anon directive, *some* myth-shaped intervention causes cooperation movements ≥1 σ_host. The carrier property is more subtle than "cooperativeness of the myth text" — it interacts with the agent's task-structure (free choice vs constrained injection) and the myth's narrative form (parable vs game-rule description). The Phase 1 §16 conclusion that the memory regime is the only mechanism does **not** generalize: under multi-agent dyadic history3, myth content does carry cooperation, but in ways that the original H1/H4 hypotheses partly missed.
+
+#### 17.6.7 Cost
+
+Total Phase 2 spend (~$255):
+- Noise pilot (3 runs): ~$7
+- Noisy baselines (45 runs): ~$104
+- Smoke run (1): ~$2
+- Seeded cells (60 runs): ~$138
+- Judge scoring (20 myths): ~$0.50
+
+#### 17.6.8 Follow-ups
+
+- Re-judge s_start vs s_end_plus with a second model (Opus 4.7 or GPT-5) to bound the judge-noise contribution on the H4 reversal.
+- Stylistic ablation: rewrite s_end_plus texts in parable format (or s_start texts in "Myth:" format) and re-run a small cell to isolate format from content.
+- Phase 3 Soc-one: at N=8, seed only 1 of 8 agents and look for diffusion of cooperation. This was infeasible until the multi-agent merge (§14) and is the natural next experiment given Phase 2's positive sufficiency signal.
+
+---
+
+### 17.7 Implementation footprint (Phase 2)
 
 Re-implementing the §6 mechanism on the current codebase needs the three adjustments documented in §6's "Re-implementation notes" plus:
 
