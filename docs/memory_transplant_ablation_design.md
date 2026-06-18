@@ -349,41 +349,67 @@ If step 4 fails verification, stop — fix mechanism before any further runs.
 
 ---
 
-## 16. Results — Phase 1 (Sonnet 4.5, negative noise, dyadic, 5 reps/cell)
+## 16. Results — Phase 1 (Sonnet 4.5, negative noise, dyadic)
 
-### Cell means
+Three pivotal cells (`m1_s_none`, `m1_s_filler`, `m1_s_end_plus`) were scaled to **n=15** after an initial pass at n=5 revealed within-cell σ ~2-3× the pilot σ_host. All other cells remain at n=5. The added cell `m1_s_none` was a post-hoc isolation control to discriminate "wipe alone" from "wipe + any text"; not in the original §13 grid.
 
-| Cell | n | Mean | Std | Min | Max |
+### Cell statistics
+
+| Cell | n | Mean | Std | SE | 95% CI |
 |---|---|---|---|---|---|
-| m1_s_none      | 5 | **63.14** | 2.87  | 59.30 | 66.68 |
-| m1_s_start     | 5 | **69.21** | 3.61  | 66.32 | 75.02 |
-| m1_s_end_plus  | 5 | **67.25** | 9.59  | 54.94 | 78.56 |
-| m1_s_end_minus | 5 | **67.64** | 8.66  | 59.02 | 80.56 |
-| m1_s_filler    | 5 | **64.68** | 4.09  | 61.12 | 69.80 |
-| m2_s_none      | 5 | **53.80** | 3.47  | 50.88 | 59.64 |
-| m2_s_start     | 5 | **54.82** | 3.11  | 52.12 | 60.08 |
-| m2_s_end_plus  | 5 | **53.34** | 3.68  | 50.00 | 59.36 |
-| m2_s_end_minus | 5 | **56.43** | 10.50 | 50.00 | 75.04 |
-| m2_s_filler    | 5 | **56.29** | 6.53  | 50.26 | 66.54 |
+| **m1_s_none**       | **15** | **65.62** | 6.06  | 1.56 | [62.43, 68.81] |
+| **m1_s_filler**     | **15** | **67.72** | 6.00  | 1.55 | [64.56, 70.88] |
+| **m1_s_end_plus**   | **15** | **66.88** | 7.07  | 1.82 | [63.15, 70.60] |
+| m1_s_start          | 5      | 69.21 | 3.61  | 1.61 | [65.77, 72.65] |
+| m1_s_end_minus      | 5      | 67.64 | 8.66  | 3.87 | [59.39, 75.89] |
+| m2_s_none           | 5      | 53.80 | 3.47  | 1.55 | [50.49, 57.10] |
+| m2_s_start          | 5      | 54.82 | 3.11  | 1.39 | [51.86, 57.79] |
+| m2_s_end_plus       | 5      | 53.34 | 3.68  | 1.64 | [49.83, 56.84] |
+| m2_s_end_minus      | 5      | 56.43 | 10.50 | 4.69 | [46.43, 66.43] |
+| m2_s_filler         | 5      | 56.29 | 6.53  | 2.92 | [50.07, 62.51] |
 
-The added cell `m1_s_none` is the isolation control (memory wipe alone, no text at `messages[1:3]`); not in the original §13 grid but added post-hoc to discriminate "wipe alone" from "wipe + any text".
+### Power-honest threshold outcomes
 
-### Threshold outcomes (against locked thresholds, σ_host = 3.47, S-none mean = 53.80)
+Pre-spec thresholds were calibrated to pilot σ_host = 3.47, but actual within-cell σ for myth-bearing cells is ~6–10. Contrasts below are reported with proper SE pooling and a z-statistic; "significance" is read against α=0.05 two-tailed (z ≥ 1.96).
 
-**M1 (primary readout):**
-- H1 sufficiency (m1_s_end_plus vs m2_s_none): **+13.46** → ✅ PASS (≥ +3.47).
-- H1 sufficiency vs m1_s_none (added control): **+4.11** → ✅ still PASS.
-- H2 content vs filler: **+2.58** → ❌ FAIL by 0.02 (threshold +2.60).
-- H3 cooperative content (m1_s_end_plus vs m1_s_end_minus): **−0.39** → ❌ FAIL.
-- H4 refinement (m1_s_end_plus vs m1_s_start): **−1.96** → ❌ FAIL (start *exceeds* end+).
+**Regime effect — robustly large:**
+- **H1 (m1_s_end_plus vs m2_s_none):** Δ = **+13.08**, SE = 2.40, **z = +5.46** ***. Memory regime moves cooperation by ~3.6 source-σ. Robust.
 
-**M2 (ecological comparison):**
-- H1: **−0.46** → ❌ null (within ±1.73). Seed has no propagated effect when memory accumulates.
-- H2/H3/H4 all fail; filler actually beats real myths.
+**Within M1 — content vs regime:**
+- **H1 refined (m1_s_end_plus vs m1_s_none):** Δ = **+1.26**, SE = 2.40, z = +0.52. Null. Cannot distinguish "wipe + cooperative myth" from "wipe alone."
+- **H2 (content vs filler, m1_s_end_plus vs m1_s_filler):** Δ = **−0.85**, SE = 2.39, z = −0.35. Null — and slightly *negative*.
+- **wipe + filler vs wipe alone (m1_s_filler vs m1_s_none):** Δ = +2.10, SE = 2.20, z = +0.95. Small positive, not significant. Any-text contribution is bounded above ~4 joint.
+- **H3 (cooperative vs anti-cooperative, m1_s_end_plus vs m1_s_end_minus):** Δ = −0.76, SE = 4.28, z = −0.18. Null. *Caveat:* m1_s_end_minus is still n=5.
+- **H4 (refinement, m1_s_end_plus vs m1_s_start):** Δ = −2.34, SE = 2.44, z = −0.96. Start cells slightly higher; m1_s_start still n=5.
 
-**H5 (graded calibration):**
-- Spearman ρ(judge cooperativeness, host joint balance) — M1: **−0.019** (n=15). M2: **−0.478** (n=15). Combined: **−0.166** (n=30).
-- The relationship is essentially zero in M1 and moderately *negative* in M2 (hypothesis-generating only at this n).
+**M2 (normal memory):**
+- All cells cluster 53–56. No contrast is significant against m2_s_none. The seed has no detectable propagated effect once game history accumulates.
+
+### Trajectory
+
+| Cell | Mean sent per round (r1 → r10) | Avg | Pattern |
+|---|---|---|---|
+| m1_s_none (n=15)    | 0.73, 0.70, 0.53, 0.98, 0.89, 0.69, 0.91, 1.20, 0.60, 0.57 | **0.78** | sustains |
+| m1_s_filler (n=15)  | 0.52, 0.97, 1.25, 1.20, 0.95, 0.42, 0.86, 1.04, 1.17, 0.48 | **0.89** | sustains, peaks mid |
+| m1_s_end_plus (n=15)| 0.86, 0.66, 0.82, 0.91, 1.03, 1.10, 0.43, 0.80, 0.97, 0.84 | **0.84** | sustains |
+| m1_s_start (n=5)    | 0.67 → 0.92 | 0.96 | sustains |
+| m1_s_end_minus (n=5)| 0.41 → 0.50 | 0.88 | sustains |
+| m2_s_none (n=5)     | 0.48 → **0.00** | 0.19 | collapse |
+| m2_s_start (n=5)    | 1.39 → **0.00** | 0.24 | collapse from highest opener |
+| m2_s_end_plus (n=5) | 0.60 → 0.00 | 0.17 | collapse |
+| m2_s_end_minus (n=5)| 0.54 → 0.10 | 0.32 | collapse |
+| m2_s_filler (n=5)   | 0.97 → 0.19 | 0.31 | collapse |
+
+The regime contrast is not "M1 averages 10 round-1s" — it's **M1 sustains moderate sending across all 10 rounds**, while **M2 collapses from a moderate opener to near-zero by rounds 6–10**. The destructive ingredient in M2 is the *interaction between noise and memory*: agents see "I sent $3, partner returned $0" (a noise-distorted record), and that history kills cooperation. Wiping the history rescues a sustained moderate-cooperation default.
+
+### Within-data H3 (judge-score as IV, all 15 M1 myth-bearing runs)
+
+The pre-spec H3 contrast (pool selection by source-run joint balance) turned out **not** to be a contrast on myth cooperativeness — the judge scored s_end_minus myths (7.60) *higher* than s_end_plus (6.60). The right within-data test:
+
+- Median split on judge score (M1 myth-bearing, n=15): Δ(high − low) = **+1.84** (low ≈ 66.93, high ≈ 68.77). Tertile (≤3 vs ≥7): Δ = +2.50.
+- Spearman ρ(judge cooperativeness, host balance) — M1 myth-bearing: **−0.019**. M2 myth-bearing: −0.478 (driven by a single outlier; fragile).
+
+The within-data direction is mildly positive on M1 but well within within-cell noise; the negative M2 correlation is not robust.
 
 ### Judge scores per seed pool
 
@@ -398,32 +424,35 @@ The cooperation-by-joint-balance ranking (top 25% vs bottom 25% of source runs) 
 
 ### Interpretation
 
-1. **The memory regime (M1 vs M2) is the dominant explanatory variable.** All M1 cells cluster 63–69; all M2 cells cluster 53–56. Spread within each regime is small; gap between regimes is ~10–14 joint.
+1. **The memory regime is the dominant explanatory variable.** M1 cells cluster 65–69; M2 cells cluster 53–56. The regime contrast is ~3.6 source-σ and z=5.46 — robust at any reasonable n.
 
-2. **Memory wipe alone (m1_s_none = 63.14) carries most of the M1 lift.** +9.34 vs m2_s_none = 2.7 σ_host. Adding text on top adds another +1.5 to +6 — present but small relative to the wipe effect.
+2. **The trajectory tells the mechanism story.** M1 sustains moderate cooperation across all 10 rounds; M2 collapses from a moderate opener to near-zero. Under negative noise, memory of being burned actively destroys cooperation. Wiping that memory rescues a sustained moderate-cooperation default.
 
-3. **Content specificity is absent.** Real cooperative myths, real anti-cooperative myths, and length-matched Wikipedia filler produce indistinguishable host cooperation under both M1 and M2.
+3. **No content-specific effect is detected.** At n=15, real cooperative myths, length-matched Wikipedia filler, and the empty-memory control all sit within 2 points of each other (65.6–67.7), 95% CIs heavily overlapping. The any-text contribution over wipe-alone is bounded above ~4 joint at this n.
 
-4. **Per §9 decision rules, this falls between (2) epiphenomenal/readout and (3) warm-up.** The most precise reading: under M1, the memory-wipe regime resets the agent to a round-1 prior every round, and round-1 priors in Sonnet 4.5 are moderately cooperative (send ~$3). The seed myth in `messages[2]` is along for the ride. Under M2, with normal memory accumulating, the seed scrolls out within ~3 rounds and game dynamics dominate — no detectable carryover from seed content.
+4. **H3 was not a fair test of content-specificity at the level we framed it.** The pool selection (top vs bottom of source-run joint balance) does not produce a contrast on the actual cooperativeness dimension of the myths — judge scores invert that ordering. The within-data judge-score split is a fairer test and gives a small positive direction (+1.84) consistent with the bounded content contribution but well within noise.
 
-5. **The "myths carry cooperation" claim does not survive transplant.** Source-run agents writing more cooperation-themed myths is not the mechanism behind source-run cooperation.
+5. **The "myth content carries cooperation" hypothesis is not supported by transplant** at this power. A defensible weaker claim is consistent with the data: if myths contribute, it is on the order of 2-4 joint, indistinguishable from neutral filler text in the same memory slot.
 
-6. **Unexpected finding worth following up:** Round-10 myths from *low-cooperation* source runs are judge-rated *more* cooperative than round-10 myths from high-cooperation runs. This inverts a naive "myths reflect game behavior" reading — agents under stress write counter-current normative myths. Worth a separate analysis.
+6. **Unexpected finding worth following up:** Round-10 myths from *low-cooperation* source runs are judge-rated *more* cooperative than round-10 myths from high-cooperation runs. This inverts a naive "myths reflect game behavior" reading — agents under stress may write counter-current normative myths. Worth a separate analysis.
+
+### Statistical power caveat
+
+n=5 has SE ≈ σ/2.2 ≈ 3 (at within-cell σ ~6.5). The pre-spec thresholds (calibrated to σ_host = 3.47 from m2_s_none, the most stable cell) underestimated the within-cell variance for myth-bearing cells. The n=15 scale-up resolved this for the m1 content contrast; remaining n=5 cells (m1_s_start, m1_s_end_minus, all M2) carry wider CIs and their contrasts should be read with that caveat. A confirmatory Phase 2 with n=15 across all cells, plus a second judge model, would tighten the within-data H3 and bound the m1_s_start anomaly.
 
 ### Status against §9 decision rules
 
-- H1 reproduces but H2 fails → support for **(3) warm-up / any-text effect**. With the m1_s_none isolation cell, refined to: **(3'): memory-wipe regime + any text ≥ memory-wipe regime + no text ≥ normal-memory baseline**. Text content is not the carrier; the wipe is.
-- H1 null in M2 → support for **(2) epiphenomenal / readout** in the ecological setup.
-
-Both readings support the broader conclusion: **myth content is not a sufficient causal carrier of cooperation** in this setup.
+- H1 reproduces against the M2 baseline, but H1 refined (vs m1_s_none) is null and H2 is null → support for **(2) epiphenomenal / readout** of the seed text. The regime, not the content, carries the effect.
+- The M1 lift is real and substantive, but its proximate cause is memory-wiping under noise, not seed content. This was not an outcome the original four-explanation taxonomy in §1 anticipated; it's an emergent fifth interpretation: **(5) the interaction of noise and accumulated memory destroys cooperation, and any intervention that breaks that accumulation (memory wipe) rescues a moderate baseline regardless of what fills the freed slot**.
 
 ### Total Phase 1 cost
 
-≈ $9–11 (40 sweep runs + 5 pilot + 5 isolation + 20 judge calls).
+≈ $14–16 (40 initial sweep + 5 pilot + 5 isolation + 30 scale-up + 20 judge calls).
 
 ### Open follow-ups
 
-- Replicate with larger n per cell to tighten ρ estimates (especially the negative M2 ρ).
-- Cross-judge with a different model (Opus 4.7 or GPT-5) to bound judge-noise on the H3 inversion.
-- Investigate the counter-current myth finding more directly: do agents in low-coop runs write progressively more moralizing myths over rounds?
-- The memory-wipe-alone effect (+9.34 over normal-memory baseline) is itself a substantive finding deserving its own study.
+- Scale n=15 across the remaining cells (especially m1_s_start, m1_s_end_minus). m1_s_start at 69.21 ± 3.61 is the highest mean and may reflect a real stylistic effect (Markdown header vs "Myth:" prefix) or noise; n=5 cannot tell.
+- Cross-judge with a different model (Opus 4.7 or GPT-5) to bound judge-noise on the s_end_plus / s_end_minus inversion.
+- Investigate the counter-current myth finding directly: in source runs, do agents in low-coop runs write progressively more moralizing myths over rounds?
+- **The noise-memory destruction effect (+13 joint over M2 baseline) is itself a substantive finding deserving its own study** — independent of the myth question.
+- Re-run on the no-noise condition (per the 2026-02-26 ceiling-lock check, Claude saturates near-max). Would test whether the regime effect persists when memory has nothing to destroy.

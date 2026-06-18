@@ -122,11 +122,9 @@ def resolve_seed_for_cell(
     if pool_key == "__none__":
         return None
     if pool_key == "__filler__":
-        if rep_index >= len(fillers):
-            raise IndexError(
-                f"rep_index {rep_index} out of range for fillers (len={len(fillers)})"
-            )
-        f = fillers[rep_index]
+        # Cycle through the filler pool when rep_index exceeds it — each unique
+        # filler then gets repeated reps under different decoding seeds.
+        f = fillers[rep_index % len(fillers)]
         return {
             "seed_text": f["text"],
             "seed_id": f["filler_id"],
@@ -137,11 +135,11 @@ def resolve_seed_for_cell(
             },
         }
     pool = manifest["pools"].get(pool_key, [])
-    if rep_index >= len(pool):
-        raise IndexError(
-            f"rep_index {rep_index} out of range for pool '{pool_key}' (len={len(pool)})"
-        )
-    s = pool[rep_index]
+    if not pool:
+        raise IndexError(f"empty pool '{pool_key}'")
+    # Cycle through seed pool when rep_index exceeds it — each unique seed then
+    # gets repeated reps under different decoding seeds.
+    s = pool[rep_index % len(pool)]
     return {
         "seed_text": s["myth_text"],
         "seed_id": s["seed_id"],
@@ -350,10 +348,11 @@ def build_plan(
     reps: int,
     manifest: Dict[str, Any],
     fillers: List[Dict[str, Any]],
+    rep_start: int = 0,
 ) -> List[Dict[str, Any]]:
     plan: List[Dict[str, Any]] = []
     for cell in cells:
-        for rep_index in range(reps):
+        for rep_index in range(rep_start, reps):
             seed_record = resolve_seed_for_cell(cell, rep_index, manifest, fillers)
             plan.append({"cell": cell, "rep": rep_index, "seed_record": seed_record})
     return plan
@@ -393,7 +392,9 @@ def main() -> int:
     parser.add_argument("--cells", required=True,
                         help="Comma-separated cell names, or 'all'.")
     parser.add_argument("--reps", type=int, default=DEFAULT_REPS,
-                        help=f"Reps per cell (default: {DEFAULT_REPS}).")
+                        help=f"Reps per cell — interpreted as the upper bound (default: {DEFAULT_REPS}). With --rep-start N --reps M, runs reps in range(N, M).")
+    parser.add_argument("--rep-start", type=int, default=0,
+                        help="First rep index to run (default: 0). Use to extend an existing cell without re-running prior reps.")
     parser.add_argument("--workers", type=int, default=1,
                         help="Parallel workers (default: 1).")
     parser.add_argument("--dry-run", action="store_true",
@@ -409,7 +410,7 @@ def main() -> int:
     manifest = load_seed_manifest(SEED_MANIFEST_PATH)
     fillers = load_fillers(FILLERS_PATH)
 
-    plan = build_plan(cells, args.reps, manifest, fillers)
+    plan = build_plan(cells, args.reps, manifest, fillers, rep_start=args.rep_start)
 
     print_preflight(plan, cells, args.workers)
     print_plan_table(plan)
