@@ -75,6 +75,7 @@ CELL_TO_POOL = {
     "m1_s_end_plus": "s_end_plus",
     "m1_s_end_minus":"s_end_minus",
     "m1_s_filler":   "__filler__",
+    "m1_s_none":     "__none__",  # isolation cell — memory-wipe alone, no seed text
     "m2_s_start":    "s_start",
     "m2_s_end_plus": "s_end_plus",
     "m2_s_end_minus":"s_end_minus",

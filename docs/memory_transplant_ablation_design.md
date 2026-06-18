@@ -216,18 +216,18 @@ Plus: independent cooperativeness scoring of every distinct seed myth used (≈ 
 
 Source-pool σ (6.4) is computed on `myth_game + game_myth` runs that had full memory machinery and active myth-writing. The host runs here have stripped memory and game-only task order, so their within-cell variance may differ. The thresholds below are **provisional** — they will be re-anchored after a pilot variance cell (see §9.3) before final scoring.
 
-Provisional thresholds (using source-pool σ = 6.4 as a stand-in):
+**Locked thresholds** (σ_host = **3.47**, measured from the pilot S-none × M2 cell, n=5, joint balances [50.88, 51.68, 52.80, 53.98, 59.64], mean = 53.80):
 
-| Outcome | Criterion |
-|---|---|
-| **H1 (sufficiency) reproduces** | `mean(S-end+) − mean(S-none) ≥ +1 σ_host` (≈ +6 joint at source σ) |
-| **H1 null** | `|mean(S-end+) − mean(S-none)| ≤ 0.5 σ_host` AND CIs overlap S-none |
-| **H2 (content-specificity)** | `mean(S-end+) − mean(S-filler) ≥ +0.75 σ_host` |
-| **H3 (cooperative-content)** | `mean(S-end+) − mean(S-end−) ≥ +0.75 σ_host` |
-| **H4 (refinement)** | `mean(S-end+) − mean(S-start) ≥ +0.5 σ_host` |
-| **H5 (graded)** | Spearman ρ between independently-scored myth cooperativeness and resulting joint balance, on all ~15 myth-bearing host runs. Report with 95% CI. **Hypothesis-generating only** at this n. |
+| Outcome | Criterion | Numeric |
+|---|---|---|
+| **H1 (sufficiency) reproduces** | `mean(S-end+) − mean(S-none) ≥ +1 σ_host` | ≥ +3.47 joint (S-end+ ≥ 57.27) |
+| **H1 null** | `|mean(S-end+) − mean(S-none)| ≤ 0.5 σ_host` AND CIs overlap S-none | ±1.73 |
+| **H2 (content-specificity)** | `mean(S-end+) − mean(S-filler) ≥ +0.75 σ_host` | ≥ +2.60 |
+| **H3 (cooperative-content)** | `mean(S-end+) − mean(S-end−) ≥ +0.75 σ_host` | ≥ +2.60 |
+| **H4 (refinement)** | `mean(S-end+) − mean(S-start) ≥ +0.5 σ_host` | ≥ +1.73 |
+| **H5 (graded)** | Spearman ρ between independently-scored myth cooperativeness and resulting joint balance, on all ~15 myth-bearing host runs. Report with 95% CI. **Hypothesis-generating only** at this n. | — |
 
-These thresholds are pre-registered with the substitution rule: replace σ in each formula with the **pilot host σ** (§9.3) once that's measured. The substitution rule is fixed; the number plugged in is data-derived but doesn't change the criterion structure.
+**σ_host vs source-pool σ.** σ_host / σ_source = 3.47 / 6.4 = 0.54 — inside the heuristic [0.5×, 2.0×] sanity band. The host condition is less variable than the source pool, plausibly because host runs have `task_order=["game"]` (no myth-writing during play) so the myth-writing variability that contributes to source-pool σ is absent. **Pilot S-none mean = 53.80** is also notably below source-pool mean (62.88); same explanation — the myth-writing in source runs was itself contributing ~9 joint to cooperation. This is informative for interpretation: the seed needs to lift host cooperation above 57.27 (≥1 σ_host above 53.80) to support sufficiency.
 
 ### Decision rules
 - If H1 reproduces AND H2 AND H3 hold → strong support for **(1) causal seed** with content specificity.
@@ -346,3 +346,84 @@ Length-matched filler is drawn from **Simple English Wikipedia first paragraphs 
 9. **Analyze and write up** against §9 pre-specified thresholds.
 
 If step 4 fails verification, stop — fix mechanism before any further runs.
+
+---
+
+## 16. Results — Phase 1 (Sonnet 4.5, negative noise, dyadic, 5 reps/cell)
+
+### Cell means
+
+| Cell | n | Mean | Std | Min | Max |
+|---|---|---|---|---|---|
+| m1_s_none      | 5 | **63.14** | 2.87  | 59.30 | 66.68 |
+| m1_s_start     | 5 | **69.21** | 3.61  | 66.32 | 75.02 |
+| m1_s_end_plus  | 5 | **67.25** | 9.59  | 54.94 | 78.56 |
+| m1_s_end_minus | 5 | **67.64** | 8.66  | 59.02 | 80.56 |
+| m1_s_filler    | 5 | **64.68** | 4.09  | 61.12 | 69.80 |
+| m2_s_none      | 5 | **53.80** | 3.47  | 50.88 | 59.64 |
+| m2_s_start     | 5 | **54.82** | 3.11  | 52.12 | 60.08 |
+| m2_s_end_plus  | 5 | **53.34** | 3.68  | 50.00 | 59.36 |
+| m2_s_end_minus | 5 | **56.43** | 10.50 | 50.00 | 75.04 |
+| m2_s_filler    | 5 | **56.29** | 6.53  | 50.26 | 66.54 |
+
+The added cell `m1_s_none` is the isolation control (memory wipe alone, no text at `messages[1:3]`); not in the original §13 grid but added post-hoc to discriminate "wipe alone" from "wipe + any text".
+
+### Threshold outcomes (against locked thresholds, σ_host = 3.47, S-none mean = 53.80)
+
+**M1 (primary readout):**
+- H1 sufficiency (m1_s_end_plus vs m2_s_none): **+13.46** → ✅ PASS (≥ +3.47).
+- H1 sufficiency vs m1_s_none (added control): **+4.11** → ✅ still PASS.
+- H2 content vs filler: **+2.58** → ❌ FAIL by 0.02 (threshold +2.60).
+- H3 cooperative content (m1_s_end_plus vs m1_s_end_minus): **−0.39** → ❌ FAIL.
+- H4 refinement (m1_s_end_plus vs m1_s_start): **−1.96** → ❌ FAIL (start *exceeds* end+).
+
+**M2 (ecological comparison):**
+- H1: **−0.46** → ❌ null (within ±1.73). Seed has no propagated effect when memory accumulates.
+- H2/H3/H4 all fail; filler actually beats real myths.
+
+**H5 (graded calibration):**
+- Spearman ρ(judge cooperativeness, host joint balance) — M1: **−0.019** (n=15). M2: **−0.478** (n=15). Combined: **−0.166** (n=30).
+- The relationship is essentially zero in M1 and moderately *negative* in M2 (hypothesis-generating only at this n).
+
+### Judge scores per seed pool
+
+| Pool | Mean | Std | Values |
+|---|---|---|---|
+| s_end_plus  | 6.60 | 2.07 | 3, 7, 7, 8, 8 |
+| s_end_minus | 7.60 | 0.89 | 6, 8, 8, 8, 8 |
+| s_start     | 3.60 | 2.79 | 1, 1, 3, 6, 7 |
+| filler      | 0.00 | 0.00 | 0, 0, 0, 0, 0 |
+
+The cooperation-by-joint-balance ranking (top 25% vs bottom 25% of source runs) **does not** match judge-rated cooperativeness of the myth text. Low-cooperation source runs produced *more* cooperation-themed myths, plausibly as moralizing/aspirational counter-current rather than descriptive narration.
+
+### Interpretation
+
+1. **The memory regime (M1 vs M2) is the dominant explanatory variable.** All M1 cells cluster 63–69; all M2 cells cluster 53–56. Spread within each regime is small; gap between regimes is ~10–14 joint.
+
+2. **Memory wipe alone (m1_s_none = 63.14) carries most of the M1 lift.** +9.34 vs m2_s_none = 2.7 σ_host. Adding text on top adds another +1.5 to +6 — present but small relative to the wipe effect.
+
+3. **Content specificity is absent.** Real cooperative myths, real anti-cooperative myths, and length-matched Wikipedia filler produce indistinguishable host cooperation under both M1 and M2.
+
+4. **Per §9 decision rules, this falls between (2) epiphenomenal/readout and (3) warm-up.** The most precise reading: under M1, the memory-wipe regime resets the agent to a round-1 prior every round, and round-1 priors in Sonnet 4.5 are moderately cooperative (send ~$3). The seed myth in `messages[2]` is along for the ride. Under M2, with normal memory accumulating, the seed scrolls out within ~3 rounds and game dynamics dominate — no detectable carryover from seed content.
+
+5. **The "myths carry cooperation" claim does not survive transplant.** Source-run agents writing more cooperation-themed myths is not the mechanism behind source-run cooperation.
+
+6. **Unexpected finding worth following up:** Round-10 myths from *low-cooperation* source runs are judge-rated *more* cooperative than round-10 myths from high-cooperation runs. This inverts a naive "myths reflect game behavior" reading — agents under stress write counter-current normative myths. Worth a separate analysis.
+
+### Status against §9 decision rules
+
+- H1 reproduces but H2 fails → support for **(3) warm-up / any-text effect**. With the m1_s_none isolation cell, refined to: **(3'): memory-wipe regime + any text ≥ memory-wipe regime + no text ≥ normal-memory baseline**. Text content is not the carrier; the wipe is.
+- H1 null in M2 → support for **(2) epiphenomenal / readout** in the ecological setup.
+
+Both readings support the broader conclusion: **myth content is not a sufficient causal carrier of cooperation** in this setup.
+
+### Total Phase 1 cost
+
+≈ $9–11 (40 sweep runs + 5 pilot + 5 isolation + 20 judge calls).
+
+### Open follow-ups
+
+- Replicate with larger n per cell to tighten ρ estimates (especially the negative M2 ρ).
+- Cross-judge with a different model (Opus 4.7 or GPT-5) to bound judge-noise on the H3 inversion.
+- Investigate the counter-current myth finding more directly: do agents in low-coop runs write progressively more moralizing myths over rounds?
+- The memory-wipe-alone effect (+9.34 over normal-memory baseline) is itself a substantive finding deserving its own study.
