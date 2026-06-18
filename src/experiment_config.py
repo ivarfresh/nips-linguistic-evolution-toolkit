@@ -119,6 +119,9 @@ class ExperimentConfig:
                     self.config["prompt_templates"].get("trust_game_later_trustee"),
                     game_prompt_addition,
                 ),
+                "defector_game_instruction": self.config["prompt_templates"].get(
+                    "defector_game_instruction"
+                ),
                 "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
                 "myth_default_prompt_key": active_myth_default_key,
                 "myth_later_prompt_key": active_myth_later_key,

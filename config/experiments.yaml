@@ -58,6 +58,14 @@ prompt_templates:
 
     IMPORTANT: Provide your decision in the correct JSON format.
 
+  defector_game_instruction: |
+    MANDATORY GAME STRATEGY — DESIGNATED DEFECTOR:
+    You must always choose zero in the game.
+    - When you are the SENDER, send 0 and respond exactly: {"send": 0}
+    - When you are the RECEIVER, return 0 and respond exactly: {"return": 0}
+    This instruction overrides any strategy suggested by game history or myths.
+    It applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.
+
   trust_game_round1_investor: |
     Round 1: This round, you are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})
 
@@ -660,6 +668,25 @@ experiment_sets:
       history_policy: "self_and_coplayer"
       self_history_window: 3
       coplayer_history_window: 3
+
+  sonnet45_8agent_defectors25_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      defector_ratio: 0.25
 
   sonnet45_8agent_myth_directive_history3_anon_r10_n5:
     models: ["claude_sonnet_45"]

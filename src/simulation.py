@@ -64,6 +64,24 @@ def _configure_game_agents(game, agent_ids, agent_names):
         game.configure_agents(agent_ids, agent_names)
 
 
+def _restore_population_assignment(game, sim_data):
+    saved_defectors = sim_data.game_data.get("defector_agent_ids")
+    if saved_defectors is not None and hasattr(game, "restore_defector_agent_ids"):
+        game.restore_defector_agent_ids(saved_defectors)
+
+
+def _sync_population_metadata(game, sim_data):
+    if not hasattr(game, "get_population_metadata"):
+        return {}
+
+    metadata = game.get_population_metadata()
+    sim_data.game_data.update(metadata)
+    agent_types = metadata.get("agent_types", {})
+    for agent_id, agent in sim_data.agents.items():
+        agent.population_role = agent_types.get(agent_id, "standard")
+    return metadata
+
+
 def _get_round_pairings(game, turn, sim_data):
     if hasattr(game, "get_round_pairings"):
         return game.get_round_pairings(turn, sim_data)
@@ -124,7 +142,16 @@ def _role_label(role):
     return "Agent"
 
 
-def _interaction_metadata(turn, task, agent_id, roles_by_agent, pairings, task_index, move_index):
+def _interaction_metadata(
+    turn,
+    task,
+    agent_id,
+    roles_by_agent,
+    pairings,
+    task_index,
+    move_index,
+    agent_type=None,
+):
     role = roles_by_agent.get(agent_id)
     pairing = _pairing_for_agent(pairings, agent_id)
     metadata = {
@@ -134,6 +161,7 @@ def _interaction_metadata(turn, task, agent_id, roles_by_agent, pairings, task_i
         "move_index": move_index,
         "role": role,
         "role_label": _role_label(role),
+        "agent_type": agent_type or "standard",
     }
     if pairing:
         opponent_id = next(
@@ -199,6 +227,7 @@ class SimulationData:
                     "temperature": agent.temperature,
                     "memory_capacity": agent.memory_capacity,
                     "initial_bias": agent.initial_bias,
+                    "population_role": getattr(agent, "population_role", "standard"),
                     "system_prompt": agent.system_prompt,
                     "messages": agent.messages,
                     "interaction_history": getattr(agent, "interaction_history", []),
@@ -253,6 +282,7 @@ class SimulationData:
             agent.messages = a.get("messages", [])
             agent.interaction_history = a.get("interaction_history", [])
             agent.display_name = a.get("display_name", agent.agent_id)
+            agent.population_role = a.get("population_role", "standard")
             sim_data.add_agent(agent_id, agent)
 
         return sim_data
@@ -305,6 +335,7 @@ def run_simulation(
             agent.display_name = resolved_agent_names[agent_id]
         sim_data.game_data["agent_names"] = resolved_agent_names
         _configure_game_agents(game, agent_ids, resolved_agent_names)
+        _restore_population_assignment(game, sim_data)
     else:
         sim_data = SimulationData()
         sim_data.task_order = task_order  # Store task_order in sim_data
@@ -323,6 +354,8 @@ def run_simulation(
             agent.messages.append({"role": "system", "content": system_prompt})
             sim_data.add_agent(agent_id, agent)
 
+    population_metadata = _sync_population_metadata(game, sim_data)
+
     # Store run metadata (useful for debugging/resume)
     actual_num_agents = len(sim_data.agents) if sim_data.agents else num_agents
     sim_data.run_metadata.update(
@@ -333,6 +366,11 @@ def run_simulation(
             "num_agents": actual_num_agents,
             "memory_capacity": memory_capacity,
             "agent_names": sim_data.game_data.get("agent_names", {}),
+            **{
+                key: value
+                for key, value in population_metadata.items()
+                if key != "agent_types"
+            },
         }
     )
 
@@ -371,6 +409,7 @@ def run_simulation(
             round_entry = {
                 "round": turn,
                 "roles": roles_by_agent,
+                "agent_types": sim_data.game_data.get("agent_types", {}),
                 "pairings": pairings,
                 "dyads": [],
                 "sent": None,
@@ -415,6 +454,7 @@ def run_simulation(
                                 pairings,
                                 task_index,
                                 move_index,
+                                getattr(agent, "population_role", "standard"),
                             ),
                         )
                         agent_responses[agent_id] = response_data
@@ -460,6 +500,11 @@ def run_simulation(
                                 pairings,
                                 task_index,
                                 move_index,
+                                getattr(
+                                    sim_data.agents[agent_id],
+                                    "population_role",
+                                    "standard",
+                                ),
                             )
                             for move_index, agent_id in enumerate(active_agent_order)
                         }

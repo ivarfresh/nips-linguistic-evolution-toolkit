@@ -23,6 +23,10 @@ class TrustGame(DyadicPairingMixin, Game):
         self_history_window=1,
         coplayer_history_window=0,
         show_agent_names=True,
+        defector_ratio=0.0,
+        defector_agent_ids=None,
+        defector_seed=0,
+        defector_prompt_template=None,
     ):
         """
         Args:
@@ -48,6 +52,12 @@ class TrustGame(DyadicPairingMixin, Game):
         self.self_history_window = self._coerce_history_window(self_history_window, 1)
         self.coplayer_history_window = self._coerce_history_window(coplayer_history_window, 0)
         self.set_prompt_name_visibility(show_agent_names)
+        self.set_defector_options(
+            defector_ratio=defector_ratio,
+            defector_agent_ids=defector_agent_ids,
+            defector_seed=defector_seed,
+            defector_prompt_template=defector_prompt_template,
+        )
         self._round_multipliers = {}
         self._init_dyadic_agents()
 

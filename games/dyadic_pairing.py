@@ -7,11 +7,42 @@ class DyadicPairingMixin:
 
     requires_even_agents = True
 
+    def set_defector_options(
+        self,
+        defector_ratio=0.0,
+        defector_agent_ids=None,
+        defector_seed=0,
+        defector_prompt_template=None,
+    ):
+        try:
+            ratio = float(defector_ratio or 0.0)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("defector_ratio must be a number between 0 and 1.") from exc
+        if not 0 <= ratio <= 1:
+            raise ValueError("defector_ratio must be between 0 and 1.")
+
+        if defector_agent_ids is None:
+            requested_ids = None
+        elif isinstance(defector_agent_ids, str):
+            requested_ids = [defector_agent_ids]
+        else:
+            requested_ids = list(defector_agent_ids)
+        if requested_ids and len(set(requested_ids)) != len(requested_ids):
+            raise ValueError("defector_agent_ids must not contain duplicates.")
+
+        self.defector_ratio = ratio
+        self.requested_defector_agent_ids = requested_ids
+        self.defector_seed = 0 if defector_seed is None else defector_seed
+        self.defector_prompt_template = defector_prompt_template
+        self.defector_agent_ids = []
+
     def _init_dyadic_agents(self):
         self.agent_ids = ["Agent_1", "Agent_2"]
         self.agent_names = {agent_id: agent_id for agent_id in self.agent_ids}
         if not hasattr(self, "show_agent_names"):
             self.show_agent_names = True
+        if not hasattr(self, "defector_ratio"):
+            self.set_defector_options()
         self._round_pairings = {}
         self._balanced_pairing_schedule = {}
         self._sync_agent_aliases()
@@ -32,9 +63,78 @@ class DyadicPairingMixin:
         if len(set(self.agent_names.values())) != len(self.agent_names):
             raise ValueError("Agent display names must be unique.")
 
+        self._assign_defectors()
         self._round_pairings = {}
         self._balanced_pairing_schedule = {}
         self._sync_agent_aliases()
+
+    def _assign_defectors(self):
+        if self.requested_defector_agent_ids is not None:
+            unknown_ids = sorted(set(self.requested_defector_agent_ids) - set(self.agent_ids))
+            if unknown_ids:
+                raise ValueError(
+                    "Unknown defector_agent_ids: " + ", ".join(unknown_ids)
+                )
+            selected = list(self.requested_defector_agent_ids)
+        else:
+            target_count = int(len(self.agent_ids) * self.defector_ratio + 0.5)
+            if self.defector_ratio > 0 and target_count == 0:
+                target_count = 1
+            target_count = min(len(self.agent_ids), target_count)
+            selected = random.Random(self.defector_seed).sample(
+                self.agent_ids,
+                target_count,
+            )
+
+        selected_ids = set(selected)
+        self.defector_agent_ids = [
+            agent_id for agent_id in self.agent_ids if agent_id in selected_ids
+        ]
+        if self.defector_agent_ids and not self.defector_prompt_template:
+            raise ValueError(
+                "A defector_prompt_template is required when defectors are configured."
+            )
+
+    def restore_defector_agent_ids(self, agent_ids):
+        """Restore a saved assignment when resuming a run."""
+        restored = list(agent_ids or [])
+        unknown_ids = sorted(set(restored) - set(self.agent_ids))
+        if unknown_ids:
+            raise ValueError(
+                "Saved defector_agent_ids are not in the current population: "
+                + ", ".join(unknown_ids)
+            )
+        if restored and not self.defector_prompt_template:
+            raise ValueError(
+                "A defector_prompt_template is required when restoring defectors."
+            )
+        restored_ids = set(restored)
+        self.defector_agent_ids = [
+            agent_id for agent_id in self.agent_ids if agent_id in restored_ids
+        ]
+
+    def is_defector(self, agent_id):
+        return agent_id in self.defector_agent_ids
+
+    def get_agent_types(self):
+        return {
+            agent_id: "defector" if self.is_defector(agent_id) else "standard"
+            for agent_id in self.agent_ids
+        }
+
+    def get_population_metadata(self):
+        defector_count = len(self.defector_agent_ids)
+        population_size = len(self.agent_ids)
+        return {
+            "defector_ratio_requested": self.defector_ratio,
+            "defector_ratio_actual": (
+                defector_count / population_size if population_size else 0.0
+            ),
+            "defector_count": defector_count,
+            "defector_agent_ids": list(self.defector_agent_ids),
+            "defector_seed": self.defector_seed,
+            "agent_types": self.get_agent_types(),
+        }
 
     def _sync_agent_aliases(self):
         self.agent_1_id = self.agent_ids[0] if self.agent_ids else "Agent_1"
@@ -429,20 +529,26 @@ class DyadicPairingMixin:
         return pairing["trustee"] if agent_id == pairing["investor"] else pairing["investor"]
 
     def with_prompt_context(self, prompt, agent_id, opponent_id=None):
-        if len(self.agent_ids) <= 2:
-            return prompt
-        if not self.names_visible_in_prompts():
-            return prompt
+        contextualized_prompt = prompt
+        if len(self.agent_ids) > 2 and self.names_visible_in_prompts():
+            lines = [
+                f"Your name in this experiment is {self.get_agent_display_name(agent_id)}."
+            ]
+            if opponent_id:
+                lines.append(
+                    "Your opponent this round is "
+                    f"{self.get_agent_display_name(opponent_id)} ({opponent_id})."
+                )
+            contextualized_prompt = "\n".join(lines) + "\n\n" + prompt
 
-        lines = [
-            f"Your name in this experiment is {self.get_agent_display_name(agent_id)}."
-        ]
-        if opponent_id:
-            lines.append(
-                "Your opponent this round is "
-                f"{self.get_agent_display_name(opponent_id)} ({opponent_id})."
+        if self.is_defector(agent_id):
+            contextualized_prompt = (
+                contextualized_prompt.rstrip()
+                + "\n\n"
+                + self.defector_prompt_template.strip()
+                + "\n"
             )
-        return "\n".join(lines) + "\n\n" + prompt
+        return contextualized_prompt
 
     def with_system_context(self, prompt, agent_id):
         if len(self.agent_ids) <= 2:

@@ -155,6 +155,9 @@ class NoisyExperimentConfig:
                         self.config["prompt_templates"].get("trust_game_later_trustee"),
                         game_prompt_addition,
                     ),
+                    "defector_game_instruction": self.config["prompt_templates"].get(
+                        "defector_game_instruction"
+                    ),
                     "replicate_id": run if num_runs > 1 else None,
                     "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
                     "myth_default_prompt_key": active_myth_default_key,
@@ -213,6 +216,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
 
         agent_ids = [f"Agent_{i+1}" for i in range(game_params['num_agents'])]
         personas = {agent_id: combo['persona'] for agent_id in agent_ids}
+        defector_seed = game_params.get("defector_seed")
+        if defector_seed is None:
+            defector_seed = combo.get("replicate_id")
+        if defector_seed is None:
+            defector_seed = 0
 
         # Create noisy trust game with noise config and other_player_names
         game = TrustGameNoisy(
@@ -230,6 +238,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             self_history_window=game_params.get('self_history_window', 1),
             coplayer_history_window=game_params.get('coplayer_history_window', 0),
             show_agent_names=game_params.get('show_agent_names', True),
+            defector_ratio=game_params.get("defector_ratio", 0.0),
+            defector_agent_ids=game_params.get("defector_agent_ids"),
+            defector_seed=defector_seed,
+            defector_prompt_template=combo.get("defector_game_instruction"),
         )
 
         myth_writer = MythWriter(
@@ -286,6 +298,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}\n")
             f.write(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}\n")
             f.write(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}\n")
+            f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
+            f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
+            f.write(f"Defector Seed: {defector_seed}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation

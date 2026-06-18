@@ -150,6 +150,11 @@ def _add_run_metadata(pdf: "_SimplePdf", state: Dict[str, Any], show_agent_names
         "self_history_window",
         "coplayer_history_window",
         "show_agent_names",
+        "defector_ratio_requested",
+        "defector_ratio_actual",
+        "defector_count",
+        "defector_agent_ids",
+        "defector_seed",
     ]:
         if key in metadata:
             pdf.add_kv(key, metadata.get(key))
@@ -162,6 +167,8 @@ def _add_run_metadata(pdf: "_SimplePdf", state: Dict[str, Any], show_agent_names
             "agent_names",
             "hidden in transcript labels because show_agent_names is false",
         )
+    if game_data.get("agent_types"):
+        pdf.add_kv("agent_types", game_data.get("agent_types"))
     pairing_schedule = game_data.get("dyadic_pairing_schedule")
     if pairing_schedule:
         pdf.add_kv(
