@@ -1,12 +1,10 @@
-from together import Together
-from openai import OpenAI
 import json
 import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from src.agents import Agent
-from src.utils import print_simulation_header, OPENROUTER_API_KEY
+from src.utils import create_llm_client, print_simulation_header
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -304,6 +302,8 @@ def run_simulation(
     resume_from: Optional[str] = None,
     log_file: Optional[str] = None,
     agent_names: Optional[Any] = None,
+    seed_myth: Optional[str] = None,
+    seed_user_prompt: Optional[str] = None,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -312,11 +312,7 @@ def run_simulation(
     task_order: List of tasks to execute in order. Options: "game", "myth"
                 Examples: ["game"], ["myth"], ["game", "myth"], ["myth", "game"]
     """
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError(
-            "OPENROUTER_API_KEY is not set. Copy .env.example to .env and fill in your key."
-        )
-    client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
+    client = create_llm_client(model)
     if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
         if task_order is not None:
@@ -352,6 +348,16 @@ def run_simulation(
             system_prompt = game.get_system_prompt(agent_id, agent)
             agent.system_prompt = system_prompt
             agent.messages.append({"role": "system", "content": system_prompt})
+            # Phase 2 memory-transplant: seed lands at messages[1:3] so
+            # the agent enters round 1 with a prior "myth-writing" turn in
+            # its memory. See docs/memory_transplant_ablation_design.md §17.
+            if seed_myth is not None:
+                if not seed_user_prompt:
+                    raise ValueError(
+                        "seed_myth was provided but seed_user_prompt is empty."
+                    )
+                agent.messages.append({"role": "user", "content": seed_user_prompt})
+                agent.messages.append({"role": "assistant", "content": seed_myth})
             sim_data.add_agent(agent_id, agent)
 
     population_metadata = _sync_population_metadata(game, sim_data)
@@ -366,6 +372,8 @@ def run_simulation(
             "num_agents": actual_num_agents,
             "memory_capacity": memory_capacity,
             "agent_names": sim_data.game_data.get("agent_names", {}),
+            "seed_myth": seed_myth,
+            "seed_user_prompt": seed_user_prompt,
             **{
                 key: value
                 for key, value in population_metadata.items()

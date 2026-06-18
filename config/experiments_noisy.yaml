@@ -488,11 +488,106 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
+  # ----------------------------------------------------------------------------
+  # PHASE 2 — ablation comparable to anon-history3-directive 8-agent baseline
+  # See docs/memory_transplant_ablation_design.md §17
+  # ----------------------------------------------------------------------------
+
+  phase2_8agent_history3_anon_neg2:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 2.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 3
+    coplayer_history_window: 3
+    show_agent_names: false
+
+  phase2_8agent_history3_anon_neg3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 3.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 3
+    coplayer_history_window: 3
+    show_agent_names: false
+
+  phase2_8agent_history3_anon_neg5:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    noise_config:
+      type: "uniform"
+      range: 5.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 3
+    coplayer_history_window: 3
+    show_agent_names: false
+
 # ============================================================================
 # EXPERIMENT SETS
 # ============================================================================
 
 experiment_sets:
+  # Phase 2 — noise-level pilot: 1 rep at each candidate level on ["myth","game"]
+  phase2_pilot_noise_levels:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "phase2_8agent_history3_anon_neg2"
+      - "phase2_8agent_history3_anon_neg3"
+      - "phase2_8agent_history3_anon_neg5"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 1
+
+  # Phase 2 — full noisy baselines (S-none cells + source pool for seeds)
+  # neg5 locked 2026-06-18 after pilot: joint=482.0 (80% of ceiling, mid-range)
+  phase2_baseline_neg5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["game", "myth"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "phase2_8agent_history3_anon_neg5"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    num_runs: 15
+
   # Quick pilot test
   noise_pilot:
     models: ["gpt5_nano"]
