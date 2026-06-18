@@ -75,6 +75,7 @@ class SimulationData:
                     "memory_capacity": agent.memory_capacity,
                     "initial_bias": agent.initial_bias,
                     "system_prompt": agent.system_prompt,
+                    "memory_mode": getattr(agent, "memory_mode", "normal"),
                     "messages": agent.messages
                 }
                 for agent_id, agent in self.agents.items()
@@ -117,6 +118,10 @@ class SimulationData:
                 initial_bias=a.get("initial_bias"),
                 system_prompt=a.get("system_prompt"),
                 log_file=log_file,
+                memory_mode=a.get(
+                    "memory_mode",
+                    sim_data.run_metadata.get("memory_mode", "normal"),
+                ),
             )
             # Preserve message history exactly for faithful resume
             agent.messages = a.get("messages", [])
@@ -142,6 +147,9 @@ def run_simulation(
     log_file: Optional[str] = None,
     initial_system_prompt_template: Optional[str] = None,
     switch_to_game_system_before_game: bool = False,
+    memory_mode: str = "normal",
+    seed_myth: Optional[str] = None,
+    seed_user_prompt: Optional[str] = None,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -163,7 +171,11 @@ def run_simulation(
         for i in range(num_agents):
             agent_id = f"Agent_{i+1}"
             bias = agent_biases[i] if agent_biases and i < len(agent_biases) else None
-            agent = Agent(agent_id, model, temperature, client, memory_capacity=memory_capacity, initial_bias=bias, log_file=log_file)
+            agent = Agent(
+                agent_id, model, temperature, client,
+                memory_capacity=memory_capacity, initial_bias=bias,
+                log_file=log_file, memory_mode=memory_mode,
+            )
             if initial_system_prompt_template:
                 system_prompt = _format_initial_system_prompt(
                     game, initial_system_prompt_template, agent_id, agent
@@ -172,6 +184,21 @@ def run_simulation(
                 system_prompt = game.get_system_prompt(agent_id, agent)
             agent.system_prompt = system_prompt
             agent.messages.append({"role": "system", "content": system_prompt})
+            # Memory-transplant ablation: inject the seed myth as a fake prior
+            # user/assistant exchange so it lands at messages[1] and messages[2].
+            # Under memory_mode="m1", agents.respond() resets messages[:3] before
+            # each call, so this seed pair persists for the whole run.
+            # See docs/memory_transplant_ablation_design.md §6 (memory-injection,
+            # not system-prompt injection).
+            if seed_myth is not None:
+                if not seed_user_prompt:
+                    raise ValueError(
+                        "seed_myth was provided but seed_user_prompt is empty. "
+                        "Provide a fake user prompt (typically myth_writing_default "
+                        "formatted with myth_topic='anything')."
+                    )
+                agent.messages.append({"role": "user", "content": seed_user_prompt})
+                agent.messages.append({"role": "assistant", "content": seed_myth})
             sim_data.add_agent(agent_id, agent)
 
     # Store run metadata (useful for debugging/resume)
@@ -184,6 +211,9 @@ def run_simulation(
             "memory_capacity": memory_capacity,
             "initial_system_prompt_overridden": bool(initial_system_prompt_template),
             "switch_to_game_system_before_game": bool(switch_to_game_system_before_game),
+            "memory_mode": memory_mode,
+            "seed_myth": seed_myth,
+            "seed_user_prompt": seed_user_prompt,
         }
     )
 
