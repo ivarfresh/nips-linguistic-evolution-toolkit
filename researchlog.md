@@ -1,23 +1,1332 @@
-### 2026-04-24 — Pre-NeurIPS measurement plan
+### 2026-06-15 — Defectors, ablations, manuscript restart
 
-#### Framing
-Main research question: *do myths increase cooperation in multi-agent LLM settings*. Existing TODOs: ensure 15 runs/condition, try better models, add prompt variations. This entry logs additional measurement ideas surfaced in discussion, ranked for the NeurIPS window (internal deadline 2026-04-27).
+Does story language converge or diverge?  And does this convergence or divergence correlate to changes in gameplay behavior?
+Do myths contain gameplay language?
+Scatterplot; cooperativeness in myths and outcomes in games
+Abstractness in the myths but clearly encoded norm applied in the game
+Some kind of measure of abstractness
+If more abstract myths do better in cooperation, that would even be better
+How to distinguish here between information and noise?
+Re-start myths from scratch but then use myths from the end of the previous run. Does performance decrease then? Kind of ablation where you adjust myth memory. Can myths alone support that? Or only myth in conjunction with the game behavior?
 
-#### Directions to add
-- **Signal vs. noise 2×2**: per (model × noise) cell, tabulate mean-shift × variance-shift — separates useful signal / pure noise / strategy-reinforcement / harmful signal. Reuses existing runs.
-- **Reason-field coding**: classify each game `reason` as myth-referencing / game-math / neither. Highest evidence-per-hour; existing data.
-- **Content structure of myths**: Moral Foundations tagging (LLM-judge), named-entity persistence curves, motif-cluster mutation-selection under partner rewrite, compression-over-rounds entropy curves (quantifies the prior "concrete → abstract" observation).
-- **Causal ablations**: content-scrambled myth (cheapest, pre-submission if compute allows); Jabberwocky structure-vs-semantics variant; forced-valence injected myths; myth-removal after round K; non-narrative cross-task control — all post-NeurIPS except scrambled.
-- **Mediation**: ETI-style (Abdurahman et al.) warmth/competence inference per round; test whether myth shifts inferred traits and whether that mediates cooperation-lift.
+Measure calibration between verbalized strategies vs actual strategies?
+1. Correlation: Do collaborative myths align with more cooperative behavior
+2. Causation: …
+does just ANY myth increase cooperation?
 
-#### Priority (pre-NeurIPS)
-1. Reason-field coding + ETI trait inference on existing myths.
-2. 2×2 mean/variance decision table.
-3. Ghafouri-Ferrara convergence / selective-survival measures on existing myth corpus.
-4. Content-scrambled myth ablation if compute headroom.
+To Do;
+Defector runs                             – Aron
+Ablations of agents who have lost their memories        – Ivar
+Maory of agent just be the myth → run a few rounds (of dyadic + large society)
+Do it with both
+Myth from start of previous run (a myth written of agent from beginning of game)
+Do this 5 times for both, but each time taking a different start myth and end myth
+Myth from end of (successful) previous run (for example, round 10 of a run where there was high cooperation)
+Do this 5 times for both, but each time taking a different start myth and end myth
+We could just take myths of pre-existing runs?
+Linguistic analyses                             – Mario, Arabella?
+Load traces with all myths
 
-#### Papers pulled
-- **Robinson & Burden, 2503.04840** — framing sensitivity; template for forced-valence injection and non-narrative control.
-- **Ghafouri & Ferrara, 2602.17674** — AI-to-AI telephone chains; convergence + selective survival + competitive filtering measures. Most load-bearing for myth-evolution section.
-- **Lupyan & Agüera y Arcas, 2601.11432** — Jabberwocky substitution; sharper content-scramble ablation design.
-- **Abdurahman et al., 2604.19278** — Explicit Trait Inference; off-the-shelf mediator for partner-perception story.
+
+Summary
+Research progress was evaluated alongside experimental methodology updates and a decision to restart the manuscript drafting process.
+
+Experimental Strategy Planning
+Clarification regarding available Doctor of Philosophy positions occurred alongside timeline alignment for the Association for the Advancement of Artificial Intelligence conference. Methodologies for testing hard-prompted defector agents were outlined to observe emer behaviors.
+
+Myth And Cooperation Analysis
+Evaluation methods for myth abstractness were established using a Large Language Model judge. Ablation experiments were designed to test if myths bootstrap cooperation without historical memory.
+
+Manuscript Strategy Formulation
+The team decided to restart the writing process to create a fresh narrative structure. Strict adherence to formatting requirements remains critical for successful submission.
+
+
+Decisions
+Aligned
+Linguistic myth analysis priority established The team agreed to prioritize linguistic myth analysis before conducting additional model runs to maintain project sequencing.
+Hardcoded defector agents for punishment analysis The team selected the implementation of hardcoded, myth-immune defector agents as the strategy for analyzing punishment emergence.
+Ablation experiments comparing myth memory impact The team adopted an ablation experiment methodology to test agent memory by comparing start-of-run myths against end-of-run myths.
+Manuscript drafting strategy based on figures The group decided to adopt a figure-first approach for manuscript drafting, starting with figure captions and placeholders.
+AAAI paper submission template confirmed The team confirmed the use of the official AAAI conference paper template for their submission to avoid rejection.
+
+We've updated the Decisions section using your feedback.
+Let us know what you think: Helpful or Not Helpful
+
+
+Next steps
+[Aron Vallinder] Test Defectors: Run simulations with hardcoded defector agents to identify thresholds where punishment emerges.
+[Ivar Frisch] Run Ablations: Conduct ablation runs with agents having memory restricted to myths to test for cooperation bootstrapping.
+[Mario Giulianelli, Arabella] Analyze Myths: Review myth phrases and examine linguistic structures to validate strategic content.
+[Aron Vallinder] Clean Version: Refine the existing version of the document to prepare it for further development.
+[Aron Vallinder, Ivar Frisch] Add Figures: Compose descriptive captions and insert placeholder diagrams using the latest presentation slides.
+[Aron Vallinder, Ivar Frisch] Update Template: Reformat the current draft to comply with the Triple AI submission requirements.
+[Aron Vallinder] Identify Trajectories: Provide the specific file path on GitHub for the generated trajectory datasets.
+
+
+Details
+Meeting Opening and Introductions: The meeting began with Ivar, Aron, and Mario checking in on recent activities and confirming that Ed and Arabella were expected to join (00:00:00). Mario provided a brief update on the work status at University College London, noting that while teaching responsibilities had concluded, thesis and administrative work remained busy (00:01:41).
+Clarification on PhD Positions: Ivar expressed confusion regarding the number of PhD positions available at Mario's institute, citing a LinkedIn post that they believed indicated five openings. Mario clarified that there was only one PhD position available, noting that a misunderstanding regarding a "four-year" position description likely caused the confusion (00:04:25).
+Project Progress and Timeline: Mario and Aron reviewed the project status and agreed that the AAAI (Association for the Advancement of Artificial Intelligence) Horizon conference in July is the likely target for submission. Aron reported that current results indicate increased cooperation when myth writing is included in the experimental setup (00:07:00).
+Implementation of Punishment and Defector Agents: The group discussed the potential for punishment to emerge in their simulations, with Ed suggesting that it should be an emergent behavior rather than a hard-coded rule (00:09:46) (00:13:31). They reached a consensus to introduce "hard-prompted" defector agents into the population to test whether punishment emerges when a certain threshold ratio of defectors is reached (00:11:08) (00:14:26). The team decided to keep these defector agents simple by making them insensitive to myths rather than attempting complex myth-writing behaviors for them (00:12:24) (00:14:26).
+Refining Defector Agent Methodology: Ed, Mario, and Aron evaluated how to introduce defector agents, considering whether they should be static members of the population or appear with a certain probability during interactions (00:15:17). To ensure enough granularity for analysis, the team agreed to start with a version where defector agents are hard-prompted, planning to potentially increase the complexity of the experiment if initial results justify further development (00:16:24).
+Linguistic Analysis of Myths: Mario and Ivar initiated a discussion on analyzing the myths generated by the agents, using a specific slide as a starting point (00:20:03). Ivar outlined existing analysis methods, including tracking cooperative language, measuring lag correlation between agent turns, and assessing myth similarity over time (00:22:13). The team discussed evaluating the "abstractness" of myths, with Ivar noting that myths appear to become more abstract over time; they agreed to use an Large Language Model as a judge to measure this abstractness (00:26:13).
+Proposed Ablation Experiments: To test the causal relationship between myths and cooperation, the team proposed an ablation experiment where they would run simulations with agents that have no memory of past game history, relying solely on myths for decision-making (00:29:20). This experiment aims to determine if myths themselves are sufficient to bootstrap cooperative behavior or if they rely on external knowledge of previous agent interactions (00:33:24).
+Assignment of Experimental Tasks: The participants distributed upcoming research tasks to move the project forward. Aron will focus on running the defector-agent experiments, and Ivar will manage the ablation experiments (00:34:20). Mario and Arabella will collaborate on the linguistic analysis of the myths, provided the data is accessible (00:35:27).
+Refining Ablation Methodology: The group refined the procedure for the ablation tests, agreeing to run trials using myths taken from both the beginning and the end of previous successful runs. By comparing these conditions, the team aims to demonstrate whether specific myth content from successful runs effectively supports bootstrapping cooperation in the absence of other memory (00:36:30) (00:38:19).
+Manuscript Preparation and Formatting: Regarding the paper draft, the team decided to restart the writing process rather than continuing with the existing draft, as they wanted a fresh start (00:40:26). They agreed to focus initially on creating placeholder figures and captions to establish a structure for the narrative (00:41:31). Mario emphasized the importance of strictly adhering to the AAAI manuscript formatting requirements to avoid automatic rejection (00:43:17).
+Data Management and Closing: Aron confirmed that all experimental trajectories are stored and accessible on GitHub, addressing concerns about data storage (00:43:17). The team concluded the meeting by acknowledging the progress made on the project and scheduled their next meeting for the following week (00:44:36).
+
+
+### 2026-06-08 — Everyone notes
+
+Current Experiment Status
+Anonymous agent naming now implemented (previous run still showed names)
+Agents see last 3 games of their own + last 3 games of opponents
+Slide 652 shows slightly more cooperation with this setup
+Results looking promising across both noise and paper scenarios
+Analysis Pipeline
+Initial linguistic analysis of transcripts needed
+Mario and Arabella to be brought in for deeper linguistic work
+Plan to send them zip file of transcripts for Claude-assisted analysis
+Target: initial analysis by next week
+Haven't yet examined transcripts in detail from current runs
+Interesting pattern emerging: agents discussing cooperation strategies
+Model Expansion Plan
+Current work on Claude, expanding to Gemini and GPT next
+Timeline:
+Complete anonymous runs this week
+Gold runs with all models next week
+Two weeks for analysis and writing
+Deadline: July 21st-28th (triple AI conference)
+Next Steps
+Aron's last day: July 3rd (4 weeks remaining, 3 more meetings)
+This w Complete transcript analysis setup
+Next week: Run Gemini and GPT experiments
+Following weeks: Focus on paper writing and analysis refinement
+
+
+### 2026-06-02 — Everyone notes
+
+It seems transcription went wrong, so will summarize here:
+
+- original new myths prompts (directive prompts) followed our desired pattern (game-myth and myth-game higher balance than game only), however these were too leading (trust game mentioned, trust-related concepts, etc.)
+- Aron added updated myth prompts (directive with normative language) but these did not follow desired pattern
+- Aron implemented a larger multi-agent system, but did not run yet. Discussion about role switching, role switching for larger population should be disabled
+
+To Do:
+1. generate full pdf transcript of output model run; inputs, outputs, game decisions, written myths.
+     - current .log files do this, but do not capture the full input agents receive (no system prompt, does not print full agent memory/message history), could be worth having a version like this too.
+
+2. System prompt edits: refer explicitly to myth use
+3. Myth prompt edits; there seems to be some contradictory wording "write a myth about anything" vs "write a myth about how the game should be played"
+
+I think that was it.
+
+
+### 2026-05-26 — Everyone notes
+
+Summary
+Myth generation prompts were refined and the experiment expanded to a population based setting for AAAI.
+
+Myth Prompt Bias Review
+Participants identified potential bias from loaded terms in myth writing prompts. Simplification of prompts to neutral language was finalized to improve result validity.
+
+Experimental Scope Expansion
+The team decided to scale the experiment to a population of 6 to 8 agents. This decision allows testing for complex social dynamics like second order punishment.
+
+Project Timeline and Focus
+Development priorities shifted toward completing the new prompt implementation by June. The team aligned on an Association for the Advancement of Artificial Intelligence submission goal.
+
+Rate this Summary: Helpful or Not Helpful
+
+
+Decisions
+ALIGNED
+Simplified game and myth prompts adopted The game and myth prompts will be simplified to remove biasing language, shifting focus to neutral reflections of the interaction history.
+Population-based experiment expansion strategy adopted The research strategy will expand to include a population-based experiment using 6-8 agents paired randomly to test for complex dynamics like second-order punishment.
+AAAI conference target deadline set The team established the end-of-July AAAI conference deadline as the target for research submission.
+Consistent noise condition applied across models All models will utilize a consistent noise condition, set to negative between zero and two, regardless of individual model performance.
+
+We've updated the Decisions section using your feedback.
+Let us know what you think: Helpful or Not Helpful
+
+
+Next steps
+[Aron Vallinder] Simplify Prompts: Simplify the game and myth writing prompts to be neutral and remove biased terms such as trust, risk, reciprocity, withholding, repair, or betrayal.
+[Aron Vallinder] Implement Population Setting: Implement a multi agent population setting with 6 to 8 agents paired randomly to evaluate dyadic myth exchange and interactions.
+[Aron Vallinder] Run Experiments: Run experiments using the new simplified prompts and population settings with Claude.
+[Aron Vallinder] Update Slide Deck: Update the slide deck with the new prompts, performance metrics from the direct reciprocity setting, and the results from the new population experiments.
+[Edward Hughes] Review Slides: Review the updated slide deck and provided prompts to sense check the changes and ensure consistency.
+
+
+Details
+Review of Myth-Generation Prompts: Aron Vallinder expressed skepticism regarding whether the cooperative behavior observed in agents resulted from the new myth-writing prompts being too encouraging, specifically questioning if explicitly mentioning concepts like reciprocity and trust biased the results (00:00:00). Ivar Frisch confirmed that the "myth control" arm of the experiment is currently serving as a comparison against the standard prompts (00:01:48).
+Concerns Regarding Informed Noise Prompts: Ivar Frisch questioned whether the system prompt asking agents to filter out noise might be too leading, noting that the team is still observing performance differences between conditions for the noisy runs (00:03:41).
+Discussion of Positive Results and Prompt Bias: Edward Hughes joined the meeting and noted enthusiasm for the latest results, which showed positive effects in both the "no noise" and "noise" conditions when agents were asked to write myths reflecting their gameplay (00:05:05). The participants agreed that current prompts might be biasing by explicitly including terms like "trust," "risk," "reciprocity," "withholding," "repair," or "betrayal". Edward Hughes recommended simplifying the myth prompt to neutrally ask the agents to write a myth that reflects their interactions with the other player, and to refer to the game simply as "game" rather than "trust game" to minimize bias (00:06:02) (00:11:25).
+Clarification on Game History Visibility: The team clarified that during the myth-generation process, agents are prompted with the game rules, the game action history from the last three rounds, and previously generated myths, which provides the agents with context for their writing (00:09:03).
+Expansion to Population-Based Setting: Edward Hughes proposed expanding the experiment from a two-player (diadic) setting to a larger population of six to eight agents to test if myths can help bootstrap more complex social dynamics, such as second-order punishment (00:13:09) (00:24:47). The team decided that, for now, agents should continue to see their own history and the myths of the partners they most recently interacted with to keep the implementation and the narrative around the side-channel information clean (00:20:41).
+Conference Deadlines and Timeline: The group discussed potential submission deadlines, with the goal of submitting to the Association for the Advancement of Artificial Intelligence (AAAI) conference at the end of July. They agreed to make a significant push in June to finalize work, with the intention of posting to Archive before submitting to the conference (00:18:06).
+Implementation Responsibilities and Next Steps: Aron Vallinder will lead the implementation of the new, simplified prompts and the population-based experiment using Claude (00:22:50). Ivar Frisch's work on Generative Pre-trained Transformer (GPT) noise was deprioritized to focus on these tasks (00:23:47). Edward Hughes requested that the slide deck be updated with the new simplified prompts, results from the direct reciprocity setting, and initial results from the population setting (00:24:47).
+Consistency of Noise Conditions: The team agreed that the noise condition should remain consistent, with negative noise between zero and two applied to all models, to ensure valid and comparable data across the different model types (00:23:47).
+
+
+### 2026-05-11 — Everyone notes
+
+Summary
+Meetingiscussion focused on project results and debugging system prompts and noise implementation across language models.
+
+System Prompt and Results
+Discrepant findings led to reverting code and correcting a system prompt bug. Rerunning results showed varied model improvements and inconsistencies.
+
+Addressing Noise Implementation Disparity
+Models used different noise perturbation methods, causing issues with result validity. The team decided to standardize noise implementation to perturbation across all models.
+
+Debugging and Experimental Adjustments
+Debugging logs will be added to confirm prompt certainty. The team decided to adjust the myth writing prompt to explicitly link myths to game behavior.
+
+
+Next steps
+[Ivar Frisch] Add LLM Logging: Add debug logging in the call LLM function to verify passed messages and responses.
+[Ivar Frisch] Update Myth Prompt: Adjust the myth writing prompt to explicitly link the myth to past game behavior and ensure consistency when referencing both the agents own and the other agents previous myths.
+[Ivar Frisch] Test Smaller Noise: Conduct experiments using a significantly smaller amount of perturbation noise in the game simulation.
+[Aron Vallinder, Ivar Frisch] Coordinate Experiment Runs: Coordinate via email to divide and run simulation experiments in the background.
+
+
+Details
+Discussion of Recent Deadlines and Submissions: The participants initially discussed recently met academic deadlines, including a submission which involved significant work. One participant mentioned a resubmission from a previous conference, possibly ML I guess, related to using cognitive neuroscience tasks to study Language Models (LMs) (00:00:00).
+Upcoming Travel Plans to Rome: Edward Hughes confirmed their attendance in Rome for the beginning of June, specifically from June 9th to the 12th, while mentioning they would need to return on the Thursday evening (00:03:48). Ivar Frisch noted they would be in Rome on the 4th and 5th for a conference and possibly the 15th and 19th for a summer school, dates that did not align with Edward Hughes's visit (00:04:30).
+Internet Connection and Camera Off: Ivar Frisch addressed concerns about their internet connection quality and decided to turn off their camera to potentially improve the call quality. Edward Hughes and Mario Giulianelli reported that their connections seemed fine (00:05:26).
+Review of Discrepant Results and System Prompt Fixes: The discussion shifted to project results, noting that Aron Vallinder's initial findings were disappointing because they did not seem to make sense. Ivar Frisch explained that they and Aron Vallinder investigated and determined that the different results were likely due to new API calls not allowing for the same settings, temperature, and reasoning as before, leading them to revert to Ivar Frisch's original code (00:05:26). A bug was found where the no-noise and noise conditions were run with slightly different wordings in the system prompt, which Ivar Frisch subsequently reran (00:06:49).
+Impact of System Prompt Correction onodel Results: After correcting the system prompt mismatch, the reran results were similar, though the results for Gemini changed slightly, specifically showing an increase in variance and median in the no-noise condition (00:06:49). Edward Hughes observed that in GPT-5 Nano, fixing the branch showed a positive result, and while Claude also showed improvement, Gemini did not demonstrate an improvement (00:10:08).
+Disparity in Noise Implementation Across Models: Ivar Frisch identified a significant difference in how noise was implemented across the models, explaining that Gemini and Claude used a perturbation noise (adding or subtracting a value), while GPT used a full replacement of the actual value based on a probability. They stated that the GPT noise type, which was different and replaced the actual amounts with completely random values in the noise condition, should be removed and replaced with the same perturbation noise type used for Claude (00:11:29).
+Analysis of Noise Conditions and Effect on Balances: In the old GPT noise condition (637), the values shown were supposedly completely random, leading to a consistent but potentially meaningless picture, which Edward Hughes suggested might be due to luck (00:12:45). Edward Hughes questioned why an effect was seen in the plot without noise (635) but not in the plot with noise (639), where the noise condition seemed to wipe out the positive effect of the myth (00:15:14). The current noise being applied is uniform, negative, between zero and five, which Edward Hughes noted is quite a lot of noise relative to the maximum gift of five per round (00:21:09).
+Investigating the Role of Myths in Transcripts: Edward Hughes suggested looking at the transcripts to understand how the models were using the myths, proposing that the noise level might be causing the models to decide there is no point in trying (00:19:46) (00:22:10). Ivar Frisch prepared to look at a Claude transcript for the informed noise condition (00:23:24).
+Reviewing Game Memory and Prompting Mechanics: A detailed discussion ensued about how the game memory is implemented and passed to the language model, with Edward Hughes seeking confirmation on whether the previous interactions and responses were being correctly appended to the prompt for subsequent calls (00:28:08). Edward Hughes confirmed that the system prompt is kept, and the user and assistant messages for three rounds are retained, suggesting that the memory mechanism is likely correct and logging the exact content sent to the model (00:33:20) (00:36:04).
+Proposed Debugging and Experimental Adjustments: Edward Hughes outlined three main points before leaving: adding debug logging to the `call_LLM` function to confirm prompt certainty, adjusting the myth-writing prompt to explicitly link the myth to the game behavior, and trying a smaller amount of noise (00:40:16) (00:43:45). Mario Giulianelli and Edward Hughes agreed that making the myth's role more explicit might help the models better relate the subtasks of myth generation and gameplay (00:41:28) (00:45:52).
+Commitment to Future Tasks and Scheduling Conflicts: Ivar Frisch agreed to implement the proposed changes, including adjusting the myth-writing prompt to ask agents to base their myth on both their own and the other agent's previous myths, rather than just their own (00:42:37) (00:45:52). Mario Giulianelli mentioned they will be busy with an event the following week and will not be able to attend the next meeting but will try to answer project emails (00:47:04). Aron Vallinder offered to run some of the background tasks despite having an upcoming deadline, and they agreed to coordinate the work via email (00:48:15).
+
+
+### 2026-04-20 — Everyone notes
+
+Summary
+Grant funding secured experiments initiated for noise conditions with models to improve behavioral variation for paper submission to NeurIPS.
+
+Grant Secured, Noise Introduced
+The team successfully secured a grant of €1,000 to conduct experiments addressing low behavioral variation in models, where initial runs showed GPT-5 scores near zero and others maximized. Noise was implemented to increase variability and better observe the influence of myths on cooperative behavior across different agents like GPT, Claude, and Gemini.
+
+Improved Results via Noise
+Fixing a bug in the initial noise implementation led to significantly improved and more interesting results, with new patterns visible in the model dynamics, despite complete defection still being common for GPT. The negative delta, indicating the myth condition yielded a higher cumulative balance, was confirmed as the desired outcome for assessing myth inflnce.
+
+Focus for Conference Paper
+It was decided to focus the final paper on the negative noise condition to ensure consistency and demonstrate the significant effect of the myth on at least 1 or 2 models, aiming for the NeurIPS conference submission deadline in 2.5 weeks. The relative social ordering of the models (Claude, Gemini, GPT) was observed to be consistent with previous findings.
+
+
+Details
+Meeting Start and Technical Issues: The meeting began with participants joining and a brief discussion of technical issues Ivar Frisch experienced with a new email address used for note-taking, which led to other participants being held in the waiting room. Ivar Frisch also mentioned having difficulties receiving and responding to Edward Hughes's emails, necessitating the creation of a filter to prioritize them (00:00:00). Edward Hughes humorously suggested that their extensive emails on cultural evolution might be triggering spam filters (00:01:05).
+Grant Award and Experimental Setup: Ivar Frisch reported that they secured a grant of €1,000 from the Cooperative AI foundation, thanks to Aron Vallinder's assistance, to conduct experiments. They scheduled a call regarding the grant for Wednesday (00:01:05). The discussion transitioned to the noise experiments, which were implemented to address issues where GPT-5 scores were nearly always zero, while Claude and Gemini scores were often maximized in the game-only direction, limiting behavioral variation (00:02:37).
+Noise Implementation and Results: The core idea of adding noise was to increase behavioral variation to better observe the influence of myths on cooperative behavior (00:02:37). Ivar Frisch explained that an initial bug in the noise implementation was fixed, as agents could deduce the real amount sent. The noise condition for GPT agents was designed to make the return value appear maximum to the first agent, while for Gemini and Claude, the noise worked in the opposite direction (00:03:59).
+Qualitative Assessment of Noise Effects: Edward Hughes found the rults with noise to be greatly improved and more interesting than previous runs, noting the presence of dynamics in the plots. Ivar Frisch presented examples of different runs, noting that while the previously observed trajectory (complete defection) is still the most common for GPT, other patterns are now visible (00:05:46) (00:09:10). They clarified that the return value only reflects what is given back, which can only happen if an amount was sent in the first round (00:07:18).
+Interpretation of Delta Plots and Conditions: Edward Hughes sought clarification on the summary plots and the interpretation of the y-axis and delta values (00:10:32). Ivar Frisch explained that the delta is calculated as the mean of the game-only condition minus the mean of the myth condition, meaning a negative delta indicates that the myth condition had a higher cumulative balance, which is the desired outcome (00:13:54). The "Bootstrap" condition for GPT-5 Nano is a specific noise condition designed to increase the return value to maximum, unlike the noise for Claude and Gemini, which is intended to reduce the return value (00:16:19) (00:19:18).
+Proposed Path for Paper and Experiments: Edward Hughes proposed focusing on the "negative noise condition" (where return values go down, used for Claude and Gemini) for the paper to maintain consistency and demonstrate a significant effect of the myth on at least one or two models (00:20:18). They suggested that running GPT-5 Nano under the same negative noise condition might result in zeros across the board, which would still be interesting for comparison. They noted that the relative social ordering of the models (Claude being most social, Gemini in the middle, and GPT being least social) seems to reflect previous findings (00:28:44).
+Analysis of Qualitative Data and Myth Difference: Edward Hughes suggested that collecting transcripts with the myths and analyzing them quantitatively and qualitatively would be valuable, potentially revealing more cooperative language in Claude versus GPT (00:30:47). Arabella Sinclair suggested investigating whether the myths themselves change when agents are informed about the noise, as this could reveal important aspects of their reasoning or storytelling (00:32:12).
+Planning for Conference Submission: Edward Hughes suggested that the research is nearing a position to be written up as a full paper for a conference. They proposed aiming for the NeurIPS (New Conference) deadline, which is in two and a half weeks (00:34:22). Aron Vallinder volunteered to start working on the LaTeX file and creating placeholder figures based on the consistent negative noise condition. Ivar Frisch confirmed they already have a LaTeX file and will share it, but noted they will be on holiday from the 27th until the 3rd, making the May 7th deadline tight (00:35:56) (00:37:47).
+Next Steps and Meeting Schedule: The group agreed to try sprinting this week, with Ivar Frisch running remaining experiments and Aron Vallinder working on the draft. They planned to assess their progress at the meeting on the 27th to determine if the others could continue writing while Ivar Frisch is away (00:37:47). Edward Hughes concluded the meeting by praising Ivar Frisch's work .
+
+
+Next steps
+[Ivar Frisch] Run Experiment: Run GPT 5 Nano experiment under the negative noise condition this week.
+[Ivar Frisch] Gather Transcripts: Gather transcripts of the myths (rollouts) for review during next week's meeting.
+[Ivar Frisch] Share LaTeX: Share the existing LaTeX file for the paper draft.
+[Aron Vallinder] Draft Paper: Start drafting the NeurIPS paper using the existing LaTeX file this week. Coordinate with Ivar Frisch for consistent figures, method explanations, and introduction placeholder.
+(ivars notes)
+Now we got these nice results, focus on getting consistent results for the noise condition
+
+Delta's:
+With gemini we would expect positive delta, given the points
+With claude correctly expect negative delta, given the points
+
+Maybe can use median instead of mean?
+→ claude, no noise would give delta = 0, bu noise and noise informed we would get negative deltas
+→ gemini, in no noise, we would get 0s,
+
+
+This would be great to run this week:
+Run Gpt-5-nano in the Claude noise setting
+→ this would be exactly the same ordering of models which Aron and Ed found in last paper.
+
+This is interestingly, what their personality feels like.
+
+Take a look at Myths and rollouts → gather some myths to look at.
+
+Do myths differ when informed about noise?
+→ this would be interesting.
+
+Conferences:
+Neurips, 2,5 weeks
+Most open to this kind of paper
+
+- Have placeholder figures
+- Explanation of methods
+
+
+Notes
+
+- why noise lower than no noise?
+    → no noise experiments where 15 rounds. Noise experiments are rounds.
+
+
+### 2026-04-04 — Ivar/Aron noise to-dos
+
+To do:
+Track and plot noised sent, noised returned, noised cumulative balance
+So basically, have two ledgers; one which tracks all original data, one which tracks all noised data (so only the noise amounts are used for further calculations and to update balances) .
+Compare to old plots (is this very different?)
+GPT-5-nano should have uniform distribution ise, run with this
+Every noise condition should
+have clamping
+Been applied to all agents, all variables (send, returned, cumulative balance) all rounds
+Check prompts:
+Are there bad prompts being used?
+Re-run gpt-5-nano noise
+Update the prompts
+Make it all uniform between baseline and noise conditions
+Give baseline same prompts as noise conditions
+Re-run
+Balance comparison plot the results
+
+
+
+
+Ivar/Aron
+Prompt variations:
+A variation of myth writing where they don't know about the game yet.
+
+Can we map myth evolution of concrete → abstract to game behavior?
+The myth is meant to be a broader story, not necessarily about the game? What if it conveys general norms and lessons about life? Then with what mechanisms can this storytelling improve cooperation in LLMs.
+
+"Write a myth about a very game-unrelated event, conveying your own inner morality"
+→ try some different prompt variations and see effect
+
+Lets agents play game, but then we insert the myths ourselves rather than letting them
+generadifferent game strategies lead to different myth game influence?
+
+
+### 2026-03-30 — Ivar/Aron/Mario notes
+
+- to test between different conditions (noise/no noise, game/game_myth, etc), add significance testing
+
+Theres a big difference for claude and gemini between noise and non-noise .  but is there also a difference between game_myth and myth_game?
+
+Noise did one part ofoped:
+Moving the models somewhat from their extreme strategies
+But it did not make the difference we expected in cum. balance between game and game_myth, myth_game conditions.
+
+
+Compare distribution of mean cum scores and variance : 1. no noise vs noise vs noise informed, 2. Between each condition game, game myth, myth game, 3. Also; is the impact of adding myth different between no myth and adding myth.
+
+
+    mean(no-noise, game-only) vs mean(no-noise, game-myth)
+mean(no-noise, game-only) vs mean(no-noise, myth-game)
+…
+mean(no-noise, game-only) vs mean(noise-informed, game-only)
+…
+
+"deltas":
+mean(no-noise, game-only) - mean(no-noise, game-myth) vs mean(noise-informed, game-only) - mean(noise-informed, game-myth)
+
+Update boxplots; different boxplots for different conditions, including all models.
+
+Possible other myth-game hypothesis;
+Maybe not that myths increase cooperation game play?
+Maybe instead: myths reinforce existing played strategy → maybe reduce gameplay variance?
+
+
+Ways out of no chum:
+Noise experiments
+Multi-agent experiments
+
+
+Delta's between conditions have not dramatically changed.
+
+Ed:
+It seems you would want to be able to identify a defector. If you introduce a deliberately defective agent, does that influence global dynamics?
+
+
+To Do:
+Run noise experiments on Donor Game
+Compare distribution of mean cumulative balance scores and variance
+Update boxplots; different boxplots for different conditions, including all models.
+Run Donor game noise experiments
+Implement some other games
+Could be cool to try only down-side noise conditions; you can only try noise which makes less. Increase the height of the noise; not just $1, but $5.
+Fix decimal place thing.
+
+
+### 2026-02-26 — Ivar/Aron notes
+
+Subject: Noise experiment results — summary and next steps
+
+  Research question: Does adding myth writing to a trust game increase cooperative behavior between LLM agents?
+
+  The problem: Our initial experiments produced two degenerate patterns that prevent a clean answer. GPT-5-Nano defaulo near-zero cooperation
+  regardless of condition — myth writing produces brief cooperative spikes that immediately collapse. Claude and Gemini default to near-maximum
+  cooperation, creating a ceiling effect where myth writing has no room to increase scores. In both cases, the models' trained-in behavioral defaults
+  dominate, making it impossible to detect whether myth content actually influences game decisions.
+
+  We introduced noise to create moderate cooperation baselines where a myth effect could be measured. The noise distorts communicated amounts (what
+  agents are told the other sent/returned) while keeping actual payoffs accurate — agents see correct receipts but not the other's intentions. We
+  tested two variants: bidirectional uniform noise (±$1 on both sent and returned) for ceiling-locked models, and bootstrap noise (return always
+  reported as 100%) for floor-locked models. Both were crossed with an informed/uninformed condition (whether agents are told noise exists).
+
+  Results: Bidireal noise successfully pulled Claude from ~0.95 to ~0.75 trust ratio — a genuine moderate baseline. However, myth conditions did
+  not show a clear lift above this baseline. Gemini remained ceiling-locked (~0.92–1.00) even with noise; ±$1 on a $5 endowment is insufficient to
+  disrupt its cooperative default. For GPT-5-Nano, bootstrap noise with informed agents raised the baseline from 0.08 to 0.28, but again myth
+  conditions did not reliably exceed this. The uninformed bootstrap showed a suggestive Myth→Game effect (0.41 trust ratio) but with very high variance
+   across runs.
+
+  In short: noise can create the moderate baselines we need (at least for Claude), but myth writing does not yet demonstrably increase cooperation
+  above those baselines. Possible explanations include the myth topic ("anything") being too generic to prime cooperative behavior, memory capacity
+  being too low for myth content to persist during game rounds, and the sequential task structure allowing the priming effect to decay game
+  play.
+
+
+Notes:
+
+Hypothesis:
+Noise can potentially pull the agents out of their convergent state and this might lead to more influence of myth in game.
+
+Basic idea; LLMs are strongly trained to give a particular response, this means that the myths will not have much influence. So if we can get them out of this state they're trained on.
+
+Extra noise condition. 1:
+Change the actual game results
+Also; currently, the only thing which is updated is the prompt and not the agent memory itself.
+Add noise for both agents
+They are told there is noise added
+
+Extra noise condition. 2:
+Add noise for both agents
+They are not told there is noise added
+
+Focus on:  more on other noise variations; noise_…small, noise…_informed. But increase dollar ranges.
+
+Here are descriptions of current noise variations implemented. Remember that for gpt models, we saw that behavior is often centered around 0, because the trustee does not return the initial investment of the investor. So we would likely want to have a van similar to 3. noisy_probabilistic_zero but then just that return amount is always represented as 100% return.
+
+
+Main choice points:
+- how do we want noise to be represented? Only as a different donation/return amount or can we think of smt else too?
+- to who should this be presented? Only to the trustee and only for round N? Or also to the investor and also for previously played rounds?
+
+---
+NOISE EXPERIMENTS (noise_comparison)
+
+These experiments test how agents behave when the amounts they see differ from actual amounts.
+
+  ---
+  1. default (Baseline)
+
+  Description: No noise. Agents see exactly what was sent/returned. This is the control condition.
+
+  Example Round 1 Trustee Prompt:
+  Round 1: You are the TRUSTEE. The investor sent $3, that is 60.0% of their total
+  endowment. You received $9. How much do you return to The investor? (0-9)
+
+  ---
+  2. noisy_uniform_small
+
+Description: Adds ±$1 uniform random noise to the "sent" amount shown to the trustee. The trustee sees a distorted amount but is NOT told about the noise. Actual game payoffs use true amounts.
+
+  Config:
+  noise_config:
+    type: "uniform"
+    range: 1.0           # +/- $1
+    applies_to: "sent"
+    inform_agents: false  # Agents don't know there's noise
+
+  Example: Investor actually sends $3, but trustee might see $2.3 or $3.8
+
+  Example Round 1 Trustee Prompt (with noise applied):
+  Round 1: You are the TRUSTEE. The investor sent $2.3, that is 46.0% of their total
+  endowment. You received $6.9. How much do you return to The investor? (0-6.9)
+  (Actual sent was $3, but agent sees $2.3 due to noise)
+
+  ---
+  3. noisy_probabilistic_zero
+
+Description: 20% chance the "sent" amount appears as $0 to the trustee, even if investor sent money. Tests how agents handle apparent betrayal that's actually communication failure.
+
+  Config:
+  noise_config:
+    type: "probabilistic"
+    probability: 0.2      # 20% chance of noise
+    replacement: "zero"   # Replace with $0
+    applies_to: "sent"
+    inform_agents: false
+
+  Example: Investor sends $4, but 20% of the time trustee sees $0
+
+  Example Round 1 Trustee Prompt (when noise triggers):
+  Round 1: You are the TRUSTEE. The investor sent $0, that is 0.0% of their total
+  endowment. You received $0. How much do you return to The investor? (0-0)
+  (Actual sent was $4, but agent sees $0 due to probabilistic noise)
+
+  ---
+  4. noisy_uniform_informed
+
+  Description: Same ±$1 noise as noisy_uniform_small, but agents are TOLD there's noise. Tests whether awareness of noise changes behavior.
+
+  Config:
+  noise_config:
+    type: "uniform"
+    range: 1.0
+    applies_to: "ent"
+    inform_agents: true   # Agents ARE told about noise
+
+  System Prompt Addition (appended to standard system prompt):
+  NOTE: There may be communication noise in this game.
+  The amounts you see may differ slightly from what was actually sent/returned.
+  This is part of the experimental design.
+
+  Example Round 1 Trustee Prompt:
+  Round 1: You are the TRUSTEE. The investor sent $2.3, that is 46.0% of their total
+  endowment. You received $6.9. How much do you return to The investor? (0-6.9)
+  (Same distortion, but agent was warned in system prompt)
+
+  ---
+
+
+Aron's suggestions
+Both money sent and money returned get distorted via a iform distribution (±$x)
+Agents always see the correct amounts received, but not how much the other person intended to send (i.e. the amount before distortion)
+In one condition, they are told that there is a noisy process. In the other condition they are not.
+
+PUBLIC GOODS GAME
+File: noise/public_goods_game.py
+
+  ---
+  All Prompts (Hardcoded - no YAML config)
+
+  1. System Prompt (lines 64-78)
+
+  You are playing a Public Goods Game with {n_players} players.
+
+  GAME RULES:
+  - Each round, you receive ${endowment}
+  - You decide how much to CONTRIBUTE to a shared pool ($0-${endowment})
+  - All contributions are summed, multiplied by {mpcr}, then divided equally among all players
+  - Your payoff = ${endowment} - contribution + (pool share)
+
+  STRATEGY:
+  - Contributing more benefits the group but costs you individually
+  - If everyone contributes nothing, everyone gets ${endowment}
+  - If everyone contributes everything, everyone gets ${endowment * mpcr / n_players:.2f}
+
+  RESPONSE FORMAT: {'contribute': <amount>}
+
+  ---
+  2. Round 1 Prompt (line 94)
+
+  Round 1: You have ${endowment}. How much do you contribute to the public pool? (0-{endowment})
+
+  ---
+  3. Later Round Prompt (lines 118-129)
+
+  Round {turn}
+
+  Last round results:
+  - You contributed: ${my_contribution}
+  - Others contributed: {others_str}
+  - Total pool: ${total_pool:.2f}
+  - Pool was multiplied to ${total_pool * mpcr:.2f} and divided {n_players} ways
+  - Your share from pool: ${pool_share:.2f}
+  - Your payoff: ${my_payoff:.2f}
+  - Your total earnings: ${balance:.2f}
+
+  You have ${endowment} this round. How much do you contribute? (0-{endowment})
+
+  ---
+  Key Parameters
+
+
+  Game Theory:
+  - Nash equilibrium: Contribute $0 (defect)
+  - Social optimum: Contribute everything (cooperate)
+  - For cooperation to be socially beneficial: mpcr > 1
+  - For defection to be individually rational: mpcr < n_players
+
+  ---
+  Note
+
+  Unlike the trust game, the public goods game has no YAML-configurable prompts - they're all hardcoded in the Python file. The game also supports optional template overrides via system_prompt_template and
+  contribution_prompt_template constructor arguments, but no experiments currently use them.
+
+
+### 2026-02-20 — Ivar/Aron/Arabella/Mario/Ed notes
+
+"Prior work has already shown that telling prosocial stories / antisocial stories in prompts can affect subsequent cooperativeness of actions. What would be new in our work is if these stories arose and their valence evolved (either pro or anti-socially) in a less-engineered way. " → is this still the case? Not sure this is what we have been measuring so far.
+
+→ mario: we want do not want stories that start out pro-social/anti-social, but which evolve as such.
+- if we do not specifically engineer the myth as cooperative, does cooperativeness still emee?
+
+- we're in a good place, but still need to run more experiments.
+
+If we have a non-cooperative baseline, then run more experiments, then we would have a good place.
+
+Get figures in the paper first – then start writing introduction and rest paper.
+
+Best focus:
+Get into good cadence of experiments and if we have good results → then edward can help writing (mario and arabella)
+
+Arabella paper:
+- Q.1: do they cooperate? Does introducing the myths make them more collaborative?
+- → we can already write this up?
+- what if the reward is not constant? Does that change?
+- write up experiment 1 (put in overleaf)
+
+Mario paper:
+- if i don't have time, what are we gonna do then?
+- if we take it a bit slower (meet every two weeks), can we finish it then?
+- write up once notes are in document is not an issue
+
+Run a bit more experiments and document results in overleaf.
+If I didn't have time to run, we can also skip. → when transferring notes to overleaf add recap of definitions.
+
+
+### 2026-02-11 — Ivar notes
+
+Ivar/ notes �If donor game, game only, is less cooperative than trust game, then that would be good.
+Emergence of punishment behaviors would be great to see!
+
+The most interesting dimension is if myth writing increases cooperation.
+
+What ways could we make game behavior more interesting?
+
+How to complexify game?
+Add in noise
+Random noise on what is actually send to decision that is made by trustee
+Noise = something in the game dynamics between the two agents where 1 agent chooses defect, but it is being communicated as being cooperative.
+Or; lose information through rounds.
+1. Add uniform round noise on the amount send/return – just change outputs
+2. There is a prob of 0 that this will happen – have a prob, roll a dice, and if number 1 comes up, send amount x.
+Different options to implement:
+Telling this to agents in system prompt, do not tell it in system prompt
+Public goods game instead of trust game
+Is more similar to donor game
+Need more than two agents interacting – need this for anything similar to cu evolution.
+
+Do we see punishment mechanisms emerge in myths?
+
+Non-cooperative result is interesting
+Cause it does show there is relation
+
+What if instead of a fixed multiplier in a trust game, we have a variable multiplier?
+Random distribution
+Between 0-5 ?
+Some certain distribution
+
+Can we have a milestone write up of something? In a report.
+This is a good frustrating moment. There is still engineering to be done to find the edge of knowledge; where do systems fail?
+
+To Do:
+Fix one shot assumption in trust game
+Add to system prompt; you play multiple roles across rounds
+Complexifying the game
+Try out different multipliers
+Add noise
+
+Add gemini reasoning
+Donor game playing
+
+Ivar/ notes – 11/02/2026
+
+Why is trustee behavior always lower than investor behavior?
+→ if investor send 0, trustee range of return is 0-0, so HAS to return 0.
+
+Important paper about recent LLM chain transmission experiment:
+Lost Before Translation: Social Information Transmission and Survival in AI-AI Communication
+httposf.io/preprints/psyarxiv/u64gc_v1
+
+
+### 2026-02-09 — Ivar/Mario/Arabella/Aron/Alex/Ed
+
+Myth conditions are slightly higher; that is a good initial signal that something is happening. However is this due to change in game strategy or just more variance in game behavior?
+
+One difference Mario noticed:
+In game myth or myth game, we see that 1st rounds start more cooperative, then go down
+
+Some things to notice:
+Does the game start cooperative (high send/return values in the trajectory plot)?
+Are there spikes later on (high send/return values in the trajectory plot)?
+Why are the spikes not continued?
+What do the models interpret by cooperation?
+A high send/return amount?
+Not breaking the pattern? (claude seems to believe that not breaking the pattern means cooperation)
+Are the spikes reflected in the myths or the myth measure results?
+
+Spikes do not show cooperativity developing; they often go back to equilibrium of 0.
+There is no organic development of cooperativity
+
+It is weird that if they start cooperativand then write a myth about cooperativity, their behavior does not change much. Gpt5-nano seems to have strong bias towards non-cooperative behavior.
+
+→ Do reasoning chains say something explicitly about game dynamics.
+
+Can it be that the myth makes the agents' think its the investors role to invest more. If you have one role and myth supports behavior only in role. It would be interesting to see who makes the generosity attempt and whether you make this attempt because of the myth which was written before.
+
+What is interesting to look at:
+…
+
+If agents see multiple rounds where non-cooperativity happens, then ofcourse theyll be non cooperative
+
+So why if the first round is cooperative, they still act noncooperative?
+
+We could:
+Try to make them more cooperative
+Do we know if across rounds, the myths remain cooperative?
+
+Can we compare the two signals (the cooperativity ratio curve ~ game send/return curve). Could we compare these using time series? For money sent, we would hope to see some correlaetween the two lines.
+What to correlate with what?
+Received you could leave out
+sent/returned
+You would need to correlate language of both agents with the agents, because they have access to both.
+
+Can we conclude that adding the myths changes something in game behavior?
+    - Yes.
+        - something is happening, but its not yet as systematic as we were hoping for.
+        - Also; variance across models question: models have prior bias for (non)
+Cooperativity → myth writing can sort of change this, but maybe not fully.
+
+Arabella:
+Would be interesting to follow up the type of language and influence; what type of
+That some models write more positively is very interesting.
+How much do myths contain keywords from the myth prompt?
+→ a measure to check how good are models follow myth topic
+
+Direct reciprocity:
+Iterated interactions with the same model
+Indirect reciprocity:
+Looks at reputation: How has this model behaved with other models?
+
+For some models, rates of cooperation where already very high in Truste, but not in Donor Game.
+
+
+To Do:
+Send summary email
+Run Donor game with GPT-5-Nano, or Claude sonnet 4.5
+Run Trust game 2, 3 other models
+Good Claude model
+Good mistral model
+Good gemini model
+Parallelize condition running
+Consolidate results from these conditions for 3, 4 models and then doing the analysis between language and behavior.
+What can we say with certainty about how different models behave?
+Write the story down with preliminary results in overleaf.
+
+
+### 2026-01-30 — Ivar/Mario/Arabella/Aron/Alex/Ed
+
+Myth topics still for two agents game.
+
+Problem is that the baseline is too strong and their behavior is too regular.
+
+Gpt-5-nano run 10 times and average so that its clearer what baseline is, run 10 of each condition.
+→ run for 10 times
+
+Real world test
+Disguise trust game as more real world behavior? But then trust game rules should be more integrate in real story. Ed's understanding of when humans play this game; they do get these explicit instructions, so we don't need to do this.87 is interesting,
+
+Prioritize:
+Running gpt-5-nano, for 10 times, in game only and game myth, with myth variations. (ivar)
+Run myth variations in larger population donor game (aron). Not doing the accumulation
+Write a paper with two player trust and more player donor.
+
+If we can't get it working with deception myths, then we likely can't get it to work at all. Then we can think, how unfair is this trickster prompt unfair and can make it fairer?
+
+→ then we could have variations on how explicitly we call deception in myths.
+
+Writing paper tips:
+Target type paper?
+Start by writing introduction (later change).
+Describing games
+Describing experimental methods.
+
+What is cooperation?
+Money sent
+
+
+Fairness/Reciprocity:
+How much money is returned?
+
+
+Looking into the strategies is good and interesting, need to look into main results first:
+Is there a difference between game condition and game myth condition?
+Is the game baseline non-cooperative and the game myth condition more cooperative?
+If game mndition makes game strategy less stable, this could be a result too, but is harder to tell and convey.
+
+If we can disambiguate which scenario we're in, we're in a good position.
+
+Then look at:
+Thinking traces
+Language use and correlation to successful outcomes
+
+
+But first need results!!
+
+To Do:
+Running gpt-5-nano, for 10 times, in game only and game myth, with myth variations. (ivar)
+Run myth variations in larger population donor game (aron). Not doing the accumulation
+
+
+### 2026-01-26 — Ivar/Mario/Arabella/Aron/Alex/Ed
+
+Response leakage:
+Try to prevent myth leakage
+In system prompt, tell what is going on in whole game. Should include myth writing  (rationale: if system prompt doesn't contain any mention of myths, this might be the reason there is no myth sometimes)
+Pydantic schema; we could do that to the game. → but doesn't seem necessary
+
+Get reason then donation:
+These models are doing reasoning internally, but may not be able to access. If you get decision and then reason, you will not get ey will do post hoc. So if you want reason, do reverse; first reasoning, then donation
+→ but maybe we could just api to extract reasoning tokens.
+
+Arabella finds interesting:
+that donor game is prevalent in myth is very interesting.
+Then you would hope that behavior later is more cooperative or smt
+But then you would need to check; do these stories have more generous gameplay.
+
+Ed agrees → this would make more stronger. Inverse relation would also be interesting
+
+Results:
+When you get a behavior in this game, it seems to stick.
+Its cool that there is much more diversity in game behavior in game myth conditions
+Indirect reciprocity case, baseline does not seem to strong.
+
+Just run for 20,30,40 rounds. Because we don't see interesting developments in 100 rounds.
+
+If myths have more effect in indirect than direct reciprocity, it wouldn't be weird; it's the same function in humans.
+→ alex; if we see a relation (width ~ depth), could we correlate it with increase to indirect reciprocity?
+
+2 agentfinitely direct reciprocity.
+Giving names vs not giving names → does this have an effect? Because then you have to rely on a wider population.
+
+Or: the power of myth is higher when there  is more agents you interact with
+Myths if a notion of policing came up, would be cool
+
+Paper ed shared: religious myths are correlated with large scale cooperation
+add myth variation prompts
+Now we've got a good setup, we can work on the myths;
+Myths about the game, myths about a certain topic, etc.
+The cultural evolution of prosocial religions | Behavioral and Brain Sciences | Cambridge Core
+
+Are myths allowing you to bootstrap way more agents? → could it allow new agents to tell them how to behave?
+Digital red queen paper: →
+We have an implicit evolution framework; memes (a unit of human cultural transmission) in myths are also competing with each other. → we want competitive ideas .
+
+AS: important point to think of related to controlling myth topic/meme that is repeated: if we encourage a topic, we maconsider this differently to what is adopted by the population: e.g. are we varying an agent's myth adoption behaviour, are we varying the type of myths they are predisposed to propose
+
+Get sign of life of in myth condition:
+
+Experimental grid (Aron)
+For logging: weights and Biases.
+
+To Do's:
+- if you want to add reasoning, then first reason, then game
+- but just use api to extract reasoning, then remove from prompt. (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens)
+
+Last Meeting summary:
+Key Decisions
+Main paper focus: the language–cooperation link
+Research question: How does linguistic evolution occur between LLM agents interacting over time.
+Is there a relationship between increased cooperativity and the language of the myths?
+Setups:
+Game only
+Is there some equilibrium reached in terms of game play behaviour?
+Myth only
+Does change in linguistic use occur in a myth sharing setup
+Stable myth similarity across time or divergence from original myth topic
+Game → myth and Myth →here a relationship between game behaviour and subsequent myth topic
+Is there a relationship between increased cooperativity and the language of the myths?
+Is there a difference in gameplay when adding myths
+Is there a difference in myth evolution when adding gameplay
+Core conditions to run:
+Different models (GPT vs Claude)
+Different task orders (game ↔ myth)
+Deadline: Feb 23
+Meetings: weekly until deadline (open to all)
+Updates: shared Google doc/slides, sent 24h before meetings
+
+
+To Do's
+1. planned a meeting with aron early next week to discuss game changes
+3. update game prompt
+4. Fix trajectory plot issues
+4. Fix rolling trajectory plot issues
+4. Test new prompt for gpt-5-nano, claude
+4. Implement donor game
+3. look into memory saving issue: Something seems to go wrong; memory capacity is 3, but saves way more messages?
+
+
+memory_capacity=3 does not mean "store 3 messages". It means "keep ~3 exchanges (user+assistant pairs)", and our truncation check is off by one, so it actually stabilizes at the system prompt.
+truncate only when len(self.messages) > 2*C + 1
++1 for the system prompt
+2*C for prompt, response pair; because each of these counts as one message
+Example: memory_capacity = 3, after response of llm, have 9 messages in memory
+[
+ {"role":"system","content":"..."},
+ {"role":"user","content":"(old prompt A)"},
+ {"role":"assistant","content":"(old response A)"},
+ {"role":"user","content":"(old prompt B)"},
+ {"role":"assistant","content":"(old response B)"},
+ {"role":"user","content":"(old prompt C)"},
+ {"role":"assistant","content":"(old response C)"},
+ {"role":"user","content":"(old prompt D)"},
+ {"role":"assistant","content":"(old response D)"}
+]
+
+
+
+
+5. look into myths, does collapse happen when game behavior collapse happens?
+Quick check in this shows, does not necessarily seem to be the case
+For gpt-5-nano runs, uninformative because game responses often leak in myth texts.
+
+
+
+
+2. Make februari planning
+2. start writing paper (literature review, conditions, methods, etc)
+3. Remove hardcoded prompts in trust game and myth writer; read in from config
+4. Save/generate game strategies/reasoning
+4. Json save full responses
+4. Trust game sys prompt:
+    Remove game reasoning
+    - explicitly mention myth writing
+5. Possible prompt variations:
+Myth writing:
+Explicitly tell agents to write about game dynamics
+Different myth topics
+Game sys prompt:
+ tell agents max number of round (to test for backward induction)
+Add defection punishment mechanisms
+Game framing; frame game in real–world scenario (ie two people trading stocks)
+Do results generalize to more real-world scenario's?
+
+
+6. Add clear prompt/result variation tracking (ivar)
+7. Implement measures to capture game dynamics:
+Can we extract game strategies from sent/returned values alone?
+Can we detect the following questions: What is optimal strategy? When does this strategy start to occur? When they land on the strategy, do they keep playing it? Or do they divert at some point?
+Cluster or categorize game strategies
+8. Implement measures to cae language-cooperation link:
+Concreteness scoring
+LLM-as-a-judge:
+"How well does this myth reflect events from a cooperation game? Rate 0-10."
+"What is the moral of this myth? Is it prosocial (cooperation/trust rewarded) or antisocial (selfishness rewarded)? And does this reflect game decisions?
+Brysbaert concreteness scoring:
+dictionaries of concreteness norms (Brysbaert concreteness ratings) . Count number of concrete words vs abstract words in myth. Could even use LIWC here. Justify as: yes we do llm-as-a-judge, but we also use non-llm measures.
+Remaining questions:
+What do you mean exactly by signal to amplify? Longer cooperation streaks? Or more variance in behavior (high and low peaks)? Both?
+We could share the results from indirect reciprocity game if desired
+ I still struggle a bit with the following technicalities:
+How can we make sure a run is not just random? How can we be sure that the result is actually due to the condition and just the beginning of the run so to speak? Just run the same condition 3 times and average?
+In general, are you aware of a clear and established way/software/package to keep track of different LLM runs, their configs and results? This is more of a data management and architecture question; the number of config combinations and result json to track quickly becomes very big.
+→ Weights and biases
+This ties into a similar uncertainty; how to quickly do ablation studies/runs? So let's say we want to test a new prompt variant, but we also want to test the effect of increasing memory capacity, how could I do both of those effectively? Currently, I would run the prompt variation separately, then run a memory capacity test separately, then run it together. But, again, this easily gives a lot of different conditions and result files. Not sure how to best deal with this. Maybe one option would be to just for each run have a run_id or a hash and save it, along with all parameter values and conditions in a csv. Another option could maybe be to just use software like Weights andiases for logging? Curious too hear if you have any thoughts on this!
+ Checkpointing: currently, we have implemented checkpoint saves. So, for each run, each 10 rounds all results and data gets saved in a json. Then, if the LLM simulation crashes (for example due to empty llm response, which happens occasionally), we can just restart the run by loading in the agents' memory of the last interactions. I did this because: 1. for long runs (100+ ) simulation can crash quite easily and all data would be lost without checkpointing, 2. I did not constrain llm responses uses Pydantic model schema's because I wanted to capture weird unusual model output (for example; what if the model starts outputting game decisions as myths and vice versa, then we would like to know). My concern here, tho, is that, technically this is not the same model, is it a new instantiation of that model with the same conversation history. I think this is still similar enough, but I would like to know if you think we can do this or not.
+→ checkpointing should be fine, no problem!
+
+
+### 2026-01-26 (recap with Aron) — ivar/aron
+
+direct reciprocity:
+    -direct link between the two agents
+    - here you would expect something like "if i behave nice with person now, the will
+behave nice  with me in the future"
+
+indirect reciprocity:
+    - reciprocity is mediated by other variable (ie reputation; if i behave well to this
+agent, my reputation will increase and maybe other agents will behave good to me
+in the future)
+
+Trust game is only direct reciprocity
+We see they almost always give the max, so then we can't detect interesting myth behavior. So we would want a different game where we can detect more variation.
+
+Question: 1 round donor game, 1 round myth writing?
+
+→ you can only play the donor game by having a society of agents
+
+Make a society of agents:
+
+
+To Do's:
+Add clear prompt/result variation tracking (ivar)
+Adjust myth writing; tell them to write about game dynamics (ivar)
+Run no defection prompt for gpt, claude (ivar)
+Run new myth writing for gpt, claude (ivar)
+Incry parameter and plot if effects changes (ivar)
+Run myth_writing_no_explicit_myth_last_round (ivar)
+Add donor game (Aron)
+Add society of Agents (Aron, ivar?)
+
+
+### 2026-01-16 — Ivar/Mario/Arabella/Aron/Alex/Ed
+
+Research question:
+How does linguistic evolution occur between LLM agents interacting over time.
+Is there a relationship between increased cooperativity and the language of the myths?
+Setups:
+Game only
+Is there some equilibrium reached in terms of game play behaviour?
+Myth only
+Does linguistic evolution occur in a myth sharing setup
+Stable myth similarity across time or divergence from original myth topic
+Game → myth and Myth → game
+Is there a relationship between game behaviour and subsequent myth topic
+Is there a relationship between increased cooperativity and the language of the myths?
+Is there a difference in gameplay when adding myths
+Is there a difference in myth evolution when adding gameplay
+
+
+3. In general, across almost all models, myths seem to go from concrete to abstract. With early mypturing game dynamics more closely than later myths.
+4. In terms of game strategies, it seems that only claude-3-haiku uses elements from the myth in its reasoning for game decisions, not any of the other models.
+
+Is there some underlying setting we are observing that is to do with models being trained for reciprocity
+
+Maybe worth investigating whether there Is there actually some difference depending on if agents first write a myth (e.g. it starts the myth off with no influence and it directly influences the first gameplay behaviour
+
+Investigate myths at specific gameplay points: e.g. collapse in behaviour
+
+
+To DO's
+
+Update game prompt
+Remove "defect" option from game
+Why are there no negotiation dynamics?
+Can we do indirect reciprocity instead?
+Make them play pairwise
+Instead of just two agents, have group of agents
+Adjust myth writin; tell them to write about game dynamics
+Look into memory capacity
+Something seems to go wrong; memory capacity is 3, but saves way more messages?
+Look into myths,
+ame behavior collapses/changes, do myths also change?
+Maybe could use complexity science measures/ phase shift detection to detect this easier.
+Implement Game strategies:
+make models do game strategy
+Save strategy in json
+Implement measures to capture game dynamics:
+Can we extract game strategies from sent/returned values alone?
+Can we detect the following questions: What is optimal strategy? When does this strategy start to occur? When they land on the strategy, do they keep playing it? Or do they divert at some point?
+Cluster or categorize game strategies
+Implement measures to capture language-cooperation link:
+Concreteness scoring
+LLM-as-a-judge:
+"How well does this myth reflect events from a cooperation game? Rate 0-10."
+"What is the moral of this myth? Is it prosocial (cooperation/trust rewarded) or antisocial (selfishness rewarded)? And does this reflect game decisions?
+Brysbaert concreteness scoring:
+dictionaries of concreteness norms (Brysbaert concreteness ratings) . Count number of concrete words vs abstract words in myth. Could even use LIWC here. Justify as: yes we do llm-as-a-judge, but we also use non-llm measures.
+
+
+
+
+Reply Arabella questions
+
+Questions
+Main research focus/question for this paper? What are the most important conditions to run?
+→ language-cooperation link
+Conditions to run; different models (gpt and claude), different task orders
+Im free until Feb 23, so would like to try to finish by then. Can we plan weekly meeting and whoever wants to join can join?
+Yes
+Deadline: Februari 23rd
+What is the best way to share updates/findings? Seeing as there are so many conditions, I sometimes struggle getting everything together clearly
+→ share google doc/slides
+→ send 24 hours before meeting
+Simulation generation: currently, when simulation crashes, the states and memory get loaded into llm and run gets started again. Is this legit? Or can we only do this if we specify seed parameter? In this case, Anthropic does not have seed parameter, so what then?
+→ no seed parameter
+
+
+### 2026-01 — Ivar/Mbella
+
+I feel a little unclear atm about the direction and what to look for exactly, so I should write up the blogpost to get more clarity.
+
+Done:
+Run for all base models 50 rounds + analyses
+Implemented myth parallelization; agent 1 and 2 myths are generated simultaneously
+Fixed game trajectory plot; one symbol per agent
+Looked into results
+
+Not Done:
+Blog post
+Concreteness score
+Strategy generation
+Multiple agents/large society
+Evolutionary mechanism/generations
+
+Results
+Does deviation in game scores coincide with deviations in myth similarity?
+GPT4o
+Does not seem so (as far as i can tell), but also do not have a clear metric
+
+- Claude-3-haiku
+    - cooperative language use goes up in round 35, game scores dip in rounds 42-45
+    - lag correlations:
+        - Lag correlations test whether one agent's cooperativity in round N is related to the
+other agent's cooperativity in round N-1. Indicating mimicry or adaptation of
+cooperative word usage between agents; If Agent_1 uses cooperative language in round
+10, does Agent_2 mirror that in round 11?
+- For most models this is very low (just like cooperative language score), but for claude is
+0.72 . + cooperative word usage plot seems to indicate they are in this positive feedback
+loop.
+
+
+
+- Deepseek-chat-v3
+    - round 18, investor and trustee cumulative balances start to diverge
+
+-GPT5-nano
+    - cumulative balances seem to have phases/equilibrium states?
+Diverge-close-diverge?
+    - faulty myth generation
+
+Questions:
+
+Testing
+How to test/look for correlation between deviation in game scores and deviation in myth similarity? Spearson r correlations?
+
+Measures:
+I think this would be an interesting sub question "Does linguistic evolution (the creation of new linguistic patterns) coincide with linguistic convergence?" So, does a high value of unique POS patterns correlate to the similarity of individual agents' POS patterns?
+However, does this make sense? Can we use POS patterns for this? Now what happens is, we take a myth text, separate the sentences, for each sentencssign all words with a POS tag. Thus, a POS pattern is a pattern describing one sentence (see examples). However, these sentences are generally long and therefore the patterns are almost always new. What we see is that each sentence has a different pattern and this pattern occurs only once.
+Is this then a valid metric to speak of "Linguistic Innovation/Evolution"? Or no.
+Currently, innovation rate is really high (avg 80%). However, this is just because it is unlikely that two sentences are EXACTLY the same right? So does this actually tell us anything? Also, maybe an increase in POS patterns is just because myths become longer?
+→ Finally, my hypothesis about this is that linguistic innovation and convergence are likely a function of agent memory. Less memory means more innovation and less/more convergence?
+
+Implementation
+Currently, sometimes response generation crashes because models do not give back correct game response format. We tell them "- Response format: {{'send': <amount>, 'reason': <re}}",  "IMPORTANT: Always respond in the correct format based on your current role." but they don't always do this.
+Could enforce this using Pydantic schema only for Game responses. Can we do this? Or do you think will skew results too much?
+
+
+### 2025-12-09 — Ivar/Mario
+
+- The config experimental framework I built is really nice and should definitely highlight for COSMOS result essay. Also upload a clean repo.
+
+Why do Payoffs per round plot and cumulative balance plot not align? It trustee payoff per round goes down, why do we not see a different plot in cum balance?
+→ because agents swap roles each round
+
+Ask:
+What is optimal strategy?
+When does this strategy start to occur?
+When they land on the strategy, do they keep playing it? Or do they divert at some point?
+In deviation cases, it would be very interesting to look at the myths and written strategies
+
+Game result interpretations
+The red squares become more and more flat/ far apart from each other!! (what does this tell us? )
+
+Downward trend toff through time
+= trustee returns more through time
+Possible reasons for agents to do this is so that in the next round, other agent returns more to.
+
+Initial Jump in payoffs
+Agents in trustee role quickly learn to return as mush as possible.
+
+Flattening of payoff, why can i not go higher?
+Lets say investor sends maximum, then he sends $5.
+Then trustee receives, 3*$5 = $15.
+If trustee keeps 2, then trustee returns 15-2 = 13.
+ So then, the investor earns $13 this round.
+
+To Do:
+In the plots, can we have different symbols for each agent? That way it is clear that we're looking at different agents.
+We see there is no positive words during deviation rounds (rounds 16-24), look into the file to see whatsup.
+
+
+### 2025-12-04 — Ivar/Mario
+
+Questions:
+
+my grant deadline for this project is January 7th. I agreed with them that running some experiments would be enough. What do you think would be necessary to have for then? Currently, I'm planning to at least have:
+1. models generate game strategies,
+2. correlaon between strategies, game scores and myth texts (to see how correlations change),
+ 3. run with different base models,
+4. parameter to include/omit round length in prompt (to test for possible backward induction).
+5. 10 agents cooperating in groups of 2, randomly paired.
+
+    → 1. Yes, look at CoT/reasoning strategies. Keep track of strategies.
+→ 2. Correlation: we could correlate collaborativeness scores of myth ~ action.
+Correlation strategies ~ action; if the agent says it takes an action, it will likely take an
+action. Could maybe categorize or cluster the strategies? For example, Unconditional
+strategy (i will always play this action). We could classify with llm-as-a-judge into what
+category strategy falls.
+
+You're thinking of strategies that are **reactive or contingent on an opponent's previous behaviour**, often studied in game theory, social dilemmas, and multi-agent systems. Here are some common categories and alternative names:
+
+### 1. **Reciprocal strategies**
+
+* Tit-for-tat (mirroronent's previous move)
+* Tit-for-two-tats (forgives one defection before retaliating)
+* Win-stay, lose-shift (repeat a move if it worked, change if it didn't)
+* Pavlovian strategies (similar to win-stay, lose-shift; reward reinforces action)
+* Generous tit-for-tat (occasionally forgives defections)
+
+### 2. **Conditional or contingent strategies**
+
+* Trigger strategies (cooperate until opponent defects, then punish indefinitely or for a set period)
+* Conditional cooperation (cooperate if the other does; defect otherwise)
+* Grim strategies (cooperate until a defection occurs, then defect forever)
+
+### 3. **Reactive / memory-based strategies**
+
+* Memory-one strategies (decisions based on the previous round only)
+* Memory-n strategies (decisions based on the last n rounds)
+* Probabilistic tit-for-tat (retaliate with some probability rather than deterministically)
+
+### 4. **Other descriptive terms**
+
+* Retaliatory strategies (punish defection)
+* Forgiving strategies (allow occasional defection without immediretaliation)
+* Adaptive strategies (adjust based on observed behaviour over time)
+
+If you want, I can make a **compact table mapping all these strategies with their "type" and typical examples**—very handy for research or teaching. Do you want me to do that?
+
+https://medium.com/blagenflorble/a-prisoners-dilemma-cheat-sheet-4d85fe289d87
+
+https://ojs.aaai.org/index.php/ICWSM/article/view/35829/37983
+
+
+Currently, we don't really have a good method to measure automatically how well myths capture game dynamics. I could maybe use LLM-as-a judge for this. Are you aware of any method to test this?
+
+    → Abstractness score: dictionaries of concreteness norms (Brysbaert concreteness ratings) . Count number of concrete words vs abstract words in myth. Could even use LIWC here. Justify as: yes we do llm-as-a-judge, but we also use non-llm measures.
+
+In terms of correlating game behavior (scores or strategies) with myths, what do you think we would need for this? How many data points, what conditions, etc.
+
+
+For  January 7th:
+Start from a report; what would you like to write? What are the main questions? Main conditions, etc.?
+Could also put emphasis a bit more on tooling; that we have a tooling to quickly run more of these experiments.
+
+
+### 2025-11-13 — Thursday meeting
+
+Does anyone have any updates before Ivar goes into his updates?
+Mario:
+Suggested Ivar goes first before he talks about his ideas
+Ivar:
+How we started first was that we tried to combine Aron's donor game with the myth-writing, so we could see if some sort of linguistic evolution occurs when they play the donor game (high cooperation) versus low cooperation on the donor game. But, we noticed it was hard to understand what was going on, so he decided to implement it from scratch.
+Then, we decided to move to the trust game because it was simpler.
+We have a basic implementation now: 2 agents play a trust game and then write a myth. And we have some stats to see how the myth evolves, and extracting key words in the myths which could serve as a basis for a coerativity measure.
+Ivar explains the architecture: Agent 1 is the investor, Agent 2 is the trustee. They play the game (but importantly, they only receive information about the other agent's actions), then they write the myths
+Ed:
+Do they alternate rounds?
+Ivar: no, we still need to do that.
+Ivar:
+Questions:
+For a first version, do we need to implement those things? I.e., swapping roles.
+Aron:
+Do they swap roles? With the same agent?
+Ivar:
+They don't swap roles.
+Aron: they definitely should swap roles. Because otherwise the cooperation scores just reflect whether you were assigned as investor or trustee.
+Ed:
+What are the parameters?
+Endowment needs to be less than the donation
+Aron: let them choose the donation in both directions
+Structured outputs per call, and you can always do a reasoning step and then a step where you just write down the number.
+Aron
+First have the reasoning step, and then in the second step, prompt them in the output with the reasoning step and then ask them to only return the nr
+This is only a concern if you're not using a reasoning model, because then you force it to use test time to compute what it wants to do
+Ed: if you're not using a reasoning model then this is redundant though. But this is a consideration for reproducibility because reasoning models are more expensive, so not everyone's going to use it
+ Reasoning model vs non-reasoning model would be interesting. Maybe the non-reasoning model would be more cooperative because the reasoning model might just not engage with the game because of the risks.
+Mario:
+Equilibrium is to defect and exit.
+What could be the role of the communicative / storytelling task? The agents could reason together about a cooperative strategy.
+→ games could start from a defect/defect equilibrium, and through the dialogue/stories, they slowly move towards more cooperative action. Then social welfare grows from that.
+Ed:
+They didn't say there were 6 rounds. → end up in a repeated game. It creates the possibility of tit for tat
+How moes it play before myth writing? They write a myth every round. And do they see the previous rounds' behavior? Now, they see the history of actions but not myths. Ivar thinks they should see the history of the myths.
+Do they know how many rounds? Ed thinks don't tell them how many rounds. Ed thinks we've got exactly the right setup. In principle, there should be a cooperative equilibrium.
+Mario:
+Interesting to have a setup where they do know it's a finite horizon, then the rational thing would be to defect, but only by virtue of cooperation through language, they have a coordinated strategy.
+Ed: most interested in the dynamics -- infinitely repeated game, all these different equilibria, which one do they converge to? The storytelling can act as a tipping point
+Mario:
+Cooperation can emerge as one of the possible equilibria. What is the relation to the language task? ⇒ language causes behavior to converge to different cooperative states
+Jane:
+Having the interaction and then the myth is very importanause you could have a trust-based game, but you don't know anything about your partner. Through the myth, you're transmitting a culture between the two players. You also have the personality of the agents. But I learn about them via the myths and their behavior. Maybe the myth-writing is reflective of my underlying motives, and the moral of the story could have some sort of alignment, you could predict cooperative behavior.
+Interesting to see if potential personas/cooperation are reflected in the myth-writing.
+Ivar:
+Language use of one investor starts off very positively. But by the end, most of the words are related to themes of "screaming" and "madness"
+Jane: Maybe emotions are something we should measure then too.
+Aron:
+How can the story influence in-game behavior in the current setup? Is the story included in the game prompts?
+Ivar: first its donation then myth-writing. But I think we should have a reversed setting too.
+Put the myths in the context.
+Jane:
+If we're trying to measure how morally sound the interactions are after, use LLM-as-a-judge to ask what's the moral of the story? We could ask what are the motives of the main character? Facts that relate to the cooperative cultural evolution. If both players give a "cooperative" moral of the story, then they both have a cooperative persona in that setting, that might encourage cooperative behavior. And the vice-versa could hold. And it would be interesting if they don't match!
+Knowing the whole history - a potted version of that - would be very useful for this
+Ed:
+Two pathways of communicating history: actions taken and myths. It would be cool to see what would happen if we only provide the myths. Might be more aligned with how people do it.
+Ivar:
+Should we have a parameter to adjust population size? Is that important for this first draft?
+Ed: you'd get a lot more diversity and therefore more interesting dynamics… but maybe do that after we've implemented everything else first.
+*Ivar is gives a quick demo of the architepts*
+It would be good to provide as much information as possible in the beginning. The trustee should know how much money the investor had to start with in that first bit of the trustee prompt.
+The issue of communication is solved when they return myths to each other.
+Myths are a compression of what happened in the game.
+
+
+### 2025-09-05 — Friday meeting
+
+Agenda:
+Propose research design to Ed
+Finalize pilot design
+Roadmap to 22 November
+Assign roles
+
+Notes
+
+Rephrase 1st question in terms of (linguistic) convergence (do stories of different groups become more/less alike, in what way?)
+Change interactions patterns between agents
+currently , agents are randomly matched as pairs, but such that same agents are never paired twice
+Mario: how can we make agents interact more freely? Still as dyads of two, but paired differently?
+Interact as a result of past interactions?
+Interaction as a genetic tree? Pair agents based on myth similarity?
+Task order
+Worth checking if changing task order has big influence
+
+
+### 2026-01-26 (later — Aron 4-agent test) — Ivar/Mario/Arabella/Aron/Alex/Ed
+
+Aron made an implementation that would work with 4 agents, but Ivar got an error
+We tested this
+There were some issues with the plots which Ivar fixed
+Question about possible memory issue - we saw memory capacity = 3, but when you look at the actual message list of an agent, you'd see 9 messages. Error? But that's because we have 1 message for system prompt, 2 per response (because its the prompt + response), so then 3 stands for the amount of rounds, i.e., the response pair
+6 messages of rounds that have already happened, system prompt, 1 message which is the prompt for the new round, plus the response for the new round = 9 in total. So that's why we see 9 messages
+= memory = 3 previous rounds of interaction
+Collapse in game behavior → change in myths?
+For these runs it might not be insightful, because of a leakage between the tasks
+GPT-5 will often output the game response twice - one in the myth text and one in the game text. And no actual myth.
+Claude 4.5 kind of does the reverse: the game respo become this intermingled thing of the myth, the agent writing the myth, and the json format at the end. E.g.: slide 50 gives an example.
+Do we care about this behavior?
+Ed: if its producing the wrong format, then that's not ideal, because its not a myth
+Just explain what's going to happen in the myth formatting. Tell it in the system prompt what's going on in the whole game - including the myth-writing
+Pedantic schema to strictly enforce output patterns; forces the model to fit a format. Is this too strict? Ed: we could do that for the game, but it doesn't seem necessary, we get the right format
+Ed: what's the logic of making the output the reasoning here? Ivar: to get a reason why you made this decision. I liked in your paper with Aron that you always showed how the strategy evolved, so I thought that would be interesting to capture. Ed thinks that they have thinking tokens, but not sure if we'd be able to capture that. If you ask it to produce the output and then explain the reasoning, thenask for the reason first, because they're autoregressors.
+Most interesting part: does this part of this story associate with more generous behavior? If we can show exactly that - insofar that the myth morale correlates with real-time donor behavior in the game - then this would be very interesting.
+Open to-dos:
+LLMs as a judge
+Recap:
+We decided to focus on language-cooperation link
+How does linguistic evolution occur and change through time?
+Cooperativity <-> myths?
+Gameplay behavior?
+Compare between different models
+→ try to get paper by 23 february
+
+When we get a behavior in this game, the behavior just seems to stick. This is tricky because we get a very generous baseline… It seems that this game will have too strong a baseline and not enough room for variance with the myths.
+There is much more diversity in 45-47, but still no overall increase in generosity, which is also interesting.
+Comparing this to the latest slides from Aron's runs, we assume this is direct reciprocity,
+In the direct ity case, the baseline might be too strong, but in Aron's runs, there's not.
+
+Slide 52: what is the setting here?
+Aron: they see the same traces that we had in the other paper. So last three turns or something like that. Actually here, we have concept width and depth. Width = how many other agents' past actions you see. Depth = how far back for each agent. Another parameter of interest is this myth visibility.
+Ed: if we had the result where the myths didn't have that much effect on direct reciprocity but moreso for indirect reciprocity, if we compare to people, that makes sense, right?
+
+Imagine that one thing might be cool - take Aron's result and link in the myths and we see an increase in cooperations across rounds - it would be cool to vary # of agents
+Or introduce new agents and see if they know immediately how to behave
+When you have a culture that's evolved like humans but in agents, make sure they've got some sort of mythology
+Ivar: relation between our paper and the digital red queemes in the myths are competing against each other. Its an implicit red queen thing going on. We dont want competitive agents we want competitive ideas
