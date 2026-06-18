@@ -4,7 +4,7 @@ import datetime
 class Agent:
     """Represents a single LLM agent with memory capacity"""
 
-    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None): #system prompt is none, so it can be set later.
+    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None, memory_mode="normal"): #system prompt is none, so it can be set later.
         self.agent_id = agent_id
         self.model = model
         self.temperature = temperature
@@ -14,6 +14,11 @@ class Agent:
         self.initial_bias = initial_bias
         self.system_prompt = system_prompt
         self.log_file = log_file
+        # memory_mode: "normal" = standard memory_capacity truncation;
+        #              "m1"     = wipe messages to [system, fake-user, seed-myth]
+        #                        before every respond() call (memory-transplant
+        #                        ablation — see docs/memory_transplant_ablation_design.md §6).
+        self.memory_mode = memory_mode
     
 
     def _log_interaction(self, prompt, response_data):
@@ -54,6 +59,12 @@ class Agent:
         """Respond to a prompt with the LLM. The truncation effectuates
         a short term memory effect; earlier interactions are forgotten. Thus introduces recency bias;
         recent interactions have more impact than older ones. Remove if unwanted"""
+        # M1 ablation: wipe everything except [system, fake-user, seed-myth-assistant]
+        # so the agent's only inheritance each round is the seed myth.
+        # See docs/memory_transplant_ablation_design.md §6.
+        if self.memory_mode == "m1":
+            self.messages = self.messages[:3]  # keep system + seed exchange only
+
         # Truncate oldest messages if memory is full (but keep system prompt)
         if len(self.messages) > self.memory_capacity * 2 + 1:  # *2 for user and assistant messages, +1 for system prompt
             # Keep system prompt (first message) and last N messages
