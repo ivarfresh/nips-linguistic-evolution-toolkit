@@ -3,7 +3,11 @@
 **Are myths sufficient causal carriers of cooperation?**
 
 Owner: Ivar · Workstream: "Ablations of agents who have lost their memories"
-Status: Phase 1 — locked · Scope: dyadic only (society = future work)
+Status: Phase 1 — complete (see §16) · Scope: dyadic. Soc-pop is now technically supported in the codebase (see banner) but is out of scope for this doc.
+
+> **2026-06-18 update.** The multi-agent dyadic-pairing layer (`games/dyadic_pairing.py`, `DyadicPairingMixin`) was merged from `origin/codex/push-current-changes-20260601`. The toolkit now supports arbitrary even-N agent pools with role-balanced random pairing per round, unique display names, and anonymous variants — i.e., the "Soc-pop" future-work item in §14 is no longer blocked on infrastructure.
+>
+> The Phase 1 ablation-specific code (`memory_mode="m1"`, `seed_myth` / `seed_user_prompt` plumbing in `src/agents.py` and `src/simulation.py`, the M1 round-1-template dispatch in `games/trust_game.py`, the `experiments/run_ablation.py` cell dispatcher and `scripts/harvest_seeds.py`) was **rolled back** as part of that merge. The Phase 1 results in §16 stand as a historical record. To re-run the ablation under the new multi-agent codebase, the §6 / §15 footprint would need to be re-applied on top of the dyadic-pairing architecture (see "Re-implementation notes" at end of §6).
 
 Fixed parameters (Phase 1): model **Claude Sonnet 4.5** · **N = 2** agents · **10 rounds** per run · both agents seeded **identically** · **5 reps per seeded cell** · negative-noise condition (`noisy_negative_5`) · seeds harvested from existing v4 direct-provider Sonnet 4.5 runs.
 
@@ -96,7 +100,7 @@ The research log specifies S-start and S-end+ only. The other three are load-bea
 - **M2 — myth-prior / seeded-start.** Memory is seeded at construction; normal `memory_capacity=3` truncation runs; game history accumulates. The seed naturally scrolls out of working memory after ~3 rounds. Tests whether the myth puts a normally-playing system on a **better trajectory**. *(ecological comparison)*
 
 ### Factor C — Society — fixed at dyadic for Phase 1
-- **Soc-dyad — N = 2.** Society / re-pairing is deferred (§13).
+- **Soc-dyad — N = 2.** Society / re-pairing is deferred (§13). *(2026-06-18: the pairing layer now exists in `games/dyadic_pairing.py`; deferral is now a scope choice for this ablation, no longer an infrastructure constraint.)*
 
 ### Replication
 **5 reps per myth-seeded cell, each rep a different myth drawn from a different source run.** Drawing 5 distinct myths from 5 distinct source runs avoids pseudo-replication. S-filler / S-none reps are simple replicates (filler re-sampled per run; S-none is identical replicates with different decoding seeds — variance comes from temperature).
@@ -153,6 +157,8 @@ A custom M1 template like `"Round N. You have $5. How much do you send? (0-5)"` 
 
 ### Implementation footprint
 
+> **Historical.** This footprint was applied during Phase 1 and rolled back in the 2026-06-18 multi-agent merge. See "Re-implementation notes" below if Phase 2 is run on the current codebase.
+
 - `src/agents.py` — `Agent.__init__` accepts `memory_mode: Literal["normal", "m1"] = "normal"`. In `respond()`, before the existing truncation block, add:
   ```python
   if self.memory_mode == "m1":
@@ -165,6 +171,14 @@ A custom M1 template like `"Round N. You have $5. How much do you send? (0-5)"` 
 - Analysis script extensions for trajectory + threshold testing.
 
 Agent + simulation + game changes: ~50 LoC. Runner + harvest + analysis: 150–300 LoC. Total ~200–350 LoC.
+
+### Re-implementation notes (post 2026-06-18 multi-agent merge)
+
+If Phase 2 of the ablation is run on the current codebase, the footprint above needs three adjustments because `TrustGame` now inherits from `DyadicPairingMixin`:
+
+- `Agent.__init__` no longer takes `memory_mode`. Re-add it the same way, but the agent now also carries `display_name` / `population_role` / `interaction_history` — the wipe `self.messages = self.messages[:3]` is still correct (those attributes are not in `self.messages`).
+- `src/simulation.py` no longer has the `_format_initial_system_prompt` / `_replace_agent_system_prompt` helpers. The "myth-first blind variant" wiring (`initial_system_prompt_template`, `switch_to_game_system_before_game`) was used to defer applying the game system prompt until after the first myth was written; re-adding those helpers is straightforward but must coexist with the new `_build_agent_names` / `_configure_game_agents` / `_get_round_pairings` setup.
+- `games/trust_game.py` round-1 dispatch under M1 must read from `sim_data.game_data["pending_sents"][pairing["dyad_id"]]` (the new dyadic key), not the legacy scalar `pending_sent`. With 2 agents there is exactly one dyad, so the dict has one key; the rest of the logic is unchanged.
 
 ### Fake user prompt
 
@@ -325,7 +339,7 @@ Length-matched filler is drawn from **Simple English Wikipedia first paragraphs 
 
 ## 14. Future work (out of scope for Phase 1)
 
-- **Large society (Soc-pop).** Population of N > 2 agents re-paired each round, so a seeded norm can *spread*. Requires a pairing layer the codebase does not yet have, and adds **diffusion** measures (does cooperation / myth content propagate from the seeded starting point or stay local?). Re-runs the same Seed × Memory-regime sweep at N > 2.
+- **Large society (Soc-pop).** Population of N > 2 agents re-paired each round, so a seeded norm can *spread*. ~~Requires a pairing layer the codebase does not yet have~~ **Now supported** by `games/dyadic_pairing.py` (`DyadicPairingMixin`, merged 2026-06-18): even-N pools, role-balanced random pairing per round, unique display names with anonymous variants, defector subsets. Existing 8-agent experiment sets in `config/experiments.yaml` (`sonnet45_8agent_*`, `gemini31_flashlite_8agent_*`) demonstrate the wiring. Soc-pop adds **diffusion** measures (does cooperation / myth content propagate from the seeded starting point or stay local?). Re-runs the same Seed × Memory-regime sweep at N > 2 — note the seed-symmetry decision (§13 row 3) needs re-revisiting for N > 2: seeding *all* agents identically eliminates the diffusion question, seeding *one* agent isolates the spreading dynamic.
 - **Necessity / lesion** and **specificity / content** ablations — sibling designs in the ablation family.
 - **One-sided seeding** — only one agent gets the myth. Distinguishes "shared norm" from "individual norm" effects.
 - **Cross-model generalization** — replicate on Gemini 3 Pro and GPT-5 to test whether the carrier effect is Sonnet-specific.
@@ -334,6 +348,8 @@ Length-matched filler is drawn from **Simple English Wikipedia first paragraphs 
 ---
 
 ## 15. Launch sequence (operational)
+
+> **Historical.** Steps 1–9 were executed during Phase 1 and produced the §16 results. After the 2026-06-18 multi-agent merge, the ablation-specific code has been rolled back; step 1 would need to be re-applied as described in "Re-implementation notes" at the end of §6 before re-running.
 
 1. **Implement** `memory_mode` + seed injection + M1 prompt-template dispatch (§6 footprint).
 2. **Harvest seeds** — `scripts/harvest_seeds.py` pulls 5 myths per pool by the rules in §11. Output a JSON manifest pinning seed text → source run → joint balance → text-feature summary.
