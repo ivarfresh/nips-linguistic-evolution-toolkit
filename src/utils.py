@@ -462,6 +462,13 @@ def _direct_openai_reasoning_effort():
     return _env("OPENAI_REASONING_EFFORT") or "minimal"
 
 
+def _anthropic_supports_temperature(provider_model):
+    # Opus 4.7 and later reject explicit temperature; omit when calling them.
+    if provider_model.startswith("claude-opus-4-7") or provider_model.startswith("claude-opus-4-8"):
+        return False
+    return True
+
+
 def _call_anthropic(client, provider_model, temperature, messages, max_retries):
     if anthropic is None:
         raise RuntimeError(
@@ -477,8 +484,9 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries):
                 "model": provider_model,
                 "messages": chat_messages,
                 "max_tokens": max_tokens,
-                "temperature": temperature,
             }
+            if _anthropic_supports_temperature(provider_model):
+                request_params["temperature"] = temperature
             if system:
                 request_params["system"] = system
 

@@ -669,9 +669,40 @@ Total Phase 2 spend (~$255):
 - Seeded cells (60 runs): ~$138
 - Judge scoring (20 myths): ~$0.50
 
-#### 17.6.8 Follow-ups
+#### 17.6.8 Cross-judge replication with Opus 4.7 (run 2026-06-19)
 
-- Re-judge s_start vs s_end_plus with a second model (Opus 4.7 or GPT-5) to bound the judge-noise contribution on the H4 reversal.
+All 20 seed myths were re-scored by Claude Opus 4.7 with the same 0–10 cooperativeness rubric to bound judge noise. The two judges agree strongly on rank order (Spearman ρ = +0.937 across the 20 myths, Pearson r = +0.970).
+
+**Per-pool means:**
+
+| Pool | Sonnet 4.5 | Opus 4.7 | Δ (Opus−Sonnet) |
+|---|---|---|---|
+| s_start      | 10.00 (±0.00) | 10.00 (±0.00) | +0.00 |
+| s_end_plus   | 8.20 (±1.17)  | 8.40 (±1.02)  | +0.20 |
+| s_end_minus  | 8.60 (±0.49)  | 9.20 (±0.40)  | +0.60 |
+| s_filler     | 0.00 (±0.00)  | 5.00 (±0.00)  | +5.00 |
+
+**Both Phase 2 surprises survive the second judge:**
+
+1. **Counter-current finding replicates.** Both judges rate s_end_minus *higher* than s_end_plus. Sonnet: 8.60 vs 8.20 (Δ=+0.40). Opus: 9.20 vs 8.40 (Δ=+0.80). Opus actually shows a *larger* gap. The "low-coop source runs produce higher-judged myths" finding is not a Sonnet-specific quirk.
+2. **H4 judge-side gap replicates.** s_start scores higher than s_end_plus on both judges with similar magnitude (Sonnet Δ=+1.80, Opus Δ=+1.60). The H4 reversal on game-outcome is not driven by judge-noise on the seed text.
+
+**One interpretive disagreement.** s_filler scores at the bottom on both judges, but Sonnet rates it 0 (treating "no cooperation content" as "anti-cooperative") while Opus rates it 5 (treating it as "neutral"). Both judges still place filler well below all myth pools, so the ordinal H5 contrast is preserved; only the absolute floor changes.
+
+**H5 dose-response is weaker with Opus** (Spearman ρ(judge, joint) across all 60 seeded runs):
+
+| Task order | Sonnet judge | Opus judge |
+|---|---|---|
+| `["game"]`        | +0.525 | +0.424 |
+| `["game","myth"]` | +0.411 | +0.251 |
+| `["myth","game"]` | +0.153 | +0.014 |
+
+Opus's flatter judge distribution (it doesn't push filler to 0) compresses the dose-response correlation. Direction of correlation is unchanged.
+
+Raw cross-judge comparison written to `data/phase2/judge_compare.json`.
+
+#### 17.6.9 Remaining follow-ups
+
 - Stylistic ablation: rewrite s_end_plus texts in parable format (or s_start texts in "Myth:" format) and re-run a small cell to isolate format from content.
 - Phase 3 Soc-one: at N=8, seed only 1 of 8 agents and look for diffusion of cooperation. This was infeasible until the multi-agent merge (§14) and is the natural next experiment given Phase 2's positive sufficiency signal.
 
