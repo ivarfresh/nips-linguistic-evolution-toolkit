@@ -1,3 +1,33 @@
+### 2026-06-19 — Phase 2 myth transplant complete
+
+#### What changed
+- Merged Aron's `codex/push-current-changes-20260601` multi-agent dyadic-pairing branch into local. `games/dyadic_pairing.py` (DyadicPairingMixin) now supports N≥2 even pools, balanced random pairing, display names, anon variants. Rolled back Phase 1 ablation-specific code (memory_mode="m1", seed_myth M1 dispatch); design doc preserved with §17 Phase 2 plan added.
+- Ran Phase 2: Sonnet 4.5, 8 agents, history3 anon directive, `noisy_negative_5` (pilot-locked at 80% of ceiling). 45 baselines (3 task orders × 15 reps) + 60 seeded cells (4 seed types × 3 task orders × 5 reps) = 105 runs. Spend ≈ $255.
+- Single-shot seed injection: `[fake user prompt, seed myth as assistant]` inserted at `messages[1:3]` before round 1. Scrolls out by round 2–4 under standard truncation; influence after that is indirect via the agent's own round-1 output and the history-block in later prompts. **No M1 re-injection.**
+
+#### Headline numbers (per-agent $, baseline n=15 / seeded n=5)
+| | `["game"]` | `["game","myth"]` | `["myth","game"]` |
+|---|---|---|---|
+| S-none baseline | 41.94 | 50.07 | 57.20 |
+| S-start (round-1 directive) | **50.21** (z=+2.66) | **56.05** (z=+2.18) | 56.97 |
+| S-end+ | 47.61 (z=+2.23) | 50.22 | **48.52** (z=−3.39) |
+| S-end− | 41.62 | 46.83 (z=−2.33) | **47.76** (z=−8.5) |
+| S-filler | 41.90 | 49.54 | 53.08 (z=−3.07) |
+
+#### Findings worth re-litigating later
+- **Task order is a primary moderator**, not a side condition: same seed lifts in `["game"]` and suppresses in `["myth","game"]`. Pre-injecting a foreign myth in `["myth","game"]` displaces the agent's own free choice of round-1 myth and *hurts* cooperation.
+- **H4 reversed across all task orders.** Round-1 directive parables ("# The Tale of...") outperform round-10 myths that drifted into game-rule descriptions ("Myth: ...five golden coins...Amplifying Well would triple..."). Cooperation carrying-capacity *decays* over a run, not refines.
+- **"Counter-current" Phase-1 finding replicates and is *stronger* on Opus 4.7.** Low-coop-source end-myths score higher on judged cooperativeness than high-coop-source end-myths (Sonnet Δ=+0.40, Opus Δ=+0.80). Cross-judge Spearman ρ=+0.937 across 20 myths. Surviving 2-judge replication makes this a robust property of how stressed agents write, not a Sonnet artifact.
+- Filler (Wikipedia paragraphs) lifts nothing in `["game"]` (per-agent 41.90 vs baseline 41.94) → the S-start lift is *not* a "more tokens" warm-up effect.
+
+#### Open follow-ups
+- Stylistic ablation: re-write S-end+ in parable format / S-start in "Myth:" format to isolate format from content (currently confounded).
+- Phase 3 Soc-one diffusion: seed 1-of-8 instead of all-8. Now feasible post multi-agent merge.
+
+Full design + numbers: `docs/memory_transplant_ablation_design.md §17`. Team brief: `docs/phase2_team_brief.md`. Plots: `data/phase2/plots/`. Data: `data/json/noise_experiments/phase2_baseline/` and `…/phase2_seeded/`.
+
+---
+
 ### 2026-06-15 — Defectors, ablations, manuscript restart
 
 Does story language converge or diverge?  And does this convergence or divergence correlate to changes in gameplay behavior?
