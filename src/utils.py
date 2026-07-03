@@ -538,6 +538,9 @@ def _should_retry_anthropic(error):
     return (
         name in {"RateLimitError", "APIConnectionError", "APITimeoutError"}
         or (status_code is not None and status_code >= 500)
+        # Stochastic refusals surface as empty content (no text blocks); at
+        # nonzero temperature a retry usually succeeds, so don't kill the run.
+        or (isinstance(error, ValueError) and "Empty response" in str(error))
     )
 
 

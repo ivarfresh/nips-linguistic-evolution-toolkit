@@ -67,8 +67,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         model_name = combo['model'].split('/')[-1] if '/' in combo['model'] else combo['model']
         task_order_str = "_".join(combo['task_order'])
 
-        # Create directory: data/json/{experiment_name}/{model}/{task_order}/
-        save_dir = f"data/json/{experiment_name}/{model_name}/{task_order_str}"
+        # Create directory: data/json/{output_dir or experiment_name}/{model}/{task_order}/
+        top_dir = combo.get("output_dir") or experiment_name
+        save_dir = f"data/json/{top_dir}/{model_name}/{task_order_str}"
         Path(save_dir).mkdir(parents=True, exist_ok=True)
 
         # Only include myth_topic in filename if myth task is present
@@ -135,6 +136,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "resume_from": resume_from,
             "log_file": log_path,
             "agent_names": game_params.get("agent_names"),
+            "monitor_config": game_params.get("monitor_config"),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:

@@ -98,6 +98,8 @@ class ExperimentConfig:
                 "persona_key": persona,
                 "system_addition_key": exp_set.get("system_addition_key"),
                 "task_order": order,
+                # Optional top-level output folder override (default: experiment name).
+                "output_dir": exp_set.get("output_dir"),
                 "game_params": self._get_game_params(exp_set.get("game_params", {})),
                 "myth_topic_id": myth_topic_id,
                 "myth_topic": myth_topic,

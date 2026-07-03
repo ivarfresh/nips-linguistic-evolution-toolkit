@@ -707,6 +707,59 @@ experiment_sets:
       coplayer_history_window: 3
       show_agent_names: false
 
+  # Phase 8 — silent monitor. Identical to the anon r10 n5 reference set above,
+  # plus a monitor that reads each round's myths and zeroes that round's game
+  # earnings for any agent whose myth encodes actionable game strategy. Agents
+  # are told nothing; the only signal is their (non-growing) balance.
+  sonnet45_8agent_myth_directive_history3_anon_monitored_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    output_dir: "phase8_monitored"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
+      monitor_config:
+        enabled: true
+        model: "anthropic/claude-sonnet-4.5"
+        temperature: 0.0
+
+  # Phase 8 smoke — cheap monitor-on validation (Haiku agents, 3 rounds, 1 rep).
+  phase8_monitor_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    output_dir: "phase8_smoke"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 3
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
+      monitor_config:
+        enabled: true
+        model: "anthropic/claude-haiku-4.5"
+        temperature: 0.0
+
   gemini31_flashlite_8agent_myth_directive_history3_r10_n5:
     models: ["gemini_3_1_flash_lite"]
     templates: ["trust_game_default"]
@@ -724,6 +777,27 @@ experiment_sets:
       history_policy: "self_and_coplayer"
       self_history_window: 3
       coplayer_history_window: 3
+
+  # Phase 6b — cross-model seed source: GPT-5-nano baseline for harvesting
+  # round-10 myths, then injecting into Sonnet game cells (Phase 3 regime).
+  gpt5nano_8agent_myth_directive_history3_anon_r10_n5:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
 
   game_prompt_bug_fix:
     models: ["gpt5_nano"]

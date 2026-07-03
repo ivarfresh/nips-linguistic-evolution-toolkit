@@ -304,6 +304,9 @@ def run_simulation(
     agent_names: Optional[Any] = None,
     seed_myth: Optional[str] = None,
     seed_user_prompt: Optional[str] = None,
+    chat_memory_mode: str = "default",
+    seed_reinject: bool = False,
+    monitor_config: Optional[Dict[str, Any]] = None,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -374,6 +377,8 @@ def run_simulation(
             "agent_names": sim_data.game_data.get("agent_names", {}),
             "seed_myth": seed_myth,
             "seed_user_prompt": seed_user_prompt,
+            "chat_memory_mode": chat_memory_mode,
+            "seed_reinject": seed_reinject,
             **{
                 key: value
                 for key, value in population_metadata.items()
@@ -381,6 +386,34 @@ def run_simulation(
             },
         }
     )
+
+    # Phase 8 silent monitor: opt-in. When enabled, after each round's myths are
+    # written a monitor model flags actionable game strategy; flagged agents have
+    # that round's game earnings zeroed (balance simply doesn't grow). Agents get
+    # NO notification — the only signal is their balance.
+    monitor = None
+    if monitor_config and monitor_config.get("enabled"):
+        from src.monitor import StrategyMonitor, DEFAULT_MONITOR_MODEL
+
+        rules_context = ""
+        if getattr(game, "system_prompt_template", None):
+            rules_context = game.system_prompt_template.format(
+                endowment=getattr(game, "endowment", ""),
+                multiplier=getattr(game, "multiplier", ""),
+            )
+        monitor_model = monitor_config.get("model") or DEFAULT_MONITOR_MODEL
+        monitor_temperature = monitor_config.get("temperature", 0.0)
+        monitor = StrategyMonitor(
+            rules_context,
+            model=monitor_model,
+            temperature=monitor_temperature,
+            log_file=log_file,
+        )
+        sim_data.run_metadata["monitor_config"] = {
+            "enabled": True,
+            "model": monitor_model,
+            "temperature": monitor_temperature,
+        }
 
     print_simulation_header(game, num_turns, actual_num_agents, memory_capacity, agent_biases)
     last_responses = {}
@@ -394,6 +427,21 @@ def run_simulation(
         print("\n" + "=" * 80)
         print(f"ROUND {turn}")
         print("=" * 80)
+
+        # Phase 3 myth-only memory + re-injection: at the start of every round,
+        # reset each agent's chat memory to exactly [system, seed_user, seed_myth].
+        # This guarantees the seed is at positions [1, 2] and never scrolls out.
+        if chat_memory_mode == "myth_only" and seed_reinject and seed_myth:
+            for agent in sim_data.agents.values():
+                system_msg = agent.messages[0] if agent.messages else {
+                    "role": "system",
+                    "content": agent.system_prompt or "",
+                }
+                agent.messages = [
+                    system_msg,
+                    {"role": "user", "content": seed_user_prompt},
+                    {"role": "assistant", "content": seed_myth},
+                ]
 
         try:
             pairings = _get_round_pairings(game, turn, sim_data)
@@ -464,6 +512,7 @@ def run_simulation(
                                 move_index,
                                 getattr(agent, "population_role", "standard"),
                             ),
+                            remember=(chat_memory_mode != "myth_only"),
                         )
                         agent_responses[agent_id] = response_data
 
@@ -492,7 +541,12 @@ def run_simulation(
                     # Prepare prompts for all agents (no dependencies)
                     prompts = {}
                     for agent_id in active_agent_order:
-                        if turn == 1:
+                        # Phase 4 Option A: under myth-only chat memory, every
+                        # round uses the round-1 prompt because the later-rounds
+                        # variant relies on last_myth/other_agent_myth from
+                        # chat history that doesn't exist in this regime.
+                        force_round1 = chat_memory_mode == "myth_only"
+                        if turn == 1 or force_round1:
                             prompts[agent_id] = myth_writer.get_myth_prompt_round_1(agent_id, turn, sim_data)
                         else:
                             prompts[agent_id] = myth_writer.get_myth_prompt_round_later(agent_id, turn, sim_data)
@@ -516,11 +570,17 @@ def run_simulation(
                             )
                             for move_index, agent_id in enumerate(active_agent_order)
                         }
+                        # Phase 4 Option A: under myth-only chat memory the
+                        # generated myth is saved to sim_data for analysis but
+                        # NOT appended to agent.messages — chat memory stays at
+                        # [system, seed_user, seed_myth] across all rounds.
+                        myth_remember = chat_memory_mode != "myth_only"
                         futures = {
                             agent_id: executor.submit(
                                 sim_data.agents[agent_id].respond,
                                 prompts[agent_id],
                                 myth_metadata[agent_id],
+                                myth_remember,
                             )
                             for agent_id in active_agent_order
                         }
@@ -536,6 +596,7 @@ def run_simulation(
                                 myth_response_data = sim_data.agents[agent_id].respond(
                                     prompts[agent_id],
                                     myth_metadata[agent_id],
+                                    myth_remember,
                                 )
                                 agent_myths[agent_id] = myth_response_data
 
@@ -551,6 +612,52 @@ def run_simulation(
                             print(f"\n{agent_id} ({current_role}) myth response:\n{myth_response_data['content']}")
 
                     myth_writer.process_myths(turn, agent_myths, sim_data)
+
+            # Phase 8 silent monitor: flag myths and zero this round's game
+            # earnings for flagged agents. Only the cumulative balance is touched
+            # (game_data + this round's stored balances snapshots); the truthful
+            # per-round payoff/transaction records are left intact so no monitor
+            # signal ever reaches an agent prompt beyond the balance number.
+            if monitor is not None and "myth" in task_order:
+                myths_this_round = round_entry.get("myths") or {}
+                verdicts = monitor.monitor_round(myths_this_round)
+                round_payoffs = round_entry.get("payoffs") or {}
+                monitor_record = {}
+                penalties_applied = False
+                for agent_id in active_agent_order:
+                    verdict = verdicts.get(
+                        agent_id, {"flagged": False, "reason": "no myth this round"}
+                    )
+                    flagged = bool(verdict.get("flagged"))
+                    round_payoff = round_payoffs.get(agent_id) or 0
+                    penalty_applied = bool(flagged and "game" in task_order and round_payoff)
+                    if penalty_applied:
+                        sim_data.game_data["balances"][agent_id] -= round_payoff
+                        penalties_applied = True
+                    monitor_record[agent_id] = {
+                        "flagged": flagged,
+                        "reason": verdict.get("reason", ""),
+                        "parse_ok": verdict.get("parse_ok", True),
+                        "myth": myths_this_round.get(agent_id, ""),
+                        "pre_penalty_earnings": round_payoff,
+                        "post_penalty_earnings": 0 if penalty_applied else round_payoff,
+                        "penalty_applied": penalty_applied,
+                    }
+                # Mirror penalized balances into every stored snapshot so the
+                # joint-balance curve (ch[-1].balances) and the next round's
+                # game/myth prompts all read the same reduced balance.
+                if penalties_applied:
+                    penalized = dict(sim_data.game_data["balances"])
+                    round_entry["balances"] = penalized
+                    for dyad in round_entry.get("dyads") or []:
+                        dyad["balances"] = dict(penalized)
+                round_entry["monitor"] = monitor_record
+                flagged_ids = [aid for aid, r in monitor_record.items() if r["flagged"]]
+                print(
+                    f"\n[MONITOR] round {turn}: flagged {len(flagged_ids)}/"
+                    f"{len(monitor_record)} agents"
+                    + (f" ({', '.join(flagged_ids)})" if flagged_ids else "")
+                )
 
             # Print turn summary (only if game was run)
             if "game" in task_order:

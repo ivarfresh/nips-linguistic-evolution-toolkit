@@ -1,0 +1,9 @@
+# Verified facts — repo infrastructure
+
+One fact per bullet, each verified against the file cited. Update in place when a fact changes; delete when it stops being true.
+
+- `claude-fable-5` is available on this repo's `ANTHROPIC_API_KEY` (probed 2026-07-03). Two API quirks: (1) it **rejects an explicit `temperature` parameter** (400: "temperature is deprecated for this model") — omit it, like Opus 4.7+ in `src/utils.py::_anthropic_supports_temperature` (Fable is NOT yet in that omit-list; add it before using Fable through `call_llm`); (2) it is a **reasoning model whose thinking blocks share `max_tokens`** — with `max_tokens=2048` a translation prompt returned only a `thinking` block, `stop_reason="max_tokens"`, zero text. Use `max_tokens` ≥ ~16000 for generation tasks and always check for empty text (see `scripts/phase9_fable_seeds.py::fable`).
+
+- There is **no `.venv`** in this repo despite CLAUDE.md saying so — Python is provided by **pyenv 3.11.10** via `.python-version`, with all framework deps installed there (`python3` from the pyenv shim just works from repo root). Verified 2026-07-02 (`ls .venv` → absent; `python3 -c "import yaml, openai, dotenv"` → OK).
+- `src/utils.py::call_llm()` returns a **dict** `{"content", "reasoning", "usage"}`, not a string — use `response["content"]` (see `src/agents.py:37`). Verified 2026-07-02.
+- `ms-pdf-extract` routes through **Gemini-3-flash via OpenRouter** (`model: openrouter:google/gemini-3-flash-preview`, `parallel_jobs: 6`), configured in `.claude/skills/ms-pdf-extract/config.local.yml` (untracked, gitignored via `.claude/skills/*/config.local.yml`). Reason: Sonnet returned truncated markdown on long PDFs; Gemini transcribes full papers incl. references (needed for leads). Repo has `OPENROUTER_API_KEY` and Anthropic keys only — no Google key, hence OpenRouter routing. (Verified 2026-07-02.)

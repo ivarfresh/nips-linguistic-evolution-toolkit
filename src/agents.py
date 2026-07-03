@@ -78,21 +78,34 @@ class Agent:
         self.interaction_history.append(event)
 
     # Response with messages
-    def respond(self, prompt, transcript_metadata=None):
+    def respond(self, prompt, transcript_metadata=None, remember=True):
         """Respond to a prompt with the LLM. The truncation effectuates
         a short term memory effect; earlier interactions are forgotten. Thus introduces recency bias;
-        recent interactions have more impact than older ones. Remove if unwanted"""
+        recent interactions have more impact than older ones. Remove if unwanted.
+
+        When `remember=False`, the prompt and response are sent to the LLM and
+        the response is returned/recorded as usual, but neither the user prompt
+        nor the assistant response is appended to `self.messages`. Used by
+        Phase 3 myth-only memory mode so game decisions don't pollute the
+        seeded-myth chat memory.
+        """
         # Truncate oldest messages if memory is full (but keep system prompt)
         if len(self.messages) > self.memory_capacity * 2 + 1:  # *2 for user and assistant messages, +1 for system prompt
             # Keep system prompt (first message) and last N messages
             self.messages = [self.messages[0]] + self.messages[-(self.memory_capacity * 2):]
 
-        self.messages.append({"role": "user", "content": prompt})
-        messages_sent = copy.deepcopy(self.messages)
+        if remember:
+            self.messages.append({"role": "user", "content": prompt})
+            messages_for_call = self.messages
+        else:
+            # Build a transient message list that includes the prompt without
+            # mutating self.messages.
+            messages_for_call = self.messages + [{"role": "user", "content": prompt}]
+        messages_sent = copy.deepcopy(messages_for_call)
 
         # Call the LLM and get structured response
         try:
-            response_data = call_llm(self.client, self.model, self.temperature, self.messages)
+            response_data = call_llm(self.client, self.model, self.temperature, messages_for_call)
         except Exception as exc:
             self._record_interaction(
                 prompt,
@@ -106,13 +119,14 @@ class Agent:
         # Log the interaction
         self._log_interaction(prompt, response_data)
 
-        # Store full response data in messages
-        self.messages.append({
-            "role": "assistant",
-            "content": response_data["content"],
-            "reasoning": response_data.get("reasoning"),
-            "usage": response_data.get("usage")
-        })
+        if remember:
+            # Store full response data in messages
+            self.messages.append({
+                "role": "assistant",
+                "content": response_data["content"],
+                "reasoning": response_data.get("reasoning"),
+                "usage": response_data.get("usage")
+            })
         self._record_interaction(
             prompt,
             messages_sent,

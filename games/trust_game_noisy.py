@@ -270,11 +270,12 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         balances = sim_data.game_data.get("balances_communicated") or sim_data.game_data["balances"]
         agent_balance = balances[agent_id]
         history = self._format_multi_agent_history(agent_id, opponent_id, turn, sim_data)
+        history_block = f"{history}\n" if history else ""
 
         if role == "investor":
             prompt = (
                 f"Round {turn}\n\n"
-                f"{history}\n"
+                f"{history_block}"
                 f"Your total visible earnings across all rounds are ${agent_balance}.\n\n"
                 f"This round, you are the SENDER against {self.current_coplayer_label(opponent_id)}. "
                 f"You have ${self.endowment}. How much do you send? (0-{self.endowment})\n"
@@ -288,7 +289,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             received = sent_communicated * self.multiplier
             prompt = (
                 f"Round {turn}\n\n"
-                f"{history}\n"
+                f"{history_block}"
                 f"Your total visible earnings across all rounds are ${agent_balance}.\n\n"
                 f"This round, you are the RECEIVER against {self.current_coplayer_label(opponent_id)}. "
                 f"They sent you ${sent_communicated}, so you received ${received}. "
@@ -305,6 +306,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             return default
 
     def _format_multi_agent_history(self, agent_id, opponent_id, turn, sim_data):
+        if self.history_policy == "none":
+            return ""
         if self.history_policy != "self_and_coplayer":
             return self._format_most_recent_self_history(
                 agent_id,
