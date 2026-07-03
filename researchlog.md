@@ -1,3 +1,270 @@
+### 2026-07-03 — Result: Fable seed regeneration; jabberwocky blocked twice over
+
+#### What ran
+- Regenerated gowith + jabberwocky seed pools with **Claude Fable 5 as translator** (`scripts/phase9_fable_seeds.py`, ~$20 incl. debug reruns). All seeds verified with Sonnet readback + the exact-game-context host refusal probe. Fable API quirks hit and recorded in `docs/verified-facts.md`: rejects explicit `temperature`; reasoning model — thinking shares `max_tokens` (2048 → zero text; use ≥16k).
+
+#### Headline
+- **`s_end_plus_gowith_fable`: usable — 5/5 translated, 4/5 pass the host probe**, readback recovers the recipe (send 5, rf 0.5/0.67) on 3 of the 4 passing. Registered in the manifest. Required steering Fable to gowith's flowing-prose register — its default hyphen-compound register ("Meet-settle: Keeper-with…") was host-refused 3/3.
+- **Jabberwocky is blocked at two independent layers:** (1) **Fable-as-translator refuses** — 6/10 hard refusals, with a stark content asymmetry: 5/5 refusals on strategy-laden s_end+ myths vs 1/5 on innocent s_start parables; (2) of the 5 it did translate, **Sonnet-as-host refused 4/5** in the assistant slot (exact-context probe 4/4) — replicating the Phase 5 finding with a different translator. Net: 1 usable jabberwocky seed (`s_start_jab_fable`, 4 registered, 1 probe-pass). Jabberwocky cells stay unrunnable on a Sonnet host; workarounds remain system-prompt placement or a non-refusing host model.
+- **Seed 4's curse replicates across translators**: the gowith translation of s_end_plus[4] is host-refused 4/4 whether Sonnet or Fable wrote it — strengthens the content×style×context conjunction finding (same seed, two independent translations, two translator models).
+
+#### Artifacts
+- Candidates + per-seed probe status: `data/phase9/fable_seeds_candidate.json`. Manifest: 11 pools.
+
+---
+
+### 2026-07-02 — Result: silent monitor induces zero covert adaptation
+
+#### What ran
+- Phase 8 "silent monitor": source regime (`sonnet45_8agent_myth_directive_history3_anon_r10_n5`) + a Sonnet 4.5 monitor (temp 0, prompt frozen after 3-seed calibration, `src/monitor.py`) that silently zeroes a flagged agent's round earnings. Agents told nothing; only footprint is the balance line. n=5, all reps clean, ~$13 (under the $25–30 estimate). Opt-in `monitor_config` in `src/simulation.py` — zero behavior change when absent. Data `data/json/phase8_monitored/`, analysis `scripts/phase8_monitor_analysis.py`, plots `data/phase8/plots/`.
+
+#### Headline numbers (n=5)
+- **Detection never dropped**: round 1 = 0.70 (±0.07), rounds 2–10 = 1.00 (±0.00) flat. Retrospective monitor on unmonitored control round-10 myths: also 100% (40/40) — saturation isn't a selection artifact.
+- **Cooperation persisted**: pre-penalty in-game earnings $553 (±$32) vs control $585 (±$21); post-penalty balance (what agents see) flat at $15 (±$3).
+- **Round-10 legibility unchanged**: monitored round-10 myths 100% extraction (decoded send≈4.6) — same as control and s_end+ originals.
+- **The signal was in-prompt and ignored**: history shows truthful payoffs ($6–7/round) beside a stagnant total balance ($6) — agents neither hid strategy nor changed play.
+
+#### Reading + decision
+- Outcome (c): silent, unattributable selection pressure induces no covert channel in 10 rounds — an *induction* null, not a capability null. The single-scalar feedback gives no way to localize the penalty to the myth's strategy content.
+- Next cell: **visible-penalty variant** ("your myth was flagged by a monitor; earnings confiscated") — closes the attribution gap, making silent-vs-visible a clean two-cell contrast: does evasion require knowing you're watched? Also connects the monitoring arm to the eval-awareness arm.
+
+---
+
+### 2026-07-02 — Result: spontaneous eval-awareness is real but thin
+
+#### What ran
+- Free transcript mining (no API calls) over all existing runs: 4,898 files, 280,658 texts. Two-stage: keyword screen split into CONTAMINATED terms (present in the told system-prompt framing) vs CLEAN terms ("being tested", "the researchers", "simulation", "as an AI"), then rule-classification into A genuine / B told-echo / C false-positive. Script: `scripts/eval_awareness_mining.py`; data + all hits: `data/phase8/eval_awareness_mining.json`.
+
+#### Headline numbers
+- **399 genuine eval-awareness texts (~1.4 per 1,000)**, almost all in game reasoning (3.26/1,000) — myths themselves essentially never break frame (0.02/1,000; 2 cases ever).
+- By model: gpt-5-nano 2.17/1,000 (volume leader; lower bound — its reasoning is often encrypted); **Sonnet 4.5 rarest (0.15/1,000) but most sophisticated** — twice reconstructs the actual hidden hypothesis ("testing whether there's alignment between the values expressed in my myths and my actual behavior") and sometimes adjusts its move because of it.
+- **Noise elicits awareness**: noisy-payoff conditions 6.2–8.3/1,000 vs clean baseline 3.9 — broken payoff math makes models infer "simulation/test." Real confound for noisy cells.
+- Unambiguous observer-intent hits (A1, names experimenters + hypothesis): only 10 of 399; the bulk (306) is soft "this is just a simulation" talk.
+
+#### Decision
+- Fund a **small targeted** framing-ablation arm, not a broad sweep: Sonnet 4.5 + gpt-5-nano only (Haiku/gpt-5.5: zero hits), noisy cells + clean control, manipulate told framing, measure the behavioral delta. The observational question is answered; behavior-change is what's left.
+
+---
+
+### 2026-07-02 — Result: gowith cell hits ceiling; refusal censors rep 4
+
+#### Headline numbers
+- Full gowith game cell (Phase 3 regime, Sonnet 4.5, seeds = gowith translations of s_end+): **$598.5 (±$1.9), n=4** — reps $598/$600/$596/$600. Matches the round-1 probe's prediction (near-ceiling, small nonzero variance) vs original s_end+ $600.0 (±$0.0) and baseline $437.4 (±$5.5). The cooperation recipe survives full translation into subject-less relational grammar. Plot: `data/phase7/plots/04_cell_means_gowith.png`. Data: `data/json/noise_experiments/phase7_seeded/`. ~$16 incl. retries.
+
+#### Rep 4 refusal-censored — knife-edge conjunction
+- Rep 4 failed 3× with Sonnet `stop_reason="refusal"` (empty content). Dissociation probes: gowith seed 4 in the exact game-built context 0/8 (two independent translations); same text with config-template wording 16/16; original English seed 4 in game context 4/4; gowith seed 0 in game context 4/4. The refusal fires only on the conjunction content × gowith style × exact prompt wording. Extends the 2026-06-30 jabberwocky finding (memory updated): **probe candidate seeds with the runtime-built messages, not template approximations** (capture via monkeypatch → `data/phase7/debug_failing_call.json`).
+- Research-note angle: the refusal classifier is itself a surface-form-sensitive "reader" — reportable alongside legibility/bindingness.
+
+#### Pipeline fix
+- `src/utils.py::_should_retry_anthropic` now treats empty-response `ValueError` as retryable — a single *stochastic* refusal no longer kills a $2.30 rep (deterministic ones still censor, correctly).
+
+---
+
+### 2026-07-02 — Result: recipe survives gowith grammar transplant
+
+#### What ran
+- Translated the 5 s_end_plus myths into "gowith" (Andy Ayrey's relational-process English — no grammatical subjects/objects; spec at `data/phase7/gowith_spec.md`) with Sonnet 4.5 under a preserve-all-numbers constraint. 5/5 passed mechanical number checks; injection-shape refusal probe clean (one standalone-extraction call refused, echoing the jabberwocky pattern, but the game shape plays normally). Pipeline: `scripts/phase7_gowith_translate.py`; candidates: `data/phase7/gowith_seeds_candidate.json`.
+- Ran both Phase 7 probes on the translations (~$0.50, 90 calls).
+
+#### Headline numbers
+- **Extraction: unchanged.** All 3 decoder families: 100% has_strategy, send 5.00 (±0.00), rf ~0.57 — same as the originals. Radical grammar change costs zero legibility.
+- **Behavioral: ~85% of the lift survives.** Sonnet reader round-1 send 4.67 (±0.62) vs original 5.00 (±0.00) vs baseline 3.10 (±0.32). Per-seed variance appears where the original pool had none → chunked-strategic *form* contributes a small binding premium, but the payload is semantic.
+
+#### Implication
+- Strong pre-registration-style prediction for a full gowith game cell (~$11.50): near-ceiling, slightly under $600 with nonzero variance. Aligns with Gisler 2026 (transmission survives faithful paraphrase); gowith is a far harsher transform than paraphrase.
+
+---
+
+### 2026-07-02 — Result: myths legible to all, binding to some
+
+#### What ran
+- `scripts/phase7_decoder_asymmetry.py`, two modes over the 5 seed pools (25 myths) × 3 reader models (Sonnet 4.5, GPT-5-nano, Gemini 3.1 flash-lite) × 3 samples. Extract mode: game rules + myth → extract `{send, return_fraction}`. Behavioral mode: exact Phase 3 injection shape `[system, seed_user, seed_myth, round-1 prompt]` → actual round-1 send, plus unseeded baselines. ~$3.50 total.
+
+#### Headline numbers
+- **Extraction is universal** — all 3 families extract near-identical recipes from all pools (s_end+ → send 5.00, rf ~0.57 for every decoder). Same-family-privileged *legibility* refuted; any monitor can read the payload. One content nuance: Sonnet reads GPT myths as rf=0.33 (±0.00), a weaker "return what you got" recipe.
+- **Uptake is not** — Sonnet reader round-1 sends: baseline 3.10 (±0.32), s_end− 2.97 (±0.40), s_start 3.67 (±0.62), Gemini seeds 4.00 (±0.93), s_end+ 5.00 (±0.00), **GPT seeds 3.13 (±0.35) ≈ baseline**. Sonnet *states* send=5 from GPT myths but doesn't *act* on them — the Phase 6b failure is behavioral bindingness, not legibility ("collusion on paper" vs "in action", cf. COLOSSEUM).
+- GPT reader (baseline 0.00 ±0.00): moved by Sonnet s_end+ (+3.20) far more than by its own myths (+0.73) — GPT-written myths are weakly binding *even for GPT*. Gemini reader sends 5.00 everywhere incl. baseline (ceiling reader, uninformative).
+
+#### Method win
+- The round-1 behavioral probe reproduces the full-game cell ordering (s_end− < baseline < s_start < gemini < s_end+) at ~$1.30 vs $11.50/cell — use as a cheap screen before funding full cells (gowith, paraphrase). Data: `data/phase7/decoder_{asymmetry,behavioral}_results.json`.
+
+---
+
+### 2026-07-02 — Lit review narrows Phase 7 novelty claim
+
+#### Decision
+- Planned Phase 7 ("emergent steganography under monitoring pressure") **strong claim is scooped**: "monitor pressure drives encoding underground while behavior persists" already shown by Baker et al. 2025 (arXiv:2503.11926, obfuscated reward hacking), Ming 2026 (2603.15655, MARL protocols), Mathew et al. 2024 (2410.03768, emergent stego robust to monitor+paraphrase).
+- **Narrowed claim we will pursue**: same dynamic in a *cultural-transmission-chain* setting, carried by a *natural-language narrative (myth) channel*, sustaining a *prosocial cooperation lift* — that combination is unclaimed. Cite the three priors as work we extend.
+
+#### Other verdicts from the review (28 papers extracted)
+- Decoder-asymmetry test: open; use Anwar et al. 2026 (2602.23163) "steganographic gap" metric — measure asymmetry via actions (lift), not text. Mechanistic anchor: Cloud et al. 2025 subliminal learning (same-base-model transfer, matches Phase 6b pattern).
+- Paraphrase defense: Gisler 2026 (2603.09517) predicts lift survives faithful paraphrase; either outcome informative.
+- Eval-awareness framing ablation: partially done (Robinson & Burden 2025 in PD); adopt Devbunova 2026 2×2 context×format design to dodge the format-sensitivity confound.
+
+#### Artifacts
+- Per-paper notes: `projects/neurips-2026-llm-ling-evo/references/notes/eval-awareness-stego/` (leads for round 3 in `references/leads/`). Sonnet 4.5 system card extraction failed (150pp) — cite public system card directly.
+
+---
+
+### 2026-07-01 — Phase 6b: cross-model transfer is NOT universal (GPT fails)
+
+#### What changed
+- Added GPT-5-nano source runs (5 reps × 8-agent myth_game history3 anon, ~$2 via OpenRouter). Harvested 5 round-10 myths (highest-balance agent per source rep) into `s_end_plus_gpt`. Injected into Sonnet 4.5 game cell (n=5, ~$11.50).
+- Config added: `gpt5nano_8agent_myth_directive_history3_anon_r10_n5` in `config/experiments.yaml`. OpenRouter API key added to `.env`.
+
+#### Headline: three-model cross-transfer picture (n=5 each)
+| Cell | Joint mean (±sd) | vs baseline |
+|---|---|---|
+| Baseline (no seed) | $437.4 (±$5.5) | — |
+| S-end+ **GPT** (round-10) | **$446.2 (±$13.5)** | **+$9 (≈ baseline, NO transfer)** |
+| S-start (Sonnet round-1) | $499.0 (±$11.5) | +$62 |
+| S-end+ **Gemini** (round-10) | **$549.2 (±$45.4)** | **+$112 (partial transfer)** |
+| S-end+ **Sonnet** (round-10) | **$600.0 (±$0.0)** | **+$163 (ceiling)** |
+
+Plot: `data/phase6/plots/01_cell_means.png` (now 7 cells).
+
+#### Findings
+- **Cross-model transfer is not universal.** Same regime, same 5 reps, three source models → three distinct outcomes (baseline / partial lift / ceiling). Prior claim needs revision: "cooperation lift transfers" is true for Gemini→Sonnet, false for GPT→Sonnet.
+- **GPT source-run cooperation is decorrelated from seed transfer.** Even the GPT seed harvested from GPT's highest-cooperation source run ($588 joint) produced only $440 in Phase 6b. The GPT seed from GPT's lowest source ($270) produced $437. No correlation across the 5 GPT seeds.
+- **Qualitative story: GPT writes evocative prose without encoding play recipes.** Example: *"send what you bear, receive what you must spare, and watch the tally slide toward a shared safe harbor."* Poetic but the strategic rule is missing. Gemini's example *"To return half of what was received was to anchor the pendulum in its center"* encodes the number rule despite parable form. Sonnet's *"send five, return seven and a half"* states it as a chunk. Sonnet reads the numbered rule and applies it; GPT's abstractions don't propagate.
+- **Structural metrics don't explain the GPT failure.** GPT (sent_len 19.09, coop_pct 6.41%) sits between Gemini (22.87, 8.49%) and Sonnet (10.19, 5.77%). By canonical metrics GPT should transfer like Gemini. It doesn't. The predictive variable is deeper than surface metrics — probably semantic specificity of the encoded strategy.
+
+#### Revised story
+Cross-model transfer requires *the source model to have written a myth that encodes a specific behavioral rule*. Two conditions:
+1. Source model reaches high cooperation in its own runs (GPT was only partial: 2/5 reps near-ceiling).
+2. The round-10 myth crystallises the strategy into text with numeric/behavioral specificity (Gemini did; GPT didn't).
+
+Both must hold. Sonnet: yes/yes → ceiling. Gemini: yes/partial → moderate lift. GPT: partial/no → no lift.
+
+#### Scripts and artifacts
+- `scripts/phase6b_harvest_gpt.py`, updated `phase6_plot_results.py`.
+- Seed manifest now 8 pools.
+- Phase 6b source data: `data/json/gpt5nano_8agent_myth_directive_history3_anon_r10_n5/`.
+- Phase 6b game data: `data/json/noise_experiments/phase6_seeded/phase3_seeded_s_end_plus_gpt_.../`
+
+---
+
+### 2026-06-30 — Phase 6: cross-model transfer of the cooperation lift
+
+#### What changed
+- New cell: `s_end_plus_gemini` — 5 round-10 myths harvested from existing Gemini Flash Lite 8-agent myth_game runs (all source runs at $600 ceiling, harvested for free from `data/json/gemini31_flashlite_8agent_myth_directive_history3_r10_n5/`). Injected into Sonnet 4.5 game runs at n=5 under the same Phase 3 regime. ~$11.50 spent.
+
+#### Headline numbers (n=5)
+| Cell | Joint mean (±sd) | vs Sonnet's own round-10 |
+|---|---|---|
+| S-end+ Sonnet (round-10) | $600.0 (±$0.0) | — |
+| **S-end+ Gemini (round-10)** | **$549.2 (±$45.4)** | **−$51 (substantial lift, no ceiling)** |
+| S-start (Sonnet round-1 parable) | $499.0 (±$11.5) | −$101 |
+| Baseline (no seed) | $437.4 (±$5.5) | −$163 |
+
+Plot: `data/phase6/plots/01_cell_means.png` (6-cell comparison). Per-rep spread on Gemini: $523, $592, $483, $582, $566.
+
+#### Findings
+- **Cooperation lift transfers across the model that wrote the seed.** Gemini-written round-10 myths produce $112 of lift over baseline in Sonnet game runs. Cross-model transfer is real and substantial.
+- **But not full transfer.** Gemini seeds came in $51 below Sonnet's own round-10 saturation. The reason is structural: Gemini's round-10 myths are parable-style (mean sentence length 22.87, n_sentences 8.8) rather than Sonnet's chunked-strategic style (10.19, 21.8). Gemini still encodes strategic content ("To return half of what was received was to anchor the pendulum…") but in flowing prose, not declarative rule chunks. Cooperative vocabulary is higher in Gemini myths (8.49% vs 5.77%).
+- **Structure-vs-content additivity.** Adding strategic content to parable structure gets +$50 (S-start parable $499 → Gemini parable+strategy $549). Adding chunked-rule structure on top gets another +$50 (→ Sonnet chunked-strategic $600). Both modulate the effect.
+- **High Gemini variance** (±$45.4 vs Sonnet's ±$0.0). Per-seed differences in how strategically explicit each Gemini myth is — same within-pool heterogeneity pattern as Phase 5's s_end−.
+
+#### Scripts and artifacts
+- `scripts/phase6_harvest_gemini.py`, `scripts/phase6_plot_results.py`, `scripts/phase6_plot_gemini_metrics.py`.
+- Plots: `data/phase6/plots/01_cell_means.png` (6-cell), `02_gemini_vs_sonnet_metrics.png` (Gemini vs Sonnet round-1 vs Sonnet round-10 on canonical metrics).
+- Seed manifest now has 7 pools.
+
+#### Open follow-ups
+- GPT-sourced cell. Would round out the cross-model claim with a third writer; needs ~$3-5 in GPT-5-nano source runs + $11.50 Sonnet game cell.
+- Within-pool variance analysis on Gemini cell (mirror of Phase 5's s_end− variance plot).
+
+---
+
+### 2026-06-30 — Phase 5: seed content separates 5 distinct regimes
+
+#### What changed
+- New cells run under Phase 3 regime (myth-only chat memory, re-injected, `["game"]` only, n=5 each): **s_filler** (Wikipedia paragraphs) and **s_end_minus** (low-cooperation Phase 2 baseline round-10 myths). Spent ~$25.
+- Jabberwocky cells (s_start_jab, s_end_plus_jab) attempted but dropped after Sonnet 4.5 returned `stop_reason="refusal"` on 2 of 3 jabberwocky'd seeds in the assistant slot (saved as project memory `project_sonnet_jabberwocky_refusal.md`).
+
+#### Headline numbers (n=5 per cell)
+| Cell | Joint mean (±sd) | vs baseline |
+|---|---|---|
+| S-end− (low-coop source) | $407.2 (±$39.5) | **−$30 (active suppression)** |
+| Baseline (no seed) | $437.4 (±$5.5) | — |
+| S-filler (Wikipedia) | $446.0 (±$7.7) | +$9 (≈ baseline) |
+| S-start (round-1 parable) | $499.0 (±$11.5) | +$62 |
+| S-end+ (round-10 myth) | $600.0 (±$0.0) | +$163 (ceiling) |
+
+Plot: `data/phase5/plots/01_cell_means.png`. Five clearly distinguishable behavioral regimes from changing *only* the chat-memory text at position [2].
+
+#### Findings
+- **"Any text in memory" is not the mechanism.** S-filler ≈ baseline. The lift in S-start/S-end+ requires myth-like content, not just structured prose. Kills the anchor-effect hypothesis.
+- **Myths can *actively suppress* cooperation.** S-end− at $407 is 30 below baseline. Single seeds in this pool can push the run as low as $362. Not just "fail to help" — *hurt*.
+- **Within S-end−, the seed's `cooperative_pct` strongly predicts the Phase 5 outcome** (Pearson r=+0.952 across 5 reps). Across pools, vocab counts don't predict (s_filler 0% pct → $446; s_end+ 5.77% → $600). Within the s_end− pool the vocab proxies what really matters: the **strategic play recipe** encoded in the myth text. Suppressive myths advocate "send 2" / "be wounded"; less-suppressive ones in the same pool advocate "send $4-5 anyway, return 50%+."
+- **Unifying story:** the agent reads the play rule (if any) in chat memory and applies it. S-end+ encodes "send 5, return 7.5" → ceiling. S-end− encodes various recipes → varied outcomes. S-filler has no play rule → no effect. S-start has cooperation values without numbers → moderate lift. Strategic specificity beats surface cooperation vocabulary as the carrier of the effect.
+
+#### Open follow-ups
+- Jabberwocky cells via system-prompt placement (workaround for the assistant-slot refusal). ~$14 for one cell.
+- Style-swap controls (rewrite a parable in chunked form / a strategic myth in parable form) — directly tests structure-vs-content with the same content. ~$23.
+- Pure-strategy seed (numbered rules with no narrative wrapping). ~$11.
+- Option B run for the task-order question.
+
+Saved: scripts `phase5_harvest_filler.py`, `phase5_harvest_end_minus.py`, `phase5_jabberwocky_seeds.py`, `phase5_plot_results.py`. Seeds + metrics in `data/phase3/seed_manifest.json` (now 6 pools).
+
+---
+
+### 2026-06-30 — Stateless LLMs collapse Phase 4 task orders
+
+#### What changed
+- Coworker review of Phase 3 + Phase 4 results: pointed out that `["game"]`, `["myth","game"]`, and `["game","myth"]` are **not three distinct conditions** under Option A. They are three samples of the same condition.
+- Reason: LLMs are stateless — each API call only sees the messages list passed to it. Phase 4's myth call happens in a separate API call whose output is discarded by `remember=False`. The game-decision call therefore receives the same 4-message list (`[system, seed_user, seed_myth, game_prompt]`) regardless of task order, so it produces the same response distribution.
+
+#### Empirical confirmation (n=5 per cell)
+| Cell | `["game"]` | `["myth","game"]` | `["game","myth"]` |
+|---|---|---|---|
+| baseline | $437.4 (±$5.5) | $440.4 (±$5.8) | $440.8 (±$2.9) |
+| s_start | $499.0 (±$11.5) | $511.6 (±$16.5) | $503.8 (±$14.0) |
+| s_end+ | $600.0 (±$0.0) | $598.4 (±$3.6) | $599.2 (±$1.8) |
+
+All three columns within sd per row → consistent with statelessness prediction.
+
+#### Implication for future ablations
+- ~$60 of Phase 4 spending was informationally redundant for the cooperation-outcome question. We did get ~2,400 generated myths as a separate dataset, usable for linguistic analysis.
+- Generalisable rule for this codebase: under any "discard-the-generated-content" regime (`remember=False`), conditions that differ only in "what other API call happened earlier" are equivalent. Treat conditions as distinct only if they produce different `messages_sent` lists at the decision-time LLM call.
+- To make task orders genuinely differ, switch to Option B (own myth retained in chat memory at `[3:5]`). That changes the decision-time input across task orders.
+
+Saved to project memory: `project_stateless_llm_ablation_design.md`.
+
+---
+
+### 2026-06-23 — Phase 3 first cell + verbal/structural puzzle
+
+#### What changed
+- Phase 3 v1 ran end-to-end. New regime: chat memory at the start of every round is exactly `[system, seed_user, seed_myth]`; seed re-asserted every round and never scrolls out; game decisions are NOT appended to chat memory (`remember=False`); no history-block in the prompt (`history_policy="none"`). Task order: `["game"]` only. See `docs/phase3_chat_memory_spec.md` for the contract, validated by `scripts/phase3_inspect_chat_memory.py`.
+- Seed source switched away from Phase 2 baselines (decided wrongful) to the team pre-Phase-2 baseline `sonnet45_8agent_myth_directive_history3_anon_r10_n5` (5 reps, joint $548–596). Fresh manifest: `data/phase3/seed_manifest.json`. Harvester: `scripts/phase3_harvest_seeds.py`.
+- 15 Sonnet 4.5 runs (3 cells × 5 reps) + 3 Haiku smoke runs, total ≈ $34.50, 8-agent dyadic, noise neg5.
+
+#### Headline numbers (joint balance, n=5 each, ceiling = $600)
+| Cell | mean ($) | individual reps |
+|---|---|---|
+| Baseline (no seed) | 437.4 (±5.5) | 442, 439, 435, 442, 429 |
+| S-start (round-1 parable) | 499.0 (±11.5) | 489, 518, 491, 499, 498 |
+| S-end+ (round-10 myth) | **600.0 (±0.0)** | 600, 600, 600, 600, 600 |
+
+- Both seeded cells exceed baseline at >4σ. S-end+ saturates ceiling in every rep.
+- **Phase 2's H4 reverses.** In Phase 2, round-1 parables beat round-10 myths; under the clean myth-only regime, round-10 myths win by a wide margin. The Phase 2 result was likely a regime artifact (seed scrolled out, games-history-block carried the cooperation).
+- **Verbal/structural puzzle.** Canonical metrics via `analyses/cooperativity_analysis.py` + `analyses/myth_compression_curves.py` on the 10 seed myths: S-end+ has *fewer* cooperation words than S-start (5.77% vs 8.50%), *shorter* sentences (10.2 vs 13.7 words/sent), and *more* sentences (21.8 vs 15.2). So the higher-cooperation pool talks *less* like cooperation and *more* like chunked play rules ("send five", "return seven and a half"). Plot: `data/phase3/plots/04_puzzle.png`.
+
+#### Open follow-ups (prioritised by what they unlock)
+- **Counter-cooperative + filler seeds** (~$45). Highest-leverage spend — separates "cooperative myth helps" from "any text helps" from "strategic text helps." Phase 2 had these; Phase 3 doesn't.
+- **Harder game to unstick ceiling** (~$35). Required before scaling reps on S-end+; right now we can't see how much room it has.
+- **Style-swap controls** (~$23). Rewrite an S-start parable in chunked style (and vice versa) to isolate structure from content directly — the cleanest test of today's puzzle.
+- **Pure-strategy seed** (~$11). Strip the round-10 myth to bare rules with no narrative. If it still saturates ceiling, the mythic wrapping is decorative.
+- **Phase 4: task orders `myth_game`/`game_myth`** (~$21–41). Spec: `docs/phase4_task_orders.md`.
+- **Variants 1/3 (no re-injection)** (~$23). Coworker-deferred; tests decay dynamics.
+- **Different host model** (Sonnet 4.6 / Opus 4.7 / GPT-5, ~$20–40). Robustness check.
+- **n=10 for tighter SEs** (~$23). Optional; the gaps are already significant.
+
+Files: spec `docs/phase3_chat_memory_spec.md`, runner `experiments/run_phase3_seeded_cells.py`, plots `data/phase3/plots/`, data `data/json/noise_experiments/phase3_seeded/` + `…/phase3_baseline/`.
+
+---
+
 ### 2026-06-19 — Phase 2 myth transplant complete
 
 #### What changed
