@@ -46,12 +46,16 @@ def main():
             sent, rr = per_round_game(run)
             if not len(sent):
                 continue
+            game_rounds = [r for r in run["conversation_history"] if r.get("balances")]
+            final_balances = list(game_rounds[-1]["balances"].values()) if game_rounds else []
+            final_balance = float(np.mean(final_balances)) if final_balances else 0.0
             rows.append({
                 "Condition": CONDITION_LABELS[cond],
                 "Mean Trust Ratio": float(np.mean(sent)) / ENDOWMENT,
                 "Mean Return Ratio": float(np.mean(rr)),
                 "Mean Sent": float(np.mean(sent)),
                 "Cooperation Stability": float(np.std(rr)),
+                "Final Cumulative Balance": final_balance,
             })
 
     df = pd.DataFrame(rows)
@@ -113,8 +117,27 @@ def main():
     print(f"Saved: {out_dir / 'condition_comparison.png'}")
     plt.close()
 
+    # Final cumulative balance boxplot (layout of
+    # trajectory_boxplot.py::plot_cumulative_balances_boxplot_by_condition)
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    sns.boxplot(data=df, x='Condition', y='Final Cumulative Balance',
+                order=condition_order, ax=ax, palette='Set2')
+    ax.set_title('Final Cumulative Balances by Condition', fontweight='bold', fontsize=14)
+    ax.set_ylabel('Final Cumulative Balance (Average per Agent)', fontsize=12)
+    ax.set_xlabel('Condition', fontsize=12)
+    ax.tick_params(axis='x', rotation=15)
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(bottom=0)
+
+    plt.tight_layout()
+    plt.savefig(out_dir / 'cumulative_balance_boxplot_by_condition.png', dpi=300, bbox_inches='tight')
+    print(f"Saved: {out_dir / 'cumulative_balance_boxplot_by_condition.png'}")
+    plt.close()
+
     print("\n=== Run-level means ===")
-    for col in ["Mean Trust Ratio", "Mean Return Ratio", "Mean Sent", "Cooperation Stability"]:
+    for col in ["Mean Trust Ratio", "Mean Return Ratio", "Mean Sent", "Cooperation Stability",
+                "Final Cumulative Balance"]:
         parts = []
         for label in condition_order:
             v = df[df["Condition"] == label][col]
