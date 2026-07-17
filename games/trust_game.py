@@ -537,7 +537,7 @@ class TrustGame(DyadicPairingMixin, Game):
         else:
             content = response_data.get("content", "")
 
-        number = r"(-?\d+(?:\.\d*)?|-?\.\d+)"
+        number = r"\$?\s*(-?\d+(?:\.\d*)?|-?\.\d+)"
         pattern = rf"'{key}':\s*{number}|" + rf'"{key}":\s*{number}'
         match = re.search(pattern, content, re.IGNORECASE)
         if match:

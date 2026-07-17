@@ -127,6 +127,17 @@ class NoisyExperimentConfig:
             active_myth_later_key = myth_prompt_arm["later"]
             game_prompt_addition = self._get_game_prompt_addition(order)
 
+            # Optional per-set override of game prompt templates (same
+            # mechanism as the main config's game_prompt_keys).
+            game_prompt_keys = exp_set.get("game_prompt_keys", {})
+
+            def _game_template(name):
+                key = game_prompt_keys.get(name, name)
+                return self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get(key),
+                    game_prompt_addition,
+                )
+
             for run in range(num_runs):
                 combo = {
                     "model": self.config["base_models"][model],
@@ -139,22 +150,10 @@ class NoisyExperimentConfig:
                     "myth_topic": myth_topic,
                     "run_number": run,
                     # Prompt templates
-                    "trust_game_round1_investor": self._with_game_prompt_addition(
-                        self.config["prompt_templates"].get("trust_game_round1_investor"),
-                        game_prompt_addition,
-                    ),
-                    "trust_game_round1_trustee": self._with_game_prompt_addition(
-                        self.config["prompt_templates"].get("trust_game_round1_trustee"),
-                        game_prompt_addition,
-                    ),
-                    "trust_game_later_investor": self._with_game_prompt_addition(
-                        self.config["prompt_templates"].get("trust_game_later_investor"),
-                        game_prompt_addition,
-                    ),
-                    "trust_game_later_trustee": self._with_game_prompt_addition(
-                        self.config["prompt_templates"].get("trust_game_later_trustee"),
-                        game_prompt_addition,
-                    ),
+                    "trust_game_round1_investor": _game_template("trust_game_round1_investor"),
+                    "trust_game_round1_trustee": _game_template("trust_game_round1_trustee"),
+                    "trust_game_later_investor": _game_template("trust_game_later_investor"),
+                    "trust_game_later_trustee": _game_template("trust_game_later_trustee"),
                     "defector_game_instruction": self.config["prompt_templates"].get(
                         "defector_game_instruction"
                     ),
@@ -320,6 +319,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "resume_from": resume_from,
             "log_file": log_path,
             "agent_names": game_params.get("agent_names"),
+            "chat_memory_mode": game_params.get("chat_memory_mode", "default"),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
