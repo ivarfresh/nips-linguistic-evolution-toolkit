@@ -89,6 +89,20 @@ def myth_metrics(run, model):
     return np.array(cross), np.array(drift)
 
 
+def per_round_dyad_values(run, key="sent"):
+    """All individual dyad values per round: list of (round, value)."""
+    points = []
+    for entry in run.get("conversation_history", []):
+        for d in entry.get("dyads") or []:
+            if d.get("sent") is None:
+                continue
+            if key == "sent":
+                points.append((entry["round"], d["sent"]))
+            elif key == "rr" and d.get("received"):
+                points.append((entry["round"], d["returned"] / d["received"]))
+    return points
+
+
 def stack_mean_std(series_list):
     n = min(len(s) for s in series_list)
     arr = np.stack([s[:n] for s in series_list])
@@ -167,6 +181,66 @@ def main():
     fig_path = out_dir / "memprimary_8agent_comparison.png"
     fig.savefig(fig_path, dpi=150)
     print(f"\nFigure: {fig_path}")
+
+    # Individual trajectories: one thin line per run (mean over the round's 4
+    # dyads), individual dyad decisions scattered underneath, condition mean bold.
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    for ax, key, title in [
+        (axes[0], "sent", "Sent per round — individual runs"),
+        (axes[1], "rr", "Return ratio per round — individual runs"),
+    ]:
+        for (name, runs), color in zip(conditions.items(), colors):
+            res_key = "sent" if key == "sent" else "rr"
+            for s in results[name][res_key]:
+                ax.plot(np.arange(1, len(s) + 1), s, color=color, alpha=0.35, lw=1)
+            for run in runs:
+                pts = per_round_dyad_values(run, key)
+                if pts:
+                    r, v = zip(*pts)
+                    jitter = (np.random.default_rng(0).random(len(r)) - 0.5) * 0.25
+                    ax.scatter(np.array(r) + jitter, v, s=6, color=color, alpha=0.15)
+            mean, _ = stack_mean_std(results[name][res_key])
+            ax.plot(np.arange(1, len(mean) + 1), mean, color=color, lw=2.5, label=name)
+        ax.set_title(title)
+        ax.set_xlabel("Round")
+        ax.legend(fontsize=8)
+    fig.suptitle("Individual run trajectories (thin) + dyad decisions (dots) + condition mean (bold)")
+    fig.tight_layout()
+    traj_path = out_dir / "memprimary_8agent_trajectories.png"
+    fig.savefig(traj_path, dpi=150)
+    print(f"Figure: {traj_path}")
+
+    # Per-condition boxplots of run-level means (each box: n runs).
+    fig, axes = plt.subplots(1, 4, figsize=(14, 4))
+    box_specs = [
+        ("sent", "Sent ($/round)"),
+        ("rr", "Return ratio"),
+        ("cross", "Population myth sim"),
+        ("drift", "Self myth sim (r vs r-1)"),
+    ]
+    for ax, (key, title) in zip(axes, box_specs):
+        data = [
+            [float(np.mean(s)) for s in results[name][key]] for name in results
+        ]
+        bp = ax.boxplot(data, labels=[n.split(" (")[0] for n in results], patch_artist=True)
+        for patch, color in zip(bp["boxes"], colors):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.4)
+        for i, vals in enumerate(data, start=1):
+            ax.scatter(
+                np.full(len(vals), i) + (np.random.default_rng(1).random(len(vals)) - 0.5) * 0.15,
+                vals,
+                s=18,
+                color=colors[i - 1],
+                zorder=3,
+            )
+        ax.set_title(title, fontsize=10)
+        ax.tick_params(axis="x", labelsize=8)
+    fig.suptitle("Run-level means per condition (each dot = one run, n=5)")
+    fig.tight_layout()
+    box_path = out_dir / "memprimary_8agent_boxplots.png"
+    fig.savefig(box_path, dpi=150)
+    print(f"Figure: {box_path}")
 
 
 if __name__ == "__main__":
