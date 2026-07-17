@@ -1,3 +1,18 @@
+### 2026-07-17 — Result: myth-first cooperation boost replicates under 8-agent noise
+
+#### What ran
+- Task-order triplet (game / game_myth / myth_game) under bidirectional noise at 8 agents, memory-primary (`noise8_memprimary_*`, n=5 each, 15/15 clean, ~$40); plus the dyad-level version (`noise_memprimary_{game,game_myth}`, ~$7). Smoke caught the same window-0 bug in `TrustGameNoisy._format_multi_agent_history` (own copy of the history block without the skip) — fixed before the paid batch. Plots: `data/plots/noise8_memprimary/`.
+
+#### Headline numbers (run-level, n=5/condition, 8-agent noise)
+- **Myth-first boost replicates almost exactly**: trust ratio 0.851 (±0.094) myth_game vs 0.731 (±0.023) game vs 0.692 (±0.036) game_myth (plain-game triplet: 0.892 / 0.716 / 0.653). Final balance $67.55 (±$4.70) vs $61.54 (±$1.18) vs $59.61 (±$1.82) (plain: $69.60 / $60.80 / $57.65).
+- **Population buffers noise**: 8-agent noise trust stays at plain-game levels, unlike dyads under the same noise (which collapsed to ~0.4 trust, balances ~$42–47). The co-player history block + rotating partners appears to prevent the death spiral a single noisy relationship falls into.
+- Dyad-level noise triplet, same ordering compressed: $46.69 / $45.51 / $42.15 (myth_game / game_myth / game).
+
+#### Reading
+- The core task-order finding is robust across game regime (plain/noise) and population size (2/8) under the fixed memory design. Noise robustness at the population level is a potential paper point in itself.
+
+---
+
 ### 2026-07-17 — Result: noise pilot confirms memory-primary; drift tracks game visibility
 
 #### What ran
