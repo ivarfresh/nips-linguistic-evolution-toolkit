@@ -1,3 +1,17 @@
+### 2026-07-17 — Result: memory-channel pilot — game invariant, myth diversity differs
+
+#### What ran
+- Double-memory bug confirmed (rounds appear 2–3× in context: chat memory + in-prompt history recaps; and memory_capacity counts interactions, not rounds). Two fixed designs implemented and piloted head-to-head with information parity: **hybrid** (own myths in chat memory/assistant slot; game history in-prompt only) vs **stateless** (no memory; everything in one flat prompt). Sonnet 4.5, 2-agent dyads, myth→game, r10, n=5 per condition, ~$6. Sets `memtest_{hybrid,stateless}_sonnet45_2agent_r10_n5`; comparison `scripts/memtest_compare.py`; plots `data/plots/memtest_memory_channels/`.
+
+#### Headline numbers (run-level, n=5)
+- **Game play: channel-invariant.** Sent 3.80 (±0.75) vs 3.80 (±0.40); return ratio 0.527 (±0.023) vs 0.500 (±0.000) — stateless returns exactly half every round of every run.
+- **Myths: stateless collapses diversity.** Cross-agent similarity 0.719 (±0.100) hybrid vs 0.820 (±0.021) stateless; self-similarity r vs r-1 0.748 (±0.082) vs 0.817 (±0.017). Means p≈0.11–0.17 (n=5), but the variance collapse (±0.02 vs ±0.10) is the signal: stateless runs are near-deterministic and homogeneous; hybrid keeps lineage drift and divergence.
+
+#### Decision
+- The channel choice barely moves game behavior but shapes the linguistic dynamics — the paper's actual object of study. **Hybrid preferred** for reruns: preserves myth diversity/drift; assistant-slot placement is also the ecologically faithful "own authorship" condition. 8-agent regime still needs the hybrid window widened (memory_capacity in rounds ↔ 3-round history block) before the full rerun.
+
+---
+
 ### 2026-07-17 — Clean public-facing repo split from research repo
 
 #### What changed
