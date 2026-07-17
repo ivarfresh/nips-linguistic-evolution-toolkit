@@ -32,14 +32,24 @@ CONDITION_DIRS = {
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="data/plots/memprimary_8agent")
+    parser.add_argument("--game", default=None, help="override game-only runs dir")
+    parser.add_argument("--game-myth", default=None, help="override game_myth runs dir")
+    parser.add_argument("--myth-game", default=None, help="override myth_game runs dir")
+    parser.add_argument("--title-suffix", default="", help="appended to figure titles")
     args = parser.parse_args()
+
+    dirs = dict(CONDITION_DIRS)
+    for cond, override in [("game", args.game), ("game_myth", args.game_myth),
+                           ("myth_game", args.myth_game)]:
+        if override:
+            dirs[cond] = override
 
     import matplotlib.pyplot as plt
     import pandas as pd
     import seaborn as sns
 
     rows = []
-    for cond, cond_dir in CONDITION_DIRS.items():
+    for cond, cond_dir in dirs.items():
         runs = load_runs(cond_dir)
         print(f"{CONDITION_LABELS[cond]}: {len(runs)} runs")
         for run in runs:
@@ -64,7 +74,7 @@ def main():
     sns.set_style("whitegrid")
 
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-    fig.suptitle('Cooperation Patterns Across Experimental Conditions',
+    fig.suptitle('Cooperation Patterns Across Experimental Conditions' + args.title_suffix,
                  fontsize=16, fontweight='bold')
 
     condition_order = [
@@ -123,7 +133,8 @@ def main():
 
     sns.boxplot(data=df, x='Condition', y='Final Cumulative Balance',
                 order=condition_order, ax=ax, palette='Set2')
-    ax.set_title('Final Cumulative Balances by Condition', fontweight='bold', fontsize=14)
+    ax.set_title('Final Cumulative Balances by Condition' + args.title_suffix,
+                 fontweight='bold', fontsize=14)
     ax.set_ylabel('Final Cumulative Balance (Average per Agent)', fontsize=12)
     ax.set_xlabel('Condition', fontsize=12)
     ax.tick_params(axis='x', rotation=15)
