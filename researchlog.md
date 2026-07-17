@@ -1,3 +1,18 @@
+### 2026-07-17 — Result: task-order effect survives the memory fix
+
+#### What ran
+- Completed the standard game / game_myth / myth_game condition triplet for the fixed 8-agent memory-primary regime (`sonnet45_8agent_{game,game_myth}_memprimary_r10_n5`, n=5 each, ~$20). First attempt failed 10/10 on an empty direct-Anthropic credit balance; reran via `LLM_PROVIDER=openrouter` (fact + fallback recorded in docs/verified-facts.md). Standard-layout plots: `scripts/memprimary_taskorder_boxplot.py`, per-run trajectories via `analyses/trajectory_plotting_8agent.py` → `data/plots/memprimary_8agent/`.
+
+#### Headline numbers (run-level, n=5 per condition)
+- **Myth-first boosts trust ~25%**: trust ratio 0.892 (±0.082) myth_game vs 0.716 (±0.073) game-only vs 0.653 (±0.070) game_myth; mean sent $4.46 vs $3.58 vs $3.27.
+- Return ratio near half everywhere: 0.529 (±0.021) / 0.505 (±0.010) / 0.537 (±0.019); game-only is the most locked-in (stability 0.006).
+- Gotcha fixed: billing-failed first attempts leave `*.checkpoint.json.error.json` snapshots in data dirs — loaders must exclude them (initially inflated n to 10 and skewed game-only means).
+
+#### Reading
+- Writing myths *before* playing raises cooperation from round 1; playing first anchors on cautious play that a later myth doesn't lift. The cross-task influence finding survives the double-memory fix with a clean information story: each fact enters context once.
+
+---
+
 ### 2026-07-17 — Result: 8-agent memory-primary test vs June baseline
 
 #### What ran
