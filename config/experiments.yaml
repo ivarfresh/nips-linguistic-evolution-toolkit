@@ -1152,6 +1152,58 @@ experiment_sets:
       num_turns: 10
       multiplier: 3
 
+  # Fixed rerun of the 8-agent reference regime with memory-primary semantics
+  # (see memtest pilot, researchlog 2026-07-17). Differences vs the original
+  # sonnet45_8agent_myth_directive_history3_anon_r10_n5:
+  # - chat_memory_mode: memory_primary (label only; both tasks remembered)
+  # - self_history_window: 0 — own game history lives in chat memory, so the
+  #   in-prompt block carries only the co-player's last 3 games (info memory
+  #   cannot contain). Fixes the double-memory bug.
+  # - memory_capacity: 6 interaction pairs = 3 rounds of myth+game, matching
+  #   the 3-round co-player history window (was 3 pairs ≈ 1.5 rounds).
+  # - myth later prompt: co-player myth only (own myth is in memory).
+  sonnet45_8agent_myth_directive_history3_anon_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  sonnet45_8agent_memprimary_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 3
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
   # --- Memory-channel pilot (2-agent dyads) ---
   # Same information at every decision point; only the packaging differs.
   # hybrid: own myths in chat memory (assistant slot), game history in-prompt.
