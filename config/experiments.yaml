@@ -1183,6 +1183,45 @@ experiment_sets:
       coplayer_history_window: 3
       show_agent_names: false
 
+# Task-order companions to the memory-primary regime, for the standard
+  # game / game_myth / myth_game condition comparison.
+  sonnet45_8agent_game_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    repetitions: 5
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  sonnet45_8agent_game_myth_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
   sonnet45_8agent_memprimary_smoke:
     models: ["claude_haiku_45"]
     templates: ["trust_game_default"]
