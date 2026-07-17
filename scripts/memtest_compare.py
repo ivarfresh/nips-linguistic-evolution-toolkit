@@ -88,6 +88,15 @@ def embed_similarities(runs, model):
     return cross_all, self_all
 
 
+def final_balance(run):
+    """Mean final cumulative balance per agent (last round with balances)."""
+    for entry in reversed(run.get("conversation_history", [])):
+        balances = entry.get("balances")
+        if balances:
+            return float(np.mean(list(balances.values())))
+    return 0.0
+
+
 def stack_mean_std(series_list):
     n = min(len(s) for s in series_list)
     arr = np.stack([s[:n] for s in series_list])
@@ -149,6 +158,7 @@ def main():
             "mean_return_ratio_per_run": [float(np.mean(r)) for r in rrs],
             "mean_cross_sim_per_run": [float(np.mean(c)) for c in cross],
             "mean_self_sim_per_run": [float(np.mean(s)) for s in self_sim],
+            "final_balance_per_run": [final_balance(run) for run in runs],
         }
 
     print("\n=== Run-level means (each n = number of runs) ===")
@@ -157,6 +167,7 @@ def main():
         ("mean_return_ratio_per_run", "return ratio"),
         ("mean_cross_sim_per_run", "cross-agent myth sim"),
         ("mean_self_sim_per_run", "self myth sim (r vs r-1)"),
+        ("final_balance_per_run", "final balance ($/agent)"),
     ]
     names = list(conditions)
     for key, label in metrics:
@@ -194,6 +205,32 @@ def main():
     fig_path = out_dir / "memtest_comparison.png"
     fig.savefig(fig_path, dpi=150)
     print(f"\nFigure: {fig_path}")
+
+    # Final cumulative balance boxplot (layout of
+    # trajectory_boxplot.py::plot_cumulative_balances_boxplot_by_condition)
+    import pandas as pd
+    import seaborn as sns
+
+    sns.set_style("whitegrid")
+    rows = [
+        {"Condition": name, "Final Cumulative Balance": v}
+        for name in conditions
+        for v in summary[name]["final_balance_per_run"]
+    ]
+    df = pd.DataFrame(rows)
+    fig, ax = plt.subplots(figsize=(10, 7))
+    sns.boxplot(data=df, x='Condition', y='Final Cumulative Balance',
+                order=list(conditions), ax=ax, palette='Set2')
+    ax.set_title('Final Cumulative Balances by Condition', fontweight='bold', fontsize=14)
+    ax.set_ylabel('Final Cumulative Balance (Average per Agent)', fontsize=12)
+    ax.set_xlabel('Condition', fontsize=12)
+    ax.tick_params(axis='x', rotation=15)
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(bottom=0)
+    plt.tight_layout()
+    plt.savefig(out_dir / 'cumulative_balance_boxplot_by_condition.png', dpi=300, bbox_inches='tight')
+    print(f"Figure: {out_dir / 'cumulative_balance_boxplot_by_condition.png'}")
+    plt.close()
 
     with open(out_dir / "memtest_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
