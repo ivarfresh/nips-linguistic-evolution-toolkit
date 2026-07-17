@@ -1,3 +1,17 @@
+### 2026-07-17 — Result: 8-agent memory-primary test vs June baseline
+
+#### What ran
+- Fixed 8-agent regime test: `sonnet45_8agent_myth_directive_history3_anon_memprimary_r10_n5` (memory-primary; self_history_window 0, coplayer window 3, memory_capacity 6 pairs = 3 rounds, co-player-myth-only later template), n=5, 5/5 clean, ~$14. Compared against the June 8 double-memory baseline with `scripts/memprimary_8agent_compare.py`; plots `data/plots/memprimary_8agent/`.
+
+#### Headline numbers (n=5 vs n=5)
+- **The bug was inflating the generosity ratchet.** Both regimes escalate (unlike static dyads), but baseline saturates: sent r1→r10 4.30→5.00 vs fixed 3.95→4.60; return ratio 0.607 (±0.046) vs 0.529 (±0.021), r10 0.62 vs 0.54. Triple-counted cooperative history (recap + memory + reasoning) stacked the evidence of generosity.
+- **The bug was suppressing myth evolution.** Self-similarity r vs r-1: baseline 0.823 (±0.022) vs fixed 0.688 (±0.058) — verbatim "here is the myth you wrote" recaps anchored self-copying; without them lineages actually drift. Population myth similarity unchanged (0.689 vs 0.694) — convergence level is robust.
+
+#### Reading
+- Fixed regime keeps the qualitative story (escalating cooperation, myth convergence) but with honest magnitudes and livelier lineage dynamics. June-baseline myth-stability numbers should not be compared 1:1 with post-fix runs.
+
+---
+
 ### 2026-07-17 — Result: memory-channel pilot — game invariant, myth diversity differs
 
 #### What ran
