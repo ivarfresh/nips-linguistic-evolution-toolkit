@@ -108,6 +108,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--hybrid", default="data/json/memtest_hybrid_sonnet45_2agent_r10_n5")
     parser.add_argument("--stateless", default="data/json/memtest_stateless_sonnet45_2agent_r10_n5")
+    parser.add_argument(
+        "--memory-primary", default="data/json/memtest_memoryprimary_sonnet45_2agent_r10_n5"
+    )
     parser.add_argument("--out", default="data/plots/memtest_memory_channels")
     args = parser.parse_args()
 
@@ -115,7 +118,12 @@ def main():
     import matplotlib.pyplot as plt
     from sentence_transformers import SentenceTransformer
 
-    conditions = {"hybrid": load_runs(args.hybrid), "stateless": load_runs(args.stateless)}
+    conditions = {
+        "hybrid": load_runs(args.hybrid),
+        "stateless": load_runs(args.stateless),
+        "memory_primary": load_runs(args.memory_primary),
+    }
+    conditions = {k: v for k, v in conditions.items() if v}
     for name, runs in conditions.items():
         print(f"{name}: {len(runs)} runs")
 
@@ -150,15 +158,20 @@ def main():
         ("mean_cross_sim_per_run", "cross-agent myth sim"),
         ("mean_self_sim_per_run", "self myth sim (r vs r-1)"),
     ]
+    names = list(conditions)
     for key, label in metrics:
-        h = np.array(summary["hybrid"][key])
-        s = np.array(summary["stateless"][key])
-        t, p = welch(h, s)
-        p_str = f"Welch t={t:.2f} p={p:.3f}" if p is not None else "scipy unavailable"
-        print(
-            f"{label:26s} hybrid {h.mean():.3f} (±{h.std():.3f})  "
-            f"stateless {s.mean():.3f} (±{s.std():.3f})  {p_str}"
-        )
+        parts = []
+        for name in names:
+            v = np.array(summary[name][key])
+            parts.append(f"{name} {v.mean():.3f} (±{v.std():.3f})")
+        print(f"{label:26s} " + "  ".join(parts))
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                a = np.array(summary[names[i]][key])
+                b = np.array(summary[names[j]][key])
+                t, p = welch(a, b)
+                if p is not None:
+                    print(f"{'':26s}   {names[i]} vs {names[j]}: Welch t={t:.2f} p={p:.3f}")
 
     panels = [
         ("Sent per round ($)", [(n, stack_mean_std(game[n][0])) for n in conditions]),
@@ -167,7 +180,7 @@ def main():
         ("Self myth similarity (round r vs r-1)", [(n, stack_mean_std(myth[n][1])) for n in conditions]),
     ]
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    colors = {"hybrid": "tab:blue", "stateless": "tab:orange"}
+    colors = {"hybrid": "tab:blue", "stateless": "tab:orange", "memory_primary": "tab:green"}
     for ax, (title, series) in zip(axes.flat, panels):
         for name, (mean, std) in series:
             x = np.arange(1, len(mean) + 1)
@@ -176,7 +189,7 @@ def main():
         ax.set_title(title)
         ax.set_xlabel("Round")
         ax.legend()
-    fig.suptitle("Memory-channel pilot: hybrid vs stateless (Sonnet 4.5, 2-agent dyads, n=5)")
+    fig.suptitle("Memory-channel pilot (Sonnet 4.5, 2-agent dyads, n=5 per condition)")
     fig.tight_layout()
     fig_path = out_dir / "memtest_comparison.png"
     fig.savefig(fig_path, dpi=150)

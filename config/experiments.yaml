@@ -87,6 +87,21 @@ prompt_templates:
     Your total earnings accross all rounds are ${agent_balance}.
     This round, you are the RECEIVER. The other player (the sender) sent you ${current_round_sent}, so you received ${received}. How much do you return to the other player this round? (0-{received})
 
+  # Memory-primary pilot: same wording as the standard later-round game
+  # prompts minus the last-round recap — the agent's chat memory already
+  # contains last round's prompts and responses.
+  trust_game_later_investor_minimal: |
+    Round {turn}
+
+    Your total earnings accross all rounds are ${agent_balance}. This round, you are the SENDER.
+    How much do you send to the other player (the receiver) this round? (0-{endowment})
+
+  trust_game_later_trustee_minimal: |
+    Round {turn}
+
+    Your total earnings accross all rounds are ${agent_balance}.
+    This round, you are the RECEIVER. The other player (the sender) sent you ${current_round_sent}, so you received ${received}. How much do you return to the other player this round? (0-{received})
+
   myth_writing_default: |
     Write a 200-word myth. {topic_instruction}
 
@@ -168,6 +183,18 @@ prompt_templates:
     {other_agent_myth}
 
     {game_behavior_summary}
+
+    Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Memory-channel pilot: memory-primary — both tasks stay in chat memory, so
+  # the prompt only carries the one thing memory cannot: the co-player's myth.
+  # No game summary (game rounds are in memory) and no own-myth recap.
+  myth_writing_later_rounds_directive_memory_primary: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
 
     Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
 
@@ -1165,6 +1192,31 @@ experiment_sets:
       memory_capacity: 1
       chat_memory_mode: "stateless"
 
+  # memory-primary: both tasks in chat memory (remember=True is the default
+  # for this mode); duplication is removed on the prompt side instead via the
+  # _minimal game templates and the _memory_primary myth template.
+  # memory_capacity: 2 pairs = 1 round of myth+game, matching the 1-round
+  # window of the other two arms.
+  memtest_memoryprimary_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 2
+      chat_memory_mode: "memory_primary"
+
   # Cheap smoke variants of the two sets above (Haiku, 3 rounds, 1 rep).
   memtest_hybrid_smoke:
     models: ["claude_haiku_45"]
@@ -1199,3 +1251,23 @@ experiment_sets:
       num_agents: 2
       memory_capacity: 1
       chat_memory_mode: "stateless"
+
+  memtest_memoryprimary_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 2
+      chat_memory_mode: "memory_primary"

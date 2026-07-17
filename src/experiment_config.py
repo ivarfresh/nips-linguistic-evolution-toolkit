@@ -91,6 +91,17 @@ class ExperimentConfig:
             )
             game_prompt_addition = self._get_game_prompt_addition(order)
 
+            # Optional per-set override of game prompt templates, e.g.
+            # game_prompt_keys: {trust_game_later_investor: my_variant_key}
+            game_prompt_keys = exp_set.get("game_prompt_keys", {})
+
+            def _game_template(name):
+                key = game_prompt_keys.get(name, name)
+                return self._with_game_prompt_addition(
+                    self.config["prompt_templates"].get(key),
+                    game_prompt_addition,
+                )
+
             combo = {
                 "model": self.config["base_models"][model],
                 "template": self.config["prompt_templates"][template],
@@ -105,22 +116,10 @@ class ExperimentConfig:
                 "myth_topic": myth_topic,
                 "replicate_id": replicate_id if repetitions > 1 else None,
                 # Add all prompt templates for games and myths
-                "trust_game_round1_investor": self._with_game_prompt_addition(
-                    self.config["prompt_templates"].get("trust_game_round1_investor"),
-                    game_prompt_addition,
-                ),
-                "trust_game_round1_trustee": self._with_game_prompt_addition(
-                    self.config["prompt_templates"].get("trust_game_round1_trustee"),
-                    game_prompt_addition,
-                ),
-                "trust_game_later_investor": self._with_game_prompt_addition(
-                    self.config["prompt_templates"].get("trust_game_later_investor"),
-                    game_prompt_addition,
-                ),
-                "trust_game_later_trustee": self._with_game_prompt_addition(
-                    self.config["prompt_templates"].get("trust_game_later_trustee"),
-                    game_prompt_addition,
-                ),
+                "trust_game_round1_investor": _game_template("trust_game_round1_investor"),
+                "trust_game_round1_trustee": _game_template("trust_game_round1_trustee"),
+                "trust_game_later_investor": _game_template("trust_game_later_investor"),
+                "trust_game_later_trustee": _game_template("trust_game_later_trustee"),
                 "defector_game_instruction": self.config["prompt_templates"].get(
                     "defector_game_instruction"
                 ),
