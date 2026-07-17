@@ -7,8 +7,10 @@
 - **Game play: channel-invariant.** Sent 3.80 (±0.75) vs 3.80 (±0.40); return ratio 0.527 (±0.023) vs 0.500 (±0.000) — stateless returns exactly half every round of every run.
 - **Myths: stateless collapses diversity.** Cross-agent similarity 0.719 (±0.100) hybrid vs 0.820 (±0.021) stateless; self-similarity r vs r-1 0.748 (±0.082) vs 0.817 (±0.017). Means p≈0.11–0.17 (n=5), but the variance collapse (±0.02 vs ±0.10) is the signal: stateless runs are near-deterministic and homogeneous; hybrid keeps lineage drift and divergence.
 
-#### Decision
-- The channel choice barely moves game behavior but shapes the linguistic dynamics — the paper's actual object of study. **Hybrid preferred** for reruns: preserves myth diversity/drift; assistant-slot placement is also the ecologically faithful "own authorship" condition. 8-agent regime still needs the hybrid window widened (memory_capacity in rounds ↔ 3-round history block) before the full rerun.
+#### Third arm + revised decision (same day)
+- User flagged that hybrid amputates the reasoning→myth pathway (game calls unremembered ⇒ myths never see the agent's strategic reasoning). Added **memory-primary**: both tasks remembered; duplication fixed on the prompt side instead (`_minimal` game templates without last-round recap via new `game_prompt_keys` set override; myth prompt carries only co-player myth). Smoke-verified: no fact appears twice; transcript shows game reasoning quoting both myths — the co-evolution loop is active. Sonnet arm n=5, ~$3.
+- Results: cross-agent myth sim 0.774 (±0.049) and self-sim 0.722 (±0.076) — patterns with hybrid (drift preserved), not stateless (homogenized). Game side: **no interpretable treatment effect** — all dyads freeze their round-1 send for all 10 rounds, r1 contexts are identical across memory arms, so run means are 5 initial draws (hybrid [3,3,4,4,5], mp [4,4,4,5,5]); the earlier "hybrid vs stateless game invariance" claim survives, the mp 4.4 vs 3.8 sent difference is initial-draw noise.
+- **Decision: memory-primary for the reruns.** Fixes the double-memory bug, keeps linguistic diversity ~hybrid, uniquely preserves reasoning↔myth co-evolution, and is the closest fixed design to the existing runs. Before the 8-agent rerun: reconcile memory_capacity (interaction pairs) with the 3-round in-prompt co-player history block.
 
 ---
 
