@@ -160,6 +160,36 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
+  # Memory-channel pilot: hybrid — the agent's own previous myth lives in chat
+  # memory (assistant slot), so the prompt only carries what memory cannot:
+  # the co-player's myth and the previous game round.
+  myth_writing_later_rounds_directive_memory: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    {game_behavior_summary}
+
+    Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Memory-channel pilot: stateless — no chat memory, so the prompt carries
+  # everything: own previous myth, co-player's myth, and the previous game round.
+  myth_writing_later_rounds_directive_stateless: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    {game_behavior_summary}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
   myth_writing_later_rounds_normative: |
     Here is the myth you wrote in the previous round:
     {last_myth}
@@ -1094,3 +1124,78 @@ experiment_sets:
     game_params:
       num_turns: 10
       multiplier: 3
+
+  # --- Memory-channel pilot (2-agent dyads) ---
+  # Same information at every decision point; only the packaging differs.
+  # hybrid: own myths in chat memory (assistant slot), game history in-prompt.
+  # stateless: no chat memory; every call is system + one flat prompt.
+  # memory_capacity: 1 so hybrid myth memory spans 1 round, matching the
+  # 1-round {last_myth} window in the stateless template.
+  memtest_hybrid_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_hybrid"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "hybrid"
+
+  memtest_stateless_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_stateless"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_stateless"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "stateless"
+
+  # Cheap smoke variants of the two sets above (Haiku, 3 rounds, 1 rep).
+  memtest_hybrid_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_hybrid"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "hybrid"
+
+  memtest_stateless_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_stateless"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_stateless"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "stateless"

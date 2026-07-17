@@ -285,6 +285,43 @@ class SimulationData:
 
         return sim_data
 
+def _build_stateless_myth_context(agent_id, turn, sim_data, game):
+    """Myth context appended to game prompts under chat_memory_mode="stateless".
+
+    Mirrors what a hybrid-mode game call sees transiently in chat memory: the
+    agent's own most recent myth (the current round's, when the myth task ran
+    first) and the co-player's myth from the previous round.
+    """
+    own_myth = None
+    for entry in reversed(sim_data.conversation_history):
+        if entry.get("round", 0) > turn:
+            continue
+        myth = (entry.get("myths") or {}).get(agent_id)
+        if myth:
+            own_myth = myth
+            break
+
+    coplayer_myth = None
+    opponent_id = None
+    if hasattr(game, "get_opponent_id"):
+        opponent_id = game.get_opponent_id(agent_id, turn, sim_data)
+    if opponent_id:
+        for entry in reversed(sim_data.conversation_history):
+            if entry.get("round", 0) >= turn:
+                continue
+            myth = (entry.get("myths") or {}).get(opponent_id)
+            if myth:
+                coplayer_myth = myth
+                break
+
+    blocks = []
+    if own_myth:
+        blocks.append(f"The myth you wrote most recently:\n{own_myth}")
+    if coplayer_myth:
+        blocks.append(f"The myth the other agent wrote in the previous round:\n{coplayer_myth}")
+    return "\n\n".join(blocks)
+
+
 def run_simulation(
     game,
     model,
@@ -500,6 +537,16 @@ def run_simulation(
                         else:
                             prompt = game.get_game_prompt_later_round(agent_id, turn, sim_data, last_responses)
 
+                        # Stateless mode: chat memory is empty, so the myth
+                        # context that hybrid game calls see via memory must
+                        # ride in the prompt instead.
+                        if chat_memory_mode == "stateless" and "myth" in task_order:
+                            myth_context = _build_stateless_myth_context(
+                                agent_id, turn, sim_data, game
+                            )
+                            if myth_context:
+                                prompt = f"{prompt}\n\n{myth_context}"
+
                         response_data = agent.respond(
                             prompt,
                             transcript_metadata=_interaction_metadata(
@@ -512,7 +559,10 @@ def run_simulation(
                                 move_index,
                                 getattr(agent, "population_role", "standard"),
                             ),
-                            remember=(chat_memory_mode != "myth_only"),
+                            remember=(
+                                chat_memory_mode
+                                not in ("myth_only", "hybrid", "stateless")
+                            ),
                         )
                         agent_responses[agent_id] = response_data
 
@@ -574,7 +624,10 @@ def run_simulation(
                         # generated myth is saved to sim_data for analysis but
                         # NOT appended to agent.messages — chat memory stays at
                         # [system, seed_user, seed_myth] across all rounds.
-                        myth_remember = chat_memory_mode != "myth_only"
+                        # hybrid: myths stay in chat memory (single channel for
+                        # own myths); stateless: nothing is remembered — the
+                        # later-rounds template carries last_myth explicitly.
+                        myth_remember = chat_memory_mode not in ("myth_only", "stateless")
                         futures = {
                             agent_id: executor.submit(
                                 sim_data.agents[agent_id].respond,

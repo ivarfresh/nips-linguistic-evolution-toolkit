@@ -137,6 +137,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "log_file": log_path,
             "agent_names": game_params.get("agent_names"),
             "monitor_config": game_params.get("monitor_config"),
+            "chat_memory_mode": game_params.get("chat_memory_mode", "default"),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
