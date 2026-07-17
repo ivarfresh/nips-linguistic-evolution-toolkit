@@ -1,3 +1,15 @@
+### 2026-07-17 — Clean public-facing repo split from research repo
+
+#### What changed
+- Created `github.com/ivarfresh/linguistic-evolution-toolkit` (private for now): fresh single-commit export of the clean tree — code, configs, docs, phase 2–9 summary metrics/figures, manuscript sources, two sample runs in `data/sample/`. 95 MB / 866 files vs the 7.2 GB research repo. Excluded: `data/json|plots|share` (4.5 GB raw outputs), `archive/`, `reports/`, reference PDFs, Quarto build dirs.
+- This repo stays the full private archive (all data + history). Raw data to be archived on Zenodo (link TBD) before the new repo goes public — also re-check NeurIPS anonymity before flipping visibility.
+- Cleanup landed here too (`19f0d220`, `34a74425`): root `README.md`, `.env.example` (was referenced by CLAUDE.md but missing), `public_goods_game.py` → `archive/` (nothing imports it), broken `reciprocity` case removed from `run_all_analyses.sh`, `*.npz` gitignored, `data/README.md` + samples.
+
+#### Known gaps
+- New repo has no history (by design); `main` here is still 30+ commits behind this branch; ~13 unreferenced `analyses/*.py` scripts left in place pending a keep/drop decision.
+
+---
+
 ### 2026-07-03 — Result: Fable seed regeneration; jabberwocky blocked twice over
 
 #### What ran
