@@ -146,6 +146,47 @@ def main():
     print(f"Saved: {out_dir / 'cumulative_balance_boxplot_by_condition.png'}")
     plt.close()
 
+    # Cumulative balance over rounds (layout of
+    # trajectory_boxplot.py::plot_cumulative_balances_by_condition)
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    colors = {'game': '#66c2a5', 'myth': '#fc8d62', 'game_myth': '#8da0cb', 'myth_game': '#e78ac3'}
+
+    for cond in CONDITION_ORDER:
+        if cond not in dirs:
+            continue
+        runs = load_runs(dirs[cond])
+        per_run = []
+        for run in runs:
+            balances = [
+                float(np.mean(list(e["balances"].values())))
+                for e in run.get("conversation_history", [])
+                if e.get("balances")
+            ]
+            if balances:
+                per_run.append(balances)
+        if not per_run:
+            continue
+        n = min(len(b) for b in per_run)
+        avg = np.stack([b[:n] for b in per_run]).mean(axis=0)
+        rounds = list(range(1, n + 1))
+
+        ax.plot(rounds, avg, linewidth=3, label=CONDITION_LABELS[cond],
+                color=colors.get(cond, 'gray'), alpha=0.8)
+
+    ax.set_xlabel('Round', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Average Cumulative Balance', fontsize=13, fontweight='bold')
+    ax.set_title('Average Cumulative Balances Across Conditions' + args.title_suffix,
+                 fontsize=15, fontweight='bold')
+    ax.legend(fontsize=11, loc='best')
+    ax.grid(True, alpha=0.3, linestyle='--')
+    ax.set_ylim(bottom=0)
+
+    plt.tight_layout()
+    plt.savefig(out_dir / 'cumulative_balances_by_condition.png', dpi=300, bbox_inches='tight')
+    print(f"Saved: {out_dir / 'cumulative_balances_by_condition.png'}")
+    plt.close()
+
     print("\n=== Run-level means ===")
     for col in ["Mean Trust Ratio", "Mean Return Ratio", "Mean Sent", "Cooperation Stability",
                 "Final Cumulative Balance"]:
