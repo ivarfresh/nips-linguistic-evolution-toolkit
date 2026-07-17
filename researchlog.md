@@ -1,3 +1,17 @@
+### 2026-07-17 — Result: noise pilot confirms memory-primary; drift tracks game visibility
+
+#### What ran
+- Memory-channel pilot repeated under bidirectional noise (`noise_memtest_{hybrid,stateless,memprimary}` in experiments_noisy.yaml; uniform ±1.0 on communicated amounts, uninformed; Sonnet dyads, myth→game, r10, n=5/arm, ~$9, 15/15 clean). Plumbing added to run_noisy_batch (chat_memory_mode, game_prompt_keys). Smoke caught a real parser bug: Haiku answered `{'return': $6.66}` and `_extract_amount` rejected the `$` — both game classes now accept optional `$` before the number.
+
+#### Headline numbers (run-level, n=5/arm)
+- **Noise creates real dynamics and the channels still don't separate on game play**: trust collapses everywhere (sent ~3.8 → ~1.5 by r6); sent 2.42 (±0.23) / 2.26 (±0.47) / 2.17 (±0.27), all pairwise p>0.19. Return ratio 0.12 (±0.04) / 0.12 (±0.06) / 0.08 (±0.02).
+- **Myth drift is the significant separator**: self-sim r vs r-1 memory-primary 0.676 (±0.051) vs hybrid 0.826 (±0.035) and stateless 0.850 (±0.061) — p=0.002 vs both. Under a turbulent game, memory-primary myths respond (drift); the other designs' myths stay insulated — their myth calls see only a one-line game summary, while memory-primary myth calls see the full game rounds in memory.
+
+#### Decision
+- **Memory-primary confirmed for the rerun campaign.** Game behavior is channel-robust in both placid and turbulent regimes; memory-primary is the only design whose linguistic layer visibly couples to game events — which is the phenomenon the paper studies.
+
+---
+
 ### 2026-07-17 — Result: task-order effect survives the memory fix
 
 #### What ran
