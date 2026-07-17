@@ -336,6 +336,47 @@ game_params:
       inform_agents: false
     other_player_names: "default"
 
+  # 8-agent bidirectional noise, memory-primary (mirrors the plain-game
+  # sonnet45_8agent_*_memprimary regime: self history in chat memory, only the
+  # co-player's last 3 games injected; capacity 6 pairs = 3 rounds).
+  noisy8_bidirectional_memprimary:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+
+  noisy8_bidirectional_memprimary_smoke:
+    endowment: 5
+    multiplier: 3
+    num_turns: 3
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: false
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+
   # Bidirectional uniform noise + agents told about noise
   noisy_bidirectional_informed:
     endowment: 5
@@ -1137,4 +1178,89 @@ experiment_sets:
       trust_game_later_trustee: "trust_game_later_trustee_minimal"
     game_params_list:
       - "noisy_bidirectional_memprimary"
+    num_runs: 1
+
+  # Task-order companions for the memory-primary noise regime (game-only and
+  # game->myth), for the standard condition comparison alongside
+  # noise_memtest_memprimary (myth->game).
+  noise_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_memprimary"
+    num_runs: 5
+
+  noise_memprimary_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_memprimary"
+    num_runs: 5
+
+  # --- 8-agent task-order triplet under noise, memory-primary ---
+  # Mirrors the plain-game sonnet45_8agent_*_memprimary triplet.
+  noise8_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_memprimary"
+    num_runs: 5
+
+  noise8_memprimary_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_memprimary"
+    num_runs: 5
+
+  noise8_memprimary_myth_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_memprimary"
+    num_runs: 5
+
+  noise8_memprimary_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_memprimary_smoke"
     num_runs: 1

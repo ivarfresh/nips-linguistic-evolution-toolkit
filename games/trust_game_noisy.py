@@ -316,38 +316,45 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 current_coplayer_id=opponent_id,
             )
 
-        self_history = self.find_completed_dyads_for_agent(
-            agent_id,
-            turn,
-            sim_data,
-            limit=self.self_history_window,
-        )
-        coplayer_history = self.find_completed_dyads_for_agent(
-            opponent_id,
-            turn,
-            sim_data,
-            limit=self.coplayer_history_window,
-        )
+        # A window of 0 drops that section entirely (memory-primary mode keeps
+        # self history in chat memory, so only the co-player block is injected).
+        if self.self_history_window == 0 and self.coplayer_history_window == 0:
+            return ""
 
         lines = ["Visible history before this round:"]
-        lines.append(f"Your last {self.self_history_window} game(s):")
-        if self_history:
-            lines.extend(
-                f"- {self._format_visible_history_entry_for_agent(agent_id, dyad, current_coplayer_id=opponent_id)}"
-                for dyad in self_history
-            )
-        else:
-            lines.append("- No previous completed games involving you.")
 
-        opponent_name = self.current_coplayer_label(opponent_id)
-        lines.append(f"{self.coplayer_history_heading(opponent_id)} last {self.coplayer_history_window} game(s):")
-        if coplayer_history:
-            lines.extend(
-                f"- {self._format_visible_history_entry_for_agent(opponent_id, dyad, observer_agent_id=agent_id)}"
-                for dyad in coplayer_history
+        if self.self_history_window > 0:
+            self_history = self.find_completed_dyads_for_agent(
+                agent_id,
+                turn,
+                sim_data,
+                limit=self.self_history_window,
             )
-        else:
-            lines.append(f"- No previous completed games involving {opponent_name}.")
+            lines.append(f"Your last {self.self_history_window} game(s):")
+            if self_history:
+                lines.extend(
+                    f"- {self._format_visible_history_entry_for_agent(agent_id, dyad, current_coplayer_id=opponent_id)}"
+                    for dyad in self_history
+                )
+            else:
+                lines.append("- No previous completed games involving you.")
+
+        if self.coplayer_history_window > 0:
+            coplayer_history = self.find_completed_dyads_for_agent(
+                opponent_id,
+                turn,
+                sim_data,
+                limit=self.coplayer_history_window,
+            )
+            opponent_name = self.current_coplayer_label(opponent_id)
+            lines.append(f"{self.coplayer_history_heading(opponent_id)} last {self.coplayer_history_window} game(s):")
+            if coplayer_history:
+                lines.extend(
+                    f"- {self._format_visible_history_entry_for_agent(opponent_id, dyad, observer_agent_id=agent_id)}"
+                    for dyad in coplayer_history
+                )
+            else:
+                lines.append(f"- No previous completed games involving {opponent_name}.")
 
         return "\n".join(lines)
 
