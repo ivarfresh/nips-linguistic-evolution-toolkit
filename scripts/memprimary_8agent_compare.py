@@ -40,7 +40,7 @@ CONDITION_COLORS = {
 def load_runs(condition_dir):
     runs = []
     for path in sorted(Path(condition_dir).rglob("*.json")):
-        if path.name.endswith((".results.json", ".checkpoint.json")):
+        if path.name.endswith((".results.json", ".checkpoint.json", ".error.json")):
             continue
         with open(path) as f:
             runs.append(json.load(f))
