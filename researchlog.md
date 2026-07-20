@@ -1,3 +1,16 @@
+### 2026-07-20 — Result: game_myth plateau is a myth-content effect, not a memory confound
+
+#### What ran
+- Disambiguation for the game_myth < game-only deficit: game-only 8-agent plain with `memory_capacity: 3` (equal memory *rounds* to game_myth's 3) — `sonnet45_8agent_game_memprimary_mem3_r10_n5`, 4/5 clean (~$7; 1 run died on the direct-Anthropic `max_tokens=1024` truncation — now 4096 via `ANTHROPIC_MAX_TOKENS`, see verified-facts).
+- Also verified myth carry-over in game_myth: previous-round partner's myth appears verbatim in all 9 later-round prompts; own myth reaches game calls via memory. No passing bug.
+
+#### Headline numbers
+- cap3 game-only escalates like cap6: sent r1→r10 3.06→4.00 (run mean 3.54 ±0.53) vs cap6 3.15→3.95 (3.58 ±0.36); game_myth stays flat 3.10→3.35 (3.27 ±0.35). **Memory depth ruled out; the plateau follows the myths.**
+- Reading: directive myths written *after* play codify the cautious status quo and anchor it (cultural ratchet cuts both ways: myth-first locks in pre-game generosity, game-first locks in round-1 caution). Round-1 sends are identical across game/game_myth (~3.0–3.2), as their round-1 contexts are structurally identical — the gap develops through rounds.
+- Design fact recorded in verified-facts: `{other_agent_myth}` is the **previous** round's partner's myth (one-round gossip-lag diffusion; never informative about the current partner) — kept deliberately: myth influence stays cultural, not strategic signaling.
+
+---
+
 ### 2026-07-17 — Result: myth-first cooperation boost replicates under 8-agent noise
 
 #### What ran
