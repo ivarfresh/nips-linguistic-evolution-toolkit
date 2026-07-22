@@ -1,3 +1,16 @@
+### 2026-07-22 — Result: myth-first boost holds in the informed-noise condition
+
+#### What changed
+- Standing directive from Ivar: **informed noise is now the default test condition** for every new experiment (saved to project memory + this log). `inform_agents: true` suffices — `trust_game_noisy.py:133` auto-appends the noise notice to the system prompt.
+- Ran the 8-agent memory-primary task-order triplet under informed noise (`noise8i_memprimary_*`, n=5 each, 15/15 clean, ~$40). Plots: `data/plots/noise8i_memprimary/`.
+
+#### Headline numbers (run-level, n=5/condition, informed noise)
+- Trust ratio: myth_game 0.838 (±0.033) vs game 0.711 (±0.031) vs game_myth 0.699 (±0.046). Final balance: $66.91 (±$1.66) vs $60.55 (±$1.57) vs $59.95 (±$2.30).
+- Third regime, same result: plain 0.892/0.716/0.653, uninformed noise 0.851/0.731/0.692, informed noise 0.838/0.711/0.699. Telling agents about the noise barely moves anything (informed ≈ uninformed on every metric; tighter spreads).
+- The myth-first boost is now replicated across plain, uninformed-noise, and informed-noise regimes at 8 agents.
+
+---
+
 ### 2026-07-20 — Result: game_myth plateau is a myth-content effect, not a memory confound
 
 #### What ran
