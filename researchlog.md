@@ -1,3 +1,14 @@
+### 2026-07-23 — Result: lineage triplet — fidelity amplifies the ratchet in both directions
+
+#### What ran
+- Completed the lineage-prompt task-order triplet under informed noise: new `noise8i_memprimary_game_myth_lineage` (5/5 clean, ~$14) + existing myth_game lineage cell + existing game-only cell (lineage cannot apply there — no myth prompt; same condition by construction). Plots: `data/plots/noise8i_lineage_triplet/`.
+
+#### Headline numbers (run-level, n=5/condition)
+- Final balance: myth_game $70.69 (±$3.60) vs game $60.55 (±$1.57) vs game_myth $59.00 (±$2.69). Trust ratio 0.914 (±0.072) / 0.711 (±0.031) / 0.680 (±0.054).
+- vs the standard-prompt informed triplet: myth_game rose ($66.91→$70.69), game_myth did not ($59.95→$59.00). **Higher lineage fidelity amplifies whatever the myths crystallize** — pre-game ideals (myth-first) get stronger; post-game caution (game-first) stays anchored. The cultural ratchet cuts both ways, now with the fidelity knob demonstrated in both directions.
+
+---
+
 ### 2026-07-23 — Result: lineage pointer restores fidelity and amplifies the myth effect
 
 #### What ran
