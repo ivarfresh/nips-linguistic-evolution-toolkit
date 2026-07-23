@@ -1,3 +1,18 @@
+### 2026-07-23 — Result: lineage pointer restores fidelity and amplifies the myth effect
+
+#### What ran
+- A/B under informed noise (myth→game, 8 agents, memory-primary, n=5 vs n=5, ~$14 via OpenRouter fallback — direct-Anthropic balance ran dry again mid-week): standard myth prompt vs lineage variant adding "Base it on the myths you wrote earlier this session" (attention pointer to own 3-round myth memory; no content duplication). Set `noise8i_memprimary_myth_game_lineage`; plots `data/plots/noise8i_lineage_ab/`. Deliberately did NOT restore the game-side `myth_decision_link` — it would instruct the dependent variable and confound the task-order contrast.
+
+#### Headline numbers
+- **Self myth similarity 0.709 (±0.020) → 0.839 (±0.014), p<0.001** — lineage fidelity restored to (above) the pre-fix level (0.823), now without the duplication bug.
+- Population myth similarity 0.692 → 0.719 (no diversity collapse; run-level spreads intact).
+- **Not behaviorally inert**: trust ratio 0.838 (±0.033) → 0.914 (±0.072), p=0.109; sent 4.19 → 4.57; return ratio 0.513 → 0.543. Higher transmission fidelity amplified the myth→cooperation effect — with the decision side still uninstructed.
+
+#### Reading
+- Failure of the "inertness" criterion is the informative kind: fidelity acts as a moderator of culture→behavior — textbook cumulative-culture theory, and the game side stayed clean. Decision open: adopt lineage as canonical for the rerun campaign, or keep both cells as a low/high-fidelity contrast (the standard cell is already in hand, so the contrast is free).
+
+---
+
 ### 2026-07-22 — Result: myth-first boost holds in the informed-noise condition
 
 #### What changed
