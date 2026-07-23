@@ -119,7 +119,13 @@ def main():
         default="data/json/sonnet45_8agent_myth_directive_history3_anon_memprimary_r10_n5",
     )
     parser.add_argument("--out", default="data/plots/memprimary_8agent")
+    parser.add_argument("--baseline-label", default=None)
+    parser.add_argument("--fixed-label", default=None)
     args = parser.parse_args()
+    if args.baseline_label:
+        CONDITION_LABELS["baseline"] = args.baseline_label
+    if args.fixed_label:
+        CONDITION_LABELS["fixed"] = args.fixed_label
 
     configure_matplotlib()
     import matplotlib.pyplot as plt
