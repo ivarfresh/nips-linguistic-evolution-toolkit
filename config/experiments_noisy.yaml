@@ -211,6 +211,18 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
+  # Lineage variant: self-myth pointer ("base it on the myths you wrote
+  # earlier this session") — attention to own 3-round lineage in memory,
+  # no content duplication. A/B vs myth_writing_later_rounds_directive_memory_primary.
+  myth_writing_later_rounds_directive_memory_primary_lineage: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Base it on the myths you wrote earlier this session, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
   # stateless: no chat memory; prompt carries everything.
   myth_writing_later_rounds_directive_stateless: |
     Here is the myth you wrote in the previous round:
@@ -1324,3 +1336,18 @@ experiment_sets:
       - "noisy8_bidirectional_informed_memprimary"
     num_runs: 5
 
+
+  # A/B: lineage-pointer myth prompt vs standard memory-primary (informed noise)
+  noise8i_memprimary_myth_game_lineage:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memprimary_lineage"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_lineage"
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary"
+    num_runs: 5
