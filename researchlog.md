@@ -1,3 +1,15 @@
+### 2026-07-23 — Result: context audit — nothing dropped across 3,600 calls
+
+#### What ran
+- Per-call context audit over all 25 informed-noise runs (`scripts/audit_context_integrity.py`), checking every call's actual `messages_sent`: own-myth window exactly the most recent min(3, available) rounds (verbatim match), partner myth quoted verbatim in later myth prompts, co-player block present with exactly min(r-1,3) entries, informed-noise notice in every system prompt, no self-history blocks or own-myth recaps, no empty messages/responses/errors, full round/dyad/myth/response counts.
+
+#### Headline
+- **25 runs, 3,600 LLM calls, zero issues** — both triplets (standard + lineage) stand on verified context plumbing.
+- Audit validated by negative control (three planted corruptions): first version missed a myth dropped from the *old* edge of the window (contiguity check is blind there) — tightened to exact-window matching, after which all three plant types are detected. Lesson: audits need negative controls too.
+- Script is reusable: `python scripts/audit_context_integrity.py <run_dirs...>` — run as standard post-batch QA in the rerun campaign.
+
+---
+
 ### 2026-07-23 — Result: lineage triplet — fidelity amplifies the ratchet in both directions
 
 #### What ran
