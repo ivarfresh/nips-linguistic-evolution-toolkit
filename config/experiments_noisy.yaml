@@ -348,6 +348,26 @@ game_params:
       inform_agents: false
     other_player_names: "default"
 
+  # Informed counterpart to noisy_bidirectional_memprimary: identical 2-agent
+  # bidirectional uniform +-1.0 memory-primary regime, but agents are told a
+  # noise channel exists (project default test condition as of 2026-07-22).
+  # Matched to noisy8_bidirectional_informed_memprimary on noise + memory design,
+  # so the dyad triplet can be compared to the 8-agent informed triplet.
+  noisy_bidirectional_informed_memprimary:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 2
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
   # 8-agent bidirectional INFORMED noise, memory-primary. Informed noise is
   # the project's default test condition as of 2026-07-22.
   noisy8_bidirectional_informed_memprimary:
@@ -1243,6 +1263,57 @@ experiment_sets:
       trust_game_later_trustee: "trust_game_later_trustee_minimal"
     game_params_list:
       - "noisy_bidirectional_memprimary"
+    num_runs: 5
+
+  # --- 2-agent task-order triplet under INFORMED noise, memory-primary ---
+  # Informed counterparts to noise_memprimary_game / noise_memprimary_game_myth
+  # / noise_memtest_memprimary. Identical in every respect except inform_agents,
+  # so the dyad triplet is comparable to the 8-agent informed triplet
+  # (noise8i_memprimary_*) at matched noise (+-1.0) and memory design.
+  noise2i_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary"
+    num_runs: 5
+
+  noise2i_memprimary_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary"
+    num_runs: 5
+
+  noise2i_memtest_memprimary:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary"
     num_runs: 5
 
   # --- 8-agent task-order triplet under noise, memory-primary ---
