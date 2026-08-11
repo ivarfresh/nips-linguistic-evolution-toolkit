@@ -1,3 +1,18 @@
+### 2026-08-10 — Result: game_myth vs game is a population-size effect
+
+#### What ran
+- Built the missing post-fix informed dyad triplet to isolate why game_myth < game at 8 agents but > game in older dyad data. New game_params `noisy_bidirectional_informed_memprimary` (= `noisy_bidirectional_memprimary` + `inform_agents: true`) and three sets `noise2i_memprimary_{game,game_myth}` / `noise2i_memtest_memprimary` (config/experiments_noisy.yaml). Sonnet 4.5, 2-agent, memory-primary, uniform ±1.0, informed, n=5 each, 15/15 clean, ~$8 via OpenRouter. Plot `scripts/noise2i_dyad_taskorder_boxplot.py` → `data/plots/noise2i_dyad_triplet/`.
+
+#### Headline numbers (final balance, run-level, n=5)
+- **2-agent informed:** game 46.25 (±2.57) / game_myth 53.44 (±6.45) / myth_game 60.60 (±4.26) → **game_myth beats game by +7.2**.
+- **8-agent informed (existing, standard prompt):** game 60.55 (±1.57) / game_myth 59.95 (±2.30) / myth_game 66.91 (±1.66) → game_myth −0.6 vs game.
+- Everything else matched (memory fix, informed noise, ±1.0); the only axis that flips the game_myth-vs-game contrast is **population size**. The old "game_myth > game" memory was the dyad regime, not a pre-fix double-memory artifact — now confirmed on clean post-fix data.
+
+#### Known gaps
+- Why population size erases the game_myth edge is not itself pinned (co-player history block + rotating partners "buffer" dynamics per the 2026-07-17 noise entry, but that was about noise robustness). A 2-vs-8 sweep holding all else fixed would isolate it. Myth→Game stays the strongest ordering at both sizes.
+
+---
+
 ### 2026-07-23 — Result: context audit — nothing dropped across 3,600 calls
 
 #### What ran
