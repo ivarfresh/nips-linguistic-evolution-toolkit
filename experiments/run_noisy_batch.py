@@ -133,10 +133,7 @@ class NoisyExperimentConfig:
 
             def _game_template(name):
                 key = game_prompt_keys.get(name, name)
-                return self._with_game_prompt_addition(
-                    self.config["prompt_templates"].get(key),
-                    game_prompt_addition,
-                )
+                return self.config["prompt_templates"].get(key)
 
             for run in range(num_runs):
                 combo = {
@@ -163,6 +160,10 @@ class NoisyExperimentConfig:
                     "myth_later_prompt_key": active_myth_later_key,
                     "myth_writing_default": self._get_prompt_template(active_myth_default_key),
                     "myth_writing_later_rounds": self._get_prompt_template(active_myth_later_key),
+                    "game_prompt_addition": game_prompt_addition,
+                    "game_prompt_addition_id": (
+                        "myth_decision_link" if game_prompt_addition else None
+                    ),
                 }
                 combinations.append(combo)
 
@@ -188,11 +189,6 @@ class NoisyExperimentConfig:
         if "game" not in task_order or "myth" not in task_order:
             return ""
         return self.config.get("game_prompt_additions", {}).get("myth_decision_link", "")
-
-    def _with_game_prompt_addition(self, template: str, addition: str) -> str:
-        if not template or not addition:
-            return template
-        return f"{template.rstrip()}\n\n{addition.strip()}\n"
 
     def _get_game_params(self, param_name: str) -> Dict:
         """Get game parameters from a named parameter set."""
@@ -241,6 +237,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             defector_agent_ids=game_params.get("defector_agent_ids"),
             defector_seed=defector_seed,
             defector_prompt_template=combo.get("defector_game_instruction"),
+            game_prompt_addition=combo.get("game_prompt_addition", ""),
         )
 
         myth_writer = MythWriter(
@@ -297,6 +294,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Myth Prompt Arm ID: {combo.get('myth_prompt_arm_id') or 'none'}\n")
             f.write(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}\n")
             f.write(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}\n")
+            f.write(f"Game Prompt Addition ID: {combo.get('game_prompt_addition_id') or 'none'}\n")
             f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
             f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
             f.write(f"Defector Seed: {defector_seed}\n")
@@ -339,6 +337,12 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["myth_prompt_arm_id"] = combo.get("myth_prompt_arm_id")
         sim_data.run_metadata["myth_default_prompt_key"] = combo.get("myth_default_prompt_key", "myth_writing_default")
         sim_data.run_metadata["myth_later_prompt_key"] = combo.get("myth_later_prompt_key", "myth_writing_later_rounds")
+        sim_data.run_metadata["game_prompt_addition_id"] = combo.get(
+            "game_prompt_addition_id"
+        )
+        sim_data.run_metadata["game_prompt_addition"] = combo.get(
+            "game_prompt_addition", ""
+        )
         sim_data.run_metadata["history_policy"] = game_params.get("history_policy", "minimal")
         sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
         sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)

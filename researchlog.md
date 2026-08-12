@@ -1,4 +1,35 @@
+### 2026-08-12 — Protocol repair: corrected dyad noise and matched-memory v2
+
+#### What changed
+- Fixed the dyad later-round transfer path: communicated-send noise is now
+  generated only for the receiver, after the sender's actual transfer exists;
+  a missing current transfer raises instead of falling back to zero.
+- Retained the game-side instruction, "Take any myths written in this session
+  into account when making your decision." It is now appended through one
+  shared game-prompt finalizer, exactly once in every current game prompt for
+  both myth orders, both roles, all rounds, and both population regimes.
+- Added corrected informed-noise v2 triplets. Chat memory is matched to an
+  approximately three-round horizon: capacity 3 for game-only and 6 for
+  game+myth conditions, for both 2- and 8-agent runs.
+
+#### Interpretation and status
+- The 8-agent arm intentionally retains balanced rotating partners, anonymous
+  identities, and a three-game co-player reputation block. The planned contrast
+  is therefore **repeated dyad vs rotating population with reputation
+  information**, not a pure manipulation of agent count with all other
+  information held fixed.
+- No v2 outcome data have been generated yet. The 2026-08-10 dyad results were
+  produced by the broken transfer path and cannot establish a population-size
+  interaction; all six v2 cells must be rerun before updating the result claim.
+
+---
+
 ### 2026-08-10 — Result: game_myth vs game is a population-size effect
+
+> **Superseded on 2026-08-12:** the dyad transfer-noise audit found that all
+> post-round-1 receivers were shown transfers near zero. The results below are
+> retained as historical provenance but do not establish a population-size
+> effect. See the corrected v2 protocol above.
 
 #### What ran
 - Built the missing post-fix informed dyad triplet to isolate why game_myth < game at 8 agents but > game in older dyad data. New game_params `noisy_bidirectional_informed_memprimary` (= `noisy_bidirectional_memprimary` + `inform_agents: true`) and three sets `noise2i_memprimary_{game,game_myth}` / `noise2i_memtest_memprimary` (config/experiments_noisy.yaml). Sonnet 4.5, 2-agent, memory-primary, uniform ±1.0, informed, n=5 each, 15/15 clean, ~$8 via OpenRouter. Plot `scripts/noise2i_dyad_taskorder_boxplot.py` → `data/plots/noise2i_dyad_triplet/`.

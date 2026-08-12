@@ -37,6 +37,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         defector_agent_ids=None,
         defector_seed=0,
         defector_prompt_template=None,
+        game_prompt_addition="",
     ):
         super().__init__()
         self.endowment = endowment
@@ -51,6 +52,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self.history_policy = history_policy or "minimal"
         self.self_history_window = self._coerce_history_window(self_history_window, 1)
         self.coplayer_history_window = self._coerce_history_window(coplayer_history_window, 0)
+        self.game_prompt_addition = (game_prompt_addition or "").strip()
         self.set_prompt_name_visibility(show_agent_names)
         self.set_defector_options(
             defector_ratio=defector_ratio,
@@ -115,6 +117,14 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             return self.get_agent_display_name(agent_id)
         return self.other_player_names[role]
 
+    def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
+        if self.game_prompt_addition:
+            prompt = (
+                f"{prompt.rstrip()}\n\n"
+                f"{self.game_prompt_addition}\n"
+            )
+        return self.with_prompt_context(prompt, agent_id, opponent_id)
+
     def get_system_prompt(self, agent_id, agent):
         if not self.system_prompt_template:
             raise ValueError(
@@ -156,7 +166,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 investor_name=self._role_display_name(pairing, "investor"),
                 trustee_name=self._role_display_name(pairing, "trustee"),
             )
-            return self.with_prompt_context(prompt, agent_id, opponent_id)
+            return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
         sent_actual = self.sim_data_ref.game_data.get("pending_sents", {}).get(pairing["dyad_id"])
         if sent_actual is None:
@@ -184,7 +194,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             investor_name=self._role_display_name(pairing, "investor"),
             trustee_name=self._role_display_name(pairing, "trustee"),
         )
-        return self.with_prompt_context(prompt, agent_id, opponent_id)
+        return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def get_game_prompt_later_round(self, agent_id, turn, sim_data, last_responses):
         if len(self.agent_ids) > 2:
@@ -197,13 +207,10 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         if last_round is None:
             return self.get_game_prompt_round_1(agent_id, None, turn)
 
-        sent_actual = sim_data.game_data["pending_sents"].get(pairing["dyad_id"])
-        if sent_actual is None:
-            sent_actual = sim_data.game_data.get("pending_sent", 0)
-        sent_communicated = self._communicated_sent_for_prompt(sim_data, pairing, sent_actual)
-        received = sent_communicated * self.multiplier
-
-        balances = sim_data.game_data.get("balances_communicated") or sim_data.game_data["balances"]
+        balances = (
+            sim_data.game_data.get("balances_communicated")
+            or sim_data.game_data["balances"]
+        )
         agent_balance = balances[agent_id]
 
         if agent_id == roles["investor"]:
@@ -232,7 +239,19 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 investor_name=self._role_display_name(pairing, "investor"),
                 trustee_name=self._role_display_name(pairing, "trustee"),
             )
-            return self.with_prompt_context(prompt, agent_id, opponent_id)
+            return self._finalize_game_prompt(prompt, agent_id, opponent_id)
+
+        sent_actual = sim_data.game_data.get("pending_sents", {}).get(
+            pairing["dyad_id"]
+        )
+        if sent_actual is None:
+            raise ValueError(
+                "pending_sent not found in game_data. Investor should have responded first."
+            )
+        sent_communicated = self._communicated_sent_for_prompt(
+            sim_data, pairing, sent_actual
+        )
+        received = sent_communicated * self.multiplier
 
         lr_sent = last_round["sent"]
         lr_received = last_round["sent"] * self.multiplier
@@ -261,7 +280,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             investor_name=self._role_display_name(pairing, "investor"),
             trustee_name=self._role_display_name(pairing, "trustee"),
         )
-        return self.with_prompt_context(prompt, agent_id, opponent_id)
+        return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def _get_multi_agent_later_prompt(self, agent_id, turn, sim_data):
         pairing = self.get_pairing_for_agent(agent_id, turn, sim_data)
@@ -297,7 +316,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 f"Respond exactly as JSON: {{'return': <amount>}}"
             )
 
-        return self.with_prompt_context(prompt, agent_id, opponent_id)
+        return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def _coerce_history_window(self, value, default):
         try:
