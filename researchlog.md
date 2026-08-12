@@ -1,3 +1,46 @@
+### 2026-08-11 — Result: RESOLVED — the noise buffer is num_agents itself
+
+#### What ran
+- Dyad-collapse decomposition: single-variable flips from the 2-agent dyad, plus a full config transfer. Cells `noise2i_{cap6,anon,match8,full8match}_game` (game_params `noisy_bidirectional_informed_memprimary_{cap6,anon,match8,full8match}`), Sonnet 4.5, informed noise, game-only, n=5 each, 20/20 clean, ~$14. `full8match` = 2-agent dyad with an EXACT copy of the 8-agent config (cap 6, self_and_coplayer, coplayer window 3, self_window 0, anon) — everything but num_agents.
+
+#### Headline (final balance, game-only, informed noise)
+- **8-agent cells all HOLD (~58-60):** rotating 60.55 / fixed 59.41 / nocoplayer 57.95.
+- **2-agent cells all COLLAPSE (~43-46):** plain 46.25 / +cap6 43.35 / +anon 42.90 / match8 45.03 / **full-8-config 44.60**.
+- **The 2-vs-8 gap is genuinely num_agents.** Giving a dyad the exact 8-agent config does not rescue it (44.6 vs the 8-agent 60.5). Every specific channel is ruled out: rotation (fixed-8 holds), co-player block (nocoplayer-8 holds), memory depth (cap6 dyad collapses), anonymity alone (anon dyad collapses), full config bundle (full8match collapses). Perfect separation by agent count regardless of config.
+- Note: this VINDICATES the 2026-08-10 population-size framing and supersedes the 2026-08-11 "confounded / likely history-policy" walk-back — the confounds were real but controlling for all of them leaves num_agents as the driver.
+
+#### Mechanism (open) + next test
+- Surprising even in fixed pairs: 4 parallel locked dyads (8 agents) hold while 1 locked dyad (2 agents) collapses, identical config. Leading hypothesis: anonymity only bites in a population — with 8 anonymized agents you can't tell if "another agent" is the same partner, so targeted retaliation can't build; in a dyad anonymity is vacuous. Predicts NAMED fixed-8 should collapse. `pairing_mode` (fixed pairs) added this session in games/dyadic_pairing.py.
+
+---
+
+### 2026-08-11 — Result: co-player block also NOT the buffer; dyad collapse still unexplained
+
+#### What ran
+- Co-player-block isolation: `noisy8_bidirectional_informed_memprimary_nocoplayer` + set `noise8i_nocoplayer_memprimary_game` — the rotating 8-agent informed cell with the in-prompt co-player block removed (history_policy minimal, coplayer_window 0), everything else at 8-agent values. Verified absent in prompts (0 co-player headings vs 360 in a block run). n=5, 5/5 clean, ~$10.
+
+#### Headline (final balance, game-only, informed noise)
+- No-coplayer 8-agent **57.95 (±3.18)** vs rotating-8 60.55 vs fixed-8 59.41 vs dyad 46.25. Removing the block costs ~2.6, not a collapse. **The co-player block is not the buffer.**
+- Two mechanisms now refuted: rotation and the co-player block. All three 8-agent variants hold ~58–60; only the 2-agent dyad collapses to ~46.
+- Remaining confounds between no-coplayer-8 (holds) and dyad (collapses): num_agents (8 vs 2), memory_capacity (6 vs 2), show_agent_names (anon vs named), self_history_window (0 vs 1). Next decisive cut: a 2-agent dyad matched to the no-coplayer-8 config on everything except num_agents (cap 6, anon, self_window 0) — isolates whether the collapse is genuinely population size vs the memory/anonymity bundle.
+
+---
+
+### 2026-08-11 — Result: noise buffering is NOT rotation; 2-vs-8 was confounded
+
+#### What ran
+- Fixed-pairs control for the "population buffers noise" claim. Added `pairing_mode` (games/dyadic_pairing.py `_get_fixed_multi_agent_pairings`, wired through trust_game_noisy.py + run_noisy_batch.py); `noisy8_bidirectional_informed_memprimary_fixed` + set `noise8i_fixed_memprimary_game` locks each of 8 agents to one partner for all 10 rounds (roles swap by parity; unit- and data-verified: max 1 distinct partner/agent). Sonnet 4.5, informed noise, memory-primary, game-only, n=5, 5/5 clean, ~$10 via OpenRouter.
+
+#### Headline (final balance, game-only, informed noise)
+- Fixed-pairs 8-agent **59.41 (±2.55)** vs rotating 8-agent 60.55 (±1.57) vs 2-agent dyad 46.25 (±2.57).
+- **Rotation refuted, cleanly.** Fixed-vs-rotating 8-agent differ only in `pairing_mode`; both hold at ~60. Locking partners does not cause the dyad-style collapse. The earlier "rotating partners / averaging buffers noise" mechanism is wrong.
+- **The 2-vs-8 contrast is confounded.** Fixed-8 is structurally a dyad yet holds at 59, so the 2-agent collapse to 46 is not caused by agent count. The dyad and 8-agent cells differ in 5 fields besides num_agents: memory_capacity (2 vs 6), history_policy (minimal vs self_and_coplayer), self_history_window (1 vs 0), coplayer_history_window (0 vs 3), show_agent_names (True vs False). Prime suspect: the co-player history block.
+
+#### Revises
+- The 2026-08-10 entry framed game_myth-vs-game and the 2-vs-8 gap as population-size effects. The balances stand, but the *mechanism* ("population/rotation buffers noise") is not established — likely a history-policy effect. Decisive next test: fixed-8 with the dyad's minimal history policy (self_window 1, coplayer_window 0, cap 2, named). Collapse -> it's the co-player block, not agent count.
+
+---
+
 ### 2026-08-10 — Result: game_myth vs game is a population-size effect
 
 #### What ran
