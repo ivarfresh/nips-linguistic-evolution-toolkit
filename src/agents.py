@@ -131,7 +131,13 @@ class Agent:
         return normalized_response
 
     # Response with messages
-    def respond(self, prompt, transcript_metadata=None, remember=True):
+    def respond(
+        self,
+        prompt,
+        transcript_metadata=None,
+        remember=True,
+        response_validator=None,
+    ):
         """Respond to a prompt with the LLM. The truncation effectuates
         a short term memory effect; earlier interactions are forgotten. Thus introduces recency bias;
         recent interactions have more impact than older ones. Remove if unwanted.
@@ -169,6 +175,25 @@ class Agent:
 
         # Log the interaction
         self._log_interaction(prompt, response_data)
+
+        # Validate task-specific response boundaries before committing the
+        # assistant response to chat memory. Preserve the rejected payload in
+        # the interaction audit, but remove the pending user prompt so a retry
+        # starts from the same clean conversation state.
+        if response_validator is not None:
+            try:
+                response_validator(response_data.get("content", ""))
+            except Exception as exc:
+                if remember:
+                    self.messages.pop()
+                self._record_interaction(
+                    prompt,
+                    messages_sent,
+                    response_data=response_data,
+                    transcript_metadata=transcript_metadata,
+                    error=exc,
+                )
+                raise
 
         if remember:
             # Store full response data in messages

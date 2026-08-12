@@ -658,6 +658,7 @@ def run_simulation(
                                 prompts[agent_id],
                                 myth_metadata[agent_id],
                                 myth_remember,
+                                myth_writer.validate_response,
                             )
                             for agent_id in active_agent_order
                         }
@@ -674,6 +675,7 @@ def run_simulation(
                                     prompts[agent_id],
                                     myth_metadata[agent_id],
                                     myth_remember,
+                                    myth_writer.validate_response,
                                 )
                                 agent_myths[agent_id] = myth_response_data
 

@@ -2,7 +2,57 @@
 # MYTH WRITING
 # ============================================================================
 
+import re
+
 from src.shared_context import build_previous_round_shared_context
+
+
+class InvalidMythResponseError(ValueError):
+    """Raised when a myth response contains a likely game-prompt continuation."""
+
+
+_GAME_PROMPT_MARKERS = {
+    "round header": re.compile(r"(?im)^\s*Round\s+\d+\s*$"),
+    "visible earnings": re.compile(
+        r"(?im)^\s*Your total visible earnings across all rounds are\s+\$"
+    ),
+    "assigned game role": re.compile(
+        r"(?im)^\s*This round,\s+you are the\s+(?:SENDER|RECEIVER)\b"
+    ),
+    "game decision question": re.compile(
+        r"(?i)\bHow much do you (?:send|return)(?:\s+to the sender)?\?"
+    ),
+    "JSON decision instruction": re.compile(
+        r"(?im)^\s*Respond exactly as JSON:\s*"
+    ),
+    "myth decision instruction": re.compile(
+        r"(?im)^\s*Take any myths written in this session into account "
+        r"when making your decision\.\s*$"
+    ),
+}
+
+
+def validate_myth_response(content):
+    """Reject likely prompt-shaped continuations appended to a generated myth.
+
+    A myth may naturally mention rounds, senders, receivers, or decisions. To
+    avoid rejecting ordinary story content, require at least two independent
+    prompt markers. The observed spillover contained five markers.
+    """
+    if not isinstance(content, str) or not content.strip():
+        raise InvalidMythResponseError("Myth response is empty.")
+
+    matched_markers = [
+        label
+        for label, pattern in _GAME_PROMPT_MARKERS.items()
+        if pattern.search(content)
+    ]
+    if len(matched_markers) >= 2:
+        markers = ", ".join(matched_markers)
+        raise InvalidMythResponseError(
+            "Myth response appears to continue into a game prompt "
+            f"(matched markers: {markers})."
+        )
 
 
 class MythWriter:
@@ -35,6 +85,11 @@ class MythWriter:
         if not topic or topic.lower() == "anything":
             return "You may choose any mythic setting, characters, or symbols."
         return f"Use this topic: {topic}."
+
+    @staticmethod
+    def validate_response(content):
+        """Validate a raw LLM response before it is stored as a myth."""
+        validate_myth_response(content)
 
     def get_myth_prompt_round_later(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing with the agent's previous myth"""
@@ -232,9 +287,14 @@ class MythWriter:
         for agent_id, response_data in agent_myths.items():
             # Handle both old string format and new dict format for backward compatibility
             if isinstance(response_data, str):
-                myths_content[agent_id] = response_data
+                content = response_data
             else:
-                myths_content[agent_id] = response_data.get("content", "")
+                content = response_data.get("content", "")
+            # Defense in depth: the normal simulation path validates before
+            # memory insertion and retries, while this prevents any alternate
+            # caller from storing a contaminated myth directly.
+            validate_myth_response(content)
+            myths_content[agent_id] = content
 
         for entry in sim_data.conversation_history:
             if entry["round"] == turn:
