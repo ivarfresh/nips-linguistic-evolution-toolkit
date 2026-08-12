@@ -294,6 +294,21 @@ class CorrectedV2ConfigTests(unittest.TestCase):
         self.assertEqual(game_only["game_prompt_addition"], "")
         self.assertIsNone(game_only["game_prompt_addition_id"])
 
+    def test_max_runs_limits_replicates_without_losing_replicate_id(self):
+        combinations = self.config.get_experiment_combinations(
+            "noise8i_memprimary_v2_myth_game",
+            max_runs=1,
+        )
+
+        self.assertEqual(len(combinations), 1)
+        self.assertEqual(combinations[0]["replicate_id"], 0)
+
+        with self.assertRaisesRegex(ValueError, "at least 1"):
+            self.config.get_experiment_combinations(
+                "noise8i_memprimary_v2_myth_game",
+                max_runs=0,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

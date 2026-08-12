@@ -43,7 +43,11 @@ class NoisyExperimentConfig:
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
 
-    def get_experiment_combinations(self, experiment_name: str) -> List[Dict]:
+    def get_experiment_combinations(
+        self,
+        experiment_name: str,
+        max_runs: int = None,
+    ) -> List[Dict]:
         """Generate all parameter combinations for an experiment set."""
         exp_set = self.config['experiment_sets'][experiment_name]
 
@@ -67,7 +71,13 @@ class NoisyExperimentConfig:
         game_params_list = exp_set.get('game_params_list', ['default'])
 
         # Number of runs per combination
-        num_runs = exp_set.get('num_runs', 1)
+        configured_num_runs = exp_set.get('num_runs', 1)
+        if max_runs is not None:
+            if max_runs < 1:
+                raise ValueError("max_runs must be at least 1 when provided")
+            num_runs = min(configured_num_runs, max_runs)
+        else:
+            num_runs = configured_num_runs
 
         # Myth prompt variants/arms. This mirrors the main batch runner so noisy
         # prompt-arm pilots can isolate myth_control vs myth_game_directive.
@@ -154,7 +164,11 @@ class NoisyExperimentConfig:
                     "defector_game_instruction": self.config["prompt_templates"].get(
                         "defector_game_instruction"
                     ),
-                    "replicate_id": run if num_runs > 1 else None,
+                    "replicate_id": (
+                        run
+                        if configured_num_runs > 1 or max_runs is not None
+                        else None
+                    ),
                     "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
                     "myth_default_prompt_key": active_myth_default_key,
                     "myth_later_prompt_key": active_myth_later_key,
@@ -398,7 +412,13 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         }
 
 
-def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str = None, output_subdir: str = 'v2'):
+def run_experiment_set(
+    experiment_name: str,
+    workers: int = 1,
+    config_path: str = None,
+    output_subdir: str = 'v2',
+    max_runs: int = None,
+):
     """
     Run a set of noise experiments.
 
@@ -411,10 +431,15 @@ def run_experiment_set(experiment_name: str, workers: int = 1, config_path: str 
         config_path = str(Path(__file__).resolve().parent.parent / 'config' / 'experiments_noisy.yaml')
 
     config = NoisyExperimentConfig(config_path)
-    combinations = config.get_experiment_combinations(experiment_name)
+    combinations = config.get_experiment_combinations(
+        experiment_name,
+        max_runs=max_runs,
+    )
 
     print(f"Running noise experiment: {experiment_name}")
     print(f"Total combinations: {len(combinations)}")
+    if max_runs is not None:
+        print(f"Run limit: at most {max_runs} replicate(s) per configured cell")
     if workers > 1:
         print(f"Using {workers} parallel workers")
     else:
@@ -541,7 +566,19 @@ Examples:
         default='v2',
         help='Subdirectory under data/json/noise_experiments/ (default: v2)'
     )
+    parser.add_argument(
+        '--max-runs',
+        type=int,
+        default=None,
+        help='Limit replicates per configured cell without editing the config'
+    )
 
     args = parser.parse_args()
 
-    run_experiment_set(args.experiment_name, workers=args.workers, config_path=args.config, output_subdir=args.output_subdir)
+    run_experiment_set(
+        args.experiment_name,
+        workers=args.workers,
+        config_path=args.config,
+        output_subdir=args.output_subdir,
+        max_runs=args.max_runs,
+    )
