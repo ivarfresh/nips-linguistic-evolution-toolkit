@@ -491,6 +491,29 @@ game_params:
     paired_protocol_seeds: true
     protocol_seed_base: 202608120
 
+  noisy_bidirectional_informed_population_v2_dyad_twotask:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "fixed"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
   noisy8_bidirectional_informed_population_v2_fixed:
     endowment: 5
     multiplier: 3
@@ -498,6 +521,29 @@ game_params:
     num_agents: 8
     temperature: 0.8
     memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "fixed"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
+  noisy8_bidirectional_informed_population_v2_fixed_twotask:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
     chat_memory_mode: "memory_primary"
     noise_config:
       type: "uniform"
@@ -1709,7 +1755,7 @@ experiment_sets:
       trust_game_later_trustee: "trust_game_later_trustee_minimal"
     game_params_list:
       - "noisy_bidirectional_informed_memprimary_game_r3"
-    num_runs: 5
+    num_runs: 10
 
   noise2i_memprimary_v2_game_myth:
     models: ["claude_sonnet_45"]
@@ -1726,7 +1772,7 @@ experiment_sets:
       trust_game_later_trustee: "trust_game_later_trustee_minimal"
     game_params_list:
       - "noisy_bidirectional_informed_memprimary_twotask_r3"
-    num_runs: 5
+    num_runs: 10
 
   noise2i_memprimary_v2_myth_game:
     models: ["claude_sonnet_45"]
@@ -1743,7 +1789,7 @@ experiment_sets:
       trust_game_later_trustee: "trust_game_later_trustee_minimal"
     game_params_list:
       - "noisy_bidirectional_informed_memprimary_twotask_r3"
-    num_runs: 5
+    num_runs: 10
 
   # Interpretation: this is the established rotating 8-agent population with
   # anonymous identities and a three-game co-player reputation block. Compare
@@ -1756,7 +1802,7 @@ experiment_sets:
     task_orders: [["game"]]
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary_game_r3"
-    num_runs: 5
+    num_runs: 10
 
   noise8i_memprimary_v2_game_myth:
     models: ["claude_sonnet_45"]
@@ -1770,7 +1816,7 @@ experiment_sets:
         later: "myth_writing_later_rounds_directive_memory_primary"
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary_twotask_r3"
-    num_runs: 5
+    num_runs: 10
 
   noise8i_memprimary_v2_myth_game:
     models: ["claude_sonnet_45"]
@@ -1784,7 +1830,7 @@ experiment_sets:
         later: "myth_writing_later_rounds_directive_memory_primary"
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary_twotask_r3"
-    num_runs: 5
+    num_runs: 10
 
   # Confirmatory population-size isolation: fixed dyad versus four fixed dyads
   # in an 8-agent run, using the unified prompt regime and no injected history.
@@ -1796,7 +1842,37 @@ experiment_sets:
     game_params_list:
       - "noisy_bidirectional_informed_population_v2_dyad"
       - "noisy8_bidirectional_informed_population_v2_fixed"
-    num_runs: 5
+    num_runs: 10
+
+  noise_population_isolation_v2_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy_bidirectional_informed_population_v2_dyad_twotask"
+      - "noisy8_bidirectional_informed_population_v2_fixed_twotask"
+    num_runs: 10
+
+  noise_population_isolation_v2_myth_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy_bidirectional_informed_population_v2_dyad_twotask"
+      - "noisy8_bidirectional_informed_population_v2_fixed_twotask"
+    num_runs: 10
 
   # Mechanism test inside the 8-agent rotating regime. With synthetic game
   # history disabled, stable visible names are the only partner-identity cue.
@@ -1808,7 +1884,7 @@ experiment_sets:
     game_params_list:
       - "noisy8_bidirectional_informed_identity_v2_hidden"
       - "noisy8_bidirectional_informed_identity_v2_named"
-    num_runs: 5
+    num_runs: 10
 
   # Primary scripted-defector design: paired 0%-versus-25% comparisons in all
   # three task orders. Two-task cells use capacity 6 so every condition retains

@@ -5,6 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from games.trust_game import TrustGame
+from scripts.audit_v2_protocol import classify_interactions
+from src.agents import Agent
 from src.myth_writer import (
     InvalidMythResponseError,
     MythWriter,
@@ -51,6 +53,60 @@ class MythResponseValidatorTests(unittest.TestCase):
             "Myth: The receiver asked how much generosity should be returned, "
             "and the sender answered with trust rather than calculation."
         )
+
+    def test_provider_failure_rolls_back_unanswered_prompt(self):
+        agent = Agent(
+            agent_id="Agent_1",
+            model="mock/model",
+            temperature=0,
+            client=object(),
+            memory_capacity=3,
+            initial_bias=None,
+        )
+        agent.messages.append({"role": "system", "content": "Game rules"})
+
+        with patch(
+            "src.agents.call_llm",
+            side_effect=RuntimeError("temporary provider failure"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "provider failure"):
+                agent.respond("Write a myth.")
+
+        self.assertEqual(
+            agent.messages,
+            [{"role": "system", "content": "Game rules"}],
+        )
+        self.assertEqual(
+            agent.interaction_history[0]["error"]["type"],
+            "RuntimeError",
+        )
+
+    def test_audit_classifies_a_rejected_attempt_as_a_recovered_retry(self):
+        metadata = {"round": 3, "task": "myth"}
+        rejected = {
+            "metadata": metadata,
+            "error": {"type": "InvalidMythResponseError"},
+        }
+        accepted = {"metadata": metadata, "response": {"content": "Myth: ok"}}
+
+        accepted_events, retries, unrecovered = classify_interactions(
+            [rejected, accepted]
+        )
+
+        self.assertEqual(accepted_events, [accepted])
+        self.assertEqual(retries, [rejected])
+        self.assertEqual(unrecovered, [])
+
+    def test_audit_flags_a_retry_without_a_later_accepted_response(self):
+        rejected = {
+            "metadata": {"round": 3, "task": "myth"},
+            "error": {"type": "InvalidMythResponseError"},
+        }
+
+        _, retries, unrecovered = classify_interactions([rejected])
+
+        self.assertEqual(retries, [rejected])
+        self.assertEqual(unrecovered, [rejected])
 
     def test_simulation_retries_without_keeping_rejected_response_in_memory(self):
         myth_writer = MythWriter(

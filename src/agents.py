@@ -86,6 +86,15 @@ class Agent:
                 -(self.memory_capacity * 2):
             ]
 
+    def _rollback_pending_prompt(self, prompt):
+        """Remove an unanswered prompt before a clean simulation-level retry."""
+        if (
+            self.messages
+            and self.messages[-1].get("role") == "user"
+            and self.messages[-1].get("content") == prompt
+        ):
+            self.messages.pop()
+
     def scripted_response(
         self,
         prompt,
@@ -164,6 +173,8 @@ class Agent:
         try:
             response_data = call_llm(self.client, self.model, self.temperature, messages_for_call)
         except Exception as exc:
+            if remember:
+                self._rollback_pending_prompt(prompt)
             self._record_interaction(
                 prompt,
                 messages_sent,
@@ -185,7 +196,7 @@ class Agent:
                 response_validator(response_data.get("content", ""))
             except Exception as exc:
                 if remember:
-                    self.messages.pop()
+                    self._rollback_pending_prompt(prompt)
                 self._record_interaction(
                     prompt,
                     messages_sent,

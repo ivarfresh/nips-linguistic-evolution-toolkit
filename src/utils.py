@@ -97,6 +97,50 @@ def resolve_model_for_provider(client, model):
     return model
 
 
+def llm_runtime_metadata(client, model):
+    """Return non-secret provider settings needed to reproduce a run."""
+    provider, _ = _unwrap_client(client)
+    metadata = {
+        "llm_provider": provider,
+        "provider_model": resolve_model_for_provider(client, model),
+        "llm_provider_mode": (
+            _env("LLM_PROVIDER") or LLM_PROVIDER or "auto"
+        ).strip().lower(),
+    }
+    if provider == "anthropic":
+        metadata.update(
+            {
+                "max_output_tokens": int(
+                    _env("ANTHROPIC_MAX_TOKENS") or "1024"
+                ),
+                "max_output_tokens_source": "ANTHROPIC_MAX_TOKENS",
+            }
+        )
+    elif provider == "openrouter":
+        metadata.update(
+            {
+                "max_output_tokens": (
+                    int(OPENROUTER_MAX_TOKENS)
+                    if OPENROUTER_MAX_TOKENS
+                    else None
+                ),
+                "max_output_tokens_source": (
+                    "OPENROUTER_MAX_TOKENS"
+                    if OPENROUTER_MAX_TOKENS
+                    else "provider_default"
+                ),
+            }
+        )
+    else:
+        metadata.update(
+            {
+                "max_output_tokens": None,
+                "max_output_tokens_source": "provider_default",
+            }
+        )
+    return metadata
+
+
 def create_llm_client(model, provider=None):
     """
     Create a provider client for the given repo model slug.

@@ -461,7 +461,7 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 combinations = self.config.get_experiment_combinations(
                     experiment_name
                 )
-                self.assertEqual(len(combinations), 5)
+                self.assertEqual(len(combinations), 10)
                 self.assertTrue(
                     all(
                         combo["game_params"]["num_agents"] == num_agents
@@ -526,6 +526,39 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 max_runs=0,
             )
 
+    def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
+        expected = {
+            "noise_population_isolation_v2_game": (["game"], 3),
+            "noise_population_isolation_v2_game_myth": (
+                ["game", "myth"],
+                6,
+            ),
+            "noise_population_isolation_v2_myth_game": (
+                ["myth", "game"],
+                6,
+            ),
+        }
+
+        for experiment_name, (task_order, memory_capacity) in expected.items():
+            with self.subTest(experiment_name=experiment_name):
+                combinations = self.config.get_experiment_combinations(
+                    experiment_name
+                )
+                self.assertEqual(len(combinations), 20)
+                self.assertEqual(
+                    {combo["game_params"]["num_agents"] for combo in combinations},
+                    {2, 8},
+                )
+                for combo in combinations:
+                    params = combo["game_params"]
+                    self.assertEqual(combo["task_order"], task_order)
+                    self.assertEqual(params["memory_capacity"], memory_capacity)
+                    self.assertEqual(params["history_policy"], "none")
+                    self.assertEqual(params["pairing_mode"], "fixed")
+                    self.assertEqual(params["prompt_regime"], "unified")
+                    self.assertFalse(params["show_agent_names"])
+                    self.assertTrue(params["paired_protocol_seeds"])
+
     def test_population_isolation_differs_only_in_num_agents(self):
         combinations = self.config.get_experiment_combinations(
             "noise_population_isolation_v2_game"
@@ -535,7 +568,7 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             for combo in combinations
         }
 
-        self.assertEqual(len(combinations), 10)
+        self.assertEqual(len(combinations), 20)
         self.assertEqual(len(params_by_name), 2)
         dyad = dict(
             params_by_name["noisy_bidirectional_informed_population_v2_dyad"]
@@ -560,7 +593,7 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             for combo in combinations
         }
 
-        self.assertEqual(len(combinations), 10)
+        self.assertEqual(len(combinations), 20)
         hidden = dict(
             params_by_name["noisy8_bidirectional_informed_identity_v2_hidden"]
         )
@@ -616,6 +649,8 @@ class CorrectedV2ConfigTests(unittest.TestCase):
     def test_new_causal_cells_pair_protocol_seeds_by_replicate(self):
         for experiment_name in (
             "noise_population_isolation_v2_game",
+            "noise_population_isolation_v2_game_myth",
+            "noise_population_isolation_v2_myth_game",
             "noise8i_identity_v2_game",
             "noise8i_defector_v2_game",
             "noise8i_defector_v2_game_myth",
@@ -629,7 +664,11 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 )
 
             with self.subTest(experiment_name=experiment_name):
-                self.assertEqual(set(seeds_by_replicate), set(range(5)))
+                expected_replicates = 5 if "defector" in experiment_name else 10
+                self.assertEqual(
+                    set(seeds_by_replicate),
+                    set(range(expected_replicates)),
+                )
                 self.assertTrue(
                     all(len(seed_pairs) == 1 for seed_pairs in seeds_by_replicate.values())
                 )

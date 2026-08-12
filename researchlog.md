@@ -1,3 +1,28 @@
+### 2026-08-12 — Corrected non-defector confirmatory rerun prepared
+
+- Hardened simulation-level retries: an unanswered prompt is now removed from
+  private chat memory after an exhausted provider call, matching the myth-
+  validation retry contract. Rejected attempts remain in the interaction audit
+  but cannot change the clean retry context.
+- Updated `scripts/audit_v2_protocol.py` to distinguish accepted interactions
+  from recovered retry attempts. It requires exactly one accepted task response
+  per agent/round, fails unrecovered retries, and computes memory-message counts
+  from accepted interactions only.
+- New runs record non-secret execution provenance: Git commit and dirty-state,
+  config SHA-256, effective provider route, resolved provider model, and the
+  effective max-output-token setting/source.
+- Expanded the fixed-pair population isolation into a complete 2 x 3 design:
+  2 versus 8 agents crossed with game-only, game->myth, and myth->game. All
+  cells use fixed partners, unified prompts, hidden names, no injected history,
+  paired noise seeds, and a matched three-round private-memory horizon.
+- Raised the six corrected population-regime v2 cells from 5 to 10 fresh
+  replicates each. `scripts/run_corrected_v2_confirmatory_20260812.sh` refuses
+  a dirty worktree, fixes routing to direct Anthropic, writes to a new output
+  directory, requires 10 final JSONs per cell, and audits each cell before
+  continuing. This entry records protocol preparation only, not outcomes.
+
+---
+
 ### 2026-08-12 — Scripted 8-agent defector treatment implemented
 
 #### Design

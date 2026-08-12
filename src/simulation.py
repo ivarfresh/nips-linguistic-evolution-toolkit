@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from src.agents import Agent
-from src.utils import create_llm_client, print_simulation_header
+from src.utils import create_llm_client, llm_runtime_metadata, print_simulation_header
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -344,6 +344,7 @@ def run_simulation(
     chat_memory_mode: str = "default",
     seed_reinject: bool = False,
     monitor_config: Optional[Dict[str, Any]] = None,
+    run_metadata_extra: Optional[Dict[str, Any]] = None,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -353,6 +354,7 @@ def run_simulation(
                 Examples: ["game"], ["myth"], ["game", "myth"], ["myth", "game"]
     """
     client = create_llm_client(model)
+    runtime_metadata = llm_runtime_metadata(client, model)
     if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
         if task_order is not None:
@@ -416,6 +418,8 @@ def run_simulation(
             "seed_user_prompt": seed_user_prompt,
             "chat_memory_mode": chat_memory_mode,
             "seed_reinject": seed_reinject,
+            **runtime_metadata,
+            **(run_metadata_extra or {}),
             **{
                 key: value
                 for key, value in population_metadata.items()

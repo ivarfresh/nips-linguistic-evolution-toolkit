@@ -3,7 +3,8 @@
 
 Checks each final JSON for:
 - complete rounds, dyads, game responses, myths, and LLM calls
-- no recorded LLM errors or empty responses/messages
+- recovered retry attempts are explicit and do not alter accepted-call counts
+- no unrecovered LLM errors or empty accepted responses/messages
 - informed-noise notice in every system prompt
 - communicated sends and returns within the configured noise bound
 - myth-decision link exactly once in each current myth-condition game prompt
@@ -39,6 +40,33 @@ def final_json_paths(inputs):
                 continue
             paths.append(candidate)
     return sorted(set(paths))
+
+
+def classify_interactions(events):
+    """Separate accepted interactions from rejected attempts and verify recovery."""
+    accepted = []
+    retries = []
+    unrecovered = []
+    for event_index, event in enumerate(events):
+        if not event.get("error"):
+            accepted.append(event)
+            continue
+
+        retries.append(event)
+        metadata = event.get("metadata") or {}
+        event_key = (metadata.get("round"), metadata.get("task"))
+        recovered_later = any(
+            not later_event.get("error")
+            and (
+                (later_event.get("metadata") or {}).get("round"),
+                (later_event.get("metadata") or {}).get("task"),
+            )
+            == event_key
+            for later_event in events[event_index + 1 :]
+        )
+        if not recovered_later:
+            unrecovered.append(event)
+    return accepted, retries, unrecovered
 
 
 def audit_run(path):
@@ -104,6 +132,18 @@ def audit_run(path):
             add("unified protocol is missing its recorded noise_seed")
         if metadata.get("pairing_seed") is None:
             add("unified protocol is missing its recorded pairing_seed")
+    if metadata.get("execution_provenance_version"):
+        for key in (
+            "code_commit",
+            "config_sha256",
+            "llm_provider",
+            "provider_model",
+            "max_output_tokens_source",
+        ):
+            if metadata.get(key) in (None, ""):
+                add(f"execution provenance is missing {key}")
+        if metadata.get("code_dirty"):
+            add("execution provenance reports a dirty worktree")
 
     dyad_count = 0
     noise_checks = 0
@@ -167,20 +207,38 @@ def audit_run(path):
                         "forced-zero receiver made a nonzero actual return"
                     )
 
+    attempt_count = 0
     call_count = 0
     llm_call_count = 0
     forced_response_count = 0
+    retry_count = 0
     expected_calls = num_turns * num_agents * len(task_order)
     for agent_id, agent in agents.items():
         events = agent.get("interaction_history") or []
+        accepted_events, retry_events, unrecovered_events = classify_interactions(
+            events
+        )
         expected_agent_calls = num_turns * len(task_order)
-        if len(events) != expected_agent_calls:
+        if len(accepted_events) != expected_agent_calls:
             add(
-                f"{agent_id}: {len(events)} calls; expected {expected_agent_calls}"
+                f"{agent_id}: {len(accepted_events)} accepted calls; "
+                f"expected {expected_agent_calls}"
+            )
+        retry_count += len(retry_events)
+        for event in unrecovered_events:
+            event_metadata = event.get("metadata") or {}
+            add(
+                f"{agent_id} round {event_metadata.get('round')} "
+                f"{event_metadata.get('task')}: unrecovered "
+                f"{(event.get('error') or {}).get('type')} error"
             )
 
-        for event_index, event in enumerate(events, start=1):
-            call_count += 1
+        accepted_before = 0
+        for event in events:
+            attempt_count += 1
+            is_accepted = not event.get("error")
+            if is_accepted:
+                call_count += 1
             event_metadata = event.get("metadata") or {}
             round_number = event_metadata.get("round")
             task = event_metadata.get("task")
@@ -188,16 +246,15 @@ def audit_run(path):
             messages = event.get("messages_sent") or []
             response = event.get("response") or {}
             response_source = response.get("response_source", "llm")
-            if response_source == "forced_zero":
-                forced_response_count += 1
-            else:
-                llm_call_count += 1
+            if is_accepted:
+                if response_source == "forced_zero":
+                    forced_response_count += 1
+                else:
+                    llm_call_count += 1
 
-            if event.get("error"):
-                add(f"{tag}: recorded {event['error'].get('type')} error")
-            if not (response.get("content") or "").strip():
+            if is_accepted and not (response.get("content") or "").strip():
                 add(f"{tag}: empty response")
-            if defector_action_policy == "forced_zero":
+            if is_accepted and defector_action_policy == "forced_zero":
                 should_be_forced = task == "game" and agent_id in defector_ids
                 if should_be_forced and response_source != "forced_zero":
                     add(f"{tag}: forced defector game response came from the LLM")
@@ -231,7 +288,7 @@ def audit_run(path):
                 if not (message.get("content") or "").strip():
                     add(f"{tag}: empty message {message_index}")
 
-            expected_previous = min(event_index - 1, memory_capacity)
+            expected_previous = min(accepted_before, memory_capacity)
             expected_messages = 2 + 2 * expected_previous
             if len(messages) != expected_messages:
                 add(
@@ -284,6 +341,9 @@ def audit_run(path):
                     ):
                         add(f"{tag}: configured co-player history block missing")
 
+            if is_accepted:
+                accepted_before += 1
+
     if call_count != expected_calls:
         add(f"{call_count} calls; expected {expected_calls}")
     if defector_action_policy == "forced_zero":
@@ -329,8 +389,10 @@ def audit_run(path):
         "rounds": len(history),
         "dyads": dyad_count,
         "calls": call_count,
+        "attempts": attempt_count,
         "llm_calls": llm_call_count,
         "forced_responses": forced_response_count,
+        "retry_attempts": retry_count,
         "noise_checks": noise_checks,
     }
 
@@ -350,8 +412,9 @@ def main():
         print(
             f"{status} {result['path']}: "
             f"{result['rounds']} rounds, {result['dyads']} dyads, "
-            f"{result['calls']} interactions "
+            f"{result['calls']} accepted interactions "
             f"({result['llm_calls']} LLM, {result['forced_responses']} forced), "
+            f"{result['retry_attempts']} recovered retries, "
             f"{result['noise_checks']} noise checks"
         )
 
@@ -359,8 +422,10 @@ def main():
     print(
         f"\nAudited {len(results)} run(s): "
         f"{sum(result['calls'] for result in results)} interactions, "
+        f"{sum(result['attempts'] for result in results)} total attempts, "
         f"{sum(result['llm_calls'] for result in results)} LLM calls, "
         f"{sum(result['forced_responses'] for result in results)} forced responses, "
+        f"{sum(result['retry_attempts'] for result in results)} recovered retries, "
         f"{sum(result['noise_checks'] for result in results)} noise checks."
     )
     if issues:

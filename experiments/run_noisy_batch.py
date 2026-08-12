@@ -19,6 +19,8 @@ import os
 import sys
 import argparse
 import contextlib
+import hashlib
+import subprocess
 import yaml
 from itertools import product
 from pathlib import Path
@@ -34,6 +36,29 @@ from src.batch_utils import unique_json_path as _unique_json_path
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from games.trust_game_noisy import TrustGameNoisy
+
+
+def execution_provenance(config_path: str) -> Dict[str, Any]:
+    """Capture a non-secret, immutable description of the executed code/config."""
+    config_bytes = Path(config_path).read_bytes()
+
+    def git_output(*args):
+        result = subprocess.run(
+            ["git", *args],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    return {
+        "execution_provenance_version": 1,
+        "code_commit": git_output("rev-parse", "HEAD"),
+        "code_dirty": bool(git_output("status", "--porcelain")),
+        "config_path": str(Path(config_path).resolve()),
+        "config_sha256": hashlib.sha256(config_bytes).hexdigest(),
+    }
 
 
 class NoisyExperimentConfig:
@@ -383,6 +408,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "log_file": log_path,
             "agent_names": game_params.get("agent_names"),
             "chat_memory_mode": game_params.get("chat_memory_mode", "default"),
+            "run_metadata_extra": combo.get("execution_provenance", {}),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
@@ -491,6 +517,15 @@ def run_experiment_set(
         experiment_name,
         max_runs=max_runs,
     )
+    provenance = execution_provenance(config_path)
+    provenance.update(
+        {
+            "experiment_name": experiment_name,
+            "output_subdir": output_subdir,
+        }
+    )
+    for combo in combinations:
+        combo["execution_provenance"] = provenance.copy()
 
     print(f"Running noise experiment: {experiment_name}")
     print(f"Total combinations: {len(combinations)}")
