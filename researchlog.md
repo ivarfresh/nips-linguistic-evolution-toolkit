@@ -18,9 +18,22 @@
   is therefore **repeated dyad vs rotating population with reputation
   information**, not a pure manipulation of agent count with all other
   information held fixed.
-- No v2 outcome data have been generated yet. The 2026-08-10 dyad results were
-  produced by the broken transfer path and cannot establish a population-size
-  interaction; all six v2 cells must be rerun before updating the result claim.
+- The 2026-08-10 dyad results were produced by the broken transfer path and
+  cannot establish a population-size interaction; all six v2 cells require a
+  new adequately powered batch before updating the result claim.
+
+#### Smoke gate completed
+- Ran one full 10-round Sonnet 4.5 replicate in each of the six corrected v2
+  cells (2/8 agents x game/game_myth/myth_game). All 6/6 completed without an
+  API, parsing, or simulation error.
+- `scripts/audit_v2_protocol.py` checked all final JSONs: 60 rounds, 150 dyads,
+  500 LLM calls, and 300 numeric send/return noise checks. It also verified
+  completeness, informed-noise notices, exact current-prompt myth-link counts,
+  configured memory-message counts, and the intended 8-agent co-player history
+  blocks. **Zero issues.**
+- This is a protocol smoke test (`n=1` per cell), not outcome evidence. Before
+  the confirmatory batch, add recorded/paired pairing and noise seeds and choose
+  durable raw-data storage (the current `data/json/` tree is gitignored).
 
 ---
 
