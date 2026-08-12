@@ -37,8 +37,14 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         defector_agent_ids=None,
         defector_seed=0,
         defector_prompt_template=None,
+        pairing_mode="balanced",
     ):
         super().__init__()
+        # "balanced" (default) rotates partners across rounds; "fixed" locks each
+        # agent to one partner for the whole run (roles still swap by parity),
+        # which turns an N-agent run into N/2 independent dyads. Used to test
+        # whether partner rotation is what buffers noise at the population level.
+        self.pairing_mode = pairing_mode or "balanced"
         self.endowment = endowment
         self.multiplier = multiplier
         self.system_prompt_template = system_prompt_template

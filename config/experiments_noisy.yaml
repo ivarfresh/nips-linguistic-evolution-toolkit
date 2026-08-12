@@ -368,6 +368,93 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
+  # --- Dyad-collapse decomposition (single-variable flips from the dyad above) ---
+  # The 2-agent dyad collapses under noise (~46) while every 8-agent variant holds
+  # (~58-60). Rotation and the co-player block are already refuted. These flip one
+  # remaining confound at a time to find what causes the collapse.
+
+  # (C1) memory depth: dyad + cap 6 (retains ~7 turns vs the dyad's ~3). Leading
+  # hypothesis: shallow memory makes the agent over-react to the last noisy round.
+  noisy_bidirectional_informed_memprimary_cap6:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  # (C2) anonymity: dyad + anonymized partner (show_agent_names false).
+  noisy_bidirectional_informed_memprimary_anon:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 2
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    show_agent_names: false
+
+  # (C3) num_agents isolation: dyad matched to noise8i nocoplayer-8 on EVERYTHING
+  # except num_agents (cap 6, anon, self_window 0, minimal, no co-player block).
+  # vs nocoplayer-8 (58) this isolates population size; hold -> num_agents is inert.
+  noisy_bidirectional_informed_memprimary_match8:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "minimal"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+
+  # (C4) FULL 8-agent config at 2 agents: an exact replica of
+  # noisy8_bidirectional_informed_memprimary (cap 6, self_and_coplayer, coplayer
+  # window 3, self_window 0, anon) EXCEPT num_agents=2. The definitive num_agents
+  # isolation vs the holding 8-agent cells (~59-60): still collapse -> population
+  # size is the cause; hold -> num_agents is inert, the "population effect" was
+  # the config bundle. (The 2-agent co-player block shows the single partner's
+  # own last-3 games, anonymized.)
+  noisy_bidirectional_informed_memprimary_full8match:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+
   # 8-agent bidirectional INFORMED noise, memory-primary. Informed noise is
   # the project's default test condition as of 2026-07-22.
   noisy8_bidirectional_informed_memprimary:
@@ -387,6 +474,82 @@ game_params:
     history_policy: "self_and_coplayer"
     self_history_window: 0
     coplayer_history_window: 3
+    show_agent_names: false
+
+  # FIXED-PAIRS variant of noisy8_bidirectional_informed_memprimary: identical in
+  # every respect except pairing_mode. Each agent is locked to one partner for all
+  # 10 rounds (8 agents -> 4 independent dyads; roles still swap by parity). Tests
+  # whether partner ROTATION is what buffers noise at the population level: if this
+  # collapses toward the 2-agent dyad level (~46) while the rotating cell holds
+  # (~60), rotation is the cause.
+  noisy8_bidirectional_informed_memprimary_fixed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "fixed"
+
+  # NAMED fixed-pairs 8-agent: same as ..._fixed but show_agent_names TRUE.
+  # Mechanism test for "why does population buffer noise?". Hypothesis: anonymity
+  # only bites in a population (can't target retaliation at an unidentifiable
+  # partner). If naming the locked partner makes fixed-8 collapse toward the dyad
+  # (~46) while anon fixed-8 holds (~59), the buffer is anonymity-in-a-population.
+  noisy8_bidirectional_informed_memprimary_fixed_named:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: true
+    pairing_mode: "fixed"
+
+  # NO-COPLAYER-BLOCK variant of noisy8_bidirectional_informed_memprimary: identical
+  # (8 agents, rotating, memory-primary, informed, cap 6, anon) EXCEPT the in-prompt
+  # co-player history block is removed (history_policy minimal, coplayer_window 0).
+  # Isolates the co-player block as the single variable vs noise8i_memprimary_game
+  # (~60.5). Collapse toward the dyad (~46) -> the co-player block is what buffers
+  # noise; hold at ~60 -> it's something else in the 2-vs-8 config bundle.
+  noisy8_bidirectional_informed_memprimary_nocoplayer:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "minimal"
+    self_history_window: 0
+    coplayer_history_window: 0
     show_agent_names: false
 
   # 8-agent bidirectional noise, memory-primary (mirrors the plain-game
@@ -1282,6 +1445,56 @@ experiment_sets:
       - "noisy_bidirectional_informed_memprimary"
     num_runs: 5
 
+  # Dyad-collapse decomposition: single-variable flips vs noise2i_memprimary_game
+  # (dyad, ~46). Compare each to that baseline and to nocoplayer-8 (~58).
+  noise2i_cap6_game:      # (C1) memory depth
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_cap6"
+    num_runs: 5
+
+  noise2i_anon_game:      # (C2) anonymity
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_anon"
+    num_runs: 5
+
+  noise2i_match8_game:    # (C3) everything matched to nocoplayer-8 except num_agents
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_match8"
+    num_runs: 5
+
+  noise2i_full8match_game:  # (C4) full 8-agent config at 2 agents (num_agents isolation)
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_full8match"
+    num_runs: 5
+
   noise2i_memprimary_game_myth:
     models: ["claude_sonnet_45"]
     templates: ["trust_game_default"]
@@ -1377,6 +1590,42 @@ experiment_sets:
     task_orders: [["game"]]
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary"
+    num_runs: 5
+
+  # FIXED-PAIRS control for the rotation hypothesis: same as noise8i_memprimary_game
+  # but partners are locked (pairing_mode: fixed). Compare its game-only balance to
+  # noise8i_memprimary_game (rotating, ~60.5). Collapse -> rotation buffers noise.
+  noise8i_fixed_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary_fixed"
+    num_runs: 5
+
+  # Mechanism test (NOT yet run): named fixed-pairs 8-agent. If this collapses
+  # toward the dyad (~46) while anon fixed-8 holds (~59), the population buffer is
+  # anonymity-in-a-population. See NOTE_FOR_ARON.md.
+  #   python experiments/run_noisy_batch.py noise8i_fixed_named_memprimary_game --workers 4
+  noise8i_fixed_named_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary_fixed_named"
+    num_runs: 5
+
+  # Co-player-block isolation: 8-agent rotating, co-player block removed.
+  # Compare to noise8i_memprimary_game (~60.5). Collapse -> the block buffers noise.
+  noise8i_nocoplayer_memprimary_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary_nocoplayer"
     num_runs: 5
 
   noise8i_memprimary_game_myth:

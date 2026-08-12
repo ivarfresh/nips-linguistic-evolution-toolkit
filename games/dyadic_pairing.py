@@ -211,7 +211,10 @@ class DyadicPairingMixin:
             else:
                 raw_pairs = [(self.agent_2_id, self.agent_1_id)]
         elif sim_data is not None:
-            pairings = self._get_balanced_multi_agent_pairings(turn, sim_data)
+            if getattr(self, "pairing_mode", "balanced") == "fixed":
+                pairings = self._get_fixed_multi_agent_pairings(turn, sim_data)
+            else:
+                pairings = self._get_balanced_multi_agent_pairings(turn, sim_data)
             self._round_pairings[turn] = pairings
             return pairings
         else:
@@ -243,6 +246,26 @@ class DyadicPairingMixin:
             self._normalize_pairing(turn, idx, pairing)
             for idx, pairing in enumerate(scheduled, start=1)
         ]
+
+    def _get_fixed_multi_agent_pairings(self, turn, sim_data):
+        """Fixed-partner pairings: each agent keeps the same partner every round.
+
+        Partners are fixed by agent order (Agent_1&2, Agent_3&4, ...); roles swap
+        by round parity so every agent is investor/trustee equally. Deterministic
+        in (agent_ids, turn), so it needs no cached schedule and is resume-safe.
+        """
+        base_pairs = [
+            (self.agent_ids[i], self.agent_ids[i + 1])
+            for i in range(0, len(self.agent_ids) - 1, 2)
+        ]
+        pairings = []
+        for idx, (first, second) in enumerate(base_pairs, start=1):
+            if turn % 2 == 1:
+                investor_id, trustee_id = first, second
+            else:
+                investor_id, trustee_id = second, first
+            pairings.append(self._pairing_record(turn, idx, investor_id, trustee_id))
+        return pairings
 
     def _get_total_rounds(self, turn, sim_data):
         metadata = getattr(sim_data, "run_metadata", {}) or {}

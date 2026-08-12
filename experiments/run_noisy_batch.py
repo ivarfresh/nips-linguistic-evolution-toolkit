@@ -241,6 +241,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             defector_agent_ids=game_params.get("defector_agent_ids"),
             defector_seed=defector_seed,
             defector_prompt_template=combo.get("defector_game_instruction"),
+            pairing_mode=game_params.get("pairing_mode", "balanced"),
         )
 
         myth_writer = MythWriter(
