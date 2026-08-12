@@ -12,6 +12,7 @@ fi
 output_subdir="${1:-corrected_v2_confirmatory_20260812}"
 workers="${WORKERS:-2}"
 export LLM_PROVIDER="anthropic"
+export ANTHROPIC_MAX_TOKENS="4096"
 export TRUST_BATCH_QUIET="1"
 
 experiment_sets=(
