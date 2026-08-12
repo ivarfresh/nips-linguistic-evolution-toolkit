@@ -55,6 +55,18 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             defector_agent_ids=game_params.get("defector_agent_ids"),
             defector_seed=defector_seed,
             defector_prompt_template=combo.get("defector_game_instruction"),
+            defector_action_policy=game_params.get(
+                "defector_action_policy",
+                "prompted",
+            ),
+            defector_myth_policy=game_params.get(
+                "defector_myth_policy",
+                "normal",
+            ),
+            defector_role_visible_to_self=game_params.get(
+                "defector_role_visible_to_self",
+                True,
+            ),
         )
 
         myth_writer = MythWriter(
@@ -116,6 +128,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
             f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
             f.write(f"Defector Seed: {defector_seed}\n")
+            f.write(f"Defector Action Policy: {game_params.get('defector_action_policy', 'prompted')}\n")
+            f.write(f"Defector Myth Policy: {game_params.get('defector_myth_policy', 'normal')}\n")
+            f.write(f"Defector Role Visible To Self: {game_params.get('defector_role_visible_to_self', True)}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation. TRUST_BATCH_QUIET keeps verbose per-round transcripts

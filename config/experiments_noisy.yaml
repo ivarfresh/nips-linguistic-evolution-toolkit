@@ -464,6 +464,218 @@ game_params:
     coplayer_history_window: 3
     show_agent_names: false
 
+  # Strict population-size isolation. These two game-only cells use the same
+  # prompt builder, fixed partners, accurate pairing instructions, three prior
+  # own interactions in chat memory, no injected game-history recap, and hidden
+  # names. The only configured difference is num_agents.
+  noisy_bidirectional_informed_population_v2_dyad:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "fixed"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
+  noisy8_bidirectional_informed_population_v2_fixed:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "fixed"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
+  # Identity/reputation isolation inside the clean 8-agent path. Both cells use
+  # the same balanced rotating schedule and receive no synthetic self or
+  # co-player history. Stable names are therefore the sole partner-identity cue
+  # available across re-encounters; own actions remain in individual chat memory.
+  noisy8_bidirectional_informed_identity_v2_hidden:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
+  noisy8_bidirectional_informed_identity_v2_named:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: true
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608120
+
+  # Scripted-defector experiment. Within each task regime, the control and
+  # treatment differ only in defector_ratio. Defectors make deterministic zero
+  # game moves without an LLM call, receive no treatment label, remember the
+  # scripted exchange privately, and use the normal LLM myth-writing path.
+  noisy8_bidirectional_informed_defector_v2_game_control:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.0
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+
+  noisy8_bidirectional_informed_defector_v2_game_treatment25:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+
+  noisy8_bidirectional_informed_defector_v2_twotask_control:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.0
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+
+  noisy8_bidirectional_informed_defector_v2_twotask_treatment25:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+
   # 8-agent bidirectional noise, memory-primary (mirrors the plain-game
   # sonnet45_8agent_*_memprimary regime: self history in chat memory, only the
   # co-player's last 3 games injected; capacity 6 pairs = 3 rounds).
@@ -1572,6 +1784,73 @@ experiment_sets:
         later: "myth_writing_later_rounds_directive_memory_primary"
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary_twotask_r3"
+    num_runs: 5
+
+  # Confirmatory population-size isolation: fixed dyad versus four fixed dyads
+  # in an 8-agent run, using the unified prompt regime and no injected history.
+  noise_population_isolation_v2_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy_bidirectional_informed_population_v2_dyad"
+      - "noisy8_bidirectional_informed_population_v2_fixed"
+    num_runs: 5
+
+  # Mechanism test inside the 8-agent rotating regime. With synthetic game
+  # history disabled, stable visible names are the only partner-identity cue.
+  noise8i_identity_v2_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_informed_identity_v2_hidden"
+      - "noisy8_bidirectional_informed_identity_v2_named"
+    num_runs: 5
+
+  # Primary scripted-defector design: paired 0%-versus-25% comparisons in all
+  # three task orders. Two-task cells use capacity 6 so every condition retains
+  # approximately three completed rounds of private interaction memory.
+  noise8i_defector_v2_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_game_control"
+      - "noisy8_bidirectional_informed_defector_v2_game_treatment25"
+    num_runs: 5
+
+  noise8i_defector_v2_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_twotask_control"
+      - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25"
+    num_runs: 5
+
+  noise8i_defector_v2_myth_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_twotask_control"
+      - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25"
     num_runs: 5
 
 

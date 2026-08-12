@@ -27,6 +27,7 @@ class Agent:
                 f.write(f"TIMESTAMP: {timestamp}\n")
                 f.write(f"AGENT: {self.agent_id}\n")
                 f.write(f"MODEL: {self.model}\n")
+                f.write(f"RESPONSE SOURCE: {response_data.get('response_source', 'llm')}\n")
                 f.write(f"{'='*80}\n\n")
 
                 f.write(f"PROMPT:\n{'-'*80}\n")
@@ -69,6 +70,7 @@ class Agent:
                 "content": response_data.get("content", ""),
                 "reasoning": response_data.get("reasoning"),
                 "usage": response_data.get("usage"),
+                "response_source": response_data.get("response_source", "llm"),
             }
         if error is not None:
             event["error"] = {
@@ -76,6 +78,57 @@ class Agent:
                 "message": str(error),
             }
         self.interaction_history.append(event)
+
+    def _truncate_messages(self):
+        """Apply the configured interaction-memory window."""
+        if len(self.messages) > self.memory_capacity * 2 + 1:
+            self.messages = [self.messages[0]] + self.messages[
+                -(self.memory_capacity * 2):
+            ]
+
+    def scripted_response(
+        self,
+        prompt,
+        response_data,
+        transcript_metadata=None,
+        remember=True,
+    ):
+        """Record a deterministic response without making an LLM call."""
+        self._truncate_messages()
+        if remember:
+            self.messages.append({"role": "user", "content": prompt})
+            messages_for_record = self.messages
+        else:
+            messages_for_record = self.messages + [
+                {"role": "user", "content": prompt}
+            ]
+        messages_sent = copy.deepcopy(messages_for_record)
+        normalized_response = {
+            "content": response_data["content"],
+            "reasoning": response_data.get("reasoning"),
+            "usage": response_data.get("usage"),
+            "response_source": response_data.get(
+                "response_source",
+                "scripted",
+            ),
+        }
+        self._log_interaction(prompt, normalized_response)
+        if remember:
+            self.messages.append(
+                {
+                    "role": "assistant",
+                    "content": normalized_response["content"],
+                    "reasoning": normalized_response["reasoning"],
+                    "usage": normalized_response["usage"],
+                }
+            )
+        self._record_interaction(
+            prompt,
+            messages_sent,
+            response_data=normalized_response,
+            transcript_metadata=transcript_metadata,
+        )
+        return normalized_response
 
     # Response with messages
     def respond(self, prompt, transcript_metadata=None, remember=True):
@@ -89,10 +142,8 @@ class Agent:
         Phase 3 myth-only memory mode so game decisions don't pollute the
         seeded-myth chat memory.
         """
-        # Truncate oldest messages if memory is full (but keep system prompt)
-        if len(self.messages) > self.memory_capacity * 2 + 1:  # *2 for user and assistant messages, +1 for system prompt
-            # Keep system prompt (first message) and last N messages
-            self.messages = [self.messages[0]] + self.messages[-(self.memory_capacity * 2):]
+        # Truncate oldest messages if memory is full (but keep system prompt).
+        self._truncate_messages()
 
         if remember:
             self.messages.append({"role": "user", "content": prompt})

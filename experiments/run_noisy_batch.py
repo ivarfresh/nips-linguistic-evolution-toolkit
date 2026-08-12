@@ -213,6 +213,24 @@ class NoisyExperimentConfig:
             return self.config['game_params']['default'].copy()
 
 
+def resolve_protocol_seeds(game_params: Dict[str, Any], combo: Dict[str, Any]):
+    """Resolve paired exogenous seeds without changing legacy unseeded cells."""
+    noise_seed = game_params.get("noise_seed")
+    pairing_seed = game_params.get("pairing_seed")
+    if not game_params.get("paired_protocol_seeds", False):
+        return noise_seed, pairing_seed
+
+    replicate_id = combo.get("replicate_id")
+    if replicate_id is None:
+        replicate_id = combo.get("run_number", 0)
+    seed_id = int(game_params.get("protocol_seed_base", 0)) + int(replicate_id)
+    if noise_seed is None:
+        noise_seed = seed_id
+    if pairing_seed is None:
+        pairing_seed = seed_id
+    return noise_seed, pairing_seed
+
+
 def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: int, output_subdir: str = 'v2') -> Dict[str, Any]:
     """
     Run a single noise experiment with the given combination.
@@ -222,6 +240,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     """
     try:
         game_params = combo['game_params']
+        configured_pairing_mode = game_params.get("pairing_mode", "balanced")
+        effective_pairing_mode = (
+            "fixed" if game_params["num_agents"] == 2 else configured_pairing_mode
+        )
+        noise_seed, pairing_seed = resolve_protocol_seeds(game_params, combo)
 
         agent_ids = [f"Agent_{i+1}" for i in range(game_params['num_agents'])]
         personas = {agent_id: combo['persona'] for agent_id in agent_ids}
@@ -251,7 +274,23 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             defector_agent_ids=game_params.get("defector_agent_ids"),
             defector_seed=defector_seed,
             defector_prompt_template=combo.get("defector_game_instruction"),
+            defector_action_policy=game_params.get(
+                "defector_action_policy",
+                "prompted",
+            ),
+            defector_myth_policy=game_params.get(
+                "defector_myth_policy",
+                "normal",
+            ),
+            defector_role_visible_to_self=game_params.get(
+                "defector_role_visible_to_self",
+                True,
+            ),
             game_prompt_addition=combo.get("game_prompt_addition", ""),
+            pairing_mode=configured_pairing_mode,
+            pairing_seed=pairing_seed,
+            noise_seed=noise_seed,
+            prompt_regime=game_params.get("prompt_regime", "legacy"),
         )
 
         myth_writer = MythWriter(
@@ -309,9 +348,21 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Myth Default Prompt Key: {combo.get('myth_default_prompt_key', 'myth_writing_default')}\n")
             f.write(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}\n")
             f.write(f"Game Prompt Addition ID: {combo.get('game_prompt_addition_id') or 'none'}\n")
+            f.write(f"Pairing Mode Configured: {configured_pairing_mode}\n")
+            f.write(f"Pairing Mode Effective: {effective_pairing_mode}\n")
+            f.write(f"Pairing Seed: {pairing_seed if pairing_seed is not None else 'none'}\n")
+            f.write(f"Noise Seed: {noise_seed if noise_seed is not None else 'none'}\n")
+            f.write(f"Prompt Regime: {game_params.get('prompt_regime', 'legacy')}\n")
+            f.write(f"History Policy: {game_params.get('history_policy', 'minimal')}\n")
+            f.write(f"Self History Window: {game_params.get('self_history_window', 1)}\n")
+            f.write(f"Co-player History Window: {game_params.get('coplayer_history_window', 0)}\n")
+            f.write(f"Show Agent Names: {game_params.get('show_agent_names', True)}\n")
             f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
             f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
             f.write(f"Defector Seed: {defector_seed}\n")
+            f.write(f"Defector Action Policy: {game_params.get('defector_action_policy', 'prompted')}\n")
+            f.write(f"Defector Myth Policy: {game_params.get('defector_myth_policy', 'normal')}\n")
+            f.write(f"Defector Role Visible To Self: {game_params.get('defector_role_visible_to_self', True)}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
@@ -361,6 +412,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
         sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)
         sim_data.run_metadata["show_agent_names"] = game_params.get("show_agent_names", True)
+        sim_data.run_metadata["pairing_mode"] = configured_pairing_mode
+        sim_data.run_metadata["effective_pairing_mode"] = effective_pairing_mode
+        sim_data.run_metadata["pairing_seed"] = pairing_seed
+        sim_data.run_metadata["noise_seed"] = noise_seed
+        sim_data.run_metadata["prompt_regime"] = game_params.get("prompt_regime", "legacy")
 
         # Save final state
         sim_data.save_state(save_path)

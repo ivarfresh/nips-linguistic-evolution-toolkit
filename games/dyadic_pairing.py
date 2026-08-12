@@ -6,6 +6,9 @@ class DyadicPairingMixin:
     """Shared pairing/name helpers for games played in two-agent dyads."""
 
     requires_even_agents = True
+    VALID_PAIRING_MODES = {"balanced", "fixed"}
+    VALID_DEFECTOR_ACTION_POLICIES = {"prompted", "forced_zero"}
+    VALID_DEFECTOR_MYTH_POLICIES = {"normal"}
 
     def set_defector_options(
         self,
@@ -13,6 +16,9 @@ class DyadicPairingMixin:
         defector_agent_ids=None,
         defector_seed=0,
         defector_prompt_template=None,
+        defector_action_policy="prompted",
+        defector_myth_policy="normal",
+        defector_role_visible_to_self=True,
     ):
         try:
             ratio = float(defector_ratio or 0.0)
@@ -34,11 +40,29 @@ class DyadicPairingMixin:
         self.requested_defector_agent_ids = requested_ids
         self.defector_seed = 0 if defector_seed is None else defector_seed
         self.defector_prompt_template = defector_prompt_template
+        self.defector_action_policy = self._validate_choice(
+            "defector_action_policy",
+            defector_action_policy,
+            self.VALID_DEFECTOR_ACTION_POLICIES,
+        )
+        self.defector_myth_policy = self._validate_choice(
+            "defector_myth_policy",
+            defector_myth_policy,
+            self.VALID_DEFECTOR_MYTH_POLICIES,
+        )
+        self.defector_role_visible_to_self = self._coerce_bool(
+            defector_role_visible_to_self,
+            True,
+        )
         self.defector_agent_ids = []
 
     def _init_dyadic_agents(self):
         self.agent_ids = ["Agent_1", "Agent_2"]
         self.agent_names = {agent_id: agent_id for agent_id in self.agent_ids}
+        if not hasattr(self, "pairing_mode"):
+            self.pairing_mode = "balanced"
+        if not hasattr(self, "pairing_seed"):
+            self.set_pairing_seed(None)
         if not hasattr(self, "show_agent_names"):
             self.show_agent_names = True
         if not hasattr(self, "defector_ratio"):
@@ -90,7 +114,7 @@ class DyadicPairingMixin:
         self.defector_agent_ids = [
             agent_id for agent_id in self.agent_ids if agent_id in selected_ids
         ]
-        if self.defector_agent_ids and not self.defector_prompt_template:
+        if self._defector_prompt_is_required() and not self.defector_prompt_template:
             raise ValueError(
                 "A defector_prompt_template is required when defectors are configured."
             )
@@ -104,7 +128,10 @@ class DyadicPairingMixin:
                 "Saved defector_agent_ids are not in the current population: "
                 + ", ".join(unknown_ids)
             )
-        if restored and not self.defector_prompt_template:
+        if (
+            self._defector_prompt_is_required(restored)
+            and not self.defector_prompt_template
+        ):
             raise ValueError(
                 "A defector_prompt_template is required when restoring defectors."
             )
@@ -115,6 +142,41 @@ class DyadicPairingMixin:
 
     def is_defector(self, agent_id):
         return agent_id in self.defector_agent_ids
+
+    def _validate_choice(self, name, value, valid_values):
+        normalized = str(value or "").strip().lower()
+        if normalized not in valid_values:
+            choices = ", ".join(sorted(valid_values))
+            raise ValueError(f"{name} must be one of: {choices}; got {value!r}")
+        return normalized
+
+    def _defector_prompt_is_required(self, agent_ids=None):
+        configured_ids = (
+            self.defector_agent_ids if agent_ids is None else agent_ids
+        )
+        return bool(configured_ids) and (
+            self.defector_action_policy == "prompted"
+            or self.defector_role_visible_to_self
+        )
+
+    def get_forced_game_response(self, agent_id, role):
+        """Return a deterministic game response for a scripted defector."""
+        if not self.is_defector(agent_id):
+            return None
+        if self.defector_action_policy != "forced_zero":
+            return None
+        if role == "investor":
+            content = '{"send": 0}'
+        elif role == "trustee":
+            content = '{"return": 0}'
+        else:
+            raise ValueError(f"Unknown trust-game role for {agent_id}: {role!r}")
+        return {
+            "content": content,
+            "reasoning": None,
+            "usage": None,
+            "response_source": "forced_zero",
+        }
 
     def get_agent_types(self):
         return {
@@ -133,12 +195,30 @@ class DyadicPairingMixin:
             "defector_count": defector_count,
             "defector_agent_ids": list(self.defector_agent_ids),
             "defector_seed": self.defector_seed,
+            "defector_action_policy": self.defector_action_policy,
+            "defector_myth_policy": self.defector_myth_policy,
+            "defector_role_visible_to_self": self.defector_role_visible_to_self,
             "agent_types": self.get_agent_types(),
         }
 
     def _sync_agent_aliases(self):
         self.agent_1_id = self.agent_ids[0] if self.agent_ids else "Agent_1"
         self.agent_2_id = self.agent_ids[1] if len(self.agent_ids) > 1 else "Agent_2"
+
+    def set_pairing_mode(self, pairing_mode="balanced"):
+        normalized = str(pairing_mode or "balanced").strip().lower()
+        if normalized not in self.VALID_PAIRING_MODES:
+            choices = ", ".join(sorted(self.VALID_PAIRING_MODES))
+            raise ValueError(
+                f"pairing_mode must be one of: {choices}; got {pairing_mode!r}"
+            )
+        self.pairing_mode = normalized
+
+    def set_pairing_seed(self, pairing_seed=None):
+        self.pairing_seed = pairing_seed
+        self._pairing_rng = (
+            random if pairing_seed is None else random.Random(pairing_seed)
+        )
 
     def get_agent_display_name(self, agent_id):
         return self.agent_names.get(agent_id, agent_id)
@@ -211,7 +291,10 @@ class DyadicPairingMixin:
             else:
                 raw_pairs = [(self.agent_2_id, self.agent_1_id)]
         elif sim_data is not None:
-            pairings = self._get_balanced_multi_agent_pairings(turn, sim_data)
+            if getattr(self, "pairing_mode", "balanced") == "fixed":
+                pairings = self._get_fixed_multi_agent_pairings(turn)
+            else:
+                pairings = self._get_balanced_multi_agent_pairings(turn, sim_data)
             self._round_pairings[turn] = pairings
             return pairings
         else:
@@ -243,6 +326,23 @@ class DyadicPairingMixin:
             self._normalize_pairing(turn, idx, pairing)
             for idx, pairing in enumerate(scheduled, start=1)
         ]
+
+    def _get_fixed_multi_agent_pairings(self, turn):
+        """Keep each adjacent agent pair together and swap roles by parity."""
+        base_pairs = [
+            (self.agent_ids[index], self.agent_ids[index + 1])
+            for index in range(0, len(self.agent_ids), 2)
+        ]
+        pairings = []
+        for idx, (first, second) in enumerate(base_pairs, start=1):
+            if turn % 2 == 1:
+                investor_id, trustee_id = first, second
+            else:
+                investor_id, trustee_id = second, first
+            pairings.append(
+                self._pairing_record(turn, idx, investor_id, trustee_id)
+            )
+        return pairings
 
     def _get_total_rounds(self, turn, sim_data):
         metadata = getattr(sim_data, "run_metadata", {}) or {}
@@ -323,7 +423,7 @@ class DyadicPairingMixin:
         while sum(targets.values()) < total_sender_slots:
             min_count = min(targets.values())
             candidates = [agent_id for agent_id, count in targets.items() if count == min_count]
-            targets[random.choice(candidates)] += 1
+            targets[self._pairing_rng.choice(candidates)] += 1
 
         return targets
 
@@ -374,7 +474,7 @@ class DyadicPairingMixin:
             for agent_id in self.agent_ids
         }
         shuffled_agents = list(self.agent_ids)
-        random.shuffle(shuffled_agents)
+        self._pairing_rng.shuffle(shuffled_agents)
         senders = sorted(
             shuffled_agents,
             key=lambda agent_id: remaining_sender_need[agent_id],
@@ -382,8 +482,8 @@ class DyadicPairingMixin:
         )[:sender_slots]
         receivers = [agent_id for agent_id in self.agent_ids if agent_id not in set(senders)]
 
-        random.shuffle(senders)
-        random.shuffle(receivers)
+        self._pairing_rng.shuffle(senders)
+        self._pairing_rng.shuffle(receivers)
         pairs = []
         available_receivers = set(receivers)
         for sender in senders:
@@ -392,11 +492,11 @@ class DyadicPairingMixin:
                 available_receivers,
                 partner_counts,
             )
-            receiver = random.choice(best_receivers)
+            receiver = self._pairing_rng.choice(best_receivers)
             available_receivers.remove(receiver)
             pairs.append((sender, receiver))
 
-        random.shuffle(pairs)
+        self._pairing_rng.shuffle(pairs)
         return [
             self._pairing_record(turn, idx, investor_id, trustee_id)
             for idx, (investor_id, trustee_id) in enumerate(pairs, start=1)
@@ -424,12 +524,12 @@ class DyadicPairingMixin:
 
     def _random_multi_agent_pairs(self):
         shuffled = list(self.agent_ids)
-        random.shuffle(shuffled)
+        self._pairing_rng.shuffle(shuffled)
 
         raw_pairs = []
         for idx in range(0, len(shuffled), 2):
             pair = shuffled[idx:idx + 2]
-            random.shuffle(pair)
+            self._pairing_rng.shuffle(pair)
             raw_pairs.append(tuple(pair))
         return raw_pairs
 
@@ -530,7 +630,11 @@ class DyadicPairingMixin:
 
     def with_prompt_context(self, prompt, agent_id, opponent_id=None):
         contextualized_prompt = prompt
-        if len(self.agent_ids) > 2 and self.names_visible_in_prompts():
+        unified_prompts = getattr(self, "prompt_regime", "legacy") == "unified"
+        if (
+            (len(self.agent_ids) > 2 or unified_prompts)
+            and self.names_visible_in_prompts()
+        ):
             lines = [
                 f"Your name in this experiment is {self.get_agent_display_name(agent_id)}."
             ]
@@ -541,7 +645,10 @@ class DyadicPairingMixin:
                 )
             contextualized_prompt = "\n".join(lines) + "\n\n" + prompt
 
-        if self.is_defector(agent_id):
+        if self.is_defector(agent_id) and (
+            self.defector_action_policy == "prompted"
+            or self.defector_role_visible_to_self
+        ):
             contextualized_prompt = (
                 contextualized_prompt.rstrip()
                 + "\n\n"
@@ -551,18 +658,48 @@ class DyadicPairingMixin:
         return contextualized_prompt
 
     def with_system_context(self, prompt, agent_id):
-        if len(self.agent_ids) <= 2:
+        unified_prompts = getattr(self, "prompt_regime", "legacy") == "unified"
+        if len(self.agent_ids) <= 2 and not unified_prompts:
             return prompt
 
-        return (
-            prompt
-            + "\n\nMULTI-AGENT SETTING:\n"
-            + f"- There are {len(self.agent_ids)} agents in this run.\n"
-            + "- Each round, all agents are paired into dyads from the full pool. Pairings are randomized, but the schedule balances sender and receiver roles across the run.\n"
-            + "- You play one sender-receiver game with your paired opponent each round.\n"
-            + "- Your role may repeat across consecutive rounds, but by the end of the run every agent will have acted as sender and receiver equally often when the round count allows it.\n"
-            + self._system_name_context(agent_id)
+        effective_pairing_mode = (
+            "fixed"
+            if len(self.agent_ids) == 2
+            else getattr(self, "pairing_mode", "balanced")
         )
+        if not unified_prompts and effective_pairing_mode == "balanced":
+            return (
+                prompt
+                + "\n\nMULTI-AGENT SETTING:\n"
+                + f"- There are {len(self.agent_ids)} agents in this run.\n"
+                + "- Each round, all agents are paired into dyads from the full pool. Pairings are randomized, but the schedule balances sender and receiver roles across the run.\n"
+                + "- You play one sender-receiver game with your paired opponent each round.\n"
+                + "- Your role may repeat across consecutive rounds, but by the end of the run every agent will have acted as sender and receiver equally often when the round count allows it.\n"
+                + self._system_name_context(agent_id)
+            )
+
+        lines = [
+            "POPULATION SETTING:",
+            f"- There are {len(self.agent_ids)} agents in this run.",
+        ]
+        if effective_pairing_mode == "fixed":
+            lines.extend(
+                [
+                    "- You remain paired with the same opponent throughout the run.",
+                    "- You play one sender-receiver game with that opponent each round.",
+                    "- Sender and receiver roles alternate every round.",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "- Each round, all agents are paired into dyads from the full pool. Pairings are randomized, but the schedule balances sender and receiver roles across the run.",
+                    "- You play one sender-receiver game with your paired opponent each round.",
+                    "- Your role may repeat across consecutive rounds, but by the end of the run every agent will have acted as sender and receiver equally often when the round count allows it.",
+                ]
+            )
+        lines.append(self._system_name_context(agent_id))
+        return prompt + "\n\n" + "\n".join(lines)
 
     def _system_name_context(self, agent_id):
         if self.names_visible_in_prompts():

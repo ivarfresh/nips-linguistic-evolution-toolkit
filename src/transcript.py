@@ -150,11 +150,19 @@ def _add_run_metadata(pdf: "_SimplePdf", state: Dict[str, Any], show_agent_names
         "self_history_window",
         "coplayer_history_window",
         "show_agent_names",
+        "pairing_mode",
+        "effective_pairing_mode",
+        "pairing_seed",
+        "noise_seed",
+        "prompt_regime",
         "defector_ratio_requested",
         "defector_ratio_actual",
         "defector_count",
         "defector_agent_ids",
         "defector_seed",
+        "defector_action_policy",
+        "defector_myth_policy",
+        "defector_role_visible_to_self",
     ]:
         if key in metadata:
             pdf.add_kv(key, metadata.get(key))

@@ -547,30 +547,54 @@ def run_simulation(
                             if myth_context:
                                 prompt = f"{prompt}\n\n{myth_context}"
 
-                        response_data = agent.respond(
-                            prompt,
-                            transcript_metadata=_interaction_metadata(
-                                turn,
-                                "game",
-                                agent_id,
-                                roles_by_agent,
-                                pairings,
-                                task_index,
-                                move_index,
-                                getattr(agent, "population_role", "standard"),
-                            ),
-                            remember=(
-                                chat_memory_mode
-                                not in ("myth_only", "hybrid", "stateless")
-                            ),
+                        interaction_metadata = _interaction_metadata(
+                            turn,
+                            "game",
+                            agent_id,
+                            roles_by_agent,
+                            pairings,
+                            task_index,
+                            move_index,
+                            getattr(agent, "population_role", "standard"),
                         )
+                        remember_game = chat_memory_mode not in (
+                            "myth_only",
+                            "hybrid",
+                            "stateless",
+                        )
+                        forced_response = None
+                        if hasattr(game, "get_forced_game_response"):
+                            forced_response = game.get_forced_game_response(
+                                agent_id,
+                                roles_by_agent.get(agent_id),
+                            )
+                        if forced_response is not None:
+                            interaction_metadata["response_source"] = forced_response[
+                                "response_source"
+                            ]
+                            response_data = agent.scripted_response(
+                                prompt,
+                                forced_response,
+                                transcript_metadata=interaction_metadata,
+                                remember=remember_game,
+                            )
+                        else:
+                            response_data = agent.respond(
+                                prompt,
+                                transcript_metadata=interaction_metadata,
+                                remember=remember_game,
+                            )
                         agent_responses[agent_id] = response_data
 
                         # Store full game response data in round_entry
                         round_entry["game_responses"][agent_id] = {
                             "content": response_data["content"],
                             "reasoning": response_data.get("reasoning"),
-                            "usage": response_data.get("usage")
+                            "usage": response_data.get("usage"),
+                            "response_source": response_data.get(
+                                "response_source",
+                                "llm",
+                            ),
                         }
 
                         print(f"\n{agent_id} ({role_name}) prompt: {prompt}")
@@ -657,7 +681,11 @@ def run_simulation(
                             round_entry["myth_responses"][agent_id] = {
                                 "content": myth_response_data["content"],
                                 "reasoning": myth_response_data.get("reasoning"),
-                                "usage": myth_response_data.get("usage")
+                                "usage": myth_response_data.get("usage"),
+                                "response_source": myth_response_data.get(
+                                    "response_source",
+                                    "llm",
+                                ),
                             }
 
                             current_role = _role_label(roles_by_agent.get(agent_id))

@@ -1,3 +1,71 @@
+### 2026-08-12 — Scripted 8-agent defector treatment implemented
+
+#### Design
+- Added an explicit `defector_action_policy: forced_zero`. Designated agents no
+  longer make LLM calls for game decisions: senders deterministically emit
+  `{"send": 0}` and receivers emit `{"return": 0}`.
+- The scripted game prompt/response is still appended to each defector's private
+  memory under `memory_primary`. Defectors use the ordinary LLM path for myth
+  writing (`defector_myth_policy: normal`), so game behavior is fixed while
+  cultural output remains endogenous.
+- The primary cells set `defector_role_visible_to_self: false`: neither the
+  treatment label nor the phrase "designated defector" appears in the agent's
+  game prompt. Other agents are never given private treatment identities.
+- Legacy defector configurations retain their prompt-driven behavior unless
+  they explicitly select `forced_zero`.
+
+#### Planned experiment (not outcome evidence yet)
+- Added paired 0%-versus-25% (0 versus 2 of 8) controls for game-only,
+  game→myth, and myth→game. All use balanced rotating pairings, anonymous
+  identities, informed bidirectional ±1 noise, unified prompts, no injected
+  game-history recap, and paired pairing/noise seeds.
+- The two-task cells use capacity 6 and game-only uses capacity 3, retaining
+  approximately three completed rounds of private interaction memory.
+- The protocol audit now checks that all forced actual actions are zero, forced
+  game responses make no LLM calls, defector myths do use the LLM, and the
+  hidden treatment label does not leak into prompts.
+
+---
+
+### 2026-08-12 — Population/reputation isolation hardened
+
+#### Why the earlier decomposition is not confirmatory
+- The `noise2i_full8match_game` dyads still used the broken zero-send transfer
+  path, while the matched 8-agent runs used the clean path.
+- The 2-agent path also ignored `self_history_window` and
+  `coplayer_history_window`; `history_policy: minimal` injected one own-game
+  recap rather than removing history; and the fixed-pair system prompt still
+  claimed that pairings were randomized. The proposed named-fixed test also
+  exposed repeated partnership through "against you" co-player history.
+- Consequently, the reported 2-vs-8 separation and its anonymity mechanism are
+  not established. The transfer-clean 8-agent files remain exploratory
+  within-population evidence.
+
+#### Implementation
+- Ported validated `pairing_mode: fixed` support onto the corrected branch.
+  Fixed populations now receive accurate same-opponent/alternating-role system
+  instructions, while legacy balanced prompts remain unchanged.
+- Added `prompt_regime: unified`, which routes both 2- and 8-agent later rounds
+  through the same sender/receiver builder and makes the configured history
+  policy apply at both population sizes.
+- History and prompt-regime values now fail closed on unknown strings. New
+  causal cells use `history_policy: none`, so own decisions remain solely in
+  individual chat memory and no synthetic self/co-player record is injected.
+- Pairing mode, effective pairing mode, prompt regime, windows, name visibility,
+  pairing seed, and noise seed are recorded in logs, JSON metadata, and transcript
+  PDFs. Exogenous pairing schedules and per-event noise are paired by replicate
+  and reproducible in the new cells.
+
+#### New planned cells (not outcome evidence yet)
+- `noise_population_isolation_v2_game`: fixed 2-agent versus fixed 8-agent,
+  identical configuration except `num_agents`, capacity 3, hidden names, no
+  injected history, and the unified prompt regime.
+- `noise8i_identity_v2_game`: rotating 8-agent named versus anonymous, identical
+  except name visibility, with no injected co-player block. Stable names are
+  therefore the only partner-identity cue available across re-encounters.
+
+---
+
 ### 2026-08-12 — Protocol repair: corrected dyad noise and matched-memory v2
 
 #### What changed

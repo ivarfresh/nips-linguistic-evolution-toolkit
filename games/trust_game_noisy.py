@@ -1,3 +1,4 @@
+import hashlib
 import random
 import re
 
@@ -16,6 +17,9 @@ OTHER_PLAYER_NAMES = {
 
 class TrustGameNoisy(DyadicPairingMixin, Game):
     """Trust/Investment game with amount noise and optional asymmetric naming."""
+
+    VALID_HISTORY_POLICIES = {"none", "minimal", "self_and_coplayer"}
+    VALID_PROMPT_REGIMES = {"legacy", "unified"}
 
     def __init__(
         self,
@@ -37,9 +41,20 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         defector_agent_ids=None,
         defector_seed=0,
         defector_prompt_template=None,
+        defector_action_policy="prompted",
+        defector_myth_policy="normal",
+        defector_role_visible_to_self=True,
         game_prompt_addition="",
+        pairing_mode="balanced",
+        pairing_seed=None,
+        noise_seed=None,
+        prompt_regime="legacy",
     ):
         super().__init__()
+        self.set_pairing_mode(pairing_mode)
+        self.set_pairing_seed(pairing_seed)
+        self.noise_seed = noise_seed
+        self.prompt_regime = self._validate_prompt_regime(prompt_regime)
         self.endowment = endowment
         self.multiplier = multiplier
         self.system_prompt_template = system_prompt_template
@@ -49,7 +64,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self.later_trustee_template = later_trustee_template
         self.personas = personas or {}
         self.noise_config = noise_config or {}
-        self.history_policy = history_policy or "minimal"
+        self.history_policy = self._validate_history_policy(history_policy)
         self.self_history_window = self._coerce_history_window(self_history_window, 1)
         self.coplayer_history_window = self._coerce_history_window(coplayer_history_window, 0)
         self.game_prompt_addition = (game_prompt_addition or "").strip()
@@ -59,6 +74,9 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             defector_agent_ids=defector_agent_ids,
             defector_seed=defector_seed,
             defector_prompt_template=defector_prompt_template,
+            defector_action_policy=defector_action_policy,
+            defector_myth_policy=defector_myth_policy,
+            defector_role_visible_to_self=defector_role_visible_to_self,
         )
 
         if isinstance(other_player_names, str):
@@ -70,28 +88,29 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
 
         self._init_dyadic_agents()
 
-    def _apply_noise(self, actual_amount, max_amount):
+    def _apply_noise(self, actual_amount, max_amount, rng=None):
         if not self.noise_config:
             return actual_amount, actual_amount
 
+        rng = rng or random
         noise_type = self.noise_config.get("type", "none")
         if noise_type == "uniform":
             noise_range = self.noise_config.get("range", 0)
             direction = self.noise_config.get("direction", "both")
             if direction == "negative":
-                noise = random.uniform(-noise_range, 0)
+                noise = rng.uniform(-noise_range, 0)
             elif direction == "positive":
-                noise = random.uniform(0, noise_range)
+                noise = rng.uniform(0, noise_range)
             else:
-                noise = random.uniform(-noise_range, noise_range)
+                noise = rng.uniform(-noise_range, noise_range)
             communicated = actual_amount + noise
             communicated = max(0, min(communicated, max_amount))
         elif noise_type == "probabilistic":
             prob = self.noise_config.get("probability", 0)
-            if random.random() < prob:
+            if rng.random() < prob:
                 replacement = self.noise_config.get("replacement", "random")
                 if replacement == "random":
-                    communicated = random.uniform(0, max_amount)
+                    communicated = rng.uniform(0, max_amount)
                 elif replacement == "zero":
                     communicated = 0
                 elif replacement == "max":
@@ -105,17 +124,59 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
 
         return round(communicated, 2), actual_amount
 
+    def _apply_noise_for_event(
+        self,
+        actual_amount,
+        max_amount,
+        *,
+        turn,
+        dyad_id,
+        action_type,
+    ):
+        if self.noise_seed is None:
+            return self._apply_noise(actual_amount, max_amount)
+        seed_material = (
+            f"{self.noise_seed}|{turn}|{dyad_id}|{action_type}".encode("utf-8")
+        )
+        event_seed = int.from_bytes(
+            hashlib.sha256(seed_material).digest()[:8],
+            "big",
+        )
+        return self._apply_noise(
+            actual_amount,
+            max_amount,
+            rng=random.Random(event_seed),
+        )
+
     def _should_apply_noise_to(self, action_type):
         applies_to = self.noise_config.get("applies_to", "sent")
         return applies_to == "both" or applies_to == action_type
 
     def _role_display_name(self, pairing, role):
         agent_id = pairing[role]
-        if len(self.agent_ids) > 2:
+        if len(self.agent_ids) > 2 or self.prompt_regime == "unified":
             if not self.names_visible_in_prompts():
                 return "the sender" if role == "investor" else "the receiver"
             return self.get_agent_display_name(agent_id)
         return self.other_player_names[role]
+
+    def _validate_history_policy(self, history_policy):
+        normalized = str(history_policy or "minimal").strip().lower()
+        if normalized not in self.VALID_HISTORY_POLICIES:
+            choices = ", ".join(sorted(self.VALID_HISTORY_POLICIES))
+            raise ValueError(
+                f"history_policy must be one of: {choices}; got {history_policy!r}"
+            )
+        return normalized
+
+    def _validate_prompt_regime(self, prompt_regime):
+        normalized = str(prompt_regime or "legacy").strip().lower()
+        if normalized not in self.VALID_PROMPT_REGIMES:
+            choices = ", ".join(sorted(self.VALID_PROMPT_REGIMES))
+            raise ValueError(
+                f"prompt_regime must be one of: {choices}; got {prompt_regime!r}"
+            )
+        return normalized
 
     def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
         if self.game_prompt_addition:
@@ -197,7 +258,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def get_game_prompt_later_round(self, agent_id, turn, sim_data, last_responses):
-        if len(self.agent_ids) > 2:
+        if len(self.agent_ids) > 2 or self.prompt_regime == "unified":
             return self._get_multi_agent_later_prompt(agent_id, turn, sim_data)
 
         pairing = self.get_pairing_for_agent(agent_id, turn, sim_data)
@@ -283,6 +344,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def _get_multi_agent_later_prompt(self, agent_id, turn, sim_data):
+        """Build the shared later-round prompt used by every unified cell."""
         pairing = self.get_pairing_for_agent(agent_id, turn, sim_data)
         opponent_id = self.get_opponent_id(agent_id, turn, sim_data)
         role = pairing["roles"][agent_id]
@@ -454,7 +516,13 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         if dyad_id in pending:
             return pending[dyad_id]
         if self._should_apply_noise_to("sent"):
-            sent_communicated, _ = self._apply_noise(sent_actual, self.endowment)
+            sent_communicated, _ = self._apply_noise_for_event(
+                sent_actual,
+                self.endowment,
+                turn=pairing["round"],
+                dyad_id=dyad_id,
+                action_type="sent",
+            )
         else:
             sent_communicated = sent_actual
         pending[dyad_id] = sent_communicated
@@ -500,7 +568,13 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             )
 
             if self._should_apply_noise_to("returned"):
-                returned_communicated, _ = self._apply_noise(returned_actual, received_actual)
+                returned_communicated, _ = self._apply_noise_for_event(
+                    returned_actual,
+                    received_actual,
+                    turn=turn,
+                    dyad_id=pairing["dyad_id"],
+                    action_type="returned",
+                )
             else:
                 returned_communicated = returned_actual
 
