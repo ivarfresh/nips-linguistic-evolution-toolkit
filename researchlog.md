@@ -1,3 +1,29 @@
+### 2026-08-17 — RETRACTION: the num_agents result was a transfer-noise-bug artifact
+
+#### What changed
+- Aron confirmed and fixed a bug in the **2-agent** later-round transfer path:
+  the receiver-visible noisy transfer was generated/cached BEFORE the sender
+  decided, so it defaulted to ~$0 — receivers were told the sender sent ~$0.
+  Fix on `codex/fix-dyad-transfer-noise` (commit 92406b99; test
+  `tests/test_trust_game_noisy_transfer.py`).
+
+#### Consequence
+- **Withdraw the 2026-08-11 conclusion "the noise buffer is num_agents."** The
+  dyad collapse to ~$46 that every decomposition cell below was measured against
+  (plain dyad, C1 cap6, C2 anon, C3 match8, C4 full8match) ran on the broken
+  path; the spurious $0 is a sufficient alternative explanation. These cells do
+  not establish a population-size interaction. The 2026-08-11 "confounded" and
+  "RESOLVED" entries and the earlier 2026-08-10 dyad numbers are all superseded.
+- The 4-agent bug review missed this: it reconciled payoffs from *recorded*
+  sent/returned values (internally consistent); the bug is about which value the
+  noise is *based on*, which reconciliation cannot see.
+- Corrected direction (Aron, low power): game→myth slightly > game-only at 8
+  agents, not at 2; differences small. Canonical corrected line is
+  `codex/fix-dyad-transfer-noise` (matched 3-round memory both regimes; myth-link
+  applied once). NOTE_FOR_ARON.md on this branch updated to a retraction.
+
+---
+
 ### 2026-08-11 — Result: RESOLVED — the noise buffer is num_agents itself
 
 #### What ran
