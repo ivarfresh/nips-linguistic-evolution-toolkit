@@ -43,10 +43,12 @@ else
 fi
 
 # --- sync files ------------------------------------------------------------
-echo "Syncing inspector.html -> index.html and run_plots/ ..."
+echo "Syncing inspector.html -> index.html, run_plots/, runs/, agg_plots/ ..."
 cp "$SRC/inspector.html" "$CLONE_DIR/index.html"
-rm -rf "$CLONE_DIR/run_plots"
-cp -R "$SRC/run_plots" "$CLONE_DIR/run_plots"
+for d in run_plots runs agg_plots; do
+  rm -rf "$CLONE_DIR/$d"
+  if [[ -d "$SRC/$d" ]]; then cp -R "$SRC/$d" "$CLONE_DIR/$d"; fi
+done
 
 # --- commit & push (no-op if nothing changed) ------------------------------
 cd "$CLONE_DIR"
