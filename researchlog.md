@@ -1,3 +1,70 @@
+### 2026-08-20 — Result: return-vs-send gap is a denominator artifact
+
+**Time:** 1.0 hour
+
+#### What we found
+- The 11/02 call-note question ("why is trustee behavior always lower than investor behavior?") is resolved: the plots normalize send by the $5 endowment but return by the *tripled* amount received. In dollars, receivers returned more than was sent in 98.5% of the 1,500 corrected confirmatory dyad-rounds (zero zero-sends), and return/sent sits ~150% in every cell. Senders profit; the lower return line is a chart artifact, not stinginess.
+- Mechanism: receivers anchor on "return half of the tripled pool" as a fairness focal point (~50–54% in all six cells, present in game-only runs, stabilized by myths), while sends drift up to 70–90% of endowment. The old zero-send explanation is retracted for the corrected data. Human lit shows the same normalized ordering (Johnson & Mislin 2011: ~50% sent, ~37% returned = ~break-even in dollars); LLM lit is mixed.
+
+#### What changed
+- Fixed three analysis-metric problems: zero-received rounds now yield NaN (no-opportunity) instead of 0% cooperation; endowment inference corrected to payoff + sent − returned; inspector uses each run's configured endowment instead of hardcoded $5. Regression tests in `tests/test_analysis_metrics.py` (48 passed).
+
+#### Known gaps
+- Charts still overlay the two mismatched ratios on one axis; planned fix is a returned/sent line plus reference lines at 1/3 (sender break-even) and 1/2 (split the pool).
+
+---
+
+### 2026-08-19 — Result: 8-agent washout — edge grows
+
+**Time:** 0.5 hour
+
+#### What ran
+- Completed the 8-agent 20-round washout at n=5/arm (`noise8i_washout_myth_game` resumed from checkpoints + `noise8i_washout_game_myth` fresh; Sonnet 4.5, informed bidirectional noise, memory-primary, `--workers 1` after three OOM kills at higher worker counts). Data: `data/json/noise_experiments/washout_20round/noise8i_*`; plot: `data/plots/myth_taskorder_trajectories/washout_20round_8-agent.png`.
+
+#### Headline results
+- The Myth→Game edge does NOT wash out at 8 agents — it compounds: cumulative-balance lead +11.4/agent at round 10 → +17.9 at round 20 (vs the 2-agent result where per-round sends converge and the lead plateaus ~+6).
+- Per-round sends never converge: Myth→Game jumps to ~4.9/5 by round 4 and stays; Game→Myth cold-opens ~3.0 and only reaches ~4.4 by round 20.
+
+#### Known limit
+- n=5/arm (dropped from 10 for time/memory) — directional, not confirmatory. One myth_game replicate is filed as `rep00_*_2.json` (independent rerun of the rep00 cell; pooling the folder yields the intended n=5).
+
+---
+
+### 2026-08-19 — Result: meme evolution traced
+
+**Time:** 1.0 hour
+
+#### What ran
+- Added a deterministic ontology of nine strategy memes with variants, then traced inheritance, variant shifts, new-to-lineage appearances, recombination candidates, survival, and partner-myth→game uptake over all 60 corrected runs. The corpus contains 12,033 meme occurrences and 77,909 visible exposure edges; outputs are in `data/analysis/meme_evolution_2026_08_19/`.
+
+#### Headline results
+- Myth-bearing conditions contain more ideas per capsule and much more inheritance: 2-agent game-only 1.78 (±0.21) memes/capsule and 66.12% (±3.91%) inherited, versus game→myth 2.69 (±0.42) / 87.49% (±2.94%) and myth→game 2.79 (±0.56) / 87.58% (±2.99%). The 8-agent pattern is similar.
+- Proportional reciprocity is the dominant meme: 74.61% (±16.27%) capsule prevalence, 76.67% (±17.28%) edge transmission, and 82.76% (±17.13%) partner-myth→game transmission. About 25–31% of retained memes change variant across conditions, usually between fixed-percentage and responsive-reward formulations.
+- Found 62 candidate numerical partner-myth→game belief packets. A strict detector requiring explicit myth attribution plus an actual/perceived contrast found two clear decodings, both in the same 2-agent myth→game run; this is real but not yet shown to be common.
+
+#### Known limit
+- Meme families are predeclared lexical-semantic detectors, and visible transmission is not behavioral selection. The next causal test is controlled meme deletion/transplant with actions held fixed, followed by free-play validation.
+
+---
+
+### 2026-08-19 — Result: capsule genealogy quantified
+
+**Time:** 1.0 hour
+
+#### What ran
+- Added a deterministic, no-LLM genealogy over all 60 corrected informed-noise runs: 5,000 visible assistant capsules, 52,425 claim instances, and 32,700 verifiably visible parent→child edges. Outputs and reproduction report are in `data/analysis/capsule_genealogies_2026_08_19/`.
+- Claims are separated into event references, round/action quantities, rates, and predeclared normative frames; edges come only from exact `messages_sent` provenance.
+
+#### Headline results
+- Exact fact inheritance is strongest in dyads: 42.92% (±10.19%) game-only, 56.76% (±10.37%) game→myth, and 61.11% (±15.49%) myth→game, versus 11.35% (±2.80%), 13.22% (±4.06%), and 14.97% (±2.16%) in the corresponding 8-agent cells.
+- In dyadic myth→game, 30.27% (±6.20%) of event references reached earlier than the oldest literal game prompt still in context; the 8-agent counterpart was 2.49% (±3.27%). Norm inheritance was ~90% in every myth-bearing cell.
+- The hand-traced noisy-belief chain reproduces automatically: Agent_1's round-7 myth carries its perceived 79% round-6 send into Agent_2's round-8 game reasoning, where Agent_2 contrasts it with its actual 65% send.
+
+#### Known limit
+- This establishes visible textual inheritance, not causal influence. Nonexact round/action quantity pairs remain labelled `different_quantity_candidate` because unresolved actor perspective can mimic mutation; deletion/transplant ablations are required for causality.
+
+---
+
 ### 2026-08-12 — Corrected non-defector confirmatory rerun prepared
 
 - Hardened simulation-level retries: an unanswered prompt is now removed from
