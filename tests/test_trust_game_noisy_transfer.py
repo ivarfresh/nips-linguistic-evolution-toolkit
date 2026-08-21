@@ -445,6 +445,29 @@ class PairingAndPromptRegimeTests(unittest.TestCase):
                 population_history_window=0,
             )
 
+    def test_stable_ids_identify_current_pair_without_history(self):
+        game = build_game(
+            num_agents=8,
+            history_policy="stable_ids",
+            show_agent_names=False,
+            pairing_mode="fixed",
+        )
+        sim_data = build_population_ledger_state()
+
+        prompt = game.get_game_prompt_later_round(
+            "Agent_2", 2, sim_data, {}
+        )
+
+        self.assertIn("Your stable population ID is Member B", prompt)
+        self.assertIn(
+            "current co-player's stable population ID is Member A",
+            prompt,
+        )
+        self.assertIn("No population-wide interaction history is shown", prompt)
+        self.assertNotIn("- Round 1:", prompt)
+        self.assertNotIn("sent $4.1", prompt)
+        self.assertNotIn("Agent_1", prompt)
+
     def test_invalid_protocol_enums_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "history_policy"):
             build_game(history_policy="typo")
@@ -924,6 +947,29 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             self.assertEqual(params["memory_capacity"], 6)
             self.assertEqual(params["history_policy"], "population_ledger")
             self.assertEqual(params["population_history_window"], 3)
+            self.assertEqual(
+                resolve_protocol_seeds(params, combo),
+                (
+                    202608200 + combo["replicate_id"],
+                    202608200 + combo["replicate_id"],
+                ),
+            )
+
+        stable_ids = self.config.get_experiment_combinations(
+            "noise8_stable_ids_signed_gpt_n5_game"
+        )
+        self.assertEqual(len(stable_ids), 5)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in stable_ids},
+            set(range(5)),
+        )
+        for combo in stable_ids:
+            params = combo["game_params"]
+            self.assertEqual(combo["task_order"], ["game"])
+            self.assertEqual(params["memory_capacity"], 3)
+            self.assertEqual(params["history_policy"], "stable_ids")
+            self.assertEqual(params["population_history_window"], 0)
+            self.assertFalse(params["show_agent_names"])
             self.assertEqual(
                 resolve_protocol_seeds(params, combo),
                 (

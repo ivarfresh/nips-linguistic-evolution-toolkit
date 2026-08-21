@@ -23,6 +23,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         "minimal",
         "self_and_coplayer",
         "population_ledger",
+        "stable_ids",
     }
     VALID_PROMPT_REGIMES = {"legacy", "unified"}
 
@@ -197,7 +198,18 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         return normalized
 
     def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
-        if self.history_policy == "population_ledger":
+        if self.history_policy == "stable_ids":
+            identity_context = (
+                "STABLE POPULATION IDS:\n"
+                f"- Your stable population ID is {self.public_ledger_label(agent_id)}.\n"
+                "- Your current co-player's stable population ID is "
+                f"{self.public_ledger_label(opponent_id)}.\n"
+                "- These neutral IDs stay the same across rounds and do not reveal "
+                "agent names.\n"
+                "- No population-wide interaction history is shown in this condition."
+            )
+            prompt = f"{identity_context}\n\n{prompt}"
+        elif self.history_policy == "population_ledger":
             ledger_context = (
                 "PUBLIC POPULATION LEDGER:\n"
                 f"- Your stable public ID is {self.public_ledger_label(agent_id)}.\n"
@@ -417,6 +429,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
 
     def _format_multi_agent_history(self, agent_id, opponent_id, turn, sim_data):
         if self.history_policy == "none":
+            return ""
+        if self.history_policy == "stable_ids":
             return ""
         if self.history_policy == "population_ledger":
             return self._format_population_ledger(turn, sim_data)

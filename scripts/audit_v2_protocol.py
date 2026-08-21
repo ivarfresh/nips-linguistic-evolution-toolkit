@@ -437,9 +437,12 @@ def audit_run(path):
                 history_entries = len(
                     re.findall(r"^- Round", prompt, flags=re.MULTILINE)
                 )
-                if history_policy == "none":
+                if history_policy in {"none", "stable_ids"}:
                     if history_entries or "most recent previous game" in prompt:
-                        add(f"{tag}: history present under history_policy=none")
+                        add(
+                            f"{tag}: history present under "
+                            f"history_policy={history_policy}"
+                        )
                 elif history_policy == "minimal":
                     if "most recent previous game" not in prompt:
                         add(f"{tag}: minimal own-history recap missing")
@@ -500,6 +503,23 @@ def audit_run(path):
                         f"{tag}: public ledger does not exactly match the "
                         "communicated transfers in saved prior rounds"
                     )
+
+            if task == "game" and history_policy == "stable_ids":
+                if "STABLE POPULATION IDS:" not in prompt:
+                    add(f"{tag}: stable-ID treatment context missing")
+                own_label = public_ledger_label(agent_id)
+                opponent_label = public_ledger_label(
+                    round_opponent(agent_id, round_number)
+                )
+                if f"Your stable population ID is {own_label}." not in prompt:
+                    add(f"{tag}: incorrect own stable population ID")
+                if (
+                    "Your current co-player's stable population ID is "
+                    f"{opponent_label}."
+                ) not in prompt:
+                    add(f"{tag}: incorrect current co-player stable population ID")
+                if "No population-wide interaction history is shown" not in prompt:
+                    add(f"{tag}: stable-ID no-history boundary missing")
 
             if is_accepted:
                 accepted_before += 1
