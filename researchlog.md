@@ -1,3 +1,29 @@
+### 2026-08-21 — Anonymous social information preserves cooperation
+
+- Added an anonymous population-record arm: all prior-three-round noisy
+  transfers are visible, but pairs are relabeled within each round and cannot
+  support individual reputation tracking. All 20 matched Game-only runs across
+  private/anonymous-record/stable-ID/public-ledger arms passed jointly (1,600
+  decisions and noise checks; no errors or identity leakage).
+- Final balance was 66.03 anonymous private, 65.55 anonymous population record,
+  61.03 stable IDs/no ledger, and 62.04 stable IDs/public ledger. The frozen
+  anonymous-record − private contrast was −0.48 (95% CI [−5.36, +4.41],
+  p=.801); their round-one means were exactly equal at .620.
+- Anonymous record − stable IDs was +4.53 (p=.263), while stable public ledger
+  − anonymous record was −3.51 (p=.150, dz=−.79). The directions favor social
+  information without persistent identity, but n=5 intervals are wide.
+- Return ratios were .399 / .421 / .283 / .441. This corrects the preceding
+  tentative interpretation: public records are not uniquely high; the stable-
+  ID/no-ledger arm is unusually low.
+- Best current mechanism: persistent partner identity, rather than population
+  information, permits caution/retaliation and lowers cooperation. A new-seed,
+  wording-matched stable-versus-relative identity experiment is needed before
+  scaling the claim. Report and analysis:
+  `docs/anonymous_population_record_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_anonymous_population_record_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Stable-ID control: round-one drop is not the ledger announcement
 
 - Froze and ran a five-population GPT-5 Nano stable-ID/no-ledger control. All
