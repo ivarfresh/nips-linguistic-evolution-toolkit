@@ -20,7 +20,11 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from experiments.run_noisy_batch import NoisyExperimentConfig, run_single_experiment
+from experiments.run_noisy_batch import (
+    NoisyExperimentConfig,
+    execution_provenance,
+    run_single_experiment,
+)
 from src.batch_utils import sanitize_for_filename
 
 
@@ -79,7 +83,11 @@ def load_combinations(experiment_name: str, config_path: str | None) -> list[dic
         config_path = str(PROJECT_ROOT / "config" / "experiments_noisy.yaml")
 
     config = NoisyExperimentConfig(config_path)
-    return config.get_experiment_combinations(experiment_name)
+    combinations = config.get_experiment_combinations(experiment_name)
+    provenance = execution_provenance(config_path)
+    for combination in combinations:
+        combination["execution_provenance"] = provenance.copy()
+    return combinations
 
 
 def main() -> int:
