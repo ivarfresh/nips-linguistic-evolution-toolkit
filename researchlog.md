@@ -1,3 +1,27 @@
+### 2026-08-21 — Gemini identity screen is ceiling-limited
+
+- Froze and ran a new-seed Gemini 3.1 Flash-Lite replication of the stable-
+  versus-round-local identity contrast (`n=5` populations/arm). All 10 runs
+  passed jointly: 800 decisions/noise checks, no retries/errors, matched
+  schedules, and no identity leakage.
+- Gemini sent the full $5 in every sender decision in every round and condition.
+  Both arms therefore had proportion sent 1.000 and final balance 75.00 in all
+  five populations; the primary stable − round-local contrast was exactly 0.
+- This is not precise evidence of no identity effect. The test is uninformative
+  because the primary behavior is fully saturated; increasing n under the same
+  prompt would not recover variation.
+- Return behavior was also nearly identical: .4786 round-local versus .4782
+  stable (paired difference −.00033, CI [−.00144, +.00079], p=.465), or about
+  1.435 returned per dollar originally sent.
+- Cross-model conclusion: GPT-5 Nano has behavioral headroom and showed a
+  positive stable-ID effect; Gemini Flash-Lite adopts unconditional maximum
+  sending. Further Gemini work needs a harder dilemma or defectors, not more
+  replicates of this cell. Report and analysis:
+  `docs/identity_persistence_gemini_n5_overview_2026-08-21.md` and
+  `scripts/analyze_identity_persistence_gemini_n5.py`.
+
+---
+
 ### 2026-08-21 — Independent confirmation reverses the identity hypothesis
 
 - Froze and ran a new-seed, wording-matched comparison of persistent stable
