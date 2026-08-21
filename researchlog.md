@@ -1,3 +1,32 @@
+### 2026-08-21 — Costly deductions are common but not targeted in GPT-5 Nano
+
+- Added a sender-only costly deduction stage to the eight-agent Myth→Game
+  design: two optional points, a 1:3 cost-to-target effect, payoff floor zero,
+  explicit receiver notification, and neutral wording. Hidden mechanical
+  defectors write myths normally but always send, return, and deduct zero.
+- All 10 frozen GPT-5 Nano populations (`n=5` matched 0%-versus-25%-defector
+  pairs) passed: 2,400 accepted interaction records, 1,850 LLM responses,
+  exactly 150 forced decisions, 400 notices, 800 noise checks, and no leakage
+  or unrecovered failures.
+- Ordinary senders deducted in 90.9% of opportunities. They spent 1.295 points
+  toward defectors versus 1.472 toward ordinary receivers; the
+  defector-minus-ordinary population contrast was −.183 (CI [−.611,
+  +.245], p=.300). Deductions also remained common after at least half had
+  visibly been returned.
+- Defectors did not reduce ordinary sending (+.0052, CI [−.0212, +.0315],
+  p=.615). Ordinary returns were suggestively higher (+.0268, CI [−.0043,
+  +.0580], p=.075). Ordinary myth cooperation, threat, and punishment language
+  showed no reliable condition differences; much deduction vocabulary simply
+  echoed the announced institution.
+- Conclusion: the implementation is sound, but GPT-5 Nano treats deduction as
+  a routine affordance rather than a selective sanction. Next run the matched
+  punishment-unavailable cells to estimate the exploratory 2×2 availability ×
+  defector comparison. Report and analysis:
+  `docs/defector_punishment_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Defector-myth threat transmission does not independently replicate
 
 - Independently repeated the frozen Gemini defector-myth circulation
