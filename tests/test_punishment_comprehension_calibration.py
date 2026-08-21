@@ -22,6 +22,20 @@ def test_calibration_matrix_is_balanced_and_randomized():
     assert [spec["call_order"] for spec in specs] == list(range(len(specs)))
 
 
+def test_single_variant_matrix_supports_cross_model_check():
+    specs = trial_specs(
+        variants=["current"],
+        trials_per_cell=3,
+        order_seed=17,
+    )
+    assert len(specs) == len(RETURN_RATIOS) * 3
+    assert {spec["variant"] for spec in specs} == {"current"}
+    assert all(
+        sum(spec["return_ratio"] == ratio for spec in specs) == 3
+        for ratio in RETURN_RATIOS
+    )
+
+
 def test_controlled_messages_hold_state_fixed_except_return_and_wording():
     _, current_messages, current_state = controlled_messages("current", 0.5)
     _, salient_messages, salient_state = controlled_messages("cost_salient", 0.5)

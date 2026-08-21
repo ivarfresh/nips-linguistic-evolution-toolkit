@@ -142,11 +142,15 @@ def controlled_messages(variant, return_ratio):
     return game, messages, state
 
 
-def trial_specs():
+def trial_specs(
+    variants=VARIANTS,
+    trials_per_cell=TRIALS_PER_CELL,
+    order_seed=ORDER_SEED,
+):
     specs = []
-    for variant in VARIANTS:
+    for variant in variants:
         for return_ratio in RETURN_RATIOS:
-            for replicate in range(TRIALS_PER_CELL):
+            for replicate in range(trials_per_cell):
                 specs.append(
                     {
                         "trial_id": (
@@ -157,13 +161,13 @@ def trial_specs():
                         "replicate": replicate,
                     }
                 )
-    random.Random(ORDER_SEED).shuffle(specs)
+    random.Random(order_seed).shuffle(specs)
     for order, spec in enumerate(specs):
         spec["call_order"] = order
     return specs
 
 
-def run_trial(client, spec):
+def run_trial(client, spec, model=MODEL):
     game, messages, state = controlled_messages(
         spec["variant"],
         spec["return_ratio"],
@@ -172,7 +176,7 @@ def run_trial(client, spec):
     for attempt_number in range(1, 4):
         response = call_llm(
             client,
-            MODEL,
+            model,
             TEMPERATURE,
             messages,
             max_retries=3,
@@ -231,33 +235,53 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--model", default=MODEL)
+    parser.add_argument(
+        "--variants",
+        nargs="+",
+        choices=VARIANTS,
+        default=list(VARIANTS),
+    )
+    parser.add_argument("--trials-per-cell", type=int, default=TRIALS_PER_CELL)
+    parser.add_argument("--order-seed", type=int, default=ORDER_SEED)
+    parser.add_argument(
+        "--protocol",
+        default="docs/punishment_comprehension_gpt_protocol_2026-08-21.md",
+    )
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit(f"Refusing to overwrite existing output: {args.output}")
-    if args.workers < 1:
-        raise SystemExit("--workers must be positive")
+    if args.workers < 1 or args.trials_per_cell < 1:
+        raise SystemExit("--workers and --trials-per-cell must be positive")
 
     provenance = execution_provenance(str(CONFIG_PATH))
     if provenance["code_dirty"]:
         raise SystemExit("Refusing live calibration from a dirty worktree.")
-    client = create_llm_client(MODEL)
+    client = create_llm_client(args.model)
     metadata = {
         **provenance,
-        **llm_runtime_metadata(client, MODEL),
-        "model": MODEL,
+        **llm_runtime_metadata(client, args.model),
+        "model": args.model,
         "temperature": TEMPERATURE,
         "return_ratios": RETURN_RATIOS,
-        "variants": VARIANTS,
-        "trials_per_cell": TRIALS_PER_CELL,
-        "order_seed": ORDER_SEED,
+        "variants": args.variants,
+        "trials_per_cell": args.trials_per_cell,
+        "order_seed": args.order_seed,
         "fixed_myth": FIXED_MYTH,
-        "protocol": "docs/punishment_comprehension_gpt_protocol_2026-08-21.md",
+        "protocol": args.protocol,
     }
-    specs = trial_specs()
+    specs = trial_specs(
+        variants=args.variants,
+        trials_per_cell=args.trials_per_cell,
+        order_seed=args.order_seed,
+    )
     trials = []
     lock = Lock()
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {executor.submit(run_trial, client, spec): spec for spec in specs}
+        futures = {
+            executor.submit(run_trial, client, spec, args.model): spec
+            for spec in specs
+        }
         for future in as_completed(futures):
             result = future.result()
             with lock:
