@@ -1,3 +1,36 @@
+### 2026-08-21 — Defector myths transmit tone, not behavior, in Gemini screen
+
+- Added and froze a causal circulation manipulation: two hidden mechanical
+  defectors write normally in both arms, but at defector-to-ordinary cultural
+  exposures the intervention replaces the defector myth with a real
+  ordinary-authored myth from the same prior population-round. Source identity
+  and policy remain hidden, and call counts/memory are unchanged.
+- All 10 Gemini 3.1 Flash-Lite populations (`n=5` matched pairs) passed jointly:
+  1,600 accepted interactions, 1,400 LLM calls, exactly 200 forced decisions,
+  800 noise checks, 84 matched direct exposures per arm, and no leakage or
+  unrecovered failures. The separate two-run smoke set was excluded.
+- The source-text manipulation worked: ordinary substitutes had +.633
+  cooperation/fairness matches/100 words (CI [+.043, +1.223]) and −.129
+  threat matches ([−.223, −.034]) relative to defector myths.
+- The frozen cooperation outcome was suggestive but unresolved: the directly
+  exposed ordinary agent's next myth gained +.310 cooperation matches/100
+  words (CI [−.105, +.725], Holm p=.214). Same-round giving did not move
+  (`−.0158`, CI [−.218, +.186], Holm p=.838).
+- The predeclared secondary threat signal transmitted cleanly: target myths
+  used −.105 threat terms/100 words after substitution (CI [−.171, −.039],
+  p=.0115). Across 84 targets/arm, this was 23 threat-lexicon matches after
+  defector myths versus five after ordinary substitutes, spread across
+  withholding, betrayal, threat, punishment, retaliation, distrust, and other
+  terms rather than being driven only by *zero*.
+- Interpretation: Gemini's mechanically induced cultural tone survives one
+  transmission step, but it does not measurably change behavior in this
+  near-ceiling game. An independent new-seed threat-transmission confirmation
+  is the next test. Report and analysis:
+  `docs/defector_myth_circulation_gemini_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_myth_circulation_gemini_n5.py`.
+
+---
+
 ### 2026-08-21 — Defector confirmation: no broad cascade, Gemini imprint replicates
 
 - Independently repeated the frozen Myth→Game 0%-versus-25% mechanical-defector
