@@ -111,6 +111,23 @@ class MythWriter:
         """Validate a raw LLM response before it is stored as a myth."""
         validate_myth_response(content)
 
+    @staticmethod
+    def get_retry_prompt(original_prompt, error, retry_number):
+        """Clarify task boundaries after a rejected myth response.
+
+        The original substantive prompt remains intact. This suffix says only
+        how to satisfy the requested output boundary, and every rejected and
+        accepted attempt remains explicit in the interaction audit.
+        """
+        return (
+            f"{original_prompt}\n\n"
+            "Your previous response was rejected because it did not contain "
+            "only the requested myth. Complete the original myth-writing task "
+            "now. Write the story in prose and start it with 'Myth:'. Do not "
+            "answer with a send/return decision, JSON, or any part of a game "
+            f"prompt. (Correction attempt {retry_number} of 2.)"
+        )
+
     def get_myth_prompt_round_later(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing with the agent's previous myth"""
         if not self.later_rounds_template:

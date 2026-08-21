@@ -179,6 +179,59 @@ class MythResponseValidatorTests(unittest.TestCase):
                 "Myth: A valid replacement story about reciprocal trust.",
             )
 
+    def test_simulation_uses_clarified_and_bounded_myth_retries(self):
+        myth_writer = MythWriter(
+            myth_topic="anything",
+            round1_template="Write a myth. {topic_instruction}",
+            later_rounds_template="Rewrite your myth.",
+        )
+        calls_by_conversation = {}
+        calls_lock = threading.Lock()
+
+        def fake_call_llm(client, model, temperature, messages):
+            conversation_id = id(messages)
+            with calls_lock:
+                attempt = calls_by_conversation.get(conversation_id, 0) + 1
+                calls_by_conversation[conversation_id] = attempt
+            if attempt < 3:
+                content = '{"send": 5}'
+            else:
+                content = "Myth: A valid story after two boundary corrections."
+            return {"content": content, "reasoning": None, "usage": None}
+
+        with patch("src.simulation.create_llm_client", return_value=object()), patch(
+            "src.agents.call_llm",
+            side_effect=fake_call_llm,
+        ), patch("src.simulation.time.sleep"):
+            with contextlib.redirect_stdout(io.StringIO()):
+                sim_data = run_simulation(
+                    game=build_game(),
+                    model="mock/model",
+                    temperature=0,
+                    num_turns=1,
+                    num_agents=2,
+                    memory_capacity=6,
+                    agent_biases="",
+                    myth_writer=myth_writer,
+                    task_order=["myth"],
+                    chat_memory_mode="memory_primary",
+                )
+
+        for agent in sim_data.agents.values():
+            self.assertEqual(len(agent.interaction_history), 3)
+            first, second, accepted = agent.interaction_history
+            self.assertEqual(first["error"]["type"], "InvalidMythResponseError")
+            self.assertEqual(second["error"]["type"], "InvalidMythResponseError")
+            self.assertIn(
+                "Do not answer with a send/return decision",
+                second["messages_sent"][-1]["content"],
+            )
+            self.assertNotIn("error", accepted)
+            self.assertNotIn(
+                '{"send": 5}',
+                [message.get("content") for message in agent.messages],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

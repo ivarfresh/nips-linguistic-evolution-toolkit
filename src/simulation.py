@@ -686,21 +686,43 @@ def run_simulation(
                             for agent_id in active_agent_order
                         }
 
-                        # Collect results as they complete (with one retry on failure)
+                        # Collect results as they complete. Invalid responses
+                        # are rolled back by Agent.respond before a clarified,
+                        # task-boundary-only retry is sent. Keep at most two
+                        # retries so provider failures remain bounded/auditable.
                         for agent_id, future in futures.items():
                             try:
                                 myth_response_data = future.result()
                                 agent_myths[agent_id] = myth_response_data
                             except Exception as e:
-                                print(f"⚠️  Myth writing failed for {agent_id}: {type(e).__name__}: {e}. Retrying once...")
-                                time.sleep(1.0)
-                                myth_response_data = sim_data.agents[agent_id].respond(
-                                    prompts[agent_id],
-                                    myth_metadata[agent_id],
-                                    myth_remember,
-                                    myth_writer.validate_response,
-                                )
-                                agent_myths[agent_id] = myth_response_data
+                                last_error = e
+                                for retry_number in range(1, 3):
+                                    print(
+                                        f"⚠️  Myth writing failed for {agent_id}: "
+                                        f"{type(last_error).__name__}: {last_error}. "
+                                        f"Retrying ({retry_number}/2)..."
+                                    )
+                                    time.sleep(1.0)
+                                    retry_prompt = myth_writer.get_retry_prompt(
+                                        prompts[agent_id],
+                                        last_error,
+                                        retry_number,
+                                    )
+                                    try:
+                                        myth_response_data = sim_data.agents[
+                                            agent_id
+                                        ].respond(
+                                            retry_prompt,
+                                            myth_metadata[agent_id],
+                                            myth_remember,
+                                            myth_writer.validate_response,
+                                        )
+                                        agent_myths[agent_id] = myth_response_data
+                                        break
+                                    except Exception as retry_error:
+                                        last_error = retry_error
+                                else:
+                                    raise last_error
 
                             # Store full myth response data in round_entry
                             round_entry["myth_responses"][agent_id] = {
