@@ -1,3 +1,31 @@
+### 2026-08-21 — Cross-model defector pilot: modest spillover, cultural divergence
+
+- Froze and ran Myth→Game 0%-versus-25% mechanical-defector screens in GPT-5
+  Nano and Gemini 3.1 Flash-Lite (`n=5` populations/cell). All 20 runs passed
+  jointly: 3,200 accepted tasks, 3,000 LLM calls, exactly 200 forced zero game
+  responses, 1,600 myths/noise checks, matched schedules, and no label leakage.
+- Ordinary-agent sending fell in both models, but modestly and with intervals
+  spanning zero: GPT −.0326 (CI [−.0960, +.0307], p=.226) and Gemini −.0160
+  ([−.0368, +.0048], p=.099). Gemini left its full-send ceiling in three of
+  five treatment populations. Large balance losses are mostly mechanical and
+  are not evidence of a behavioral collapse.
+- Standard authors used less cooperation/fairness language with defectors:
+  GPT −.116 matches/100 words ([−.446, +.213]) and Gemini −.184
+  ([−.390, +.023], p=.069). Explicit threat language and half-return rules
+  barely changed among standard authors.
+- The distinctive result is model-specific cultural adaptation. Gemini
+  defector authors were similar in round 1, before forced play, then in rounds
+  2–10 used .697 fewer cooperation terms/100 words (CI [−1.191, −.203]) and
+  .0979 more threat terms ([+.0039, +.1918]) than standard treatment authors.
+  GPT defector myths remained as prosocial as standard myths.
+- Interpretation: hidden mechanical defectors create a modest population-level
+  cooperation spillover, not targeted punishment; forced behavior becomes
+  culturally visible in Gemini but not GPT. Report and analysis:
+  `docs/defector_myth_game_crossmodel_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_myth_game_crossmodel_n5.py`.
+
+---
+
 ### 2026-08-21 — Gemini identity screen is ceiling-limited
 
 - Froze and ran a new-seed Gemini 3.1 Flash-Lite replication of the stable-
