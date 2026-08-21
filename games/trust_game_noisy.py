@@ -25,6 +25,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         "population_ledger",
         "stable_ids",
         "anonymous_population_record",
+        "relative_pair_ids",
     }
     VALID_PROMPT_REGIMES = {"legacy", "unified"}
 
@@ -200,7 +201,17 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         return normalized
 
     def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
-        if self.history_policy == "stable_ids":
+        if self.history_policy == "relative_pair_ids":
+            identity_context = (
+                "ROUND-LOCAL PAIR IDS:\n"
+                "- Your round-local pair ID is Member Self.\n"
+                "- Your current co-player's round-local pair ID is Member Other.\n"
+                "- These neutral pair IDs are reassigned every round and do not "
+                "reveal agent names.\n"
+                "- No population-wide interaction history is shown in this condition."
+            )
+            prompt = f"{identity_context}\n\n{prompt}"
+        elif self.history_policy == "stable_ids":
             identity_context = (
                 "STABLE POPULATION IDS:\n"
                 f"- Your stable population ID is {self.public_ledger_label(agent_id)}.\n"
@@ -443,6 +454,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         if self.history_policy == "none":
             return ""
         if self.history_policy == "stable_ids":
+            return ""
+        if self.history_policy == "relative_pair_ids":
             return ""
         if self.history_policy == "population_ledger":
             return self._format_population_ledger(turn, sim_data)

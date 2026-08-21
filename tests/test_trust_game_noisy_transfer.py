@@ -491,6 +491,27 @@ class PairingAndPromptRegimeTests(unittest.TestCase):
         self.assertIn("cannot identify your current co-player", prompt)
         self.assertIn("does not reveal hidden true amounts", prompt)
 
+    def test_round_local_pair_ids_cannot_track_agents(self):
+        game = build_game(
+            num_agents=8,
+            history_policy="relative_pair_ids",
+            show_agent_names=False,
+            pairing_mode="fixed",
+        )
+        sim_data = build_population_ledger_state()
+
+        prompt = game.get_game_prompt_later_round(
+            "Agent_2", 2, sim_data, {}
+        )
+
+        self.assertIn("Your round-local pair ID is Member Self", prompt)
+        self.assertIn("pair ID is Member Other", prompt)
+        self.assertIn("reassigned every round", prompt)
+        self.assertIn("No population-wide interaction history is shown", prompt)
+        self.assertNotIn("Member A", prompt)
+        self.assertNotIn("Member B", prompt)
+        self.assertNotIn("- Round 1:", prompt)
+
     def test_invalid_protocol_enums_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "history_policy"):
             build_game(history_policy="typo")
@@ -1023,6 +1044,43 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 (
                     202608200 + combo["replicate_id"],
                     202608200 + combo["replicate_id"],
+                ),
+            )
+
+        stable_confirmation = self.config.get_experiment_combinations(
+            "noise8_identity_persistence_confirm_gpt_n10_stable"
+        )
+        relative_confirmation = self.config.get_experiment_combinations(
+            "noise8_identity_persistence_confirm_gpt_n10_relative"
+        )
+        self.assertEqual(len(stable_confirmation), 10)
+        self.assertEqual(len(relative_confirmation), 10)
+        expected_confirmation_ids = set(range(15, 25))
+        self.assertEqual(
+            {combo["replicate_id"] for combo in stable_confirmation},
+            expected_confirmation_ids,
+        )
+        self.assertEqual(
+            {combo["replicate_id"] for combo in relative_confirmation},
+            expected_confirmation_ids,
+        )
+        for stable_combo, relative_combo in zip(
+            stable_confirmation,
+            relative_confirmation,
+        ):
+            stable_params = dict(stable_combo["game_params"])
+            relative_params = dict(relative_combo["game_params"])
+            self.assertEqual(stable_params.pop("history_policy"), "stable_ids")
+            self.assertEqual(
+                relative_params.pop("history_policy"),
+                "relative_pair_ids",
+            )
+            self.assertEqual(stable_params, relative_params)
+            self.assertEqual(
+                resolve_protocol_seeds(stable_combo["game_params"], stable_combo),
+                resolve_protocol_seeds(
+                    relative_combo["game_params"],
+                    relative_combo,
                 ),
             )
 

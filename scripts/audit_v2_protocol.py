@@ -454,7 +454,7 @@ def audit_run(path):
                 history_entries = len(
                     re.findall(r"^- Round", prompt, flags=re.MULTILINE)
                 )
-                if history_policy in {"none", "stable_ids"}:
+                if history_policy in {"none", "stable_ids", "relative_pair_ids"}:
                     if history_entries or "most recent previous game" in prompt:
                         add(
                             f"{tag}: history present under "
@@ -571,6 +571,23 @@ def audit_run(path):
                         f"{tag}: anonymous population record does not exactly "
                         "match communicated transfers in saved prior rounds"
                     )
+
+            if task == "game" and history_policy == "relative_pair_ids":
+                if "ROUND-LOCAL PAIR IDS:" not in prompt:
+                    add(f"{tag}: round-local identity context missing")
+                if "Your round-local pair ID is Member Self." not in prompt:
+                    add(f"{tag}: relative own pair ID missing")
+                if (
+                    "Your current co-player's round-local pair ID is Member Other."
+                    not in prompt
+                ):
+                    add(f"{tag}: relative co-player pair ID missing")
+                if "reassigned every round" not in prompt:
+                    add(f"{tag}: round-local reassignment boundary missing")
+                if "No population-wide interaction history is shown" not in prompt:
+                    add(f"{tag}: round-local no-history boundary missing")
+                if re.search(r"\bMember [A-H]\b|\bAgent_\d+\b", prompt):
+                    add(f"{tag}: persistent identity leaked into round-local prompt")
 
             if is_accepted:
                 accepted_before += 1
