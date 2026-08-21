@@ -1176,6 +1176,54 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                     {(expected_seed, expected_seed)},
                 )
 
+        expected_confirmation_models = {
+            "noise8i_defector_myth_game_gpt_confirm_n10": "openai/gpt-5-nano",
+            "noise8i_defector_myth_game_gemini_confirm_n10": (
+                "google/gemini-3.1-flash-lite"
+            ),
+        }
+        for experiment_name, expected_model in expected_confirmation_models.items():
+            combinations = self.config.get_experiment_combinations(experiment_name)
+            self.assertEqual(len(combinations), 20)
+            self.assertEqual(
+                {combo["replicate_id"] for combo in combinations},
+                set(range(35, 45)),
+            )
+            by_replicate = {}
+            for combo in combinations:
+                self.assertEqual(combo["model"], expected_model)
+                self.assertEqual(combo["task_order"], ["myth", "game"])
+                by_replicate.setdefault(combo["replicate_id"], []).append(combo)
+            for replicate_id, matched in by_replicate.items():
+                self.assertEqual(len(matched), 2)
+                self.assertEqual(
+                    sorted(
+                        combo["game_params"]["defector_ratio"] for combo in matched
+                    ),
+                    [0.0, 0.25],
+                )
+                control = next(
+                    combo for combo in matched if combo["game_params"]["defector_ratio"] == 0
+                )
+                treatment = next(
+                    combo
+                    for combo in matched
+                    if combo["game_params"]["defector_ratio"] == 0.25
+                )
+                control_params = dict(control["game_params"])
+                treatment_params = dict(treatment["game_params"])
+                control_params.pop("defector_ratio")
+                treatment_params.pop("defector_ratio")
+                self.assertEqual(control_params, treatment_params)
+                expected_seed = 202608121 + replicate_id
+                self.assertEqual(
+                    {
+                        resolve_protocol_seeds(combo["game_params"], combo)
+                        for combo in matched
+                    },
+                    {(expected_seed, expected_seed)},
+                )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),
