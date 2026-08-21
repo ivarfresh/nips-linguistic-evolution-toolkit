@@ -33,6 +33,9 @@ from analyses._shared import configure_matplotlib
 DEFAULT_INPUT = Path(
     "data/json/noise_experiments/crossmodel_signed_gpt_n5_20260821"
 )
+DEFAULT_REPAIR_INPUT = Path(
+    "data/json/noise_experiments/history_factorial_mythrepairs_20260821"
+)
 DEFAULT_OUTPUT = Path("docs/figures/crossmodel_signed_gpt_n5_20260821")
 CELL_DIRECTORIES = {
     "game": "noise8_crossmodel_signed_gpt_n5_game",
@@ -41,26 +44,46 @@ CELL_DIRECTORIES = {
 }
 
 
-def usage_records(value):
-    """Yield one copy of each accepted call's usage from round history."""
-    if isinstance(value, dict):
-        usage = value.get("usage")
-        if isinstance(usage, dict):
-            yield usage
-        for child in value.values():
-            yield from usage_records(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from usage_records(child)
+def usage_records(run):
+    """Yield one copy of each accepted or rejected provider attempt's usage."""
+    for agent in (run.get("agents") or {}).values():
+        for event in agent.get("interaction_history") or []:
+            usage = ((event.get("response") or {}).get("usage") or {})
+            if usage:
+                yield usage
 
 
-def load_batch(input_dir: Path):
+def load_batch(input_dir: Path, repair_dir: Path):
     rows = []
     trajectories = []
     usage_totals = {"input_tokens": 0, "output_tokens": 0, "reasoning_tokens": 0}
 
     for condition, subdirectory in CELL_DIRECTORIES.items():
         runs = load_runs(input_dir / subdirectory)
+        if condition == "game_myth":
+            runs = [
+                item
+                for item in runs
+                if int((item[1].get("run_metadata") or {})["replicate_id"]) != 1
+            ]
+            runs.extend(
+                load_runs(
+                    repair_dir
+                    / "noise8_crossmodel_signed_gpt_n5_game_myth_mythrepair"
+                )
+            )
+        elif condition == "myth_game":
+            runs = [
+                item
+                for item in runs
+                if int((item[1].get("run_metadata") or {})["replicate_id"]) != 0
+            ]
+            runs.extend(
+                load_runs(
+                    repair_dir
+                    / "noise8_crossmodel_signed_gpt_n5_myth_game_mythrepair"
+                )
+            )
         if len(runs) != 5:
             raise RuntimeError(
                 f"Expected five final runs in {subdirectory}; found {len(runs)}"
@@ -98,7 +121,7 @@ def load_batch(input_dir: Path):
                 }
                 for point in run_trajectory
             )
-            for usage in usage_records(run.get("conversation_history", [])):
+            for usage in usage_records(run):
                 for key in usage_totals:
                     usage_totals[key] += int(usage.get(key) or 0)
 
@@ -340,6 +363,7 @@ def plot_trajectories(trajectory_dataframe, output_dir: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--repairs", type=Path, default=DEFAULT_REPAIR_INPUT)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
 
@@ -349,7 +373,7 @@ def main():
 
     sns.set_style("whitegrid")
     args.out.mkdir(parents=True, exist_ok=True)
-    rows, trajectories, usage_totals = load_batch(args.input)
+    rows, trajectories, usage_totals = load_batch(args.input, args.repairs)
     dataframe = pd.DataFrame(rows).sort_values(["condition", "replicate_id"])
     trajectory_dataframe = pd.DataFrame(trajectories)
     summary = pd.DataFrame(build_summary(dataframe))

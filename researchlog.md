@@ -1,22 +1,40 @@
-### 2026-08-21 — Result: GPT-5 Nano reproduces the Myth→Game ordering
+### 2026-08-21 — Result: partner dossiers suppress trust unless myth precedes play
 
-- Completed a clean, paired 8-agent GPT-5 Nano replication (`n=5` per task
-  order; game, game→myth, myth→game) from commit `3a957f41`. All 15/15 runs
-  passed the joint strict audit: 2,000 accepted LLM responses, 1,200 transfer-
-  noise checks, zero retries or violations, and identical realized pairings
-  across task orders within each of five matched seeds.
-- Mean final balance per agent was 62.64 for game only, 62.70 for game→myth,
-  and 65.51 for myth→game. Paired myth→game differences were +2.88 versus game
-  only (95% CI [1.09, 4.66], raw p=.011, Holm p=.033) and +2.81 versus
-  game→myth (95% CI [0.92, 4.70], raw p=.015, Holm p=.033). Game→myth versus
-  game only was +0.07 (p=.958).
-- The effect is carried by sending: mean proportions sent were .753/.754/.810.
-  No return-ratio contrast was detected. The full batch cost approximately
-  $0.324 at recorded list prices.
-- This cross-model screen reproduces the Sonnet task ordering, while the
-  preceding Gemini 3.1 Flash-Lite smoke was ceiling-locked in all conditions.
-  Reproducible analysis and figures: `scripts/analyze_crossmodel_signed_gpt_n5.py`
-  and `docs/crossmodel_signed_gpt_n5_overview_2026-08-21.md`.
+- Completed the clean paired GPT-5 Nano `2 × 3` history-visibility by task-
+  order screen (`n=5` populations/cell). The contrast is private interaction
+  memory versus the same memory plus the current co-player's last three games.
+- The selected 30/30 runs passed the expanded joint audit: 4,000 accepted task
+  responses, 4,019 total attempts, 19 explicit recovered myth retries, 2,400
+  transfer-noise checks, no unrecovered errors, and matched schedules across
+  all six cells.
+- The partner dossier reduced balance by −3.39/agent in Game only (95% CI
+  [−5.02, −1.75], Holm p=.014) and −2.74 in Game→Myth (raw p=.026, Holm
+  p=.052), but had no effect in Myth→Game (+0.01, p=.989). Under the dossier,
+  Myth→Game beat Game only by +3.63 (95% CI [2.45, 4.80], Holm p=.003); under
+  private memory, the same contrast was +0.23 (p=.804).
+- The Myth→Game visibility interaction was +3.40 (95% CI [0.70, 6.10], raw
+  p=.025, Holm p=.050 across two interactions). Exploratory interpretation:
+  explicit partner history facilitates targeted retaliation, while a myth
+  immediately before play buffers that penalty.
+- Reproducible analysis and full caveats:
+  `scripts/analyze_history_visibility_factorial_gpt_n5.py` and
+  `docs/history_visibility_factorial_gpt_n5_overview_2026-08-21.md`.
+
+---
+
+### 2026-08-21 — Correction: GPT-5 Nano task-order replication
+
+- The initial same-day audit did not test whether an accepted myth was actually
+  a myth. It therefore missed two selected-run failures where GPT returned
+  decision JSON instead of a story. The affected Game→Myth replicate 1 and
+  Myth→Game replicate 0 are now excluded and replaced by exact-seed clean runs.
+- The corrected selected means are 62.64 / 62.34 / 66.26 for Game only /
+  Game→Myth / Myth→Game. Myth→Game exceeds Game only by +3.63 (95% CI
+  [2.45, 4.80], Holm p=.003) and Game→Myth by +3.92 ([1.38, 6.47], Holm
+  p=.026); Game→Myth versus Game only is −0.30 (p=.779).
+- The cross-model Myth→Game ordering is therefore preserved and stronger, but
+  the original values are superseded. The expanded audit now applies the same
+  task-boundary validator used at runtime.
 
 ---
 
