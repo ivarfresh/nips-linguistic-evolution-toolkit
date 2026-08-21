@@ -1,3 +1,25 @@
+### 2026-08-21 — Result: GPT-5 Nano reproduces the Myth→Game ordering
+
+- Completed a clean, paired 8-agent GPT-5 Nano replication (`n=5` per task
+  order; game, game→myth, myth→game) from commit `3a957f41`. All 15/15 runs
+  passed the joint strict audit: 2,000 accepted LLM responses, 1,200 transfer-
+  noise checks, zero retries or violations, and identical realized pairings
+  across task orders within each of five matched seeds.
+- Mean final balance per agent was 62.64 for game only, 62.70 for game→myth,
+  and 65.51 for myth→game. Paired myth→game differences were +2.88 versus game
+  only (95% CI [1.09, 4.66], raw p=.011, Holm p=.033) and +2.81 versus
+  game→myth (95% CI [0.92, 4.70], raw p=.015, Holm p=.033). Game→myth versus
+  game only was +0.07 (p=.958).
+- The effect is carried by sending: mean proportions sent were .753/.754/.810.
+  No return-ratio contrast was detected. The full batch cost approximately
+  $0.324 at recorded list prices.
+- This cross-model screen reproduces the Sonnet task ordering, while the
+  preceding Gemini 3.1 Flash-Lite smoke was ceiling-locked in all conditions.
+  Reproducible analysis and figures: `scripts/analyze_crossmodel_signed_gpt_n5.py`
+  and `docs/crossmodel_signed_gpt_n5_overview_2026-08-21.md`.
+
+---
+
 ### 2026-08-20 — Result: return-vs-send gap is a denominator artifact
 
 **Time:** 1.0 hour

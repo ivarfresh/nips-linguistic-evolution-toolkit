@@ -513,6 +513,33 @@ game_params:
     paired_protocol_seeds: true
     protocol_seed_base: 202608200
 
+  # Own-history-only match for the GPT partner-dossier game-only cell. Agents
+  # retain their own last three game exchanges in private chat memory, but no
+  # synthetic record of the current co-player is injected into the prompt.
+  # Every other field, including the five paired protocol seeds, matches
+  # noisy8_crossmodel_signed_smoke_game_r3.
+  noisy8_history_gate_signed_gpt_ownonly_game_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "both"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608200
+
   # Strict population-size isolation. These two game-only cells use the same
   # prompt builder, fixed partners, accurate pairing instructions, three prior
   # own interactions in chat memory, no injected game-history recap, and hidden
@@ -1958,6 +1985,18 @@ experiment_sets:
         later: "myth_writing_later_rounds_directive_memory_primary"
     game_params_list:
       - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    num_runs: 5
+
+  # Two-arm history-visibility gate: compare these own-history-only runs with
+  # noise8_crossmodel_signed_gpt_n5_game (current-partner dossier), reusing the
+  # same five pairing/noise seeds and all other protocol settings.
+  noise8_history_gate_signed_gpt_n5_ownonly_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_history_gate_signed_gpt_ownonly_game_r3"
     num_runs: 5
 
   # Confirmatory population-size isolation: fixed dyad versus four fixed dyads

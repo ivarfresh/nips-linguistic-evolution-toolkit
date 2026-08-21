@@ -649,6 +649,37 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                     all(combo["task_order"] == task_order for combo in combinations)
                 )
 
+    def test_history_gate_ownonly_differs_only_in_partner_dossier_fields(self):
+        own_combinations = self.config.get_experiment_combinations(
+            "noise8_history_gate_signed_gpt_n5_ownonly_game"
+        )
+        partner_combinations = self.config.get_experiment_combinations(
+            "noise8_crossmodel_signed_gpt_n5_game"
+        )
+        self.assertEqual(len(own_combinations), 5)
+        self.assertEqual(len(partner_combinations), 5)
+
+        own_params = dict(own_combinations[0]["game_params"])
+        partner_params = dict(partner_combinations[0]["game_params"])
+        self.assertEqual(own_params.pop("history_policy"), "none")
+        self.assertEqual(
+            partner_params.pop("history_policy"),
+            "self_and_coplayer",
+        )
+        self.assertEqual(own_params.pop("coplayer_history_window"), 0)
+        self.assertEqual(partner_params.pop("coplayer_history_window"), 3)
+        self.assertEqual(own_params, partner_params)
+        self.assertEqual(
+            [
+                resolve_protocol_seeds(combo["game_params"], combo)
+                for combo in own_combinations
+            ],
+            [
+                resolve_protocol_seeds(combo["game_params"], combo)
+                for combo in partner_combinations
+            ],
+        )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),
