@@ -21,6 +21,7 @@ def build_game(
     history_policy="none",
     self_history_window=0,
     coplayer_history_window=0,
+    population_history_window=0,
     show_agent_names=True,
     pairing_mode="balanced",
     pairing_seed=None,
@@ -44,6 +45,7 @@ def build_game(
         history_policy=history_policy,
         self_history_window=self_history_window,
         coplayer_history_window=coplayer_history_window,
+        population_history_window=population_history_window,
         show_agent_names=show_agent_names,
         game_prompt_addition=game_prompt_addition,
         pairing_mode=pairing_mode,
@@ -133,6 +135,47 @@ def build_multi_agent_state():
             ],
         }
     ]
+    return sim_data
+
+
+def build_population_ledger_state():
+    sim_data = SimulationData()
+    agent_ids = [f"Agent_{index}" for index in range(1, 9)]
+    sim_data.game_data = {
+        "balances": {agent_id: 5 for agent_id in agent_ids},
+        "balances_communicated": {agent_id: 5 for agent_id in agent_ids},
+        "pending_sents": {},
+        "pending_sents_communicated": {},
+    }
+    dyads = []
+    for index in range(4):
+        investor_id = agent_ids[index * 2]
+        trustee_id = agent_ids[index * 2 + 1]
+        dyads.append(
+            {
+                "round": 1,
+                "dyad_id": f"dyad_{index + 1}",
+                "agents": [investor_id, trustee_id],
+                "investor": investor_id,
+                "trustee": trustee_id,
+                "roles": {
+                    investor_id: "investor",
+                    trustee_id: "trustee",
+                },
+                "sent": round(0.1 + index, 2),
+                "sent_communicated": round(4.1 + index / 10, 2),
+                "received": round((0.1 + index) * 3, 2),
+                "received_communicated": round((4.1 + index / 10) * 3, 2),
+                "returned": round(0.2 + index, 2),
+                "returned_communicated": round(1.2 + index / 10, 2),
+                "payoffs_communicated": {
+                    investor_id: 5,
+                    trustee_id: 5,
+                },
+            }
+        )
+    sim_data.conversation_history = [{"round": 1, "dyads": dyads}]
+    sim_data.run_metadata["num_turns"] = 10
     return sim_data
 
 
@@ -347,6 +390,60 @@ class PairingAndPromptRegimeTests(unittest.TestCase):
         self.assertEqual(no_history, "")
         self.assertEqual(zero_windows, "")
         self.assertIn("most recent previous game round", minimal)
+
+    def test_population_ledger_uses_stable_ids_and_only_communicated_values(self):
+        game = build_game(
+            num_agents=8,
+            history_policy="population_ledger",
+            population_history_window=3,
+            show_agent_names=False,
+            pairing_mode="fixed",
+        )
+        sim_data = build_population_ledger_state()
+
+        history = game._format_multi_agent_history(
+            "Agent_2", "Agent_1", 2, sim_data
+        )
+        prompt = game.get_game_prompt_later_round(
+            "Agent_2", 2, sim_data, {}
+        )
+
+        self.assertEqual(history.count("- Round 1:"), 4)
+        self.assertIn("Member A (SENDER) sent $4.1 to Member B", history)
+        self.assertIn("Member B returned $1.2", history)
+        self.assertNotIn("sent $0.1", history)
+        self.assertNotIn("returned $0.2", history)
+        self.assertIn("Your stable public ID is Member B", prompt)
+        self.assertIn(
+            "current co-player's stable public ID is Member A",
+            prompt,
+        )
+        self.assertIn("does not reveal hidden true amounts", prompt)
+        self.assertNotIn("Agent_1", prompt)
+        self.assertNotIn("Agent_2", prompt)
+
+    def test_population_ledger_has_no_prior_entries_in_round_one(self):
+        game = build_game(
+            num_agents=8,
+            history_policy="population_ledger",
+            population_history_window=3,
+            show_agent_names=False,
+            pairing_mode="fixed",
+        )
+        game.get_round_pairings(1, SimulationData())
+
+        prompt = game.get_game_prompt_round_1("Agent_1", None, 1)
+
+        self.assertIn("Your stable public ID is Member A", prompt)
+        self.assertNotIn("- Round 1:", prompt)
+
+    def test_population_ledger_fails_closed_without_a_positive_window(self):
+        with self.assertRaisesRegex(ValueError, "population_history_window"):
+            build_game(
+                num_agents=8,
+                history_policy="population_ledger",
+                population_history_window=0,
+            )
 
     def test_invalid_protocol_enums_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "history_policy"):
@@ -757,6 +854,35 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                         for combo in partner_combinations
                     ],
                 )
+
+    def test_population_ledger_smoke_is_exact_seed_matched_and_public(self):
+        combinations = self.config.get_experiment_combinations(
+            "noise8_population_ledger_signed_gpt_smoke_game"
+        )
+
+        self.assertEqual(len(combinations), 2)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in combinations},
+            {0, 1},
+        )
+        for combo in combinations:
+            params = combo["game_params"]
+            self.assertEqual(combo["model"], "openai/gpt-5-nano")
+            self.assertEqual(combo["task_order"], ["game"])
+            self.assertEqual(params["num_agents"], 8)
+            self.assertEqual(params["memory_capacity"], 3)
+            self.assertEqual(params["history_policy"], "population_ledger")
+            self.assertEqual(params["population_history_window"], 3)
+            self.assertEqual(params["self_history_window"], 0)
+            self.assertEqual(params["coplayer_history_window"], 0)
+            self.assertFalse(params["show_agent_names"])
+            self.assertEqual(
+                resolve_protocol_seeds(params, combo),
+                (
+                    202608200 + combo["replicate_id"],
+                    202608200 + combo["replicate_id"],
+                ),
+            )
 
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {

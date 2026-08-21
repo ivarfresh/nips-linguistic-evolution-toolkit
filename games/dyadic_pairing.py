@@ -247,6 +247,21 @@ class DyadicPairingMixin:
             return self.get_agent_display_name(agent_id)
         return "your current co-player"
 
+    def public_ledger_label(self, agent_id):
+        """Return a stable neutral pseudonym without revealing display names."""
+        try:
+            index = self.agent_ids.index(agent_id)
+        except ValueError as exc:
+            raise ValueError(f"Unknown agent ID for public ledger: {agent_id!r}") from exc
+
+        # Spreadsheet-style labels keep this deterministic beyond 26 agents.
+        letters = ""
+        value = index + 1
+        while value:
+            value, remainder = divmod(value - 1, 26)
+            letters = chr(ord("A") + remainder) + letters
+        return f"Member {letters}"
+
     def self_prompt_label(self, agent_id):
         if self.names_visible_in_prompts():
             return self.get_agent_display_name(agent_id)

@@ -117,6 +117,9 @@ def audit_run(path):
     history_policy = metadata.get("history_policy", "minimal")
     self_history_window = int(metadata.get("self_history_window") or 0)
     coplayer_history_window = int(metadata.get("coplayer_history_window") or 0)
+    population_history_window = int(
+        metadata.get("population_history_window") or 0
+    )
     pairing_mode = metadata.get("pairing_mode", "balanced")
     effective_pairing_mode = metadata.get(
         "effective_pairing_mode",
@@ -406,6 +409,26 @@ def audit_run(path):
                         and "game(s):" not in prompt
                     ):
                         add(f"{tag}: configured co-player history block missing")
+                elif history_policy == "population_ledger":
+                    expected_entries = (
+                        min(round_number - 1, population_history_window)
+                        * expected_dyads
+                    )
+                    if history_entries != expected_entries:
+                        add(
+                            f"{tag}: public ledger has {history_entries} entries; "
+                            f"expected {expected_entries}"
+                        )
+                    if "Public ledger of communicated/noisy transfers" not in prompt:
+                        add(f"{tag}: public population ledger missing")
+
+            if task == "game" and history_policy == "population_ledger":
+                if "PUBLIC POPULATION LEDGER:" not in prompt:
+                    add(f"{tag}: public-ledger treatment context missing")
+                if "stable public ID" not in prompt:
+                    add(f"{tag}: stable public IDs missing")
+                if "does not reveal hidden true amounts" not in prompt:
+                    add(f"{tag}: ledger observability boundary missing")
 
             if is_accepted:
                 accepted_before += 1

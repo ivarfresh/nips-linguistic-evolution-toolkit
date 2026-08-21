@@ -312,6 +312,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             history_policy=game_params.get('history_policy', 'minimal'),
             self_history_window=game_params.get('self_history_window', 1),
             coplayer_history_window=game_params.get('coplayer_history_window', 0),
+            population_history_window=game_params.get(
+                'population_history_window',
+                0,
+            ),
             show_agent_names=game_params.get('show_agent_names', True),
             defector_ratio=game_params.get("defector_ratio", 0.0),
             defector_agent_ids=game_params.get("defector_agent_ids"),
@@ -399,6 +403,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"History Policy: {game_params.get('history_policy', 'minimal')}\n")
             f.write(f"Self History Window: {game_params.get('self_history_window', 1)}\n")
             f.write(f"Co-player History Window: {game_params.get('coplayer_history_window', 0)}\n")
+            f.write(f"Population History Window: {game_params.get('population_history_window', 0)}\n")
             f.write(f"Show Agent Names: {game_params.get('show_agent_names', True)}\n")
             f.write(f"Defector Ratio Requested: {game_params.get('defector_ratio', 0.0)}\n")
             f.write(f"Defector Agent IDs Requested: {game_params.get('defector_agent_ids') or 'automatic'}\n")
@@ -455,6 +460,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["history_policy"] = game_params.get("history_policy", "minimal")
         sim_data.run_metadata["self_history_window"] = game_params.get("self_history_window", 1)
         sim_data.run_metadata["coplayer_history_window"] = game_params.get("coplayer_history_window", 0)
+        sim_data.run_metadata["population_history_window"] = game_params.get(
+            "population_history_window",
+            0,
+        )
         sim_data.run_metadata["show_agent_names"] = game_params.get("show_agent_names", True)
         sim_data.run_metadata["pairing_mode"] = configured_pairing_mode
         sim_data.run_metadata["effective_pairing_mode"] = effective_pairing_mode

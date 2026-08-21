@@ -18,7 +18,12 @@ OTHER_PLAYER_NAMES = {
 class TrustGameNoisy(DyadicPairingMixin, Game):
     """Trust/Investment game with amount noise and optional asymmetric naming."""
 
-    VALID_HISTORY_POLICIES = {"none", "minimal", "self_and_coplayer"}
+    VALID_HISTORY_POLICIES = {
+        "none",
+        "minimal",
+        "self_and_coplayer",
+        "population_ledger",
+    }
     VALID_PROMPT_REGIMES = {"legacy", "unified"}
 
     def __init__(
@@ -36,6 +41,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         history_policy="minimal",
         self_history_window=1,
         coplayer_history_window=0,
+        population_history_window=0,
         show_agent_names=True,
         defector_ratio=0.0,
         defector_agent_ids=None,
@@ -67,6 +73,18 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self.history_policy = self._validate_history_policy(history_policy)
         self.self_history_window = self._coerce_history_window(self_history_window, 1)
         self.coplayer_history_window = self._coerce_history_window(coplayer_history_window, 0)
+        self.population_history_window = self._coerce_history_window(
+            population_history_window,
+            0,
+        )
+        if (
+            self.history_policy == "population_ledger"
+            and self.population_history_window <= 0
+        ):
+            raise ValueError(
+                "population_history_window must be positive when "
+                "history_policy='population_ledger'."
+            )
         self.game_prompt_addition = (game_prompt_addition or "").strip()
         self.set_prompt_name_visibility(show_agent_names)
         self.set_defector_options(
@@ -179,6 +197,17 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         return normalized
 
     def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
+        if self.history_policy == "population_ledger":
+            ledger_context = (
+                "PUBLIC POPULATION LEDGER:\n"
+                f"- Your stable public ID is {self.public_ledger_label(agent_id)}.\n"
+                "- Your current co-player's stable public ID is "
+                f"{self.public_ledger_label(opponent_id)}.\n"
+                "- Before each game decision, every agent sees the same ledger of "
+                "communicated/noisy transfers from recent completed population rounds. "
+                "The ledger does not reveal hidden true amounts."
+            )
+            prompt = f"{ledger_context}\n\n{prompt}"
         if self.game_prompt_addition:
             prompt = (
                 f"{prompt.rstrip()}\n\n"
@@ -389,6 +418,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
     def _format_multi_agent_history(self, agent_id, opponent_id, turn, sim_data):
         if self.history_policy == "none":
             return ""
+        if self.history_policy == "population_ledger":
+            return self._format_population_ledger(turn, sim_data)
         if self.history_policy != "self_and_coplayer":
             return self._format_most_recent_self_history(
                 agent_id,
@@ -437,6 +468,49 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             else:
                 lines.append(f"- No previous completed games involving {opponent_name}.")
 
+        return "\n".join(lines)
+
+    def _format_population_ledger(self, turn, sim_data):
+        completed_rounds = []
+        for entry in getattr(sim_data, "conversation_history", []) or []:
+            try:
+                entry_round = int(entry.get("round", 0))
+            except (TypeError, ValueError):
+                continue
+            if entry_round >= turn:
+                continue
+            completed_rounds.append((entry_round, entry))
+
+        completed_rounds.sort(key=lambda item: item[0])
+        completed_rounds = completed_rounds[-self.population_history_window :]
+        if not completed_rounds:
+            return "Public ledger: no previous population round has been completed."
+
+        lines = [
+            "Public ledger of communicated/noisy transfers "
+            f"(last {self.population_history_window} population round(s)):"
+        ]
+        for entry_round, entry in completed_rounds:
+            for dyad in self.iter_completed_dyads(entry):
+                investor_id = dyad.get("investor")
+                trustee_id = dyad.get("trustee")
+                sent = dyad.get("sent_communicated")
+                returned = dyad.get("returned_communicated")
+                if investor_id is None or trustee_id is None:
+                    raise ValueError(
+                        f"Public ledger round {entry_round} has incomplete agent IDs."
+                    )
+                if sent is None or returned is None:
+                    raise ValueError(
+                        "Public ledger requires communicated transfer values; "
+                        f"round {entry_round} is incomplete."
+                    )
+                lines.append(
+                    f"- Round {entry_round}: {self.public_ledger_label(investor_id)} "
+                    f"(SENDER) sent ${sent} to {self.public_ledger_label(trustee_id)} "
+                    f"(RECEIVER); {self.public_ledger_label(trustee_id)} returned "
+                    f"${returned}."
+                )
         return "\n".join(lines)
 
     def _format_most_recent_self_history(
