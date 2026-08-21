@@ -1,3 +1,24 @@
+### 2026-08-21 — Gemini selectively deducts where GPT does not
+
+- Repeated the unchanged current-wording controlled deduction calibration in
+  Gemini 3.1 Flash-Lite (five visible returns × 10 calls). All 50 direct Google
+  calls passed with exact cell balance, no retries, and clean commit/config
+  provenance.
+- Gemini spent both points in all 10 zero-return cases and zero in all 40
+  positive-return cases. It passed the frozen selectivity gate: low-minus-high
+  +1.00 (CI [+.520, +1.480], p=.00034), zero high-return deductions, and no
+  monotonicity reversal.
+- GPT-5 Nano used the same wording almost universally. The cross-model return-
+  slope interaction was −1.244 (CI [−2.117, −.371], p=.0057), showing a
+  qualitative model-policy difference rather than merely lower Gemini use.
+- Gemini is eligible for a small population pilot, but first map its threshold
+  at visible returns within `$0–$1`: signed noise can make a mechanical
+  defector's true zero appear slightly positive. Report and analysis:
+  `docs/punishment_comprehension_crossmodel_overview_2026-08-21.md` and
+  `scripts/analyze_punishment_comprehension_crossmodel.py`.
+
+---
+
 ### 2026-08-21 — Controlled calibration rejects both GPT punishment prompts
 
 - Froze and ran a 100-call GPT-5 Nano mechanism calibration: current versus
