@@ -579,6 +579,27 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             [(202608202, 202608202), (202608204, 202608204)],
         )
 
+    def test_myth_boundary_repair_cells_target_only_invalid_replicates(self):
+        expected_ids = {
+            "noise8_crossmodel_signed_gpt_n5_game_myth_mythrepair": [1],
+            "noise8_crossmodel_signed_gpt_n5_myth_game_mythrepair": [0],
+            "noise8_history_gate_signed_gpt_n5_ownonly_game_myth_mythrepair": [
+                0, 1, 2, 3, 4
+            ],
+            "noise8_history_gate_signed_gpt_n5_ownonly_myth_game_mythrepair": [
+                0, 1, 2, 3, 4
+            ],
+        }
+        for experiment_name, replicate_ids in expected_ids.items():
+            with self.subTest(experiment_name=experiment_name):
+                combinations = self.config.get_experiment_combinations(
+                    experiment_name
+                )
+                self.assertEqual(
+                    [combo["replicate_id"] for combo in combinations],
+                    replicate_ids,
+                )
+
     def test_crossmodel_smoke_is_paired_and_matches_corrected_8agent_protocol(self):
         expected_orders = {
             "noise8_crossmodel_signed_smoke_game": ["game"],

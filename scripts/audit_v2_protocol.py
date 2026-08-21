@@ -22,7 +22,12 @@ import argparse
 import json
 import math
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.myth_writer import InvalidMythResponseError, validate_myth_response
 
 
 MYTH_DECISION_LINK = (
@@ -222,6 +227,14 @@ def audit_run(path):
                 f"round {round_number}: {myth_count} myths; "
                 f"expected {expected_myths}"
             )
+        for agent_id, myth in (entry.get("myths") or {}).items():
+            try:
+                validate_myth_response(myth)
+            except InvalidMythResponseError as exc:
+                add(
+                    f"{agent_id} round {round_number} myth: "
+                    f"invalid accepted myth ({exc})"
+                )
 
         for dyad in dyads:
             dyad_agents = dyad.get("agents") or []

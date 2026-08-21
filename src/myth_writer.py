@@ -8,7 +8,7 @@ from src.shared_context import build_previous_round_shared_context
 
 
 class InvalidMythResponseError(ValueError):
-    """Raised when a myth response contains a likely game-prompt continuation."""
+    """Raised when a myth response crosses the myth/game task boundary."""
 
 
 _GAME_PROMPT_MARKERS = {
@@ -31,6 +31,21 @@ _GAME_PROMPT_MARKERS = {
     ),
 }
 
+_GAME_DECISION_ONLY = re.compile(
+    r"""
+    ^\s*
+    (?:```(?:json)?\s*)?
+    (?:
+        \{\s*[\"']?(?:send|return)[\"']?\s*:\s*
+        \$?\s*-?(?:\d+(?:\.\d*)?|\.\d+)\s*\}
+        |
+        \$?\s*-?(?:\d+(?:\.\d*)?|\.\d+)
+    )
+    \s*(?:```)?\s*$
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
 
 def validate_myth_response(content):
     """Reject likely prompt-shaped continuations appended to a generated myth.
@@ -41,6 +56,11 @@ def validate_myth_response(content):
     """
     if not isinstance(content, str) or not content.strip():
         raise InvalidMythResponseError("Myth response is empty.")
+
+    if _GAME_DECISION_ONLY.fullmatch(content):
+        raise InvalidMythResponseError(
+            "Myth response is a game decision rather than a story."
+        )
 
     matched_markers = [
         label

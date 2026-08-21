@@ -48,6 +48,20 @@ class MythResponseValidatorTests(unittest.TestCase):
         ):
             validate_myth_response(CONTAMINATED_MYTH)
 
+    def test_rejects_game_decision_instead_of_a_myth(self):
+        for response in (
+            '{"send": 5}',
+            "{'return': 7.0}",
+            "```json\n{\"send\": 3}\n```",
+            "4.5",
+        ):
+            with self.subTest(response=response):
+                with self.assertRaisesRegex(
+                    InvalidMythResponseError,
+                    "game decision rather than a story",
+                ):
+                    validate_myth_response(response)
+
     def test_allows_game_themed_story_language(self):
         validate_myth_response(
             "Myth: The receiver asked how much generosity should be returned, "
