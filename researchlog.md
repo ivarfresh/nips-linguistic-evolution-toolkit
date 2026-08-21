@@ -1,3 +1,35 @@
+### 2026-08-21 — Punishment availability has no reliable cooperative benefit
+
+- Completed an exploratory GPT-5 Nano 2×2: deduction stage available versus
+  unavailable × 0% versus 25% hidden mechanical defectors (`n=5` matched
+  populations/cell). All 20 accepted populations passed jointly: 4,000
+  interactions, 3,350 LLM responses, exactly 250 forced decisions, 400
+  deduction notices, 1,600 noise checks, matched schedules/assignments, and no
+  leakage or unrecovered errors.
+- Caught a reproducibility gap before outcome analysis: the resumable launcher
+  omitted embedded Git/config provenance. Excluded the first off-stage batch,
+  fixed and tested the launcher, and reran all 10 new populations. Every
+  accepted replacement records commit `649dbc34`, one config hash, and a clean
+  worktree.
+- Deduction availability did not improve sending: −.0273 without defectors
+  (CI [−.0890, +.0344], p=.287) and +.0027 with defectors ([−.0908,
+  +.0961], p=.941). The availability×defector interaction was +.0300
+  ([−.0125, +.0724], p=.122).
+- Returning was directionally higher with deductions (+.0282 without and
+  +.0516 with defectors), but both intervals crossed zero and the interaction
+  was unresolved (+.0234, CI [−.0641, +.1110], p=.498). A post-hoc check
+  using the excluded first batch produced much smaller +.012 and +.015 return
+  estimates, suggesting sampling sensitivity.
+- No ordinary-myth cooperation, threat, or half-rule interaction was reliable.
+  Combined with 90.9% realized deduction use and no targeting of defectors,
+  this design elicits a routine action rather than selective norm enforcement.
+  Do not scale it unchanged; first run a controlled mechanism-comprehension
+  calibration across high- and low-return states. Report and analysis:
+  `docs/defector_punishment_factorial_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_factorial_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Costly deductions are common but not targeted in GPT-5 Nano
 
 - Added a sender-only costly deduction stage to the eight-agent Myth→Game
