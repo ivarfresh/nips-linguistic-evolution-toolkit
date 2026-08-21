@@ -1,3 +1,28 @@
+### 2026-08-21 — Controlled calibration rejects both GPT punishment prompts
+
+- Froze and ran a 100-call GPT-5 Nano mechanism calibration: current versus
+  cost-salient neutral wording × visible returns of 0%, 10%, 25%, 50%, or
+  75%, with the myth, full send, payoffs, rules, and model held fixed. All 100
+  direct OpenAI decisions passed, with 10/cell, no response-boundary retries,
+  and clean commit/config provenance.
+- Current wording showed some low-versus-high intensity difference (+.40
+  points, CI [+.101, +.699]) but deducted in 100% of high-return calls and rose
+  again from 1.1 points at a 25% return to 1.5 at 75%. It failed the frozen
+  selectivity gate.
+- Explicitly clarifying that spending is optional and personally costly cut
+  mean spending from 1.46 to .74 (−.72, CI [−.954, −.486]), but removed
+  rather than improved return sensitivity: slope +.003 (p=.994), low-minus-high
+  +.15 (CI [−.249, +.549]), and 65% high-return deduction use.
+- Conclusion: GPT-5 Nano treats the institution as a salient action, not a
+  calibrated sanction. Neither wording is eligible for a population pilot;
+  do not tune the prose further toward a desired result. Next either apply the
+  unchanged calibration to another model or redesign the economic mechanism.
+  Report and analysis:
+  `docs/punishment_comprehension_gpt_overview_2026-08-21.md` and
+  `scripts/analyze_punishment_comprehension_calibration.py`.
+
+---
+
 ### 2026-08-21 — Punishment availability has no reliable cooperative benefit
 
 - Completed an exploratory GPT-5 Nano 2×2: deduction stage available versus
