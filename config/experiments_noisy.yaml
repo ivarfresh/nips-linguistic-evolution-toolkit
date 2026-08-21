@@ -980,6 +980,69 @@ game_params:
     defector_myth_policy: "standard_substitute"
     defector_role_visible_to_self: false
 
+  # Sender-only costly deduction stage for the defector experiment. Every
+  # agent receives one post-game exchange per round (sender decision or
+  # receiver notice), so capacity 9 retains exactly three Myth→Game rounds.
+  noisy8_bidirectional_informed_defector_v2_twotask_punishment_control:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 9
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.0
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    punishment_enabled: true
+    punishment_budget: 2
+    punishment_effect_multiplier: 3
+
+  noisy8_bidirectional_informed_defector_v2_twotask_punishment_treatment25:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 9
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    punishment_enabled: true
+    punishment_budget: 2
+    punishment_effect_multiplier: 3
+
   # 8-agent bidirectional noise, memory-primary (mirrors the plain-game
   # sonnet45_8agent_*_memprimary regime: self history in chat memory, only the
   # co-player's last 3 games injected; capacity 6 pairs = 3 rounds).
@@ -2380,6 +2443,37 @@ experiment_sets:
       - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25"
       - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25_standard_substitute"
     replicate_ids: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+
+  # One matched live smoke, excluded from the subsequent five-pair screen.
+  noise8i_defector_punishment_gpt_smoke:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_twotask_punishment_control"
+      - "noisy8_bidirectional_informed_defector_v2_twotask_punishment_treatment25"
+    replicate_ids: [60]
+
+  noise8i_defector_punishment_gpt_n5:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_twotask_punishment_control"
+      - "noisy8_bidirectional_informed_defector_v2_twotask_punishment_treatment25"
+    replicate_ids: [61, 62, 63, 64, 65]
 
   noise8_history_gate_signed_gpt_n5_ownonly_game_myth:
     models: ["gpt5_nano"]

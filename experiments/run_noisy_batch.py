@@ -338,6 +338,12 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             pairing_seed=pairing_seed,
             noise_seed=noise_seed,
             prompt_regime=game_params.get("prompt_regime", "legacy"),
+            punishment_enabled=game_params.get("punishment_enabled", False),
+            punishment_budget=game_params.get("punishment_budget", 2),
+            punishment_effect_multiplier=game_params.get(
+                "punishment_effect_multiplier",
+                3,
+            ),
         )
 
         myth_writer = MythWriter(
@@ -411,6 +417,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Defector Action Policy: {game_params.get('defector_action_policy', 'prompted')}\n")
             f.write(f"Defector Myth Policy: {game_params.get('defector_myth_policy', 'normal')}\n")
             f.write(f"Defector Role Visible To Self: {game_params.get('defector_role_visible_to_self', True)}\n")
+            f.write(f"Deduction Stage Enabled: {game_params.get('punishment_enabled', False)}\n")
+            f.write(f"Deduction Budget: {game_params.get('punishment_budget', 2)}\n")
+            f.write(f"Deduction Effect Multiplier: {game_params.get('punishment_effect_multiplier', 3)}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
@@ -470,6 +479,18 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["pairing_seed"] = pairing_seed
         sim_data.run_metadata["noise_seed"] = noise_seed
         sim_data.run_metadata["prompt_regime"] = game_params.get("prompt_regime", "legacy")
+        sim_data.run_metadata["punishment_enabled"] = game_params.get(
+            "punishment_enabled",
+            False,
+        )
+        sim_data.run_metadata["punishment_budget"] = game_params.get(
+            "punishment_budget",
+            2,
+        )
+        sim_data.run_metadata["punishment_effect_multiplier"] = game_params.get(
+            "punishment_effect_multiplier",
+            3,
+        )
 
         # Save final state
         sim_data.save_state(save_path)

@@ -520,6 +520,8 @@ def run_simulation(
                 "myths": {},
                 "myth_exposures": {},  # Audit which prior myth each agent sees
                 "game_responses": {},  # Store game decision responses
+                "deduction_responses": {},
+                "deduction_notifications": {},
                 "myth_responses": {}  # Store myth writing responses
             }
             sim_data.conversation_history.append(round_entry)
@@ -630,6 +632,117 @@ def run_simulation(
 
                     # Process turn with game logic
                     last_responses = game.process_turn(turn, agent_responses, sim_data)
+
+                    # Optional sender-funded deduction stage. Each sender makes
+                    # one post-return choice and each receiver gets one scripted
+                    # outcome notice. This gives every agent exactly one extra
+                    # memory exchange per game round.
+                    if (
+                        hasattr(game, "has_post_game_stage")
+                        and game.has_post_game_stage()
+                    ):
+                        deduction_responses = {}
+                        deduction_order = game.get_post_game_move_order(
+                            turn,
+                            sim_data,
+                        )
+                        for move_index, agent_id in enumerate(deduction_order):
+                            agent = sim_data.agents[agent_id]
+                            prompt = game.get_post_game_prompt(
+                                agent_id,
+                                turn,
+                                sim_data,
+                            )
+                            metadata = _interaction_metadata(
+                                turn,
+                                "deduction_decision",
+                                agent_id,
+                                roles_by_agent,
+                                pairings,
+                                task_index,
+                                move_index,
+                                getattr(agent, "population_role", "standard"),
+                            )
+                            remember_stage = chat_memory_mode not in (
+                                "myth_only",
+                                "hybrid",
+                                "stateless",
+                            )
+                            forced = game.get_forced_post_game_response(agent_id)
+                            if forced is not None:
+                                response_data = agent.scripted_response(
+                                    prompt,
+                                    forced,
+                                    transcript_metadata=metadata,
+                                    remember=remember_stage,
+                                )
+                            else:
+                                try:
+                                    response_data = agent.respond(
+                                        prompt,
+                                        transcript_metadata=metadata,
+                                        remember=remember_stage,
+                                        response_validator=game.validate_post_game_response,
+                                    )
+                                except Exception as exc:
+                                    print(
+                                        f"⚠️  Deduction decision failed for {agent_id}: "
+                                        f"{type(exc).__name__}: {exc}. Retrying once..."
+                                    )
+                                    time.sleep(1.0)
+                                    response_data = agent.respond(
+                                        prompt,
+                                        transcript_metadata=metadata,
+                                        remember=remember_stage,
+                                        response_validator=game.validate_post_game_response,
+                                    )
+                            deduction_responses[agent_id] = response_data
+                            round_entry["deduction_responses"][agent_id] = {
+                                "content": response_data["content"],
+                                "reasoning": response_data.get("reasoning"),
+                                "usage": response_data.get("usage"),
+                                "response_source": response_data.get(
+                                    "response_source",
+                                    "llm",
+                                ),
+                            }
+
+                        game.process_post_game_stage(
+                            turn,
+                            deduction_responses,
+                            sim_data,
+                        )
+
+                        for move_index, pairing in enumerate(pairings):
+                            agent_id = pairing["trustee"]
+                            agent = sim_data.agents[agent_id]
+                            prompt, scripted = game.get_post_game_notification(
+                                agent_id,
+                                turn,
+                                sim_data,
+                            )
+                            metadata = _interaction_metadata(
+                                turn,
+                                "deduction_notification",
+                                agent_id,
+                                roles_by_agent,
+                                pairings,
+                                task_index,
+                                move_index,
+                                getattr(agent, "population_role", "standard"),
+                            )
+                            response_data = agent.scripted_response(
+                                prompt,
+                                scripted,
+                                transcript_metadata=metadata,
+                                remember=remember_stage,
+                            )
+                            round_entry["deduction_notifications"][agent_id] = {
+                                "content": response_data["content"],
+                                "response_source": response_data[
+                                    "response_source"
+                                ],
+                            }
 
                 elif task == "myth":
                     # PHASE 2: MYTH WRITING

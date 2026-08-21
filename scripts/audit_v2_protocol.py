@@ -142,6 +142,11 @@ def audit_run(path):
         or game_data.get("defector_agent_ids")
         or []
     )
+    punishment_enabled = bool(metadata.get("punishment_enabled", False))
+    punishment_budget = int(metadata.get("punishment_budget", 2))
+    punishment_multiplier = float(
+        metadata.get("punishment_effect_multiplier", 3)
+    )
     expected_dyads = num_agents // 2
     noise_config = metadata.get("noise_config") or {}
     noise_range = float(noise_config.get("range") or 0)
@@ -276,6 +281,9 @@ def audit_run(path):
 
     dyad_count = 0
     noise_checks = 0
+    expected_forced_deductions = 0
+    reconstructed_balances = {agent_id: 0.0 for agent_id in agents}
+    reconstructed_visible_balances = {agent_id: 0.0 for agent_id in agents}
     partners_by_agent = {agent_id: set() for agent_id in agents}
     for entry in history:
         round_number = entry.get("round")
@@ -291,6 +299,24 @@ def audit_run(path):
                 f"round {round_number}: incomplete game responses "
                 f"({len(entry.get('game_responses') or {})}/{num_agents})"
             )
+        if punishment_enabled:
+            if len(entry.get("deduction_responses") or {}) != expected_dyads:
+                add(
+                    f"round {round_number}: incomplete deduction decisions "
+                    f"({len(entry.get('deduction_responses') or {})}/"
+                    f"{expected_dyads})"
+                )
+            if len(entry.get("deduction_notifications") or {}) != expected_dyads:
+                add(
+                    f"round {round_number}: incomplete deduction notices "
+                    f"({len(entry.get('deduction_notifications') or {})}/"
+                    f"{expected_dyads})"
+                )
+            if len(entry.get("deductions") or {}) != expected_dyads:
+                add(
+                    f"round {round_number}: incomplete deduction records "
+                    f"({len(entry.get('deductions') or {})}/{expected_dyads})"
+                )
         myth_count = len(entry.get("myths") or {})
         expected_myths = num_agents if has_myth else 0
         if myth_count != expected_myths:
@@ -414,19 +440,159 @@ def audit_run(path):
                         f"round {round_number} {dyad.get('dyad_id')}: "
                         "forced-zero receiver made a nonzero actual return"
                     )
+            if punishment_enabled:
+                investor_id = dyad.get("investor")
+                trustee_id = dyad.get("trustee")
+                spent = dyad.get("deduction_spent")
+                if (
+                    isinstance(spent, bool)
+                    or not isinstance(spent, (int, float))
+                    or not float(spent).is_integer()
+                    or not 0 <= float(spent) <= punishment_budget
+                ):
+                    add(
+                        f"round {round_number} {dyad.get('dyad_id')}: "
+                        f"invalid deduction_spent={spent!r}"
+                    )
+                    spent = 0
+                spent = int(spent)
+                if investor_id in defector_ids:
+                    expected_forced_deductions += 1
+                    if spent != 0:
+                        add(
+                            f"round {round_number} {dyad.get('dyad_id')}: "
+                            "forced-zero defector made a nonzero deduction"
+                        )
+
+                sent = float(dyad.get("sent") or 0)
+                returned = float(dyad.get("returned") or 0)
+                sent_visible = float(dyad.get("sent_communicated") or 0)
+                returned_visible = float(dyad.get("returned_communicated") or 0)
+                expected_pre = {
+                    investor_id: 5.0 - sent + returned,
+                    trustee_id: sent * 3.0 - returned,
+                }
+                expected_pre_visible = {
+                    investor_id: 5.0 - sent + returned_visible,
+                    trustee_id: sent_visible * 3.0 - returned,
+                }
+                intended_loss = punishment_multiplier * spent
+                expected_loss = min(
+                    intended_loss,
+                    expected_pre[trustee_id],
+                )
+                expected_visible_loss = min(
+                    intended_loss,
+                    expected_pre_visible[trustee_id],
+                )
+                expected_post = {
+                    investor_id: (
+                        expected_pre[investor_id]
+                        + punishment_budget
+                        - spent
+                    ),
+                    trustee_id: expected_pre[trustee_id] - expected_loss,
+                }
+                expected_post_visible = {
+                    investor_id: (
+                        expected_pre_visible[investor_id]
+                        + punishment_budget
+                        - spent
+                    ),
+                    trustee_id: (
+                        expected_pre_visible[trustee_id]
+                        - expected_visible_loss
+                    ),
+                }
+
+                for label, observed, expected in (
+                    (
+                        "pre_deduction_payoffs",
+                        dyad.get("pre_deduction_payoffs") or {},
+                        expected_pre,
+                    ),
+                    (
+                        "pre_deduction_payoffs_communicated",
+                        dyad.get("pre_deduction_payoffs_communicated") or {},
+                        expected_pre_visible,
+                    ),
+                    ("payoffs", dyad.get("payoffs") or {}, expected_post),
+                    (
+                        "payoffs_communicated",
+                        dyad.get("payoffs_communicated") or {},
+                        expected_post_visible,
+                    ),
+                ):
+                    for focal_id, expected_value in expected.items():
+                        observed_value = observed.get(focal_id)
+                        if observed_value is None or not math.isclose(
+                            float(observed_value),
+                            expected_value,
+                            abs_tol=1e-9,
+                        ):
+                            add(
+                                f"round {round_number} {dyad.get('dyad_id')}: "
+                                f"{label}[{focal_id}]={observed_value!r}; "
+                                f"expected {expected_value}"
+                            )
+                for key, expected_value in (
+                    ("deduction_intended_loss", intended_loss),
+                    ("deduction_actual_loss", expected_loss),
+                    ("deduction_visible_loss", expected_visible_loss),
+                ):
+                    observed_value = dyad.get(key)
+                    if observed_value is None or not math.isclose(
+                        float(observed_value),
+                        expected_value,
+                        abs_tol=1e-9,
+                    ):
+                        add(
+                            f"round {round_number} {dyad.get('dyad_id')}: "
+                            f"{key}={observed_value!r}; expected {expected_value}"
+                        )
+                for focal_id, payoff in expected_post.items():
+                    reconstructed_balances[focal_id] += payoff
+                for focal_id, payoff in expected_post_visible.items():
+                    reconstructed_visible_balances[focal_id] += payoff
+
+        if punishment_enabled:
+            for label, observed, expected in (
+                ("balances", entry.get("balances") or {}, reconstructed_balances),
+                (
+                    "balances_communicated",
+                    entry.get("balances_communicated") or {},
+                    reconstructed_visible_balances,
+                ),
+            ):
+                for agent_id, expected_value in expected.items():
+                    observed_value = observed.get(agent_id)
+                    if observed_value is None or not math.isclose(
+                        float(observed_value),
+                        expected_value,
+                        abs_tol=1e-9,
+                    ):
+                        add(
+                            f"round {round_number}: {label}[{agent_id}]="
+                            f"{observed_value!r}; expected {expected_value}"
+                        )
 
     attempt_count = 0
     call_count = 0
     llm_call_count = 0
     forced_response_count = 0
+    notification_count = 0
     retry_count = 0
-    expected_calls = num_turns * num_agents * len(task_order)
+    expected_calls = num_turns * num_agents * (
+        len(task_order) + (1 if punishment_enabled else 0)
+    )
     for agent_id, agent in agents.items():
         events = agent.get("interaction_history") or []
         accepted_events, retry_events, unrecovered_events = classify_interactions(
             events
         )
-        expected_agent_calls = num_turns * len(task_order)
+        expected_agent_calls = num_turns * (
+            len(task_order) + (1 if punishment_enabled else 0)
+        )
         if len(accepted_events) != expected_agent_calls:
             add(
                 f"{agent_id}: {len(accepted_events)} accepted calls; "
@@ -457,13 +623,18 @@ def audit_run(path):
             if is_accepted:
                 if response_source == "forced_zero":
                     forced_response_count += 1
+                elif response_source == "deduction_notification":
+                    notification_count += 1
                 else:
                     llm_call_count += 1
 
             if is_accepted and not (response.get("content") or "").strip():
                 add(f"{tag}: empty response")
             if is_accepted and defector_action_policy == "forced_zero":
-                should_be_forced = task == "game" and agent_id in defector_ids
+                should_be_forced = (
+                    task in {"game", "deduction_decision"}
+                    and agent_id in defector_ids
+                )
                 if should_be_forced and response_source != "forced_zero":
                     add(f"{tag}: forced defector game response came from the LLM")
                 if not should_be_forced and response_source == "forced_zero":
@@ -474,6 +645,11 @@ def audit_run(path):
                     and response_source != "llm"
                 ):
                     add(f"{tag}: defector myth did not come from the LLM")
+                if (
+                    task == "deduction_notification"
+                    and response_source != "deduction_notification"
+                ):
+                    add(f"{tag}: receiver notice was not scripted")
             if not messages or messages[0].get("role") != "system":
                 add(f"{tag}: system message is not first")
                 continue
@@ -536,14 +712,18 @@ def audit_run(path):
                         ):
                             add(f"{tag}: myth circulation policy leaked into prompt")
             if (
-                task == "game"
+                task in {"game", "deduction_decision"}
                 and agent_id in defector_ids
                 and not defector_role_visible
                 and "DESIGNATED DEFECTOR" in prompt
             ):
                 add(f"{tag}: hidden defector treatment leaked into the prompt")
             link_count = prompt.count(MYTH_DECISION_LINK)
-            expected_link_count = 1 if task == "game" and has_myth else 0
+            expected_link_count = (
+                1
+                if task in {"game", "deduction_decision"} and has_myth
+                else 0
+            )
             if link_count != expected_link_count:
                 add(
                     f"{tag}: current prompt has myth-decision link "
@@ -696,13 +876,26 @@ def audit_run(path):
     if call_count != expected_calls:
         add(f"{call_count} calls; expected {expected_calls}")
     if defector_action_policy == "forced_zero":
-        expected_forced = num_turns * len(defector_ids)
+        expected_forced = (
+            num_turns * len(defector_ids)
+            + (expected_forced_deductions if punishment_enabled else 0)
+        )
         if forced_response_count != expected_forced:
             add(
                 f"{forced_response_count} forced-zero responses; "
                 f"expected {expected_forced}"
             )
-        expected_llm_calls = expected_calls - expected_forced
+        expected_notifications = (
+            num_turns * expected_dyads if punishment_enabled else 0
+        )
+        if notification_count != expected_notifications:
+            add(
+                f"{notification_count} deduction notifications; "
+                f"expected {expected_notifications}"
+            )
+        expected_llm_calls = (
+            expected_calls - expected_forced - expected_notifications
+        )
         if llm_call_count != expected_llm_calls:
             add(
                 f"{llm_call_count} LLM calls; expected {expected_llm_calls}"
@@ -741,6 +934,7 @@ def audit_run(path):
         "attempts": attempt_count,
         "llm_calls": llm_call_count,
         "forced_responses": forced_response_count,
+        "notifications": notification_count,
         "retry_attempts": retry_count,
         "noise_checks": noise_checks,
         "pairing_key": pairing_key,

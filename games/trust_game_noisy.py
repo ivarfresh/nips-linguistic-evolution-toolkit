@@ -58,6 +58,9 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         pairing_seed=None,
         noise_seed=None,
         prompt_regime="legacy",
+        punishment_enabled=False,
+        punishment_budget=2,
+        punishment_effect_multiplier=3,
     ):
         super().__init__()
         self.set_pairing_mode(pairing_mode)
@@ -90,6 +93,15 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 f"history_policy={self.history_policy!r}."
             )
         self.game_prompt_addition = (game_prompt_addition or "").strip()
+        self.punishment_enabled = bool(punishment_enabled)
+        self.punishment_budget = self._validate_nonnegative_integer(
+            "punishment_budget",
+            punishment_budget,
+        )
+        self.punishment_effect_multiplier = self._validate_positive_number(
+            "punishment_effect_multiplier",
+            punishment_effect_multiplier,
+        )
         self.set_prompt_name_visibility(show_agent_names)
         self.set_defector_options(
             defector_ratio=defector_ratio,
@@ -109,6 +121,30 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             self.other_player_names = other_player_names
 
         self._init_dyadic_agents()
+
+    @staticmethod
+    def _validate_nonnegative_integer(name, value):
+        if isinstance(value, bool):
+            raise ValueError(f"{name} must be a non-negative integer.")
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{name} must be a non-negative integer.") from exc
+        if numeric < 0 or not numeric.is_integer():
+            raise ValueError(f"{name} must be a non-negative integer.")
+        return int(numeric)
+
+    @staticmethod
+    def _validate_positive_number(name, value):
+        if isinstance(value, bool):
+            raise ValueError(f"{name} must be a positive number.")
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{name} must be a positive number.") from exc
+        if numeric <= 0:
+            raise ValueError(f"{name} must be a positive number.")
+        return numeric
 
     def _apply_noise(self, actual_amount, max_amount, rng=None):
         if not self.noise_config:
@@ -270,6 +306,19 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 "\n\nNOTE: There may be communication noise in this game.\n"
                 "The amounts you see may differ slightly from what was actually sent/returned.\n"
                 "This is part of the experimental design."
+            )
+
+        if self.punishment_enabled:
+            base_prompt += (
+                "\n\nDEDUCTION-POINT STAGE:\n"
+                "- After the receiver returns, the sender receives a separate "
+                f"budget of {self.punishment_budget} deduction points.\n"
+                "- The sender may spend any whole number of those points. "
+                "Unspent points are added to the sender's earnings.\n"
+                "- Each point spent reduces the receiver's payoff for that round "
+                f"by up to ${self.punishment_effect_multiplier:g}; the receiver's "
+                "round payoff cannot fall below $0.\n"
+                "- The receiver is told the deduction decision and its effect."
             )
 
         return self.with_system_context(base_prompt, agent_id)
@@ -832,6 +881,228 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self._fill_round_entry(turn, sim_data, dyads, round_actions, round_payoffs)
         return last_responses
 
+    def has_post_game_stage(self):
+        """Whether the optional sender deduction stage should be executed."""
+        return self.punishment_enabled
+
+    def get_post_game_move_order(self, turn, sim_data):
+        if not self.punishment_enabled:
+            return []
+        return [
+            pairing["investor"]
+            for pairing in self.get_round_pairings(turn, sim_data)
+        ]
+
+    def _current_round_dyad_for_agent(self, agent_id, turn, sim_data):
+        entry = next(
+            (
+                item
+                for item in reversed(sim_data.conversation_history)
+                if item.get("round") == turn
+            ),
+            None,
+        )
+        if entry is None:
+            raise ValueError(f"Round {turn} entry not found for deduction stage.")
+        dyad = next(
+            (
+                item
+                for item in entry.get("dyads", [])
+                if agent_id in item.get("agents", [])
+            ),
+            None,
+        )
+        if dyad is None:
+            raise ValueError(
+                f"Completed round {turn} dyad not found for {agent_id}."
+            )
+        return entry, dyad
+
+    def get_post_game_prompt(self, agent_id, turn, sim_data):
+        if not self.punishment_enabled:
+            raise ValueError("Deduction stage is not enabled.")
+        _, dyad = self._current_round_dyad_for_agent(
+            agent_id,
+            turn,
+            sim_data,
+        )
+        if agent_id != dyad["investor"]:
+            raise ValueError("Only the sender chooses deduction points.")
+
+        opponent_id = dyad["trustee"]
+        visible_return = dyad.get("returned_communicated", dyad["returned"])
+        visible_sender_payoff = dyad.get(
+            "investor_payoff_communicated",
+            dyad["investor_payoff"],
+        )
+        visible_receiver_payoff = dyad.get(
+            "trustee_payoff_communicated",
+            dyad["trustee_payoff"],
+        )
+        prompt = (
+            f"Round {turn}: deduction-point stage\n\n"
+            f"You saw {self.current_coplayer_label(opponent_id)} return "
+            f"${visible_return}. Before the deduction-point budget, your visible "
+            f"round payoff is ${visible_sender_payoff} and the receiver's visible "
+            f"round payoff is ${visible_receiver_payoff}.\n\n"
+            f"You now receive {self.punishment_budget} deduction points. You may "
+            f"spend any whole number from 0 to {self.punishment_budget}; unspent "
+            "points are added to your earnings. Each point spent reduces the "
+            f"receiver's payoff by up to ${self.punishment_effect_multiplier:g}, "
+            "without taking it below $0.\n"
+            "Respond exactly as JSON: {'deduct': <whole number>}"
+        )
+        return self._finalize_game_prompt(prompt, agent_id, opponent_id)
+
+    def validate_post_game_response(self, content):
+        amount = self._extract_amount(content, "deduct")
+        if not float(amount).is_integer():
+            raise ValueError("Deduction points must be a whole number.")
+        if not 0 <= amount <= self.punishment_budget:
+            raise ValueError(
+                "Deduction points must be between 0 and "
+                f"{self.punishment_budget}."
+            )
+
+    def get_forced_post_game_response(self, agent_id):
+        if not self.is_defector(agent_id):
+            return None
+        if self.defector_action_policy != "forced_zero":
+            return None
+        return {
+            "content": '{"deduct": 0}',
+            "reasoning": None,
+            "usage": None,
+            "response_source": "forced_zero",
+        }
+
+    def process_post_game_stage(self, turn, responses, sim_data):
+        """Apply sender-funded deduction points and update saved round state."""
+        if not self.punishment_enabled:
+            return {}
+
+        entry = next(
+            (
+                item
+                for item in reversed(sim_data.conversation_history)
+                if item.get("round") == turn
+            ),
+            None,
+        )
+        if entry is None:
+            raise ValueError(f"Round {turn} entry not found for deduction stage.")
+
+        deduction_records = {}
+        for dyad in entry.get("dyads", []):
+            investor_id = dyad["investor"]
+            trustee_id = dyad["trustee"]
+            if investor_id not in responses:
+                raise ValueError(
+                    f"Missing deduction response for sender {investor_id}."
+                )
+
+            raw = self._extract_amount(responses[investor_id], "deduct")
+            if not float(raw).is_integer():
+                raise ValueError("Deduction points must be a whole number.")
+            spent = int(raw)
+            if not 0 <= spent <= self.punishment_budget:
+                raise ValueError(
+                    "Deduction points must be between 0 and "
+                    f"{self.punishment_budget}."
+                )
+
+            pre_actual = dict(dyad["payoffs"])
+            pre_visible = dict(dyad["payoffs_communicated"])
+            sender_bonus = self.punishment_budget - spent
+            intended_loss = self.punishment_effect_multiplier * spent
+            actual_loss = min(intended_loss, pre_actual[trustee_id])
+            visible_loss = min(intended_loss, pre_visible[trustee_id])
+
+            investor_payoff = pre_actual[investor_id] + sender_bonus
+            trustee_payoff = pre_actual[trustee_id] - actual_loss
+            investor_visible = pre_visible[investor_id] + sender_bonus
+            trustee_visible = pre_visible[trustee_id] - visible_loss
+
+            sim_data.game_data["balances"][investor_id] += sender_bonus
+            sim_data.game_data["balances"][trustee_id] -= actual_loss
+            sim_data.game_data["balances_communicated"][investor_id] += sender_bonus
+            sim_data.game_data["balances_communicated"][trustee_id] -= visible_loss
+
+            dyad["pre_deduction_payoffs"] = pre_actual
+            dyad["pre_deduction_payoffs_communicated"] = pre_visible
+            dyad["deduction_budget"] = self.punishment_budget
+            dyad["deduction_spent"] = spent
+            dyad["deduction_effect_multiplier"] = self.punishment_effect_multiplier
+            dyad["deduction_intended_loss"] = intended_loss
+            dyad["deduction_actual_loss"] = actual_loss
+            dyad["deduction_visible_loss"] = visible_loss
+            dyad["investor_payoff"] = investor_payoff
+            dyad["trustee_payoff"] = trustee_payoff
+            dyad["investor_payoff_communicated"] = investor_visible
+            dyad["trustee_payoff_communicated"] = trustee_visible
+            dyad["payoffs"] = {
+                investor_id: investor_payoff,
+                trustee_id: trustee_payoff,
+            }
+            dyad["payoffs_communicated"] = {
+                investor_id: investor_visible,
+                trustee_id: trustee_visible,
+            }
+            dyad["deduction_action"] = {
+                "agent_id": investor_id,
+                "target_id": trustee_id,
+                "spent": spent,
+                "intended_loss": intended_loss,
+                "actual_loss": actual_loss,
+                "visible_loss": visible_loss,
+            }
+            deduction_records[dyad["dyad_id"]] = dict(dyad["deduction_action"])
+
+        entry["deductions"] = deduction_records
+        entry["payoffs"] = {
+            agent_id: payoff
+            for dyad in entry.get("dyads", [])
+            for agent_id, payoff in dyad["payoffs"].items()
+        }
+        entry["balances"] = dict(sim_data.game_data["balances"])
+        entry["balances_communicated"] = dict(
+            sim_data.game_data["balances_communicated"]
+        )
+        final_balances = dict(sim_data.game_data["balances"])
+        final_visible_balances = dict(sim_data.game_data["balances_communicated"])
+        for dyad in entry.get("dyads", []):
+            dyad["balances"] = dict(final_balances)
+            dyad["balances_communicated"] = dict(final_visible_balances)
+        return deduction_records
+
+    def get_post_game_notification(self, agent_id, turn, sim_data):
+        if not self.punishment_enabled:
+            raise ValueError("Deduction stage is not enabled.")
+        _, dyad = self._current_round_dyad_for_agent(
+            agent_id,
+            turn,
+            sim_data,
+        )
+        if agent_id != dyad["trustee"]:
+            raise ValueError("Only the receiver gets a deduction notification.")
+        sender_id = dyad["investor"]
+        spent = dyad["deduction_spent"]
+        loss = dyad["deduction_visible_loss"]
+        prompt = (
+            f"Round {turn} deduction result: "
+            f"{self.current_coplayer_label(sender_id)} spent {spent} deduction "
+            f"point{'s' if spent != 1 else ''}. This reduced your visible round "
+            f"payoff by ${loss}. Your visible round payoff after the deduction "
+            f"stage is ${dyad['trustee_payoff_communicated']}."
+        )
+        response = {
+            "content": "Acknowledged.",
+            "reasoning": None,
+            "usage": None,
+            "response_source": "deduction_notification",
+        }
+        return self.with_prompt_context(prompt, agent_id, sender_id), response
+
     def _ensure_balances(self, sim_data):
         if "balances" not in sim_data.game_data:
             sim_data.game_data["balances"] = {agent_id: 0 for agent_id in self.agent_ids}
@@ -978,6 +1249,11 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 print(
                     f"    [NOISE] Communicated sent=${dyad['sent_communicated']:.2f}, "
                     f"returned=${dyad['returned_communicated']:.2f}"
+                )
+            if "deduction_spent" in dyad:
+                print(
+                    f"    Deduction: sender spent {dyad['deduction_spent']} "
+                    f"point(s), receiver lost ${dyad['deduction_actual_loss']}"
                 )
             print(
                 f"    Payoffs: {investor_id} ${dyad['investor_payoff']}, "
