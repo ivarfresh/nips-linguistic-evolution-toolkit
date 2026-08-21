@@ -1,3 +1,32 @@
+### 2026-08-21 — Defector confirmation: no broad cascade, Gemini imprint replicates
+
+- Independently repeated the frozen Myth→Game 0%-versus-25% mechanical-defector
+  design in GPT-5 Nano and Gemini 3.1 Flash-Lite (`n=10` new populations/cell).
+  All 40 runs passed jointly: 6,400 accepted tasks, exactly 400 forced game
+  responses, 3,200 myths/noise checks, matched schedules, and no leakage or
+  unrecovered errors.
+- Neither broad confirmatory claim survived. The equal-model treatment effect
+  on ordinary-agent sending was −.01345 (95% CI [−.03142, +.00451],
+  Holm p=.258); the effect on cooperation/fairness density in ordinary-authored
+  myths was −.0652 matches/100 words ([−.194, +.0637], Holm p=.300).
+- Large ordinary-agent balance losses (−$18.80 GPT; −$21.73 Gemini) are
+  principally mechanical consequences of zero sends/returns, not evidence of
+  a comparably large behavioral cascade.
+- The Gemini author-specific cultural effect independently replicated. In
+  rounds 2–10, defector myths used .571 fewer cooperation terms/100 words
+  ([−.778, −.364], p=.00015) and .0577 more threat terms ([+.0293, +.0860],
+  p=.00128) than ordinary treatment myths; round-one author differences were
+  absent. GPT again showed no reliable author-type divergence.
+- Conclusion: hidden mechanical defectors impose direct welfare losses but do
+  not trigger a confirmed population-wide behavioral or cultural collapse.
+  Gemini shows a replicated, localized behavior-to-culture imprint. The next
+  causal test should manipulate whether defector-authored myths circulate.
+  Report and analysis:
+  `docs/defector_myth_game_crossmodel_confirmation_n10_overview_2026-08-21.md`
+  and `scripts/analyze_defector_myth_game_crossmodel_confirmation_n10.py`.
+
+---
+
 ### 2026-08-21 — Cross-model defector pilot: modest spillover, cultural divergence
 
 - Froze and ran Myth→Game 0%-versus-25% mechanical-defector screens in GPT-5

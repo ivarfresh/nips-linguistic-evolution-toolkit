@@ -143,17 +143,21 @@ def usage(run):
     return totals, attempts, retries, forced
 
 
-def load_data(input_dir):
+def load_data(input_dir, model_specs=None, expected_ids=None):
     run_rows = []
     behavior_round_rows = []
     myth_rows = []
     usage_rows = []
-    expected_ids = set(range(30, 35))
+    model_specs = model_specs or MODEL_SPECS
+    expected_ids = expected_ids or set(range(30, 35))
 
-    for model_id, spec in MODEL_SPECS.items():
+    for model_id, spec in model_specs.items():
         runs = load_runs(input_dir / spec["directory"])
-        if len(runs) != 10:
-            raise RuntimeError(f"{model_id} has {len(runs)} runs, expected 10")
+        expected_run_count = 2 * len(expected_ids)
+        if len(runs) != expected_run_count:
+            raise RuntimeError(
+                f"{model_id} has {len(runs)} runs, expected {expected_run_count}"
+            )
         seen = {condition: set() for condition in CONDITION_ORDER}
         for path, run in runs:
             metadata = run.get("run_metadata") or {}
