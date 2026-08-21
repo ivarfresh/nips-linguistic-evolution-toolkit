@@ -1,3 +1,23 @@
+### 2026-08-21 — Gemini's live-noise punishment threshold is $.25–$.50
+
+- Mapped Gemini's current-wording deduction choice at `$0`, `$.25`, `$.50`,
+  `$.75`, and `$1` visible returns (10 calls/cell), spanning the full band that
+  `U(−1,+1)` noise can produce from a defector's true zero. All 50 calls
+  passed with no retries and clean provenance.
+- Gemini spent both points in every `$0` and `$.25` case and zero in every
+  `$.50`, `$.75`, and `$1` case. The empirical switch lies between $.25 and
+  $.50.
+- Under the frozen piecewise-linear integration of the live clamped-noise
+  distribution, a true-zero defector is expected to be punished 68.75% of the
+  time, at mean intensity 1.375 points. This passes the population-pilot gate.
+- Next run three matched Gemini Myth→Game population pairs (0% versus 25%
+  defectors) and evaluate within-treatment targeting before cooperation or
+  myths. Report and analysis:
+  `docs/punishment_comprehension_gemini_noise_boundary_overview_2026-08-21.md`
+  and `scripts/analyze_punishment_comprehension_gemini_noise_boundary.py`.
+
+---
+
 ### 2026-08-21 — Gemini selectively deducts where GPT does not
 
 - Repeated the unchanged current-wording controlled deduction calibration in
