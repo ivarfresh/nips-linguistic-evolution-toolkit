@@ -1084,6 +1084,46 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 ),
             )
 
+        gemini_stable = self.config.get_experiment_combinations(
+            "noise8_identity_persistence_gemini_n5_stable"
+        )
+        gemini_relative = self.config.get_experiment_combinations(
+            "noise8_identity_persistence_gemini_n5_relative"
+        )
+        self.assertEqual(len(gemini_stable), 5)
+        self.assertEqual(len(gemini_relative), 5)
+        expected_gemini_ids = list(range(25, 30))
+        self.assertEqual(
+            [combo["replicate_id"] for combo in gemini_stable],
+            expected_gemini_ids,
+        )
+        self.assertEqual(
+            [combo["replicate_id"] for combo in gemini_relative],
+            expected_gemini_ids,
+        )
+        for stable_combo, relative_combo in zip(gemini_stable, gemini_relative):
+            self.assertEqual(stable_combo["model"], "google/gemini-3.1-flash-lite")
+            self.assertEqual(relative_combo["model"], "google/gemini-3.1-flash-lite")
+            stable_params = dict(stable_combo["game_params"])
+            relative_params = dict(relative_combo["game_params"])
+            self.assertEqual(stable_params.pop("history_policy"), "stable_ids")
+            self.assertEqual(
+                relative_params.pop("history_policy"),
+                "relative_pair_ids",
+            )
+            self.assertEqual(stable_params, relative_params)
+            self.assertEqual(
+                resolve_protocol_seeds(stable_combo["game_params"], stable_combo),
+                (202608200 + stable_combo["replicate_id"],) * 2,
+            )
+            self.assertEqual(
+                resolve_protocol_seeds(stable_combo["game_params"], stable_combo),
+                resolve_protocol_seeds(
+                    relative_combo["game_params"],
+                    relative_combo,
+                ),
+            )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),
