@@ -1,3 +1,28 @@
+### 2026-08-21 — Stable-ID control: round-one drop is not the ledger announcement
+
+- Froze and ran a five-population GPT-5 Nano stable-ID/no-ledger control. All
+  15 matched private/stable/public Game-only runs passed jointly: 1,200 clean
+  decisions, 1,200 noise checks, exact ID/history checks, and matched schedules.
+- Round-one sending was .620 anonymous private, .440 stable IDs/no ledger, and
+  .480 stable IDs/public ledger. The prespecified ledger − stable contrast was
+  +.040 (95% CI [−.095, +.175], p=.456); stable − anonymous was −.180
+  ([−.384, +.024], p=.070).
+- Across all rounds, final balance was 66.03 / 61.03 / 62.04. Stable − private
+  was −5.00 (p=.112) with high variance from one low-cooperation population;
+  ledger − stable was +1.01 (p=.553). There is no resolved welfare benefit from
+  the public records beyond persistent identity.
+- Post hoc, the public ledger raised return ratios relative to stable IDs by
+  .158 ([+.055, +.261], unadjusted p=.013), positive in all five pairs. This
+  may indicate social-norm information even though returns do not directly
+  increase total surplus.
+- The early cooperation drop is best attributed to the persistent identity/
+  current-partner prompt bundle, not ledger learning or the public-monitoring
+  announcement. Report and analysis:
+  `docs/stable_ids_control_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_stable_ids_control_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Public-ledger Myth→Game extension: positive, unresolved
 
 - Froze and ran five matched GPT-5 Nano public-ledger Myth→Game populations
