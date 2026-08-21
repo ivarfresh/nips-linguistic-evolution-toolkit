@@ -28,6 +28,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         "relative_pair_ids",
     }
     VALID_PROMPT_REGIMES = {"legacy", "unified"}
+    VALID_PUNISHMENT_PROMPT_VARIANTS = {"current", "cost_salient"}
 
     def __init__(
         self,
@@ -61,6 +62,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         punishment_enabled=False,
         punishment_budget=2,
         punishment_effect_multiplier=3,
+        punishment_prompt_variant="current",
     ):
         super().__init__()
         self.set_pairing_mode(pairing_mode)
@@ -101,6 +103,9 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         self.punishment_effect_multiplier = self._validate_positive_number(
             "punishment_effect_multiplier",
             punishment_effect_multiplier,
+        )
+        self.punishment_prompt_variant = self._validate_punishment_prompt_variant(
+            punishment_prompt_variant
         )
         self.set_prompt_name_visibility(show_agent_names)
         self.set_defector_options(
@@ -236,6 +241,16 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             )
         return normalized
 
+    def _validate_punishment_prompt_variant(self, variant):
+        normalized = str(variant or "current").strip().lower()
+        if normalized not in self.VALID_PUNISHMENT_PROMPT_VARIANTS:
+            choices = ", ".join(sorted(self.VALID_PUNISHMENT_PROMPT_VARIANTS))
+            raise ValueError(
+                "punishment_prompt_variant must be one of: "
+                f"{choices}; got {variant!r}"
+            )
+        return normalized
+
     def _finalize_game_prompt(self, prompt, agent_id, opponent_id):
         if self.history_policy == "relative_pair_ids":
             identity_context = (
@@ -320,6 +335,13 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 "round payoff cannot fall below $0.\n"
                 "- The receiver is told the deduction decision and its effect."
             )
+            if self.punishment_prompt_variant == "cost_salient":
+                base_prompt += (
+                    "\n- Spending is optional: choosing 0 is valid, and there is "
+                    "no requirement to use the deduction budget."
+                    "\n- Because unspent points are added to the sender's earnings, "
+                    "each point spent costs the sender $1 relative to keeping it."
+                )
 
         return self.with_system_context(base_prompt, agent_id)
 
@@ -952,6 +974,13 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             "without taking it below $0.\n"
             "Respond exactly as JSON: {'deduct': <whole number>}"
         )
+        if self.punishment_prompt_variant == "cost_salient":
+            prompt = (
+                prompt.rstrip()
+                + "\nSpending is optional: 0 is valid, and there is no requirement "
+                "to use the budget. Each point spent costs you $1 relative to "
+                "keeping it."
+            )
         return self._finalize_game_prompt(prompt, agent_id, opponent_id)
 
     def validate_post_game_response(self, content):

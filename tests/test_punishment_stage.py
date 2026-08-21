@@ -65,6 +65,42 @@ class PunishmentStageTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     game.validate_post_game_response(malformed)
 
+    def test_cost_salient_variant_states_optional_sender_cost(self):
+        game = build_game(punishment_prompt_variant="cost_salient")
+        game.configure_agents(["Agent_1", "Agent_2"])
+
+        system = game.get_system_prompt("Agent_1", None)
+        self.assertIn("Spending is optional", system)
+        self.assertIn("choosing 0 is valid", system)
+        self.assertIn("costs the sender $1", system)
+
+        sim_data = SimulationData()
+        sim_data.conversation_history = [
+            {
+                "round": 1,
+                "dyads": [
+                    {
+                        "agents": ["Agent_1", "Agent_2"],
+                        "investor": "Agent_1",
+                        "trustee": "Agent_2",
+                        "returned": 3,
+                        "returned_communicated": 3,
+                        "investor_payoff": 3,
+                        "investor_payoff_communicated": 3,
+                        "trustee_payoff": 12,
+                        "trustee_payoff_communicated": 12,
+                    }
+                ],
+            }
+        ]
+        prompt = game.get_post_game_prompt("Agent_1", 1, sim_data)
+        self.assertIn("Spending is optional", prompt)
+        self.assertIn("Each point spent costs you $1", prompt)
+
+    def test_unknown_punishment_prompt_variant_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "punishment_prompt_variant"):
+            build_game(punishment_prompt_variant="moralizing")
+
     def test_sender_budget_and_three_to_one_effect_are_applied(self):
         game = build_game()
         game.configure_agents(["Agent_1", "Agent_2"])

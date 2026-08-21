@@ -344,6 +344,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
                 "punishment_effect_multiplier",
                 3,
             ),
+            punishment_prompt_variant=game_params.get(
+                "punishment_prompt_variant",
+                "current",
+            ),
         )
 
         myth_writer = MythWriter(
@@ -420,6 +424,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Deduction Stage Enabled: {game_params.get('punishment_enabled', False)}\n")
             f.write(f"Deduction Budget: {game_params.get('punishment_budget', 2)}\n")
             f.write(f"Deduction Effect Multiplier: {game_params.get('punishment_effect_multiplier', 3)}\n")
+            f.write(f"Deduction Prompt Variant: {game_params.get('punishment_prompt_variant', 'current')}\n")
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
@@ -490,6 +495,10 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         sim_data.run_metadata["punishment_effect_multiplier"] = game_params.get(
             "punishment_effect_multiplier",
             3,
+        )
+        sim_data.run_metadata["punishment_prompt_variant"] = game_params.get(
+            "punishment_prompt_variant",
+            "current",
         )
 
         # Save final state
