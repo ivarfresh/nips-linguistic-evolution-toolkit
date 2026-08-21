@@ -1,3 +1,29 @@
+### 2026-08-21 — Independent confirmation reverses the identity hypothesis
+
+- Froze and ran a new-seed, wording-matched comparison of persistent stable
+  IDs versus round-local pair IDs (`n=10` GPT-5 Nano populations/arm), with no
+  synthetic history in either condition. All 20 runs passed jointly: 1,600
+  decisions and noise checks, no retries/errors, matched schedules, and no
+  identity leakage.
+- Contrary to the directional hypothesis, persistent IDs **increased** final
+  balance by +3.71/agent (95% paired CI [+1.35, +6.08], p=.0063, dz=1.12):
+  65.03 stable versus 61.31 round-local. The frozen hypothesis required a
+  negative interval and is therefore not confirmed; it is directionally
+  contradicted by the independent evidence.
+- The effect developed across repeated play: round-one sending differed by
+  only +.070 ([−.087, +.227], p=.341), while mean sending differed by +.0743
+  ([+.0269, +.1217], p=.0063). Persistent IDs may enable relationship-specific
+  trust rather than retaliation, but the mechanism is not isolated.
+- Persistent IDs reduced return ratios by −.0647 (unadjusted p=.0087). Since
+  final welfare is driven by sending, this redistribution result does not
+  negate their higher joint surplus.
+- The preceding n=5 claim that identity explains the public-ledger penalty is
+  superseded as an unstable exploratory interpretation. Report and analysis:
+  `docs/identity_persistence_confirmation_gpt_n10_overview_2026-08-21.md` and
+  `scripts/analyze_identity_persistence_confirmation_gpt_n10.py`.
+
+---
+
 ### 2026-08-21 — Anonymous social information preserves cooperation
 
 - Added an anonymous population-record arm: all prior-three-round noisy
