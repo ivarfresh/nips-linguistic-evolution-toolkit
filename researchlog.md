@@ -1,4 +1,28 @@
-### 2026-08-21 — Result: partner dossiers suppress trust unless myth precedes play
+### 2026-08-21 — Independent confirmation: no history × Myth→Game interaction
+
+- Froze and ran a new-seed `2 × 2` GPT-5 Nano confirmation (`n=10`
+  populations/cell; replicate IDs 5–14) before inspecting outcomes. It crossed
+  private interaction memory versus current-partner dossier with Game only
+  versus Myth→Game.
+- All 40/40 runs passed the joint expanded audit: 4,800 accepted responses,
+  4,842 attempts, 42 recovered myth-boundary retries, 3,200 noise checks, no
+  unrecovered failures, and matched schedules.
+- The preregistered final-balance difference-in-differences was +0.50/agent
+  (95% CI [−1.95, +2.94], p=.655, dz=.15). The exploratory claim that
+  Myth→Game specifically eliminates the partner-dossier penalty is not
+  confirmed.
+- Secondary estimates suggest roughly additive effects: dossier − private was
+  −1.81 in Game only (p=.084) and −1.32 in Myth→Game (p=.013); Myth→Game −
+  Game only was +1.18 under private memory (p=.237) and +1.68 under the dossier
+  (p=.017). These secondary p values are unadjusted.
+- Frozen protocol, analysis, and report:
+  `docs/history_visibility_confirmatory_protocol_2026-08-21.md`,
+  `scripts/analyze_history_visibility_confirmation_gpt_n10.py`, and
+  `docs/history_visibility_confirmation_gpt_n10_overview_2026-08-21.md`.
+
+---
+
+### 2026-08-21 — Exploratory result: apparent Myth→Game buffering
 
 - Completed the clean paired GPT-5 Nano `2 × 3` history-visibility by task-
   order screen (`n=5` populations/cell). The contrast is private interaction
@@ -15,7 +39,8 @@
 - The Myth→Game visibility interaction was +3.40 (95% CI [0.70, 6.10], raw
   p=.025, Holm p=.050 across two interactions). Exploratory interpretation:
   explicit partner history facilitates targeted retaliation, while a myth
-  immediately before play buffers that penalty.
+  immediately before play buffers that penalty. The independent confirmation
+  above did not reproduce this interaction.
 - Reproducible analysis and full caveats:
   `scripts/analyze_history_visibility_factorial_gpt_n5.py` and
   `docs/history_visibility_factorial_gpt_n5_overview_2026-08-21.md`.
