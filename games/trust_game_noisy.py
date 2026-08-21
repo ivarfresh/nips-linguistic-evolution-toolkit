@@ -24,6 +24,7 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         "self_and_coplayer",
         "population_ledger",
         "stable_ids",
+        "anonymous_population_record",
     }
     VALID_PROMPT_REGIMES = {"legacy", "unified"}
 
@@ -79,12 +80,13 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             0,
         )
         if (
-            self.history_policy == "population_ledger"
+            self.history_policy
+            in {"population_ledger", "anonymous_population_record"}
             and self.population_history_window <= 0
         ):
             raise ValueError(
                 "population_history_window must be positive when "
-                "history_policy='population_ledger'."
+                f"history_policy={self.history_policy!r}."
             )
         self.game_prompt_addition = (game_prompt_addition or "").strip()
         self.set_prompt_name_visibility(show_agent_names)
@@ -209,6 +211,16 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 "- No population-wide interaction history is shown in this condition."
             )
             prompt = f"{identity_context}\n\n{prompt}"
+        elif self.history_policy == "anonymous_population_record":
+            record_context = (
+                "ANONYMOUS POPULATION RECORD:\n"
+                "- Before each game decision, every agent sees the same record of "
+                "communicated/noisy transfers from recent completed population rounds.\n"
+                "- Historical pairs are relabeled independently in every round, so "
+                "the record cannot identify your current co-player or track individuals.\n"
+                "- The record does not reveal hidden true amounts."
+            )
+            prompt = f"{record_context}\n\n{prompt}"
         elif self.history_policy == "population_ledger":
             ledger_context = (
                 "PUBLIC POPULATION LEDGER:\n"
@@ -434,6 +446,8 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
             return ""
         if self.history_policy == "population_ledger":
             return self._format_population_ledger(turn, sim_data)
+        if self.history_policy == "anonymous_population_record":
+            return self._format_anonymous_population_record(turn, sim_data)
         if self.history_policy != "self_and_coplayer":
             return self._format_most_recent_self_history(
                 agent_id,
@@ -524,6 +538,44 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                     f"(SENDER) sent ${sent} to {self.public_ledger_label(trustee_id)} "
                     f"(RECEIVER); {self.public_ledger_label(trustee_id)} returned "
                     f"${returned}."
+                )
+        return "\n".join(lines)
+
+    def _format_anonymous_population_record(self, turn, sim_data):
+        completed_rounds = []
+        for entry in getattr(sim_data, "conversation_history", []) or []:
+            try:
+                entry_round = int(entry.get("round", 0))
+            except (TypeError, ValueError):
+                continue
+            if entry_round >= turn:
+                continue
+            completed_rounds.append((entry_round, entry))
+
+        completed_rounds.sort(key=lambda item: item[0])
+        completed_rounds = completed_rounds[-self.population_history_window :]
+        if not completed_rounds:
+            return "Anonymous population record: no previous round has been completed."
+
+        lines = [
+            "Anonymous record of communicated/noisy population transfers "
+            f"(last {self.population_history_window} population round(s)):"
+        ]
+        for entry_round, entry in completed_rounds:
+            for pair_index, dyad in enumerate(
+                self.iter_completed_dyads(entry),
+                start=1,
+            ):
+                sent = dyad.get("sent_communicated")
+                returned = dyad.get("returned_communicated")
+                if sent is None or returned is None:
+                    raise ValueError(
+                        "Anonymous population record requires communicated transfer "
+                        f"values; round {entry_round} is incomplete."
+                    )
+                lines.append(
+                    f"- Round {entry_round}, Pair {pair_index}: a sender sent "
+                    f"${sent}; the receiver returned ${returned}."
                 )
         return "\n".join(lines)
 

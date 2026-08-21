@@ -468,6 +468,29 @@ class PairingAndPromptRegimeTests(unittest.TestCase):
         self.assertNotIn("sent $4.1", prompt)
         self.assertNotIn("Agent_1", prompt)
 
+    def test_anonymous_population_record_shows_social_information_without_ids(self):
+        game = build_game(
+            num_agents=8,
+            history_policy="anonymous_population_record",
+            population_history_window=3,
+            show_agent_names=False,
+            pairing_mode="fixed",
+        )
+        sim_data = build_population_ledger_state()
+
+        prompt = game.get_game_prompt_later_round(
+            "Agent_2", 2, sim_data, {}
+        )
+
+        self.assertEqual(prompt.count("- Round 1, Pair"), 4)
+        self.assertIn("Pair 1: a sender sent $4.1", prompt)
+        self.assertIn("receiver returned $1.2", prompt)
+        self.assertNotIn("sent $0.1", prompt)
+        self.assertNotIn("Member A", prompt)
+        self.assertNotIn("Member B", prompt)
+        self.assertIn("cannot identify your current co-player", prompt)
+        self.assertIn("does not reveal hidden true amounts", prompt)
+
     def test_invalid_protocol_enums_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "history_policy"):
             build_game(history_policy="typo")
@@ -969,6 +992,31 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             self.assertEqual(params["memory_capacity"], 3)
             self.assertEqual(params["history_policy"], "stable_ids")
             self.assertEqual(params["population_history_window"], 0)
+            self.assertFalse(params["show_agent_names"])
+            self.assertEqual(
+                resolve_protocol_seeds(params, combo),
+                (
+                    202608200 + combo["replicate_id"],
+                    202608200 + combo["replicate_id"],
+                ),
+            )
+
+        anonymous_record = self.config.get_experiment_combinations(
+            "noise8_anonymous_record_signed_gpt_n5_game"
+        )
+        self.assertEqual(len(anonymous_record), 5)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in anonymous_record},
+            set(range(5)),
+        )
+        for combo in anonymous_record:
+            params = combo["game_params"]
+            self.assertEqual(combo["task_order"], ["game"])
+            self.assertEqual(
+                params["history_policy"],
+                "anonymous_population_record",
+            )
+            self.assertEqual(params["population_history_window"], 3)
             self.assertFalse(params["show_agent_names"])
             self.assertEqual(
                 resolve_protocol_seeds(params, combo),

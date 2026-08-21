@@ -216,6 +216,23 @@ def audit_run(path):
                 )
         return lines
 
+    def expected_anonymous_record_lines(round_number):
+        previous_rounds = sorted(
+            number for number in history_by_round if number < round_number
+        )[-population_history_window:]
+        lines = []
+        for previous_round in previous_rounds:
+            for pair_index, dyad in enumerate(
+                history_by_round[previous_round].get("dyads") or [],
+                start=1,
+            ):
+                lines.append(
+                    f"- Round {previous_round}, Pair {pair_index}: a sender sent "
+                    f"${dyad.get('sent_communicated')}; the receiver returned "
+                    f"${dyad.get('returned_communicated')}."
+                )
+        return lines
+
     def round_opponent(agent_id, round_number):
         for dyad in (history_by_round.get(round_number) or {}).get("dyads") or []:
             dyad_agents = dyad.get("agents") or []
@@ -475,6 +492,21 @@ def audit_run(path):
                         )
                     if "Public ledger of communicated/noisy transfers" not in prompt:
                         add(f"{tag}: public population ledger missing")
+                elif history_policy == "anonymous_population_record":
+                    expected_entries = (
+                        min(round_number - 1, population_history_window)
+                        * expected_dyads
+                    )
+                    if history_entries != expected_entries:
+                        add(
+                            f"{tag}: anonymous population record has "
+                            f"{history_entries} entries; expected {expected_entries}"
+                        )
+                    if (
+                        "Anonymous record of communicated/noisy population transfers"
+                        not in prompt
+                    ):
+                        add(f"{tag}: anonymous population record missing")
 
             if task == "game" and history_policy == "population_ledger":
                 if "PUBLIC POPULATION LEDGER:" not in prompt:
@@ -520,6 +552,25 @@ def audit_run(path):
                     add(f"{tag}: incorrect current co-player stable population ID")
                 if "No population-wide interaction history is shown" not in prompt:
                     add(f"{tag}: stable-ID no-history boundary missing")
+
+            if task == "game" and history_policy == "anonymous_population_record":
+                if "ANONYMOUS POPULATION RECORD:" not in prompt:
+                    add(f"{tag}: anonymous-record treatment context missing")
+                if "cannot identify your current co-player" not in prompt:
+                    add(f"{tag}: anonymous-record identity boundary missing")
+                if "does not reveal hidden true amounts" not in prompt:
+                    add(f"{tag}: anonymous-record observability boundary missing")
+                if re.search(r"\bMember [A-Z]+\b|\bAgent_\d+\b", prompt):
+                    add(f"{tag}: stable identity leaked into anonymous record prompt")
+                observed_lines = re.findall(
+                    r"^- Round.*$", prompt, flags=re.MULTILINE
+                )
+                expected_lines = expected_anonymous_record_lines(round_number)
+                if observed_lines != expected_lines:
+                    add(
+                        f"{tag}: anonymous population record does not exactly "
+                        "match communicated transfers in saved prior rounds"
+                    )
 
             if is_accepted:
                 accepted_before += 1
