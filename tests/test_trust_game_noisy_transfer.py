@@ -884,6 +884,32 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 ),
             )
 
+        extension = self.config.get_experiment_combinations(
+            "noise8_population_ledger_signed_gpt_n5_extension_game"
+        )
+        self.assertEqual(
+            {combo["replicate_id"] for combo in extension},
+            {2, 3, 4},
+        )
+        self.assertTrue(
+            all(
+                combo["game_params"]["history_policy"]
+                == "population_ledger"
+                for combo in extension
+            )
+        )
+        self.assertEqual(
+            {
+                resolve_protocol_seeds(combo["game_params"], combo)
+                for combo in extension
+            },
+            {
+                (202608202, 202608202),
+                (202608203, 202608203),
+                (202608204, 202608204),
+            },
+        )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),

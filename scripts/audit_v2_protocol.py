@@ -11,6 +11,8 @@ Checks each final JSON for:
 - no myth-decision link in game-only current prompts
 - chat-memory message counts consistent with the configured interaction capacity
 - configured history-policy/window behavior in shared later game prompts
+- exact public-ledger identities and noisy records when population-wide
+  history is enabled
 - fixed-pair partner stability and pairing-aware system instructions
 - identical realized schedules across nominally paired seeded runs
 
@@ -174,6 +176,55 @@ def audit_run(path):
 
     def add(message):
         issues.append(f"{path.name}: {message}")
+
+    agent_ids = list(agents)
+
+    def public_ledger_label(agent_id):
+        try:
+            index = agent_ids.index(agent_id)
+        except ValueError:
+            return None
+        letters = ""
+        value = index + 1
+        while value:
+            value, remainder = divmod(value - 1, 26)
+            letters = chr(ord("A") + remainder) + letters
+        return f"Member {letters}"
+
+    history_by_round = {}
+    for entry in history:
+        try:
+            history_by_round[int(entry.get("round"))] = entry
+        except (TypeError, ValueError):
+            continue
+
+    def expected_public_ledger_lines(round_number):
+        previous_rounds = sorted(
+            number for number in history_by_round if number < round_number
+        )[-population_history_window:]
+        lines = []
+        for previous_round in previous_rounds:
+            for dyad in history_by_round[previous_round].get("dyads") or []:
+                investor_id = dyad.get("investor")
+                trustee_id = dyad.get("trustee")
+                lines.append(
+                    f"- Round {previous_round}: {public_ledger_label(investor_id)} "
+                    f"(SENDER) sent ${dyad.get('sent_communicated')} to "
+                    f"{public_ledger_label(trustee_id)} (RECEIVER); "
+                    f"{public_ledger_label(trustee_id)} returned "
+                    f"${dyad.get('returned_communicated')}."
+                )
+        return lines
+
+    def round_opponent(agent_id, round_number):
+        for dyad in (history_by_round.get(round_number) or {}).get("dyads") or []:
+            dyad_agents = dyad.get("agents") or []
+            if agent_id in dyad_agents:
+                return next(
+                    (other_id for other_id in dyad_agents if other_id != agent_id),
+                    None,
+                )
+        return None
 
     if len(history) != num_turns:
         add(f"{len(history)} rounds; expected {num_turns}")
@@ -429,6 +480,26 @@ def audit_run(path):
                     add(f"{tag}: stable public IDs missing")
                 if "does not reveal hidden true amounts" not in prompt:
                     add(f"{tag}: ledger observability boundary missing")
+                own_label = public_ledger_label(agent_id)
+                opponent_label = public_ledger_label(
+                    round_opponent(agent_id, round_number)
+                )
+                if f"Your stable public ID is {own_label}." not in prompt:
+                    add(f"{tag}: incorrect own public-ledger ID")
+                if (
+                    "Your current co-player's stable public ID is "
+                    f"{opponent_label}."
+                ) not in prompt:
+                    add(f"{tag}: incorrect current co-player public-ledger ID")
+                observed_lines = re.findall(
+                    r"^- Round.*$", prompt, flags=re.MULTILINE
+                )
+                expected_lines = expected_public_ledger_lines(round_number)
+                if observed_lines != expected_lines:
+                    add(
+                        f"{tag}: public ledger does not exactly match the "
+                        "communicated transfers in saved prior rounds"
+                    )
 
             if is_accepted:
                 accepted_before += 1
