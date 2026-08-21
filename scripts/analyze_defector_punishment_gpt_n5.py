@@ -38,6 +38,8 @@ COLORS = {
     "control": "#457b9d",
     "defectors25": "#c14953",
 }
+RETURN_PLOT_TITLE = "Deduction was not reserved for low returns"
+TRAJECTORY_PLOT_TITLE = "Behavior across the ten-round punishment screen"
 PUNISH_PATTERN = re.compile(
     r"\b(?:punish\w*|sanction\w*|retaliat\w*|revenge\w*|"
     r"deduct\w*|penalt\w*|consequence\w*)\b",
@@ -122,8 +124,11 @@ def usage_metrics(run):
 
 def load_data(input_dir):
     runs = load_runs(input_dir / EXPERIMENT_DIR)
-    if len(runs) != 10:
-        raise RuntimeError(f"Found {len(runs)} runs; expected 10")
+    expected_run_count = len(CONDITION_ORDER) * len(EXPECTED_IDS)
+    if len(runs) != expected_run_count:
+        raise RuntimeError(
+            f"Found {len(runs)} runs; expected {expected_run_count}"
+        )
 
     run_rows = []
     decision_rows = []
@@ -603,7 +608,7 @@ def plot_return_bins(bins, output_dir):
     ax.set_xlabel("Visible return / visible amount received")
     ax.set_ylabel("Probability sender spent any deduction point")
     ax.set_ylim(0, 1.15)
-    ax.set_title("Deduction was not reserved for low returns", fontweight="bold")
+    ax.set_title(RETURN_PLOT_TITLE, fontweight="bold")
     ax.legend()
     ax.grid(True, axis="y", alpha=0.25)
     fig.tight_layout()
@@ -619,12 +624,23 @@ def plot_trajectories(rounds, output_dir):
         (axes[0], "standard_send_ratio", "Ordinary-agent proportion sent"),
         (axes[1], "standard_deduction_spent", "Mean deduction points"),
     ):
+        lower_bound, upper_bound = (
+            (0.0, 1.0)
+            if metric == "standard_send_ratio"
+            else (0.0, 2.0)
+        )
         for condition in CONDITION_ORDER:
             subset = rounds[rounds["condition"] == condition]
             grouped = subset.groupby("round")[metric].agg(["mean", "sem", "count"])
             x = grouped.index.to_numpy(dtype=float)
             mean = grouped["mean"].to_numpy(dtype=float)
-            error = grouped["sem"].fillna(0).to_numpy(dtype=float) * stats.t.ppf(0.975, 4)
+            critical = grouped["count"].map(
+                lambda count: stats.t.ppf(0.975, count - 1) if count > 1 else 0
+            )
+            error = (
+                grouped["sem"].fillna(0).to_numpy(dtype=float)
+                * critical.to_numpy(dtype=float)
+            )
             ax.plot(
                 x,
                 mean,
@@ -633,13 +649,20 @@ def plot_trajectories(rounds, output_dir):
                 color=COLORS[condition],
                 label=CONDITION_LABELS[condition],
             )
-            ax.fill_between(x, mean - error, mean + error, color=COLORS[condition], alpha=0.14)
+            ax.fill_between(
+                x,
+                np.clip(mean - error, lower_bound, upper_bound),
+                np.clip(mean + error, lower_bound, upper_bound),
+                color=COLORS[condition],
+                alpha=0.14,
+            )
         ax.set_xlabel("Round")
         ax.set_ylabel(ylabel)
+        ax.set_ylim(lower_bound - 0.05, upper_bound + 0.05)
         ax.set_xticks(range(1, 11))
         ax.grid(True, alpha=0.25)
     axes[0].legend()
-    fig.suptitle("Behavior across the ten-round punishment screen", fontweight="bold")
+    fig.suptitle(TRAJECTORY_PLOT_TITLE, fontweight="bold")
     fig.tight_layout()
     fig.savefig(output_dir / "sending_and_deduction_trajectories.png", dpi=300)
     plt.close(fig)

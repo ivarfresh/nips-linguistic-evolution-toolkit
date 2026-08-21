@@ -1,3 +1,32 @@
+### 2026-08-21 — Gemini targets hidden defectors in the population pilot
+
+- Ran the frozen three-pair Gemini 3.1 Flash-Lite Myth→Game pilot after its
+  controlled punishment calibration. All six substantive populations passed:
+  1,440 accepted interactions, 1,110 LLM responses, exactly 90 forced defector
+  decisions, 240 deduction notices, 480 signed-noise checks, and no retries,
+  leakage, or provenance failures. The two-population smoke remained excluded.
+- Ordinary senders spent a mean 1.50 of two deduction points toward hidden
+  defectors (18/24 opportunities, 75%) and exactly zero toward ordinary
+  receivers (0/66). The defector-minus-ordinary contrasts were therefore
+  +1.50 points and +.75 probability, clearing the frozen pilot thresholds in
+  every aggregate criterion.
+- Restraint also survived the full noisy histories: there were zero deductions
+  in all 43 opportunities where the visible return ratio was at least .5.
+  Across all three treatment populations, ordinary partners were never
+  punished, while defectors were targeted in 50%, 87.5%, and 87.5% of their
+  opportunities.
+- Cooperation was exploratory and near ceiling: ordinary sending was .978
+  with defectors versus 1.000 without (paired difference −.022, CI [−.118,
+  +.073]); ordinary return ratios were .505 versus .504 (+.0014, CI [−.050,
+  +.053]). No small-pilot myth-language contrast was clear.
+- Decision: the mechanism passes the pre-specified screen and merits an
+  independent new-seed confirmation. Do not yet treat the `n=3` population
+  result or its p-values as confirmatory. Report and analysis:
+  `docs/defector_punishment_gemini_n3_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_gemini_n3.py`.
+
+---
+
 ### 2026-08-21 — Gemini's live-noise punishment threshold is $.25–$.50
 
 - Mapped Gemini's current-wording deduction choice at `$0`, `$.25`, `$.50`,
