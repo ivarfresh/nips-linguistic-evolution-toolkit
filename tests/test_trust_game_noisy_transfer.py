@@ -1224,6 +1224,58 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                     {(expected_seed, expected_seed)},
                 )
 
+        circulation = self.config.get_experiment_combinations(
+            "noise8i_defector_myth_circulation_gemini_n5"
+        )
+        self.assertEqual(len(circulation), 10)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in circulation},
+            set(range(45, 50)),
+        )
+        by_replicate = {}
+        for combo in circulation:
+            self.assertEqual(combo["model"], "google/gemini-3.1-flash-lite")
+            self.assertEqual(combo["task_order"], ["myth", "game"])
+            self.assertEqual(combo["game_params"]["defector_ratio"], 0.25)
+            self.assertEqual(
+                combo["game_params"]["defector_action_policy"],
+                "forced_zero",
+            )
+            self.assertFalse(
+                combo["game_params"]["defector_role_visible_to_self"]
+            )
+            by_replicate.setdefault(combo["replicate_id"], []).append(combo)
+        for replicate_id, matched in by_replicate.items():
+            self.assertEqual(len(matched), 2)
+            policies = {
+                combo["game_params"]["defector_myth_policy"] for combo in matched
+            }
+            self.assertEqual(policies, {"normal", "standard_substitute"})
+            normal = next(
+                combo
+                for combo in matched
+                if combo["game_params"]["defector_myth_policy"] == "normal"
+            )
+            substitute = next(
+                combo
+                for combo in matched
+                if combo["game_params"]["defector_myth_policy"]
+                == "standard_substitute"
+            )
+            normal_params = dict(normal["game_params"])
+            substitute_params = dict(substitute["game_params"])
+            normal_params.pop("defector_myth_policy")
+            substitute_params.pop("defector_myth_policy")
+            self.assertEqual(normal_params, substitute_params)
+            expected_seed = 202608121 + replicate_id
+            self.assertEqual(
+                {
+                    resolve_protocol_seeds(combo["game_params"], combo)
+                    for combo in matched
+                },
+                {(expected_seed, expected_seed)},
+            )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),

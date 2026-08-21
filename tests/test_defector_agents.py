@@ -6,7 +6,7 @@ from unittest.mock import patch
 from games.trust_game import TrustGame
 from src.myth_writer import MythWriter
 from src.experiment_config import ExperimentConfig
-from src.simulation import run_simulation
+from src.simulation import SimulationData, run_simulation
 
 
 DEFECTOR_PROMPT = """
@@ -133,7 +133,7 @@ class DefectorPopulationTests(unittest.TestCase):
             llm_calls.append(prompt)
             if "Write a myth" in prompt:
                 content = "A normal myth about a difficult exchange."
-            elif "Send an amount" in prompt:
+            elif "send" in prompt.lower():
                 content = '{"send": 1}'
             else:
                 content = '{"return": 0}'
@@ -213,6 +213,184 @@ class DefectorPopulationTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "defector_myth_policy"):
             build_game(defector_myth_policy="typo")
+
+    def test_standard_substitute_changes_only_defector_to_standard_exposure(self):
+        myth_writer = MythWriter(
+            myth_topic="anything",
+            round1_template="Write a myth. {topic_instruction}",
+            later_rounds_template="Other myth:\n{other_agent_myth}",
+        )
+        sim_data = SimulationData()
+        agent_types = {
+            agent_id: (
+                "defector" if agent_id in {"Agent_2", "Agent_8"} else "standard"
+            )
+            for agent_id in self.agent_ids
+        }
+        sim_data.game_data = {
+            "agent_types": agent_types,
+            "defector_myth_policy": "standard_substitute",
+        }
+        sim_data.run_metadata = {
+            "defector_myth_policy": "standard_substitute",
+        }
+        previous_myths = {
+            agent_id: f"Myth: unique story written by source {index}."
+            for index, agent_id in enumerate(self.agent_ids, start=1)
+        }
+        sim_data.conversation_history = [
+            {
+                "round": 1,
+                "agent_types": agent_types,
+                "pairings": [
+                    {"agents": ["Agent_1", "Agent_2"]},
+                    {"agents": ["Agent_3", "Agent_4"]},
+                    {"agents": ["Agent_5", "Agent_6"]},
+                    {"agents": ["Agent_7", "Agent_8"]},
+                ],
+                "myths": previous_myths,
+            },
+            {"round": 2, "myth_exposures": {}},
+        ]
+
+        exposed_prompt = myth_writer.get_myth_prompt_round_later(
+            "Agent_1", 2, sim_data
+        )
+        exposed_record = sim_data.conversation_history[1]["myth_exposures"][
+            "Agent_1"
+        ]
+        self.assertTrue(exposed_record["substitution_applied"])
+        self.assertEqual(exposed_record["original_author_id"], "Agent_2")
+        self.assertEqual(exposed_record["presented_author_id"], "Agent_5")
+        self.assertIn(previous_myths["Agent_5"], exposed_prompt)
+        self.assertNotIn(previous_myths["Agent_2"], exposed_prompt)
+        self.assertNotIn("Agent_5", exposed_prompt)
+        self.assertNotIn("substitute", exposed_prompt.lower())
+        self.assertNotIn("defector", exposed_prompt.lower())
+
+        ordinary_prompt = myth_writer.get_myth_prompt_round_later(
+            "Agent_3", 2, sim_data
+        )
+        ordinary_record = sim_data.conversation_history[1]["myth_exposures"][
+            "Agent_3"
+        ]
+        self.assertFalse(ordinary_record["substitution_applied"])
+        self.assertEqual(ordinary_record["presented_author_id"], "Agent_4")
+        self.assertIn(previous_myths["Agent_4"], ordinary_prompt)
+
+        defector_prompt = myth_writer.get_myth_prompt_round_later(
+            "Agent_2", 2, sim_data
+        )
+        defector_record = sim_data.conversation_history[1]["myth_exposures"][
+            "Agent_2"
+        ]
+        self.assertFalse(defector_record["substitution_applied"])
+        self.assertEqual(defector_record["presented_author_id"], "Agent_1")
+        self.assertIn(previous_myths["Agent_1"], defector_prompt)
+
+    def test_normal_circulation_preserves_defector_authored_myth(self):
+        myth_writer = MythWriter(
+            myth_topic="anything",
+            round1_template="Write a myth. {topic_instruction}",
+            later_rounds_template="Other myth:\n{other_agent_myth}",
+        )
+        sim_data = SimulationData()
+        agent_types = {"Agent_1": "standard", "Agent_2": "defector"}
+        sim_data.game_data = {
+            "agent_types": agent_types,
+            "defector_myth_policy": "normal",
+        }
+        sim_data.run_metadata = {"defector_myth_policy": "normal"}
+        sim_data.conversation_history = [
+            {
+                "round": 1,
+                "agent_types": agent_types,
+                "pairings": [{"agents": ["Agent_1", "Agent_2"]}],
+                "myths": {
+                    "Agent_1": "Myth: ordinary source.",
+                    "Agent_2": "Myth: defector source.",
+                },
+            },
+            {"round": 2, "myth_exposures": {}},
+        ]
+
+        prompt = myth_writer.get_myth_prompt_round_later(
+            "Agent_1", 2, sim_data
+        )
+        record = sim_data.conversation_history[1]["myth_exposures"]["Agent_1"]
+        self.assertIn("Myth: defector source.", prompt)
+        self.assertFalse(record["substitution_applied"])
+        self.assertEqual(record["presented_author_id"], "Agent_2")
+
+    def test_standard_substitute_is_recorded_in_full_simulation(self):
+        game = build_game(
+            defector_agent_ids=["Agent_1", "Agent_3"],
+            defector_action_policy="forced_zero",
+            defector_myth_policy="standard_substitute",
+            defector_role_visible_to_self=False,
+        )
+        game.set_pairing_mode("fixed")
+        myth_writer = MythWriter(
+            myth_topic="anything",
+            round1_template="Write a myth. {topic_instruction}",
+            later_rounds_template=(
+                "Other myth:\n{other_agent_myth}\n\nWrite a myth."
+            ),
+        )
+
+        def fake_call_llm(client, model, temperature, messages):
+            prompt = messages[-1]["content"]
+            if "Write a myth" in prompt:
+                content = "Myth: A traveler crossed a quiet valley and came home."
+            elif prompt.rstrip().endswith("Return an amount."):
+                content = '{"return": 0}'
+            elif prompt.rstrip().endswith("Send an amount."):
+                content = '{"send": 1}'
+            elif "{'return': <amount>}" in prompt:
+                content = '{"return": 0}'
+            elif "{'send': <amount>}" in prompt:
+                content = '{"send": 1}'
+            else:
+                raise AssertionError(f"Unexpected mock prompt: {prompt}")
+            return {"content": content, "reasoning": None, "usage": None}
+
+        with patch("src.simulation.create_llm_client", return_value=object()), patch(
+            "src.agents.call_llm",
+            side_effect=fake_call_llm,
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                sim_data = run_simulation(
+                    game=game,
+                    model="mock/model",
+                    temperature=0,
+                    num_turns=2,
+                    num_agents=8,
+                    memory_capacity=6,
+                    agent_biases="",
+                    myth_writer=myth_writer,
+                    task_order=["myth", "game"],
+                    chat_memory_mode="memory_primary",
+                )
+
+        second_round = sim_data.conversation_history[1]
+        self.assertEqual(len(second_round["myth_exposures"]), 8)
+        substituted_targets = {
+            agent_id
+            for agent_id, record in second_round["myth_exposures"].items()
+            if record["substitution_applied"]
+        }
+        self.assertEqual(substituted_targets, {"Agent_2", "Agent_4"})
+        for target_id in substituted_targets:
+            record = second_round["myth_exposures"][target_id]
+            self.assertEqual(record["original_author_type"], "defector")
+            self.assertEqual(record["presented_author_type"], "standard")
+            myth_event = next(
+                event
+                for event in sim_data.agents[target_id].interaction_history
+                if event["metadata"]["round"] == 2
+                and event["metadata"]["task"] == "myth"
+            )
+            self.assertNotIn("standard_substitute", myth_event["prompt"])
 
     def test_configured_8_agent_condition_uses_quarter_defectors(self):
         config = ExperimentConfig("config/experiments.yaml")

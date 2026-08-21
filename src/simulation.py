@@ -518,6 +518,7 @@ def run_simulation(
                 "balances": None,
                 "actions": None,
                 "myths": {},
+                "myth_exposures": {},  # Audit which prior myth each agent sees
                 "game_responses": {},  # Store game decision responses
                 "myth_responses": {}  # Store myth writing responses
             }

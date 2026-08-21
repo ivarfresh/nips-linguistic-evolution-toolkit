@@ -307,6 +307,77 @@ def audit_run(path):
                     f"invalid accepted myth ({exc})"
                 )
 
+        exposures = entry.get("myth_exposures") or {}
+        if has_myth and round_number == 1 and exposures:
+            add("round 1: unexpected prior-myth exposure records")
+        if has_myth and round_number > 1 and (
+            defector_myth_policy == "standard_substitute" or exposures
+        ):
+            if len(exposures) != num_agents:
+                add(
+                    f"round {round_number}: {len(exposures)} myth exposure "
+                    f"records; expected {num_agents}"
+                )
+            previous_entry = history_by_round.get(round_number - 1) or {}
+            previous_myths = previous_entry.get("myths") or {}
+            previous_types = (
+                previous_entry.get("agent_types")
+                or game_data.get("agent_types")
+                or {}
+            )
+            for target_id in agents:
+                exposure = exposures.get(target_id) or {}
+                original_author_id = round_opponent(target_id, round_number - 1)
+                should_substitute = (
+                    defector_myth_policy == "standard_substitute"
+                    and previous_types.get(target_id, "standard") == "standard"
+                    and previous_types.get(original_author_id, "standard")
+                    == "defector"
+                )
+                if exposure.get("policy") != defector_myth_policy:
+                    add(
+                        f"{target_id} round {round_number}: myth exposure policy "
+                        "does not match run metadata"
+                    )
+                if exposure.get("source_round") != round_number - 1:
+                    add(
+                        f"{target_id} round {round_number}: myth exposure has "
+                        "the wrong source round"
+                    )
+                if exposure.get("original_author_id") != original_author_id:
+                    add(
+                        f"{target_id} round {round_number}: original myth author "
+                        "is not the prior-round partner"
+                    )
+                if bool(exposure.get("substitution_applied")) != should_substitute:
+                    add(
+                        f"{target_id} round {round_number}: myth substitution "
+                        f"flag is {exposure.get('substitution_applied')!r}; "
+                        f"expected {should_substitute}"
+                    )
+                presented_author_id = exposure.get("presented_author_id")
+                if presented_author_id not in previous_myths:
+                    add(
+                        f"{target_id} round {round_number}: presented myth author "
+                        "has no prior-round myth"
+                    )
+                if should_substitute:
+                    if previous_types.get(presented_author_id, "standard") != "standard":
+                        add(
+                            f"{target_id} round {round_number}: substituted myth "
+                            "was not ordinary-authored"
+                        )
+                    if presented_author_id in {target_id, original_author_id}:
+                        add(
+                            f"{target_id} round {round_number}: invalid "
+                            "substitute myth author"
+                        )
+                elif presented_author_id != original_author_id:
+                    add(
+                        f"{target_id} round {round_number}: normal circulation "
+                        "changed the presented myth author"
+                    )
+
         for dyad in dyads:
             dyad_agents = dyad.get("agents") or []
             if len(dyad_agents) == 2:
@@ -400,10 +471,9 @@ def audit_run(path):
                 if (
                     task == "myth"
                     and agent_id in defector_ids
-                    and defector_myth_policy == "normal"
                     and response_source != "llm"
                 ):
-                    add(f"{tag}: normal defector myth did not come from the LLM")
+                    add(f"{tag}: defector myth did not come from the LLM")
             if not messages or messages[0].get("role") != "system":
                 add(f"{tag}: system message is not first")
                 continue
@@ -434,6 +504,37 @@ def audit_run(path):
                 )
 
             prompt = messages[-1].get("content") or ""
+            if task == "myth" and round_number > 1:
+                exposure = (
+                    (history_by_round.get(round_number) or {})
+                    .get("myth_exposures", {})
+                    .get(agent_id)
+                )
+                if exposure:
+                    source_entry = history_by_round.get(
+                        exposure.get("source_round")
+                    ) or {}
+                    source_myths = source_entry.get("myths") or {}
+                    presented_myth = source_myths.get(
+                        exposure.get("presented_author_id")
+                    )
+                    if presented_myth and presented_myth not in prompt:
+                        add(f"{tag}: recorded presented myth is absent from prompt")
+                    if exposure.get("substitution_applied"):
+                        original_myth = source_myths.get(
+                            exposure.get("original_author_id")
+                        )
+                        if (
+                            original_myth
+                            and original_myth != presented_myth
+                            and original_myth in prompt
+                        ):
+                            add(f"{tag}: quarantined defector myth remains in prompt")
+                        if (
+                            "standard_substitute" in prompt
+                            or "circulation policy" in prompt.lower()
+                        ):
+                            add(f"{tag}: myth circulation policy leaked into prompt")
             if (
                 task == "game"
                 and agent_id in defector_ids

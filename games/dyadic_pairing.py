@@ -8,7 +8,12 @@ class DyadicPairingMixin:
     requires_even_agents = True
     VALID_PAIRING_MODES = {"balanced", "fixed"}
     VALID_DEFECTOR_ACTION_POLICIES = {"prompted", "forced_zero"}
-    VALID_DEFECTOR_MYTH_POLICIES = {"normal"}
+    # ``standard_substitute`` leaves defector myth generation untouched but,
+    # when an ordinary agent would receive a defector-authored myth in the next
+    # round, presents another ordinary author's myth from the same prior round.
+    # The policy therefore manipulates cultural circulation without changing
+    # defector game actions or the number of myth LLM calls.
+    VALID_DEFECTOR_MYTH_POLICIES = {"normal", "standard_substitute"}
 
     def set_defector_options(
         self,

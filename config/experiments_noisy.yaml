@@ -948,6 +948,38 @@ game_params:
     defector_myth_policy: "normal"
     defector_role_visible_to_self: false
 
+  # Same mechanical-defector treatment, but defector-authored myths do not
+  # circulate to ordinary agents. At an affected later-round myth prompt, a
+  # real ordinary-authored myth from the same prior population-round is shown
+  # instead. Defectors still generate myths normally and all LLM-call counts
+  # remain unchanged.
+  noisy8_bidirectional_informed_defector_v2_twotask_treatment25_standard_substitute:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "none"
+    self_history_window: 0
+    coplayer_history_window: 0
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "unified"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608121
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "standard_substitute"
+    defector_role_visible_to_self: false
+
   # 8-agent bidirectional noise, memory-primary (mirrors the plain-game
   # sonnet45_8agent_*_memprimary regime: self history in chat memory, only the
   # co-player's last 3 games injected; capacity 6 pairs = 3 rounds).
@@ -2313,6 +2345,24 @@ experiment_sets:
       - "noisy8_bidirectional_informed_defector_v2_twotask_control"
       - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25"
     replicate_ids: [35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
+
+  # Mechanism screen: hold the two hidden mechanical defectors fixed and vary
+  # only whether their myths circulate to ordinary agents. New matched seeds
+  # are disjoint from the preceding pilot and confirmation.
+  noise8i_defector_myth_circulation_gemini_n5:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25"
+      - "noisy8_bidirectional_informed_defector_v2_twotask_treatment25_standard_substitute"
+    replicate_ids: [45, 46, 47, 48, 49]
 
   noise8_history_gate_signed_gpt_n5_ownonly_game_myth:
     models: ["gpt5_nano"]

@@ -140,21 +140,44 @@ class MythWriter:
         last_myth = ""
         other_agent_myth = ""
 
+        previous_entry = None
+        original_author_id = None
+        presented_author_id = None
+        substitution_applied = False
+
         for entry in sim_data.conversation_history:
             if entry["round"] == turn - 1 and "myths" in entry:
+                previous_entry = entry
                 myths = entry["myths"]
                 if agent_id in myths:
                     last_myth = myths[agent_id]
 
                 opponent_id = self._get_paired_opponent_id(entry, agent_id)
                 if opponent_id and opponent_id in myths:
+                    original_author_id = opponent_id
+                    presented_author_id = opponent_id
                     other_agent_myth = myths[opponent_id]
                 else:
                     # Fallback for older myth-only state without pairing metadata.
                     for other_agent_id, myth in myths.items():
                         if other_agent_id != agent_id:
+                            original_author_id = other_agent_id
+                            presented_author_id = other_agent_id
                             other_agent_myth = myth
                             break
+
+                (
+                    other_agent_myth,
+                    presented_author_id,
+                    substitution_applied,
+                ) = self._apply_defector_myth_policy(
+                    agent_id=agent_id,
+                    turn=turn,
+                    sim_data=sim_data,
+                    previous_entry=entry,
+                    original_author_id=original_author_id,
+                    original_myth=other_agent_myth,
+                )
                 break
 
         if not last_myth:
@@ -162,6 +185,16 @@ class MythWriter:
 
         if not other_agent_myth:
             raise ValueError(f"OTHER AGENT MYTH ERROR: No previous myth found for {agent_id} (other agent) in round {turn - 1}. Cannot generate later round prompt.")
+
+        self._record_myth_exposure(
+            sim_data=sim_data,
+            turn=turn,
+            agent_id=agent_id,
+            previous_entry=previous_entry,
+            original_author_id=original_author_id,
+            presented_author_id=presented_author_id,
+            substitution_applied=substitution_applied,
+        )
 
         game_behavior_summary = self._get_game_behavior_summary(agent_id, turn, sim_data)
 
@@ -174,6 +207,109 @@ class MythWriter:
             ),
             game_behavior_summary=game_behavior_summary,
         ).lstrip()
+
+    def _apply_defector_myth_policy(
+        self,
+        *,
+        agent_id,
+        turn,
+        sim_data,
+        previous_entry,
+        original_author_id,
+        original_myth,
+    ):
+        """Resolve the prior myth shown under the configured circulation arm.
+
+        ``standard_substitute`` affects only transmission from a defector
+        author to an ordinary target. It substitutes a real ordinary-authored
+        myth from the same prior population-round, without disclosing the
+        author or policy in the prompt. Defectors still generate and retain
+        their own myths normally.
+        """
+        metadata = getattr(sim_data, "run_metadata", {}) or {}
+        game_data = getattr(sim_data, "game_data", {}) or {}
+        policy = metadata.get(
+            "defector_myth_policy",
+            game_data.get("defector_myth_policy", "normal"),
+        )
+        agent_types = (
+            (previous_entry or {}).get("agent_types")
+            or game_data.get("agent_types")
+            or {}
+        )
+        target_type = agent_types.get(agent_id, "standard")
+        original_type = agent_types.get(original_author_id, "standard")
+        if not (
+            policy == "standard_substitute"
+            and target_type == "standard"
+            and original_type == "defector"
+        ):
+            return original_myth, original_author_id, False
+
+        myths = (previous_entry or {}).get("myths") or {}
+        candidates = sorted(
+            candidate_id
+            for candidate_id, myth in myths.items()
+            if candidate_id != agent_id
+            and candidate_id != original_author_id
+            and myth
+            and agent_types.get(candidate_id, "standard") == "standard"
+        )
+        if not candidates:
+            raise ValueError(
+                "DEFECTOR MYTH SUBSTITUTION ERROR: no ordinary-authored myth "
+                f"is available for {agent_id} in round {turn - 1}."
+            )
+
+        ordered_agent_ids = sorted(myths)
+        target_index = ordered_agent_ids.index(agent_id)
+        candidate_id = candidates[(turn + target_index) % len(candidates)]
+        return myths[candidate_id], candidate_id, True
+
+    @staticmethod
+    def _record_myth_exposure(
+        *,
+        sim_data,
+        turn,
+        agent_id,
+        previous_entry,
+        original_author_id,
+        presented_author_id,
+        substitution_applied,
+    ):
+        metadata = getattr(sim_data, "run_metadata", {}) or {}
+        game_data = getattr(sim_data, "game_data", {}) or {}
+        agent_types = (
+            (previous_entry or {}).get("agent_types")
+            or game_data.get("agent_types")
+            or {}
+        )
+        policy = metadata.get(
+            "defector_myth_policy",
+            game_data.get("defector_myth_policy", "normal"),
+        )
+        record = {
+            "policy": policy,
+            "source_round": turn - 1,
+            "original_author_id": original_author_id,
+            "original_author_type": agent_types.get(
+                original_author_id,
+                "standard",
+            ),
+            "presented_author_id": presented_author_id,
+            "presented_author_type": agent_types.get(
+                presented_author_id,
+                "standard",
+            ),
+            "substitution_applied": bool(substitution_applied),
+        }
+        for entry in sim_data.conversation_history:
+            if entry.get("round") == turn:
+                entry.setdefault("myth_exposures", {})[agent_id] = record
+                return
+        raise ValueError(
+            f"MYTH EXPOSURE AUDIT ERROR: current round {turn} is unavailable."
+        )
 
     def _get_game_behavior_summary(self, agent_id, turn, sim_data):
         """Summarize the most recent prior game round from this agent's view.
