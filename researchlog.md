@@ -1,3 +1,29 @@
+### 2026-08-21 — Defector-myth threat transmission does not independently replicate
+
+- Independently repeated the frozen Gemini defector-myth circulation
+  manipulation in 10 new matched population pairs. All 20 populations passed:
+  3,200 accepted interactions, 2,800 LLM calls, exactly 400 forced decisions,
+  1,600 noise checks, complete matched exposures, no leakage, and no retries or
+  unrecovered failures.
+- The sole confirmatory result was negative. Replacing the defector myth with
+  a natural ordinary-authored myth changed the target's next-myth threat
+  density by only −.0117 matches/100 words (95% CI [−.0639, +.0405], p=.624,
+  dz=−.16). The target texts contained 26 threat matches after defector myths
+  versus 22 after ordinary substitutes, rather than the screen's 23 versus
+  five.
+- The source manipulation again increased presented cooperation language
+  (+.521, CI [+.237, +.805], p=.0025). A secondary target outcome also showed
+  more cooperation language (+.145, CI [+.0297, +.260], unadjusted p=.0193),
+  but neither directly exposed nor population-wide game behavior changed.
+- Conclusion: the original one-step threat result was a false positive or
+  unstable seed-contingent pattern. Do not scale this same near-ceiling
+  circulation design. Report and analysis:
+  `docs/defector_myth_circulation_gemini_confirmation_n10_overview_2026-08-21.md`
+  and
+  `scripts/analyze_defector_myth_circulation_gemini_confirmation_n10.py`.
+
+---
+
 ### 2026-08-21 — Defector myths transmit tone, not behavior, in Gemini screen
 
 - Added and froze a causal circulation manipulation: two hidden mechanical
