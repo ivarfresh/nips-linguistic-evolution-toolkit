@@ -146,10 +146,11 @@ def trial_specs(
     variants=VARIANTS,
     trials_per_cell=TRIALS_PER_CELL,
     order_seed=ORDER_SEED,
+    return_ratios=RETURN_RATIOS,
 ):
     specs = []
     for variant in variants:
-        for return_ratio in RETURN_RATIOS:
+        for return_ratio in return_ratios:
             for replicate in range(trials_per_cell):
                 specs.append(
                     {
@@ -245,6 +246,12 @@ def main():
     parser.add_argument("--trials-per-cell", type=int, default=TRIALS_PER_CELL)
     parser.add_argument("--order-seed", type=int, default=ORDER_SEED)
     parser.add_argument(
+        "--return-ratios",
+        nargs="+",
+        type=float,
+        default=list(RETURN_RATIOS),
+    )
+    parser.add_argument(
         "--protocol",
         default="docs/punishment_comprehension_gpt_protocol_2026-08-21.md",
     )
@@ -253,6 +260,10 @@ def main():
         raise SystemExit(f"Refusing to overwrite existing output: {args.output}")
     if args.workers < 1 or args.trials_per_cell < 1:
         raise SystemExit("--workers and --trials-per-cell must be positive")
+    if any(ratio < 0 or ratio > 1 for ratio in args.return_ratios):
+        raise SystemExit("--return-ratios must be between 0 and 1")
+    if len(set(args.return_ratios)) != len(args.return_ratios):
+        raise SystemExit("--return-ratios must be unique")
 
     provenance = execution_provenance(str(CONFIG_PATH))
     if provenance["code_dirty"]:
@@ -263,7 +274,7 @@ def main():
         **llm_runtime_metadata(client, args.model),
         "model": args.model,
         "temperature": TEMPERATURE,
-        "return_ratios": RETURN_RATIOS,
+        "return_ratios": args.return_ratios,
         "variants": args.variants,
         "trials_per_cell": args.trials_per_cell,
         "order_seed": args.order_seed,
@@ -274,6 +285,7 @@ def main():
         variants=args.variants,
         trials_per_cell=args.trials_per_cell,
         order_seed=args.order_seed,
+        return_ratios=args.return_ratios,
     )
     trials = []
     lock = Lock()

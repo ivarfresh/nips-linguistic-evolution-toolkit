@@ -36,6 +36,18 @@ def test_single_variant_matrix_supports_cross_model_check():
     )
 
 
+def test_custom_near_zero_return_matrix():
+    ratios = [0, 1 / 60, 1 / 30, 0.05, 1 / 15]
+    specs = trial_specs(
+        variants=["current"],
+        trials_per_cell=2,
+        order_seed=23,
+        return_ratios=ratios,
+    )
+    assert len(specs) == 10
+    assert {spec["return_ratio"] for spec in specs} == set(ratios)
+
+
 def test_controlled_messages_hold_state_fixed_except_return_and_wording():
     _, current_messages, current_state = controlled_messages("current", 0.5)
     _, salient_messages, salient_state = controlled_messages("cost_salient", 0.5)
