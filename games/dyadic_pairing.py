@@ -507,11 +507,16 @@ class DyadicPairingMixin:
             partner_counts[frozenset((sender, receiver))]
             for receiver in available_receivers
         )
-        return [
+        # ``available_receivers`` is a set. Its iteration order depends on
+        # Python's process-level hash seed, so feeding that order directly to
+        # Random.choice makes a recorded pairing seed non-reproducible across
+        # separate interpreter processes. Canonicalize the candidates before
+        # the seeded choice is made.
+        return sorted(
             receiver
             for receiver in available_receivers
             if partner_counts[frozenset((sender, receiver))] == min_count
-        ]
+        )
 
     def _accumulate_pairing_counts(self, pairings, sender_counts, partner_counts):
         for pairing in pairings:

@@ -464,6 +464,55 @@ game_params:
     coplayer_history_window: 3
     show_agent_names: false
 
+  # Exploratory cross-model smoke cells. These deliberately mirror the
+  # corrected 8-agent Sonnet protocol above, while making signed U(-1, +1)
+  # noise explicit and pairing the exogenous pairing/noise draws across models
+  # and task orders. One replicate is a pipeline/behavioral screen, not an
+  # inferential model comparison.
+  noisy8_crossmodel_signed_smoke_game_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "both"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608200
+
+  noisy8_crossmodel_signed_smoke_twotask_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "both"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608200
+
   # Strict population-size isolation. These two game-only cells use the same
   # prompt builder, fixed partners, accurate pairing instructions, three prior
   # own interactions in chat memory, no injected game-history recap, and hidden
@@ -1831,6 +1880,85 @@ experiment_sets:
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary_twotask_r3"
     num_runs: 10
+
+  # Cheap, exploratory cross-model screen against the corrected 8-agent
+  # Sonnet regime. Each set contains one paired replicate per model.
+  noise8_crossmodel_signed_smoke_game:
+    models: ["gemini_3_1_flash_lite", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_game_r3"
+    num_runs: 1
+
+  noise8_crossmodel_signed_smoke_game_myth:
+    models: ["gemini_3_1_flash_lite", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    num_runs: 1
+
+  noise8_crossmodel_signed_smoke_myth_game:
+    models: ["gemini_3_1_flash_lite", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    num_runs: 1
+
+  # Clean n=5 GPT expansion following the cross-model smoke. These use the
+  # same paired seeds (replicates 0-4 -> protocol seeds 202608200-202608204)
+  # and the same corrected 8-agent protocol as the smoke cells.
+  noise8_crossmodel_signed_gpt_n5_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_game_r3"
+    num_runs: 5
+
+  noise8_crossmodel_signed_gpt_n5_game_myth:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    num_runs: 5
+
+  noise8_crossmodel_signed_gpt_n5_myth_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    num_runs: 5
 
   # Confirmatory population-size isolation: fixed dyad versus four fixed dyads
   # in an 8-agent run, using the unified prompt regime and no injected history.

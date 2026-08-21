@@ -65,6 +65,30 @@
 
 ---
 
+### 2026-08-13 — Corrected informed-noise confirmatory rerun completed
+
+- Completed all six corrected non-defector cells (2/8 agents × game,
+  game→myth, myth→game), `n=10` independent runs per cell. The strict audit
+  passed all 60/60 runs: 5,000 accepted interactions, 5,000 LLM calls, 3,000
+  numerical noise checks, and zero errors, recovered retries, forced responses,
+  or protocol violations.
+- Corrected final balances (mean per agent) were 64.86 / 62.94 / 69.83 in the
+  2-agent repeated-dyad regime and 59.26 / 60.51 / 66.33 in the 8-agent rotating
+  population. Game→myth did not beat game only in either regime, and its
+  population-regime interaction was not detected: difference-in-differences
+  +3.16, 95% CI [−2.04, 8.36], p=.218.
+- Myth→game remained highest in both regimes. Both 8-agent myth→game contrasts
+  survived Holm correction across the six within-population balance tests; the
+  analogous dyad contrasts were suggestive but did not.
+- The saved noise/pairing seeds are null, so the analysis uses independent-group
+  Welch tests rather than the pairing originally intended in the preparation
+  note. Raw JSON remains gitignored and should be archived before publication.
+- Full implementation overview, figures, statistics, caveats, and next steps:
+  `docs/corrected_v2_confirmatory_overview_2026-08-13.md`. Reproducible analysis:
+  `scripts/analyze_corrected_v2_confirmatory.py`.
+
+---
+
 ### 2026-08-12 — Corrected non-defector confirmatory rerun prepared
 
 - Hardened simulation-level retries: an unanswered prompt is now removed from

@@ -1,3 +1,7 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -394,6 +398,41 @@ class PairingAndPromptRegimeTests(unittest.TestCase):
         self.assertEqual(first_schedule, second_schedule)
         self.assertEqual(first_noise, second_noise)
 
+    def test_seeded_pairing_is_stable_across_python_hash_seeds(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        script = """
+import json
+
+from games.dyadic_pairing import DyadicPairingMixin
+from src.simulation import SimulationData
+
+game = DyadicPairingMixin()
+game.set_pairing_mode("balanced")
+game.set_pairing_seed(202608121)
+game.set_defector_options(defector_ratio=0)
+game._init_dyadic_agents()
+game.configure_agents([f"Agent_{index}" for index in range(1, 9)])
+state = SimulationData()
+state.run_metadata["num_turns"] = 10
+schedule = [game.get_round_pairings(turn, state) for turn in range(1, 11)]
+print(json.dumps(schedule, sort_keys=True))
+"""
+        schedules = []
+        for hash_seed in ("1", "2", "3"):
+            environment = os.environ.copy()
+            environment["PYTHONHASHSEED"] = hash_seed
+            completed = subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=repository_root,
+                env=environment,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            schedules.append(completed.stdout.strip())
+
+        self.assertEqual(len(set(schedules)), 1)
+
 
 class MythDecisionLinkPromptTests(unittest.TestCase):
     def assert_link_once(self, prompt):
@@ -525,6 +564,90 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 "noise8i_memprimary_v2_myth_game",
                 max_runs=0,
             )
+
+    def test_crossmodel_smoke_is_paired_and_matches_corrected_8agent_protocol(self):
+        expected_orders = {
+            "noise8_crossmodel_signed_smoke_game": ["game"],
+            "noise8_crossmodel_signed_smoke_game_myth": ["game", "myth"],
+            "noise8_crossmodel_signed_smoke_myth_game": ["myth", "game"],
+        }
+        expected_models = {
+            "google/gemini-3.1-flash-lite",
+            "openai/gpt-5-nano",
+        }
+
+        for experiment_name, task_order in expected_orders.items():
+            with self.subTest(experiment_name=experiment_name):
+                combinations = self.config.get_experiment_combinations(
+                    experiment_name
+                )
+                self.assertEqual(len(combinations), 2)
+                self.assertEqual(
+                    {combo["model"] for combo in combinations},
+                    expected_models,
+                )
+                for combo in combinations:
+                    params = combo["game_params"]
+                    self.assertEqual(combo["task_order"], task_order)
+                    self.assertEqual(params["num_agents"], 8)
+                    self.assertEqual(
+                        params["memory_capacity"],
+                        3 if task_order == ["game"] else 6,
+                    )
+                    self.assertEqual(params["history_policy"], "self_and_coplayer")
+                    self.assertEqual(params["coplayer_history_window"], 3)
+                    self.assertFalse(params["show_agent_names"])
+                    self.assertTrue(params["paired_protocol_seeds"])
+                    self.assertEqual(params["protocol_seed_base"], 202608200)
+                    self.assertEqual(
+                        params["noise_config"],
+                        {
+                            "type": "uniform",
+                            "range": 1.0,
+                            "direction": "both",
+                            "applies_to": "both",
+                            "inform_agents": True,
+                        },
+                    )
+                    self.assertEqual(
+                        bool(combo["game_prompt_addition"]),
+                        "myth" in task_order,
+                    )
+
+    def test_crossmodel_gpt_n5_expansion_uses_five_matched_replicates(self):
+        expected_orders = {
+            "noise8_crossmodel_signed_gpt_n5_game": ["game"],
+            "noise8_crossmodel_signed_gpt_n5_game_myth": ["game", "myth"],
+            "noise8_crossmodel_signed_gpt_n5_myth_game": ["myth", "game"],
+        }
+
+        for experiment_name, task_order in expected_orders.items():
+            with self.subTest(experiment_name=experiment_name):
+                combinations = self.config.get_experiment_combinations(
+                    experiment_name
+                )
+                self.assertEqual(len(combinations), 5)
+                self.assertEqual(
+                    {combo["model"] for combo in combinations},
+                    {"openai/gpt-5-nano"},
+                )
+                self.assertEqual(
+                    {combo["replicate_id"] for combo in combinations},
+                    set(range(5)),
+                )
+                self.assertEqual(
+                    {
+                        resolve_protocol_seeds(combo["game_params"], combo)
+                        for combo in combinations
+                    },
+                    {
+                        (seed, seed)
+                        for seed in range(202608200, 202608205)
+                    },
+                )
+                self.assertTrue(
+                    all(combo["task_order"] == task_order for combo in combinations)
+                )
 
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {

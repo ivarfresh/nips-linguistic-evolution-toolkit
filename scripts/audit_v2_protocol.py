@@ -12,6 +12,7 @@ Checks each final JSON for:
 - chat-memory message counts consistent with the configured interaction capacity
 - configured history-policy/window behavior in shared later game prompts
 - fixed-pair partner stability and pairing-aware system instructions
+- identical realized schedules across nominally paired seeded runs
 
 Usage:
     python scripts/audit_v2_protocol.py <run_dir_or_json> [...]
@@ -69,6 +70,32 @@ def classify_interactions(events):
     return accepted, retries, unrecovered
 
 
+def audit_paired_schedules(results):
+    """Require runs sharing a paired-protocol key to realize one schedule."""
+    groups = {}
+    for result in results:
+        pairing_key = result.get("pairing_key")
+        if pairing_key is not None:
+            groups.setdefault(pairing_key, []).append(result)
+
+    for pairing_key, group in groups.items():
+        if len(group) < 2:
+            continue
+        signatures = {result["pairing_signature"] for result in group}
+        if len(signatures) == 1:
+            continue
+
+        pairing_seed, replicate_id, *_ = pairing_key
+        filenames = ", ".join(result["path"].name for result in group)
+        for result in group:
+            result["issues"].append(
+                f"{result['path'].name}: realized pairing schedule differs "
+                "within nominally paired runs "
+                f"(pairing_seed={pairing_seed}, replicate_id={replicate_id}): "
+                f"{filenames}"
+            )
+
+
 def audit_run(path):
     with path.open() as handle:
         run = json.load(handle)
@@ -110,6 +137,32 @@ def audit_run(path):
     noise_range = float(noise_config.get("range") or 0)
     has_myth = "myth" in task_order
     expected_addition_id = "myth_decision_link" if has_myth else None
+    pairing_signature = tuple(
+        (
+            entry.get("round"),
+            tuple(
+                (
+                    dyad.get("dyad_id"),
+                    dyad.get("investor"),
+                    dyad.get("trustee"),
+                )
+                for dyad in (entry.get("dyads") or [])
+            ),
+        )
+        for entry in history
+    )
+    replicate_id = metadata.get("replicate_id")
+    pairing_seed = metadata.get("pairing_seed")
+    pairing_key = None
+    if pairing_seed is not None and replicate_id is not None:
+        pairing_key = (
+            pairing_seed,
+            replicate_id,
+            num_agents,
+            num_turns,
+            effective_pairing_mode,
+            tuple(agents),
+        )
 
     def add(message):
         issues.append(f"{path.name}: {message}")
@@ -394,6 +447,8 @@ def audit_run(path):
         "forced_responses": forced_response_count,
         "retry_attempts": retry_count,
         "noise_checks": noise_checks,
+        "pairing_key": pairing_key,
+        "pairing_signature": pairing_signature,
     }
 
 
@@ -407,6 +462,7 @@ def main():
         parser.error("no final run JSON files found")
 
     results = [audit_run(path) for path in paths]
+    audit_paired_schedules(results)
     for result in results:
         status = "PASS" if not result["issues"] else "FAIL"
         print(
