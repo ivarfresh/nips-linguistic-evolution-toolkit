@@ -2125,6 +2125,56 @@ experiment_sets:
       - "noisy8_history_gate_signed_gpt_ownonly_twotask_r3"
     replicate_ids: [0, 1, 2, 3, 4]
 
+  # Independent confirmation of the exploratory history × task-order
+  # interaction. Seeds/replicate IDs 5–14 were not used in the n=5 screen.
+  # The primary contrast is the final-balance difference-in-differences for
+  # Myth→Game versus Game only across dossier versus private-memory history.
+  noise8_history_confirm_gpt_n10_private_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_history_gate_signed_gpt_ownonly_game_r3"
+    replicate_ids: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+  noise8_history_confirm_gpt_n10_private_myth_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_history_gate_signed_gpt_ownonly_twotask_r3"
+    replicate_ids: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+  noise8_history_confirm_gpt_n10_dossier_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_game_r3"
+    replicate_ids: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+  noise8_history_confirm_gpt_n10_dossier_myth_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    replicate_ids: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
   # Confirmatory population-size isolation: fixed dyad versus four fixed dyads
   # in an 8-agent run, using the unified prompt regime and no injected history.
   noise_population_isolation_v2_game:

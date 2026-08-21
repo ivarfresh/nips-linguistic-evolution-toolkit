@@ -600,6 +600,34 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                     replicate_ids,
                 )
 
+    def test_history_confirmation_uses_independent_paired_replicates(self):
+        experiment_names = [
+            "noise8_history_confirm_gpt_n10_private_game",
+            "noise8_history_confirm_gpt_n10_private_myth_game",
+            "noise8_history_confirm_gpt_n10_dossier_game",
+            "noise8_history_confirm_gpt_n10_dossier_myth_game",
+        ]
+        expected_ids = list(range(5, 15))
+        for experiment_name in experiment_names:
+            with self.subTest(experiment_name=experiment_name):
+                combinations = self.config.get_experiment_combinations(
+                    experiment_name
+                )
+                self.assertEqual(
+                    [combo["replicate_id"] for combo in combinations],
+                    expected_ids,
+                )
+                self.assertEqual(
+                    [
+                        resolve_protocol_seeds(combo["game_params"], combo)
+                        for combo in combinations
+                    ],
+                    [
+                        (202608200 + replicate_id, 202608200 + replicate_id)
+                        for replicate_id in expected_ids
+                    ],
+                )
+
     def test_crossmodel_smoke_is_paired_and_matches_corrected_8agent_protocol(self):
         expected_orders = {
             "noise8_crossmodel_signed_smoke_game": ["game"],
