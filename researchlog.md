@@ -1,3 +1,27 @@
+### 2026-08-21 — Public population ledger: cooperation does not increase
+
+- Implemented a population-wide public-ledger history arm with stable neutral
+  pseudonyms and the last three complete population rounds. The ledger exposes
+  only communicated/noisy transfers and identifies the current co-player; an
+  exact auditor reconstructs every row and ID mapping from saved data.
+- Ran the matched GPT-5 Nano game-only screen (`n=5` populations/arm) against
+  private memory and the current-partner dossier. All 15/15 runs passed jointly:
+  1,200 accepted decisions, 1,200 noise checks, no retries/errors, and matched
+  schedules.
+- Mean final balance was 66.03 private, 62.64 dossier, and 62.04 public ledger.
+  Ledger − private was −3.99/agent (95% CI [−7.20, −0.77], raw p=.026, Holm
+  p=.052); ledger − dossier was −0.60 (p=.404). The difference is carried by
+  sending, not return ratios.
+- The ledger arm was already lower in round 1, before any history rows existed
+  (.480 versus .620 sent under private memory). This identifies the treatment
+  as a public-monitoring package—stable IDs, anticipated observability, and
+  later records—not a clean estimate of learning from population history.
+- Report and reproducible analysis:
+  `docs/population_ledger_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_population_ledger_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Independent confirmation: no history × Myth→Game interaction
 
 - Froze and ran a new-seed `2 × 2` GPT-5 Nano confirmation (`n=10`
