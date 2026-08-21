@@ -583,11 +583,30 @@ def run_simulation(
                                 remember=remember_game,
                             )
                         else:
-                            response_data = agent.respond(
-                                prompt,
-                                transcript_metadata=interaction_metadata,
-                                remember=remember_game,
-                            )
+                            role = roles_by_agent.get(agent_id)
+
+                            def validate_game_response(content, role=role):
+                                game.validate_game_response(content, role)
+
+                            try:
+                                response_data = agent.respond(
+                                    prompt,
+                                    transcript_metadata=interaction_metadata,
+                                    remember=remember_game,
+                                    response_validator=validate_game_response,
+                                )
+                            except Exception as e:
+                                print(
+                                    f"⚠️  Game decision failed for {agent_id}: "
+                                    f"{type(e).__name__}: {e}. Retrying once..."
+                                )
+                                time.sleep(1.0)
+                                response_data = agent.respond(
+                                    prompt,
+                                    transcript_metadata=interaction_metadata,
+                                    remember=remember_game,
+                                    response_validator=validate_game_response,
+                                )
                         agent_responses[agent_id] = response_data
 
                         # Store full game response data in round_entry

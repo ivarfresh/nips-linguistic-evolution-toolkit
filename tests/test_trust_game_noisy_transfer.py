@@ -565,6 +565,20 @@ class CorrectedV2ConfigTests(unittest.TestCase):
                 max_runs=0,
             )
 
+    def test_explicit_replicate_ids_preserve_original_protocol_seeds(self):
+        combinations = self.config.get_experiment_combinations(
+            "noise8_history_gate_signed_gpt_n5_ownonly_myth_game_repair"
+        )
+
+        self.assertEqual(
+            [combo["replicate_id"] for combo in combinations],
+            [2, 4],
+        )
+        self.assertEqual(
+            [resolve_protocol_seeds(combo["game_params"], combo) for combo in combinations],
+            [(202608202, 202608202), (202608204, 202608204)],
+        )
+
     def test_crossmodel_smoke_is_paired_and_matches_corrected_8agent_protocol(self):
         expected_orders = {
             "noise8_crossmodel_signed_smoke_game": ["game"],

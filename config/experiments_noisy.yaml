@@ -2049,6 +2049,23 @@ experiment_sets:
       - "noisy8_history_gate_signed_gpt_ownonly_twotask_r3"
     num_runs: 5
 
+  # Exact-seed repair cell for the two Myth→Game replicates whose first game
+  # decisions were malformed. The game-response boundary now retries once;
+  # only replicate IDs 2 and 4 are rerun, from clean initial state.
+  noise8_history_gate_signed_gpt_n5_ownonly_myth_game_repair:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_history_gate_signed_gpt_ownonly_twotask_r3"
+    replicate_ids: [2, 4]
+
   # Confirmatory population-size isolation: fixed dyad versus four fixed dyads
   # in an 8-agent run, using the unified prompt regime and no injected history.
   noise_population_isolation_v2_game:

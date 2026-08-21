@@ -95,14 +95,30 @@ class NoisyExperimentConfig:
         # In noise config, we have game_params_list which references named param sets
         game_params_list = exp_set.get('game_params_list', ['default'])
 
-        # Number of runs per combination
+        # Number of runs per combination. Repair cells may name exact paired
+        # replicate IDs so failed runs can be repeated with their original
+        # pairing/noise seeds without rerunning successful replicates.
         configured_num_runs = exp_set.get('num_runs', 1)
+        explicit_replicate_ids = exp_set.get("replicate_ids")
+        if explicit_replicate_ids is not None:
+            if not isinstance(explicit_replicate_ids, list) or not explicit_replicate_ids:
+                raise ValueError("replicate_ids must be a non-empty list")
+            if any(
+                isinstance(replicate_id, bool)
+                or not isinstance(replicate_id, int)
+                or replicate_id < 0
+                for replicate_id in explicit_replicate_ids
+            ):
+                raise ValueError("replicate_ids must contain non-negative integers")
+            if len(set(explicit_replicate_ids)) != len(explicit_replicate_ids):
+                raise ValueError("replicate_ids must be unique")
+            replicate_ids = list(explicit_replicate_ids)
+        else:
+            replicate_ids = list(range(configured_num_runs))
         if max_runs is not None:
             if max_runs < 1:
                 raise ValueError("max_runs must be at least 1 when provided")
-            num_runs = min(configured_num_runs, max_runs)
-        else:
-            num_runs = configured_num_runs
+            replicate_ids = replicate_ids[:max_runs]
 
         # Myth prompt variants/arms. This mirrors the main batch runner so noisy
         # prompt-arm pilots can isolate myth_control vs myth_game_directive.
@@ -170,7 +186,7 @@ class NoisyExperimentConfig:
                 key = game_prompt_keys.get(name, name)
                 return self.config["prompt_templates"].get(key)
 
-            for run in range(num_runs):
+            for run in replicate_ids:
                 combo = {
                     "model": self.config["base_models"][model],
                     "template": self.config["prompt_templates"][template],
@@ -191,7 +207,9 @@ class NoisyExperimentConfig:
                     ),
                     "replicate_id": (
                         run
-                        if configured_num_runs > 1 or max_runs is not None
+                        if explicit_replicate_ids is not None
+                        or configured_num_runs > 1
+                        or max_runs is not None
                         else None
                     ),
                     "myth_prompt_arm_id": myth_prompt_arm["id"] if "myth" in order else None,
