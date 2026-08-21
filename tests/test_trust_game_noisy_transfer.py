@@ -910,6 +910,28 @@ class CorrectedV2ConfigTests(unittest.TestCase):
             },
         )
 
+        myth_game = self.config.get_experiment_combinations(
+            "noise8_population_ledger_signed_gpt_n5_myth_game"
+        )
+        self.assertEqual(len(myth_game), 5)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in myth_game},
+            set(range(5)),
+        )
+        for combo in myth_game:
+            params = combo["game_params"]
+            self.assertEqual(combo["task_order"], ["myth", "game"])
+            self.assertEqual(params["memory_capacity"], 6)
+            self.assertEqual(params["history_policy"], "population_ledger")
+            self.assertEqual(params["population_history_window"], 3)
+            self.assertEqual(
+                resolve_protocol_seeds(params, combo),
+                (
+                    202608200 + combo["replicate_id"],
+                    202608200 + combo["replicate_id"],
+                ),
+            )
+
     def test_population_isolation_is_a_complete_matched_two_by_three_design(self):
         expected = {
             "noise_population_isolation_v2_game": (["game"], 3),
