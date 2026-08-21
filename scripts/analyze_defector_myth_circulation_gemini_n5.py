@@ -109,10 +109,14 @@ def dyad_for_agent(entry, agent_id):
     return None
 
 
-def load_data(input_dir):
-    runs = load_runs(input_dir / EXPERIMENT_DIR)
-    if len(runs) != 10:
-        raise RuntimeError(f"Found {len(runs)} runs; expected 10")
+def load_data(input_dir, experiment_dir=EXPERIMENT_DIR, expected_ids=None):
+    expected_ids = expected_ids or EXPECTED_IDS
+    runs = load_runs(input_dir / experiment_dir)
+    expected_run_count = 2 * len(expected_ids)
+    if len(runs) != expected_run_count:
+        raise RuntimeError(
+            f"Found {len(runs)} runs; expected {expected_run_count}"
+        )
 
     run_rows = []
     exposure_rows = []
@@ -302,7 +306,7 @@ def load_data(input_dir):
         )
 
     for policy in POLICY_ORDER:
-        if seen[policy] != EXPECTED_IDS:
+        if seen[policy] != expected_ids:
             raise RuntimeError(f"{policy} has replicate IDs {sorted(seen[policy])}")
 
     return run_rows, exposure_rows, standard_round_rows, myth_rows, usage_rows
