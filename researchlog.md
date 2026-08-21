@@ -1,3 +1,27 @@
+### 2026-08-21 — Public-ledger Myth→Game extension: positive, unresolved
+
+- Froze and ran five matched GPT-5 Nano public-ledger Myth→Game populations
+  after inspecting the game-only ledger screen. All five new runs passed with
+  800 accepted responses, no retries/errors, exact ledger reconstruction, and
+  matched schedules.
+- Myth→Game raised final balance from 62.04 to 64.30 under the ledger: +2.26
+  per agent (95% paired CI [−1.30, +5.82], p=.152, dz=.79). Two of five
+  matched populations did not improve, so this is directional rather than
+  resolved.
+- The public-ledger task effect was not distinguishable from the private-memory
+  interaction (+2.04, p=.176) or the partner-dossier interaction (−1.36,
+  p=.279).
+- About 62% of the public-ledger balance gain came from round 1, before ledger
+  rows existed (.760 versus .480 sent). The evidence is more consistent with a
+  myth countering the initial public-monitoring frame than with a demonstrated
+  improvement in agents' processing of ledger history.
+- Frozen protocol, report, and analysis:
+  `docs/population_ledger_myth_game_protocol_2026-08-21.md`,
+  `docs/population_ledger_myth_game_gpt_n5_overview_2026-08-21.md`, and
+  `scripts/analyze_population_ledger_myth_game_gpt_n5.py`.
+
+---
+
 ### 2026-08-21 — Public population ledger: cooperation does not increase
 
 - Implemented a population-wide public-ledger history arm with stable neutral
