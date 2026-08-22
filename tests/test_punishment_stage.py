@@ -73,6 +73,27 @@ class PunishmentStageTests(unittest.TestCase):
             self.assertEqual(params["punishment_prompt_variant"], "current")
             self.assertEqual(params["memory_capacity"], 9)
 
+    def test_gemini_confirmation_is_ten_new_treatment_populations(self):
+        config = NoisyExperimentConfig("config/experiments_noisy.yaml")
+        combinations = config.get_experiment_combinations(
+            "noise8i_defector_punishment_gemini_confirmation_n10"
+        )
+        self.assertEqual(len(combinations), 10)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in combinations},
+            set(range(70, 80)),
+        )
+        self.assertEqual(
+            {combo["model"] for combo in combinations},
+            {"google/gemini-3.1-flash-lite"},
+        )
+        for combo in combinations:
+            params = combo["game_params"]
+            self.assertEqual(params["defector_ratio"], 0.25)
+            self.assertTrue(params["punishment_enabled"])
+            self.assertEqual(params["punishment_prompt_variant"], "current")
+            self.assertEqual(params["memory_capacity"], 9)
+
     def test_rules_and_response_boundary(self):
         game = build_game()
         game.configure_agents(["Agent_1", "Agent_2"])
