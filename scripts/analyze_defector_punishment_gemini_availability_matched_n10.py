@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import math
 import re
 import sys
@@ -16,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from analyses._shared import configure_matplotlib
 from analyze_corrected_v2_confirmatory import holm_adjust, load_runs
-from analyze_defector_myth_game_crossmodel_n5 import myth_metrics
+from analyze_defector_myth_game_crossmodel_n5 import THREAT_PATTERN, myth_metrics
 from analyze_defector_punishment_gpt_n5 import PUNISH_PATTERN, usage_metrics
 from audit_v2_protocol import audit_paired_schedules, audit_run
 
@@ -348,7 +349,14 @@ def plot_trajectories(rounds, output_dir):
             center = group["mean"].to_numpy()
             error = stats.t.ppf(.975, 9) * group["sem"].fillna(0).to_numpy()
             ax.plot(x, center, marker="o", color=COLORS[arm], label=ARM_LABELS[arm])
-            ax.fill_between(x, center-error, center+error, color=COLORS[arm], alpha=.13)
+            ax.fill_between(
+                x,
+                np.clip(center - error, 0, 1),
+                np.clip(center + error, 0, 1),
+                color=COLORS[arm],
+                alpha=.13,
+            )
+        ax.set_ylim(-.03, 1.03)
         ax.set_xlabel("Round")
         ax.set_ylabel(ylabel)
         ax.set_xticks(range(1, 11))
@@ -393,6 +401,23 @@ def plot_myths(runs, output_dir):
     plt.close(fig)
 
 
+def make_term_counts(myths):
+    rows = []
+    for arm, group in myths.groupby("arm"):
+        for lexicon, pattern in (
+            ("threat_defection", THREAT_PATTERN),
+            ("punishment_deduction", PUNISH_PATTERN),
+        ):
+            counts = Counter()
+            for text in group["text"]:
+                counts.update(match.group(0).lower() for match in pattern.finditer(text))
+            for term, count in counts.most_common():
+                rows.append(
+                    {"arm": arm, "lexicon": lexicon, "term": term, "count": count}
+                )
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--on-root", type=Path, default=ON_ROOT)
@@ -413,6 +438,7 @@ def main():
     audits = on[4] + off[4]
     validate_joint(runs, audits)
     contrasts = pd.DataFrame(make_contrasts(runs))
+    term_counts = pd.DataFrame(make_term_counts(myths))
 
     primaries = contrasts[contrasts["primary"]]
     send = primaries[primaries["metric"] == "standard_send_ratio"].iloc[0]
@@ -449,6 +475,7 @@ def main():
     contrasts.to_csv(args.out / "paired_contrasts.csv", index=False)
     decision.to_csv(args.out / "escalation_decision.csv", index=False)
     audit_table.to_csv(args.out / "audit.csv", index=False)
+    term_counts.to_csv(args.out / "myth_term_counts.csv", index=False)
     plot_paired_outcomes(runs, args.out)
     plot_trajectories(rounds, args.out)
     plot_myths(runs, args.out)

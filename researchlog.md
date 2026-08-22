@@ -1,3 +1,34 @@
+### 2026-08-22 — Punishment availability lowers Gemini return ratios
+
+- Added 10 punishment-unavailable Gemini populations matched to the completed
+  25%-defector punishment confirmation (replicates 70–79). Both arms passed
+  jointly: 4,000 accepted interactions, 3,100 LLM calls, exactly 500 forced
+  actions, 400 deduction notices, 1,600 signed-noise checks, zero retries, and
+  identical schedules, defector assignments, and exogenous noise seeds.
+- The exploratory punishment-available minus unavailable effect on ordinary
+  sending was −.0277 (95% paired CI [−.0668, +.0115], Holm p=.145), with only
+  five of ten pairs negative. It does not establish a sending effect.
+- Ordinary receiver return ratios fell by −.0491 ([−.0792, −.0191], Holm
+  p=.00988), with nine of ten pairs negative. Round one was virtually identical
+  (−.00076); all nine later round-level differences were negative. The on arm
+  shifted returns toward exact half (65 versus 38 `$7.50` returns) and away
+  from more generous choices (`$8`: 30 versus 47; `$10`: five versus 22), a
+  post-hoc pattern consistent with punishment anchoring the minimally fair rule.
+- Availability also changed ordinary myths: punishment/deduction density rose
+  +.221 matches/100 words (CI [+.164, +.277]) and the overlapping threat/
+  defection lexicon rose +.341 ([+.288, +.393]), in all ten pairs. The latter
+  was not only the word *punishment*: betrayal, threat, withholding, and other
+  hostile language also increased. These are descriptive institution effects,
+  not a defector interaction.
+- The frozen escalation rule passed on the return outcome. Next run a fully
+  independent new-seed 2×2 (punishment available/unavailable × 0%/25% hidden
+  defectors) to test the return effect and distinguish a general institutional
+  effect from a defector-contingent one. Report and analysis:
+  `docs/defector_punishment_gemini_availability_matched_n10_overview_2026-08-22.md`
+  and `scripts/analyze_defector_punishment_gemini_availability_matched_n10.py`.
+
+---
+
 ### 2026-08-22 — Gemini's selective punishment independently confirms
 
 - Ran 10 pre-registered new-seed Gemini 3.1 Flash-Lite populations containing
