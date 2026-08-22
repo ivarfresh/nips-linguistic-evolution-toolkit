@@ -414,6 +414,44 @@ def plot_trajectories(rounds, output_dir):
     plt.close(fig)
 
 
+def plot_myth_descriptives(runs, output_dir):
+    import matplotlib.pyplot as plt
+
+    specs = (
+        ("myth_coop_density", "Cooperation/fairness\nmatches per 100 words"),
+        ("myth_threat_density", "Threat/defection\nmatches per 100 words"),
+        ("myth_half_rule", "Proportion with explicit\nhalf/equal-return rule"),
+        ("myth_punishment_density", "Punishment/deduction\nmatches per 100 words"),
+    )
+    fig, axes = plt.subplots(2, 2, figsize=(11.5, 9))
+    jitter = np.linspace(-.08, .08, len(runs))
+    for ax, (metric, ylabel) in zip(axes.flat, specs):
+        values = runs[metric].to_numpy(dtype=float)
+        low, high = ci(values)
+        ax.scatter(jitter, values, color="#c14953", alpha=.75, s=52)
+        ax.errorbar(
+            0,
+            values.mean(),
+            yerr=[[values.mean() - low], [high - values.mean()]],
+            fmt="o",
+            color="#263238",
+            capsize=7,
+            markersize=9,
+            linewidth=2,
+        )
+        ax.set_xlim(-.18, .18)
+        ax.set_xticks([0], ["25% hidden defectors"])
+        ax.set_ylabel(ylabel)
+        ax.grid(True, axis="y", alpha=.25)
+    fig.suptitle(
+        "Ordinary-authored myth language in confirmation populations",
+        fontweight="bold",
+    )
+    fig.tight_layout()
+    fig.savefig(output_dir / "ordinary_myth_language.png", dpi=300)
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
@@ -504,6 +542,7 @@ def main():
     return_bins = plot_return_bins(decisions, args.out)
     plot_targeting(runs, args.out)
     plot_trajectories(rounds, args.out)
+    plot_myth_descriptives(runs, args.out)
 
     runs.to_csv(args.out / "run_metrics.csv", index=False)
     decisions.to_csv(args.out / "deduction_decisions.csv", index=False)

@@ -1,3 +1,34 @@
+### 2026-08-22 — Gemini's selective punishment independently confirms
+
+- Ran 10 pre-registered new-seed Gemini 3.1 Flash-Lite populations containing
+  25% hidden mechanical defectors. All passed jointly: 2,400 accepted
+  interactions, 1,700 LLM responses, exactly 300 forced defector decisions,
+  400 notices, 800 post-decision signed-noise checks, zero retries, no leakage,
+  and clean embedded commit/config provenance.
+- The prewritten analyzer halted before opening outcomes because the protocol
+  had incorrectly assumed a fixed 8/22 target-role split per population.
+  Balanced schedules guarantee 30 ordinary-sender opportunities but not that
+  exact split. A committed, outcome-blind amendment recorded the deterministic
+  frozen-seed counts (86 defector, 214 ordinary) and changed no statistical or
+  behavioral threshold.
+- Selective punishment replicated decisively. The population-level hidden-
+  defector-minus-ordinary contrast was +1.580 deduction points (95% CI
+  [+1.443, +1.718], Holm p=1.82e−9) and +.790 probability ([+.721, +.859],
+  same p). Both effects exceeded their frozen minimums.
+- Pooled, ordinary senders deducted in 70/86 hidden-defector opportunities
+  (81.4%; mean 1.628/2) versus 5/214 ordinary-receiver opportunities (2.34%;
+  mean .0467). All five ordinary-receiver deductions followed a visibly zero
+  return; no sender deducted in any of 112 opportunities with a visible return
+  ratio of at least .5.
+- This confirms a selective response to observed defection, not recognition
+  of a hidden role. Secondary treatment-only outcomes were ordinary sending
+  .930 (CI [.897, .963]) and returning .483 ([.470, .495]); without a control
+  arm they do not estimate a punishment effect. Report and analysis:
+  `docs/defector_punishment_gemini_confirmation_n10_overview_2026-08-22.md`
+  and `scripts/analyze_defector_punishment_gemini_confirmation_n10.py`.
+
+---
+
 ### 2026-08-21 — Gemini targets hidden defectors in the population pilot
 
 - Ran the frozen three-pair Gemini 3.1 Flash-Lite Myth→Game pilot after its
