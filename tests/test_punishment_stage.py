@@ -111,6 +111,33 @@ class PunishmentStageTests(unittest.TestCase):
             self.assertFalse(params.get("punishment_enabled", False))
             self.assertEqual(params["memory_capacity"], 6)
 
+    def test_gemini_factorial_confirmation_has_four_new_matched_cells(self):
+        config = NoisyExperimentConfig("config/experiments_noisy.yaml")
+        combinations = config.get_experiment_combinations(
+            "noise8i_defector_punishment_gemini_factorial_confirmation_n10"
+        )
+        self.assertEqual(len(combinations), 40)
+        self.assertEqual(
+            {combo["replicate_id"] for combo in combinations},
+            set(range(80, 90)),
+        )
+        cells = {
+            (
+                bool(combo["game_params"].get("punishment_enabled", False)),
+                combo["game_params"]["defector_ratio"],
+            )
+            for combo in combinations
+        }
+        self.assertEqual(
+            cells,
+            {(False, 0.0), (False, 0.25), (True, 0.0), (True, 0.25)},
+        )
+        for combo in combinations:
+            params = combo["game_params"]
+            self.assertEqual(combo["model"], "google/gemini-3.1-flash-lite")
+            expected_capacity = 9 if params.get("punishment_enabled") else 6
+            self.assertEqual(params["memory_capacity"], expected_capacity)
+
     def test_rules_and_response_boundary(self):
         game = build_game()
         game.configure_agents(["Agent_1", "Agent_2"])
