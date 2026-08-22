@@ -29,6 +29,18 @@ DEFAULT_OUTPUT = Path(
     "docs/figures/defector_punishment_gemini_confirmation_n10_20260821"
 )
 EXPECTED_IDS = set(range(70, 80))
+EXPECTED_TARGET_COUNTS = {
+    70: (9, 21),
+    71: (10, 20),
+    72: (8, 22),
+    73: (8, 22),
+    74: (9, 21),
+    75: (8, 22),
+    76: (9, 21),
+    77: (8, 22),
+    78: (9, 21),
+    79: (8, 22),
+}
 MODEL = "google/gemini-3.1-flash-lite"
 
 
@@ -231,10 +243,16 @@ def extract(input_root):
         standard_targets = [
             row for row in run_decisions if row["target_type"] == "standard"
         ]
-        if len(defector_targets) != 8 or len(standard_targets) != 22:
+        replicate_id = int(metadata["replicate_id"])
+        expected_defector, expected_standard = EXPECTED_TARGET_COUNTS[replicate_id]
+        if (
+            len(defector_targets) != expected_defector
+            or len(standard_targets) != expected_standard
+        ):
             raise RuntimeError(
                 f"{path}: target counts {len(defector_targets)}/"
-                f"{len(standard_targets)}; expected 8/22"
+                f"{len(standard_targets)}; expected "
+                f"{expected_defector}/{expected_standard}"
             )
         run_rows.append(
             {

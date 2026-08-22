@@ -74,8 +74,9 @@ Require exactly:
   defector decisions, and 400 scripted deduction notices, apart from recorded
   retries;
 - 800 exact signed-noise checks applied after true decisions;
-- 80 defector-target and 220 ordinary-target deduction opportunities for
-  ordinary senders;
+- 300 total deduction opportunities for ordinary senders, split across target
+  classes exactly as implied by the frozen seeded schedules and defector
+  assignments;
 - every defector game and deduction action zero and every defector myth call
   normal;
 - exact deduction costs, target losses, payoff floors, and balances;
@@ -87,3 +88,37 @@ Require exactly:
 If an accepted run lacks clean embedded provenance, exclude it and rerun that
 replicate from the committed protocol. Do not inspect outcomes until all ten
 populations pass jointly.
+
+## Structural-count amendment (2026-08-22)
+
+This amendment was made after all runs passed the general integrity audit but
+before any deduction, cooperation, or myth outcome was read. The prewritten
+analyzer stopped at its structural gate because the original acceptance list
+incorrectly assumed every population would contain exactly eight defector-
+receiver and 22 ordinary-receiver opportunities for ordinary senders.
+
+Balanced pair scheduling guarantees 30 ordinary-sender opportunities per
+population; it does not guarantee that the two defectors occupy the receiver
+role exactly eight times. Reading only agent types and scheduled roles showed
+the following deterministic split for the already frozen seeds:
+
+| Replicate | Defector receiver | Ordinary receiver | Total |
+|---:|---:|---:|---:|
+| 70 | 9 | 21 | 30 |
+| 71 | 10 | 20 | 30 |
+| 72 | 8 | 22 | 30 |
+| 73 | 8 | 22 | 30 |
+| 74 | 9 | 21 | 30 |
+| 75 | 8 | 22 | 30 |
+| 76 | 9 | 21 | 30 |
+| 77 | 8 | 22 | 30 |
+| 78 | 9 | 21 | 30 |
+| 79 | 8 | 22 | 30 |
+| **Total** | **86** | **214** | **300** |
+
+The analyzer now requires exactly this schedule-derived map. No run is added,
+removed, or reweighted; the two co-primary population-level contrasts remain
+within-population target-type means, so unequal opportunity counts do not
+change their definition. All statistical tests, Holm correction, effect-size
+thresholds, restraint thresholds, and secondary-outcome lock remain exactly
+as frozen above.
