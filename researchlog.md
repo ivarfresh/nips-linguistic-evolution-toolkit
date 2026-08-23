@@ -1,3 +1,26 @@
+### 2026-08-23 — Gemini 3.7 uses graded, selective punishment
+
+- Ran the frozen 50-call current-wording calibration with Gemini 3.7 Flash at
+  medium thinking: five controlled visible return levels x ten calls, holding
+  the myth, full send, receipt, payoffs, rules, and institution fixed. All 50
+  decisions were valid on the first attempt with clean provenance.
+- The model spent both points in every 0% and 10% return case, averaged .4
+  points at 25% (four one-point deductions), and spent zero in every 50% and
+  75% case. Low-minus-high separation was exactly +2, high-return punishment
+  was 0%, and the means decreased monotonically. All frozen gate components
+  passed.
+- Gemini 3.7 is more graded and sanctions a broader low-return band than
+  Flash-Lite under the same calibration, while both fully refrain at fair
+  returns. The live-noise prediction is near-universal mechanical-defector
+  targeting because a true zero can appear no more than about `$1` positive.
+- The model is eligible for a small new-seed 2x2 population screen crossing
+  deduction availability with 0%/25% hidden defectors. Calibration list-price
+  cost was about six cents. Report and analysis:
+  `docs/punishment_comprehension_gemini37_overview_2026-08-23.md` and
+  `scripts/analyze_punishment_comprehension_gemini37.py`.
+
+---
+
 ### 2026-08-23 — Gemini 3.7 Flash is baseline ceiling-limited
 
 - Added direct support for Google's current `gemini-3.7-flash`, including the
