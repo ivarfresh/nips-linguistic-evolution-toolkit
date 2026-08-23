@@ -1,3 +1,30 @@
+### 2026-08-23 — Gemini 3.7 Flash is baseline ceiling-limited
+
+- Added direct support for Google's current `gemini-3.7-flash`, including the
+  model's removal of legacy temperature sampling, explicit medium-thinking
+  metadata, and a recorded configurable request timeout. Regression tests
+  preserve the historical request shape for Flash-Lite.
+- Froze and ran three matched eight-agent populations per task order (Game
+  only, Game→Myth, Myth→Game). All nine accepted runs passed jointly: 1,200
+  calls, 720 exact post-decision noise checks, zero accepted-run retries or
+  boundary failures, matched schedules/seeds, and clean provenance.
+- Gemini 3.7 sent the full `$5` in all 360 sender decisions. Every condition
+  therefore ended at exactly `$75` per agent; return ratios were also nearly
+  identical (.4731/.4733/.4733). The frozen headroom gate failed and prohibits
+  adding baseline replicates.
+- The result is ceiling limitation, not evidence of a null myth effect. Greater
+  capability did not solve the measurement problem. Next use a controlled
+  punishment calibration and a small 0%-versus-25%-defector stress test, where
+  behavior can vary. Accepted-run list-price cost was `$3.16`.
+- A late request in the first attempted run exceeded the historical timeout;
+  an outcome-blind amendment raised and recorded it. A resumable filename
+  mismatch was also caught, fixed, and tested before the full launch. Failed
+  and partial files are excluded. Report and analysis:
+  `docs/gemini37_flash_task_order_n3_overview_2026-08-23.md` and
+  `scripts/analyze_gemini37_flash_task_order_n3.py`.
+
+---
+
 ### 2026-08-23 — Punishment crowding is independently defector-dependent
 
 - Completed the frozen new-seed Gemini 3.1 Flash-Lite 2x2 confirmation:
