@@ -1,3 +1,33 @@
+### 2026-08-23 — Punishment crowding is independently defector-dependent
+
+- Completed the frozen new-seed Gemini 3.1 Flash-Lite 2x2 confirmation:
+  deduction available/unavailable x 0%/25% hidden defectors, with ten matched
+  population quadruplets. All 40 passed jointly: 8,000 accepted interactions,
+  6,700 Gemini calls, exactly 500 forced actions, 800 notices, 3,200 exact
+  post-decision noise checks, zero retries, and clean matched provenance.
+- Both primary claims confirmed. In defector populations, availability lowered
+  ordinary receiver return ratios by -.0455 (95% CI [-.0743, -.0166], Holm
+  p=.0121). The availability x defector interaction was -.0373 ([-.0718,
+  -.0027], Holm p=.0373); the no-defector simple effect was only -.0082 and
+  unresolved.
+- Selective use remained strong: ordinary senders punished hidden defectors in
+  72/84 opportunities (85.7%) versus ordinary receivers in 6/216 (2.8%). All
+  six ordinary-target deductions followed a visibly zero return; there were
+  none after 116 visibly half-or-more returns.
+- Sending was unchanged at ceiling in controls and had an unresolved -.0303
+  availability effect with defectors. The return effect was absent in round
+  one and grew later, reaching -.137 in round ten. Choices shifted toward exact
+  half and away from above-half generosity.
+- Ordinary myths became more threat-, betrayal-, withholding-, and punishment-
+  focused under the institution; the threat-language increase was larger with
+  defectors (secondary interaction +.1410, CI [+.0667,+.2152]). The most useful
+  next test isolates game-history and myth-content mediation rather than adding
+  more populations to the same factorial. Report and analysis:
+  `docs/defector_punishment_gemini_factorial_confirmation_n10_overview_2026-08-23.md`
+  and `scripts/analyze_defector_punishment_gemini_factorial_confirmation_n10.py`.
+
+---
+
 ### 2026-08-22 — Punishment availability lowers Gemini return ratios
 
 - Added 10 punishment-unavailable Gemini populations matched to the completed
