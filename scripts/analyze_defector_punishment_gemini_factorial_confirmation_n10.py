@@ -33,6 +33,8 @@ DEFAULT_OUTPUT = Path(
 )
 EXPECTED_IDS = set(range(80, 90))
 MODEL = "google/gemini-3.1-flash-lite"
+PROVIDER_MODEL = "gemini-3.1-flash-lite"
+EXPECTED_RUNTIME_METADATA = {}
 AVAILABILITY_ORDER = ["off", "on"]
 DEFECTOR_ORDER = ["control", "defectors25"]
 AVAILABILITY_LABELS = {"off": "Deduction unavailable", "on": "Deduction available"}
@@ -105,8 +107,11 @@ def contrast_record(values, metric, contrast_type, label, primary=False):
 
 def extract(input_root):
     runs = load_runs(input_root / EXPERIMENT)
-    if len(runs) != 40:
-        raise RuntimeError(f"Found {len(runs)} runs; expected 40")
+    expected_run_count = 4 * len(EXPECTED_IDS)
+    if len(runs) != expected_run_count:
+        raise RuntimeError(
+            f"Found {len(runs)} runs; expected {expected_run_count}"
+        )
 
     run_rows = []
     round_rows = []
@@ -138,7 +143,7 @@ def extract(input_root):
         expected = {
             "model": MODEL,
             "llm_provider": "google",
-            "provider_model": "gemini-3.1-flash-lite",
+            "provider_model": PROVIDER_MODEL,
             "execution_provenance_version": 1,
             "defector_ratio_actual": .25 if condition == "defectors25" else 0.0,
             "defector_action_policy": "forced_zero",
@@ -150,6 +155,11 @@ def extract(input_root):
             "memory_capacity": 9 if availability == "on" else 6,
         }
         for key, value in expected.items():
+            if metadata.get(key) != value:
+                raise RuntimeError(
+                    f"{path}: {key}={metadata.get(key)!r}; expected {value!r}"
+                )
+        for key, value in EXPECTED_RUNTIME_METADATA.items():
             if metadata.get(key) != value:
                 raise RuntimeError(
                     f"{path}: {key}={metadata.get(key)!r}; expected {value!r}"
@@ -307,13 +317,17 @@ def extract(input_root):
     issues = [issue for audit in audits for issue in audit["issues"]]
     if issues:
         raise RuntimeError("Joint schedule audit failed:\n" + "\n".join(issues))
+    number_of_replicates = len(EXPECTED_IDS)
     expected_cell_totals = {
-        ("off", "control"): (1600, 1600, 0, 0),
-        ("off", "defectors25"): (1600, 1400, 200, 0),
-        ("on", "control"): (2400, 2000, 0, 400),
-        ("on", "defectors25"): (2400, 1700, 300, 400),
+        ("off", "control"): (160, 160, 0, 0),
+        ("off", "defectors25"): (160, 140, 20, 0),
+        ("on", "control"): (240, 200, 0, 40),
+        ("on", "defectors25"): (240, 170, 30, 40),
     }
-    for cell, targets in expected_cell_totals.items():
+    for cell, per_run_targets in expected_cell_totals.items():
+        targets = tuple(
+            number_of_replicates * target for target in per_run_targets
+        )
         subset = [
             audit
             for audit in audits
@@ -326,8 +340,12 @@ def extract(input_root):
             if observed != target:
                 raise RuntimeError(f"{cell}: {key}={observed}; expected {target}")
         noise_checks = sum(int(audit["noise_checks"]) for audit in subset)
-        if noise_checks != 800:
-            raise RuntimeError(f"{cell}: noise_checks={noise_checks}; expected 800")
+        expected_noise_checks = 80 * number_of_replicates
+        if noise_checks != expected_noise_checks:
+            raise RuntimeError(
+                f"{cell}: noise_checks={noise_checks}; "
+                f"expected {expected_noise_checks}"
+            )
 
     import pandas as pd
 
@@ -522,7 +540,9 @@ def plot_return_trajectories(rounds, output_dir):
             )
             x = group.index.to_numpy()
             center = group["mean"].to_numpy()
-            error = stats.t.ppf(.975, 9) * group["sem"].fillna(0).to_numpy()
+            error = stats.t.ppf(.975, len(EXPECTED_IDS) - 1) * group[
+                "sem"
+            ].fillna(0).to_numpy()
             ax.plot(
                 x, center, marker="o", color=COLORS[availability],
                 label=AVAILABILITY_LABELS[availability],
