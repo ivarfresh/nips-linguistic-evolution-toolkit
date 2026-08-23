@@ -6,6 +6,7 @@ cd "$PROJECT_ROOT"
 
 export LLM_PROVIDER=direct
 export GEMINI_THINKING_LEVEL=medium
+export GEMINI_REQUEST_TIMEOUT_SECONDS=300
 export TRUST_BATCH_QUIET=1
 export PYTHONPYCACHEPREFIX=/tmp/nlet-pycache
 export PYTHONPATH=.

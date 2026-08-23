@@ -2,7 +2,11 @@ import json
 import unittest
 from unittest.mock import patch
 
-from src.utils import _call_gemini, _gemini_supports_temperature
+from src.utils import (
+    _call_gemini,
+    _gemini_request_timeout_seconds,
+    _gemini_supports_temperature,
+)
 
 
 class _FakeResponse:
@@ -71,6 +75,19 @@ class GeminiProviderTests(unittest.TestCase):
             0.8,
         )
         self.assertTrue(_gemini_supports_temperature("gemini-3.1-flash-lite"))
+
+    def test_timeout_defaults_and_validates_override(self):
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(_gemini_request_timeout_seconds(), 120.0)
+        with patch.dict(
+            "os.environ", {"GEMINI_REQUEST_TIMEOUT_SECONDS": "300"}, clear=True
+        ):
+            self.assertEqual(_gemini_request_timeout_seconds(), 300.0)
+        with patch.dict(
+            "os.environ", {"GEMINI_REQUEST_TIMEOUT_SECONDS": "zero"}, clear=True
+        ):
+            with self.assertRaisesRegex(RuntimeError, "positive number"):
+                _gemini_request_timeout_seconds()
 
 
 if __name__ == "__main__":

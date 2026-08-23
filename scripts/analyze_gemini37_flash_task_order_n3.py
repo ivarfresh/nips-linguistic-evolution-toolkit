@@ -87,6 +87,8 @@ def load_batch(input_dir):
                 "thinking_level": "medium",
                 "thinking_level_source": "GEMINI_THINKING_LEVEL",
                 "temperature_sent": False,
+                "request_timeout_seconds": 300.0,
+                "request_timeout_source": "GEMINI_REQUEST_TIMEOUT_SECONDS",
                 "code_dirty": False,
             }
             for key, value in expected.items():

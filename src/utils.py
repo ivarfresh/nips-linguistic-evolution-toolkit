@@ -3,6 +3,7 @@ import random
 import re
 import time
 import json
+import math
 import urllib.error
 import urllib.request
 
@@ -146,6 +147,12 @@ def llm_runtime_metadata(client, model):
                 ),
                 "temperature_sent": _gemini_supports_temperature(
                     resolve_model_for_provider(client, model)
+                ),
+                "request_timeout_seconds": _gemini_request_timeout_seconds(),
+                "request_timeout_source": (
+                    "GEMINI_REQUEST_TIMEOUT_SECONDS"
+                    if _env("GEMINI_REQUEST_TIMEOUT_SECONDS")
+                    else "default_120"
                 ),
             }
         )
@@ -640,7 +647,10 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(request, timeout=120) as response:
+            with urllib.request.urlopen(
+                request,
+                timeout=_gemini_request_timeout_seconds(),
+            ) as response:
                 response_data = json.loads(response.read().decode("utf-8"))
 
             content = _gemini_text(response_data)
@@ -683,6 +693,23 @@ def _gemini_supports_temperature(provider_model):
     parameter for earlier models so existing experiments remain unchanged.
     """
     return provider_model != "gemini-3.7-flash"
+
+
+def _gemini_request_timeout_seconds():
+    raw_value = _env("GEMINI_REQUEST_TIMEOUT_SECONDS")
+    if not raw_value:
+        return 120.0
+    try:
+        timeout = float(raw_value)
+    except ValueError as error:
+        raise RuntimeError(
+            "GEMINI_REQUEST_TIMEOUT_SECONDS must be a positive number"
+        ) from error
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise RuntimeError(
+            "GEMINI_REQUEST_TIMEOUT_SECONDS must be a positive number"
+        )
+    return timeout
 
 
 def _gemini_text(response_data):

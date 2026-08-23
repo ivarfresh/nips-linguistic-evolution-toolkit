@@ -65,3 +65,14 @@ controlled punishment calibration plus a small defector stress test to learn
 where this model differs. Game→Myth is reported but does not gate escalation.
 
 No punishment condition enters this screen.
+
+## Outcome-blind technical amendment, 2026-08-23
+
+The first attempted Game-only replicate reached round ten but failed when one
+medium-thinking API response exceeded the runner's historical 120-second HTTP
+timeout on both the provider-level and simulation-level retries. It produced no
+accepted final population and is excluded. Before analyzing any behavioral
+outcome, the timeout was made configurable and set to 300 seconds, with its
+value and source embedded in run metadata. The same replicate ID is rerun from
+the beginning. Model, thinking level, prompts, seeds, sample size, acceptance
+gate, outcomes, and escalation thresholds are unchanged.
