@@ -64,7 +64,7 @@ def paired_targeting(deductions):
     return rows
 
 
-def decision_table(contrasts, deductions, targeting):
+def decision_table(contrasts, replicate_contrasts, deductions, targeting):
     indexed = contrasts.set_index(["metric", "contrast_type"])
     direct = indexed.loc[("standard_return_ratio", "availability_defectors25")]
     interaction = indexed.loc[("standard_return_ratio", "interaction")]
@@ -82,8 +82,14 @@ def decision_table(contrasts, deductions, targeting):
         and all_target_positive
         and fair_deductions == 0
     )
-    direct_negative = int(direct["same_direction"])
-    interaction_negative = int(interaction["same_direction"])
+    direct_negative = int((replicate_contrasts[
+        (replicate_contrasts["metric"] == "standard_return_ratio")
+        & (replicate_contrasts["contrast_type"] == "availability_defectors25")
+    ]["difference"] < 0).sum())
+    interaction_negative = int((replicate_contrasts[
+        (replicate_contrasts["metric"] == "standard_return_ratio")
+        & (replicate_contrasts["contrast_type"] == "interaction")
+    ]["difference"] < 0).sum())
     direct_pass = direct["estimate"] <= -.025 and direct_negative >= 2
     interaction_pass = interaction["estimate"] <= -.025 and interaction_negative >= 2
     if targeting_pass and direct_pass and interaction_pass:
@@ -142,6 +148,73 @@ def author_myth_rows(input_root):
     return rows
 
 
+def return_rule_rows(input_root):
+    """Extract ordinary-receiver choices against the amount shown in the prompt."""
+    rows = []
+    for _path, run in base.load_runs(input_root / base.EXPERIMENT):
+        metadata = run.get("run_metadata") or {}
+        availability = "on" if metadata.get("punishment_enabled") else "off"
+        defector_ids = set(metadata.get("defector_agent_ids") or [])
+        condition = "defectors25" if defector_ids else "control"
+        replicate_id = int(metadata["replicate_id"])
+        for entry in run.get("conversation_history") or []:
+            for dyad in entry.get("dyads") or []:
+                if dyad["trustee"] in defector_ids or dyad["received"] <= 0:
+                    continue
+                visible_receipt = float(dyad["received_communicated"])
+                returned = float(dyad["returned"])
+                error = returned - visible_receipt / 2
+                rows.append(
+                    {
+                        "availability": availability,
+                        "condition": condition,
+                        "replicate_id": replicate_id,
+                        "round": int(entry["round"]),
+                        "visible_receipt": visible_receipt,
+                        "returned": returned,
+                        "half_visible_error": error,
+                        "exact_half_visible": bool(np.isclose(error, 0)),
+                        "within_half_cent": abs(error) <= .0051,
+                    }
+                )
+    return rows
+
+
+def author_postround_contrasts(author_myths):
+    """Compare defector and ordinary authors after shared round-one priors."""
+    metrics = ["coop_density", "threat_density", "half_rule", "punishment_density"]
+    post = author_myths[
+        (author_myths["condition"] == "defectors25")
+        & (author_myths["round"] >= 2)
+    ]
+    grouped = post.groupby(
+        ["availability", "replicate_id", "author_type"], as_index=False
+    )[metrics].mean()
+    rows = []
+    for availability in base.AVAILABILITY_ORDER:
+        cell = grouped[grouped["availability"] == availability]
+        for metric in metrics:
+            wide = cell.pivot(
+                index="replicate_id", columns="author_type", values=metric
+            )
+            differences = wide["defector"] - wide["standard"]
+            low, high = base.ci(differences)
+            rows.append(
+                {
+                    "availability": availability,
+                    "metric": metric,
+                    "contrast": "defector author - ordinary author, rounds 2-10",
+                    "n_populations": len(differences),
+                    "estimate": float(differences.mean()),
+                    "ci_low": low,
+                    "ci_high": high,
+                    "positive_pairs": int((differences > 0).sum()),
+                    "negative_pairs": int((differences < 0).sum()),
+                }
+            )
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
@@ -163,6 +236,9 @@ def main():
     myths = pd.DataFrame(extracted[2]).sort_values(
         ["availability", "condition", "replicate_id", "round", "agent_id"]
     )
+    myths["text"] = myths["text"].str.replace(
+        r"[ \t]+(?=\n|$)", "", regex=True
+    )
     returns = pd.DataFrame(extracted[3]).sort_values(
         ["availability", "condition", "replicate_id", "round", "trustee_id"]
     )
@@ -178,7 +254,7 @@ def main():
     replicate_contrasts = pd.DataFrame(replicate_rows)
     targeting_rows = paired_targeting(deductions)
     decision = pd.DataFrame(
-        [decision_table(contrasts, deductions, targeting_rows)]
+        [decision_table(contrasts, replicate_contrasts, deductions, targeting_rows)]
     )
     term_counts = pd.DataFrame(base.make_term_counts(myths))
     author_myths = pd.DataFrame(author_myth_rows(args.input)).sort_values(
@@ -187,6 +263,19 @@ def main():
     author_myth_summary = author_myths.groupby(
         ["availability", "condition", "author_type"], as_index=False
     )[["coop_density", "threat_density", "half_rule", "punishment_density"]].mean()
+    author_postround = pd.DataFrame(author_postround_contrasts(author_myths))
+    return_rules = pd.DataFrame(return_rule_rows(args.input)).sort_values(
+        ["availability", "condition", "replicate_id", "round"]
+    )
+    return_rule_summary = return_rules.groupby(
+        ["availability", "condition"], as_index=False
+    ).agg(
+        n=("returned", "size"),
+        exact_half_visible=("exact_half_visible", "sum"),
+        within_half_cent=("within_half_cent", "sum"),
+        mean_absolute_error=("half_visible_error", lambda values: np.abs(values).mean()),
+        max_absolute_error=("half_visible_error", lambda values: np.abs(values).max()),
+    )
     audit_table = pd.DataFrame(
         [
             {
@@ -229,6 +318,9 @@ def main():
     term_counts.to_csv(args.out / "myth_term_counts.csv", index=False)
     author_myths.to_csv(args.out / "author_myth_metrics.csv", index=False)
     author_myth_summary.to_csv(args.out / "author_myth_summary.csv", index=False)
+    author_postround.to_csv(args.out / "author_myth_postround_contrasts.csv", index=False)
+    return_rules.to_csv(args.out / "return_rule_decisions.csv", index=False)
+    return_rule_summary.to_csv(args.out / "return_rule_summary.csv", index=False)
     base.plot_behavior(runs, args.out)
     base.plot_return_trajectories(rounds, args.out)
     base.plot_myth_interactions(contrasts, args.out)

@@ -1,3 +1,33 @@
+### 2026-08-23 — Gemini 3.7 selectively punishes but shows no return crowding
+
+- Completed the frozen new-seed Gemini 3.7 Flash population screen crossing
+  deduction availability with 0%/25% hidden defectors (`n=3` matched
+  quadruplets). All 12 populations passed jointly: 2,400 accepted interactions,
+  2,010 model calls, 150 forced actions, 240 notices, 960 exact noise checks,
+  zero retries, and clean matched provenance.
+- Live targeting was perfect. Ordinary senders spent both points against all
+  25 mechanical-defector receivers and zero against all 65 ordinary receivers;
+  controls also had zero deductions in 120 opportunities. There were no
+  deductions after 112 visibly half-or-more returns.
+- The Flash-Lite return-crowding result did not reproduce. Available minus
+  unavailable returning with defectors was `+.00262` (95% CI `[-.00162,
+  +.00685]`) and positive in all three pairs; the interaction was `-.00094`
+  (`[-.00843,+.00654]`). Every ordinary sender still gave the full `$5`.
+- A strong model-specific fairness rule explains the lack of behavioral
+  movement: 280/370 positive-receipt ordinary decisions returned exactly half
+  of the noisy receipt shown, and 327/370 were within half a cent. Selective
+  punishment generalizes across Gemini versions; downstream crowding does not.
+- Myth responses were preliminary: deduction availability increased both
+  cooperation and threat language, consistent with sanctioning framed as norm
+  protection. The Flash-Lite defector-author cooperation/threat imprint did
+  not cleanly generalize at `n=3`.
+- The frozen decision is **do not scale this population design**. Accepted-run
+  list-price cost was `$5.66`. Report and analysis:
+  `docs/defector_punishment_gemini37_n3_overview_2026-08-23.md` and
+  `scripts/analyze_defector_punishment_gemini37_n3.py`.
+
+---
+
 ### 2026-08-23 — Gemini 3.7 uses graded, selective punishment
 
 - Ran the frozen 50-call current-wording calibration with Gemini 3.7 Flash at
