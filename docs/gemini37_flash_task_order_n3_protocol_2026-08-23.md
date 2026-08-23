@@ -76,3 +76,12 @@ outcome, the timeout was made configurable and set to 300 seconds, with its
 value and source embedded in run metadata. The same replicate ID is rerun from
 the beginning. Model, thinking level, prompts, seeds, sample size, acceptance
 gate, outcomes, and escalation thresholds are unchanged.
+
+The first multi-run launch then exposed a separate filename mismatch in the
+resumable wrapper: its existence check omitted the replicate and myth-arm
+suffixes used by the canonical batch runner. The launch was interrupted before
+advancing beyond partial duplicate checkpoints. The path calculation was
+aligned with the canonical runner and regression-tested. Partial and failed
+files are ignored by the frozen loader; the already accepted replicate remains
+the sole final file for its cell. This infrastructure correction likewise
+changes no experimental parameter or decision rule.

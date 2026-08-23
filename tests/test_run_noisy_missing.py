@@ -1,6 +1,47 @@
 from scripts import run_noisy_missing
 
 
+def test_expected_output_path_matches_explicit_replicate_and_myth_arm():
+    combo = {
+        "model": "google/gemini-3.7-flash",
+        "task_order": ["myth", "game"],
+        "game_params_name": "params",
+        "persona": {"description": "neutral"},
+        "myth_topic_id": "anything",
+        "replicate_id": 90,
+        "myth_prompt_arm_id": "memory_primary",
+    }
+
+    path = run_noisy_missing.expected_output_path(
+        combo,
+        "experiment",
+        0,
+        "output",
+    )
+
+    assert path.name == (
+        "experiment_000_neutral_rep90_memory_primary_anything.json"
+    )
+
+
+def test_expected_output_path_preserves_legacy_filename_without_replicate():
+    combo = {
+        "model": "openai/gpt-5-nano",
+        "task_order": ["game"],
+        "game_params_name": "params",
+        "persona": {"description": "neutral"},
+    }
+
+    path = run_noisy_missing.expected_output_path(
+        combo,
+        "experiment",
+        2,
+        "output",
+    )
+
+    assert path.name == "experiment_002_neutral.json"
+
+
 def test_load_combinations_embeds_execution_provenance(monkeypatch, tmp_path):
     config_path = tmp_path / "experiments.yaml"
     config_path.write_text("experiment_sets: {}\n", encoding="utf-8")

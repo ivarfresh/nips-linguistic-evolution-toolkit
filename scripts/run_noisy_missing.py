@@ -54,7 +54,14 @@ def expected_output_path(
     if "myth" in combo["task_order"]:
         myth_topic_str = "_" + sanitize_for_filename(combo.get("myth_topic_id", ""))
 
-    filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{myth_topic_str}.json"
+    replicate = combo.get("replicate_id")
+    replicate_str = f"_rep{replicate:02d}" if replicate is not None else ""
+    myth_arm = combo.get("myth_prompt_arm_id")
+    myth_arm_str = f"_{sanitize_for_filename(myth_arm)}" if myth_arm else ""
+    filename = (
+        f"{experiment_name}_{index:03d}_{combo['persona']['description']}"
+        f"{replicate_str}{myth_arm_str}{myth_topic_str}.json"
+    )
     return save_dir / filename
 
 
