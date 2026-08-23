@@ -42,6 +42,7 @@ DIRECT_MODEL_ALIASES = {
     "anthropic/claude-opus-4.5": "claude-opus-4-5-20251101",
     "anthropic/claude-opus-4.6": "claude-opus-4-6",
     # OpenRouter-style Google slugs used in repo configs -> direct Gemini API IDs.
+    "google/gemini-3.7-flash": "gemini-3.7-flash",
     "google/gemini-3-flash-preview": "gemini-3-flash-preview",
     "google/gemini-3-pro-preview": "gemini-3.1-pro-preview",
     "google/gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
@@ -128,6 +129,23 @@ def llm_runtime_metadata(client, model):
                     "OPENROUTER_MAX_TOKENS"
                     if OPENROUTER_MAX_TOKENS
                     else "provider_default"
+                ),
+            }
+        )
+    elif provider == "google":
+        thinking_level = _env("GEMINI_THINKING_LEVEL")
+        metadata.update(
+            {
+                "max_output_tokens": None,
+                "max_output_tokens_source": "provider_default",
+                "thinking_level": thinking_level or "provider_default",
+                "thinking_level_source": (
+                    "GEMINI_THINKING_LEVEL"
+                    if thinking_level
+                    else "provider_default"
+                ),
+                "temperature_sent": _gemini_supports_temperature(
+                    resolve_model_for_provider(client, model)
                 ),
             }
         )
@@ -595,11 +613,12 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
     if not contents:
         raise ValueError("No user/assistant messages available for Gemini call.")
 
+    generation_config = {}
+    if _gemini_supports_temperature(provider_model):
+        generation_config["temperature"] = temperature
     payload = {
         "contents": contents,
-        "generationConfig": {
-            "temperature": temperature,
-        },
+        "generationConfig": generation_config,
     }
     if system_instruction:
         payload["system_instruction"] = system_instruction
@@ -655,6 +674,15 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
             raise
 
     raise Exception(f"Failed to get Gemini response after {max_retries} attempts")
+
+
+def _gemini_supports_temperature(provider_model):
+    """Return whether the direct GenerateContent endpoint accepts temperature.
+
+    Gemini 3.7 Flash removed the legacy sampling parameters. Keep the historical
+    parameter for earlier models so existing experiments remain unchanged.
+    """
+    return provider_model != "gemini-3.7-flash"
 
 
 def _gemini_text(response_data):
