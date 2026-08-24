@@ -514,6 +514,46 @@ game_params:
     paired_protocol_seeds: true
     protocol_seed_base: 202608200
 
+  # Corrected 2-agent counterparts to the 8-agent cross-model screens above.
+  # These retain the dyad-specific minimal later-round prompts and private
+  # memory used in corrected_v2_confirmatory_20260812, while sharing the
+  # signed-noise seed schedule used by the GPT and Gemini 8-agent screens.
+  noisy2_crossmodel_signed_game_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 3
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "both"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608200
+
+  noisy2_crossmodel_signed_twotask_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "both"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608200
+
   # Own-history-only match for the GPT partner-dossier game-only cell. Agents
   # retain their own last three game exchanges in private chat memory, but no
   # synthetic record of the current co-player is injected into the prompt.
@@ -2235,6 +2275,54 @@ experiment_sets:
       - "noisy8_crossmodel_signed_smoke_twotask_r3"
     num_runs: 5
 
+  # Corrected 2-agent extension of the GPT-5 Nano task-order screen. Replicate
+  # IDs 0-4 match the existing 8-agent cells' signed-noise seed schedule.
+  noise2_crossmodel_signed_gpt_n5_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_game_r3"
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  noise2_crossmodel_signed_gpt_n5_game_myth:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_twotask_r3"
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  noise2_crossmodel_signed_gpt_n5_myth_game:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_twotask_r3"
+    replicate_ids: [0, 1, 2, 3, 4]
+
   # Two-arm history-visibility gate: compare these own-history-only runs with
   # noise8_crossmodel_signed_gpt_n5_game (current-partner dossier), reusing the
   # same five pairing/noise seeds and all other protocol settings.
@@ -2620,6 +2708,54 @@ experiment_sets:
         later: "myth_writing_later_rounds_directive_memory_primary"
     game_params_list:
       - "noisy8_crossmodel_signed_smoke_twotask_r3"
+    replicate_ids: [90, 91, 92]
+
+  # Corrected 2-agent extension of the Gemini 3.7 Flash task-order screen.
+  # Replicate IDs 90-92 match the existing 8-agent cells' noise seeds.
+  noise2_crossmodel_gemini37_flash_n3_game:
+    models: ["gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_game_r3"
+    replicate_ids: [90, 91, 92]
+
+  noise2_crossmodel_gemini37_flash_n3_game_myth:
+    models: ["gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_twotask_r3"
+    replicate_ids: [90, 91, 92]
+
+  noise2_crossmodel_gemini37_flash_n3_myth_game:
+    models: ["gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy2_crossmodel_signed_twotask_r3"
     replicate_ids: [90, 91, 92]
 
   # Newest capable-Flash defector/punishment screen, gated by the baseline
