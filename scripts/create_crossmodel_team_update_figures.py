@@ -149,8 +149,16 @@ def defector_spillovers(output_dir: Path) -> None:
     axes[0].set_ylim(-.065, .035)
     axes[0].grid(True, axis="y", alpha=.3)
     cultural_metrics = [
-        ("defector_myth_coop_density_rounds2_10", "Cooperation density", "o"),
-        ("defector_myth_threat_density_rounds2_10", "Threat density", "s"),
+        (
+            "defector_myth_coop_density_rounds2_10",
+            "Cooperation/fairness terms",
+            "o",
+        ),
+        (
+            "defector_myth_threat_density_rounds2_10",
+            "Threat/defection terms",
+            "s",
+        ),
     ]
     offsets = [-.08, .08]
     for metric_index, (metric, metric_label, marker) in enumerate(cultural_metrics):
@@ -173,12 +181,33 @@ def defector_spillovers(output_dir: Path) -> None:
     axes[1].axhline(0, color=DARK, linestyle="--", linewidth=1.2)
     axes[1].set_xticks(range(2))
     axes[1].set_xticklabels(labels)
-    axes[1].set_ylabel("Defector-authored − ordinary-authored\nmatches per 100 words")
-    axes[1].set_title("Myths after forced zero actions (rounds 2–10)", fontsize=13, fontweight="bold")
+    axes[1].set_ylabel(
+        "Difference in category-word frequency\n"
+        "(defector − non-defector myths)\n"
+        "Matches per 100 words",
+        fontsize=10,
+    )
+    axes[1].set_title(
+        "Defector vs non-defector myth vocabulary\n"
+        "(after the first forced zero action; rounds 2–10)",
+        fontsize=12,
+        fontweight="bold",
+    )
+    axes[1].text(
+        0.5,
+        0.965,
+        "Above 0: more frequent in defector myths\n"
+        "Below 0: less frequent in defector myths",
+        transform=axes[1].transAxes,
+        ha="center",
+        va="top",
+        fontsize=8.5,
+        color=DARK,
+    )
     axes[1].set_ylim(-.9, .3)
     axes[1].legend(loc="lower right", fontsize=9)
     axes[1].grid(True, axis="y", alpha=.3)
-    fig.tight_layout(rect=(0, 0, 1, .95))
+    fig.tight_layout(rect=(0.01, 0.01, 0.99, .90))
     finish(fig, output_dir / "02_defector_spillovers.png")
     plt.close(fig)
 
