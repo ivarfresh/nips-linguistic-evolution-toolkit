@@ -201,6 +201,7 @@ def load_new_dyads(input_dir: Path):
 
 def load_existing_runs():
     claude = pd.read_csv(CLAUDE_METRICS)
+    claude = claude[claude["source"] == "Corrected v2"].copy()
     claude = claude.assign(
         model="Claude Sonnet 4.5",
         model_family="claude",
@@ -305,10 +306,7 @@ def plot_final_balance(run_dataframe, summary_dataframe, output_dir: Path):
                 markersize=7,
                 linewidth=2.2,
                 capsize=5,
-                label=(
-                    f"{pop_label} "
-                    f"(n={int(cell_summary['n'].iloc[0])}/cell)"
-                ),
+                label=pop_label,
                 zorder=3,
             )
             raw = run_dataframe[
@@ -328,7 +326,14 @@ def plot_final_balance(run_dataframe, summary_dataframe, output_dir: Path):
                     linewidth=0.4,
                     zorder=2,
                 )
-        ax.set_title(model, fontsize=13, fontweight="bold")
+        model_ns = summary_dataframe[summary_dataframe["model"] == model]["n"].unique()
+        if len(model_ns) != 1:
+            raise RuntimeError(f"Unequal per-cell n values for {model}: {model_ns}")
+        ax.set_title(
+            f"{model}\n(n={int(model_ns[0])}/cell)",
+            fontsize=13,
+            fontweight="bold",
+        )
         ax.set_xticks(x)
         ax.set_xticklabels(
             [CONDITION_LABELS[condition] for condition in CONDITION_ORDER],
@@ -348,7 +353,7 @@ def plot_final_balance(run_dataframe, summary_dataframe, output_dir: Path):
         fontsize=9,
         color="#37474f",
     )
-    fig.tight_layout(rect=(0, 0.045, 1, 0.95))
+    fig.tight_layout(rect=(0, 0.045, 1, 0.88))
     fig.patch.set_edgecolor("#111111")
     fig.patch.set_linewidth(1.4)
     fig.savefig(
