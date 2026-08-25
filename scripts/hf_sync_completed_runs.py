@@ -3,8 +3,9 @@
 
 Automatic uploads are deliberately opt-in. Batch runners call
 ``maybe_sync_completed_runs`` after their worker pools have closed; it does
-nothing unless both ``HF_DATASET_AUTO_UPLOAD=1`` and
-``HF_DATASET_REPO=owner/dataset`` are configured.
+nothing unless ``HF_DATASET_AUTO_UPLOAD=1``,
+``HF_DATASET_REPO=owner/dataset``, and a unique
+``HF_DATASET_NAMESPACE=uploader`` are configured.
 
 The standalone CLI can discover completed runs for a dry run or a historical
 backfill. A JSON file counts as a completed simulation only when it is a full
@@ -17,6 +18,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 import time
@@ -40,11 +42,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_JSON_ROOT = PROJECT_ROOT / "data" / "json"
 AUTO_UPLOAD_ENV = "HF_DATASET_AUTO_UPLOAD"
 REPO_ENV = "HF_DATASET_REPO"
+NAMESPACE_ENV = "HF_DATASET_NAMESPACE"
 ALLOW_PUBLIC_ENV = "HF_DATASET_ALLOW_PUBLIC_UPLOAD"
 TRUE_VALUES = {"1", "true", "yes", "on"}
 FULL_STATE_KEYS = {"agents", "conversation_history", "game_data", "task_order"}
 NON_FINAL_SUFFIXES = (".results.json", ".checkpoint.json", ".error.json")
-MAX_UPLOAD_ATTEMPTS = 3
+MAX_UPLOAD_ATTEMPTS = 6
+MAX_COMMIT_OPERATIONS = 100
+MAX_COMMIT_RAW_BYTES = 500 * 1024 * 1024
+REMOTE_UPLOAD_ROOT = "uploaders"
+NAMESPACE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 def _load_repo_env() -> None:
@@ -64,19 +71,20 @@ class UploadPlan:
     """An exact, completed-run-only Hugging Face folder upload."""
 
     repo_id: str
+    namespace: str
     data_root: Path
-    folder_path: Path
-    path_in_repo: str | None
     final_paths: tuple[Path, ...]
     artifact_paths: tuple[Path, ...]
-    allow_patterns: tuple[str, ...]
+
+    def remote_path_for(self, path: Path) -> str:
+        return (
+            f"{REMOTE_UPLOAD_ROOT}/{self.namespace}/data/json/"
+            f"{path.relative_to(self.data_root).as_posix()}"
+        )
 
     @property
     def remote_paths(self) -> tuple[str, ...]:
-        return tuple(
-            path.relative_to(self.data_root).as_posix()
-            for path in self.artifact_paths
-        )
+        return tuple(self.remote_path_for(path) for path in self.artifact_paths)
 
 
 def _warn(message: str) -> None:
@@ -191,22 +199,28 @@ def artifacts_for_completed_runs(
     return finals, tuple(sorted(artifacts))
 
 
-def _literal_glob(path: str) -> str:
-    """Escape glob metacharacters so an allow-pattern names one exact file."""
-    replacements = {"*": "[*]", "?": "[?]", "[": "[[]", "]": "[]]"}
-    return "".join(replacements.get(character, character) for character in path)
+def _validated_namespace(namespace: str) -> str:
+    namespace = namespace.strip()
+    if not NAMESPACE_PATTERN.fullmatch(namespace):
+        raise ValueError(
+            f"{NAMESPACE_ENV} must be one path-safe component containing only "
+            "letters, numbers, dots, underscores, or hyphens"
+        )
+    return namespace
 
 
 def build_upload_plan(
     final_paths: Iterable[str | Path],
     *,
     repo_id: str,
+    namespace: str,
     data_root: Path = DATA_JSON_ROOT,
 ) -> UploadPlan:
-    """Build the smallest folder upload with an exact artifact allow-list."""
+    """Build an exact, uploader-namespaced completed-run manifest."""
     repo_id = repo_id.strip()
     if not repo_id or "/" not in repo_id:
         raise ValueError("HF_DATASET_REPO must have the form owner/dataset")
+    namespace = _validated_namespace(namespace)
 
     resolved_root = data_root.resolve()
     finals, artifacts = artifacts_for_completed_runs(
@@ -214,30 +228,12 @@ def build_upload_plan(
         data_root=resolved_root,
     )
 
-    if artifacts:
-        common_parent = Path(
-            os.path.commonpath([str(path.parent) for path in artifacts])
-        )
-        relative_scope = common_parent.relative_to(resolved_root)
-        path_in_repo = None if relative_scope == Path(".") else relative_scope.as_posix()
-        allow_patterns = tuple(
-            _literal_glob(path.relative_to(common_parent).as_posix())
-            for path in artifacts
-        )
-        folder_path = common_parent
-    else:
-        folder_path = resolved_root
-        path_in_repo = None
-        allow_patterns = ()
-
     return UploadPlan(
         repo_id=repo_id,
+        namespace=namespace,
         data_root=resolved_root,
-        folder_path=folder_path,
-        path_in_repo=path_in_repo,
         final_paths=finals,
         artifact_paths=artifacts,
-        allow_patterns=allow_patterns,
     )
 
 
@@ -287,32 +283,117 @@ def _http_status_code(exc: Exception) -> int | None:
     return direct_status if isinstance(direct_status, int) else None
 
 
-def _upload_with_conflict_retry(
+def _private_repo_head(
     api: Any,
     plan: UploadPlan,
-    commit_message: str,
     *,
     allow_public: bool,
-) -> None:
-    """Retry only optimistic-lock conflicts, refreshing the remote head each time."""
-    for attempt in range(MAX_UPLOAD_ATTEMPTS):
-        repo_info = api.repo_info(repo_id=plan.repo_id, repo_type="dataset")
-        if not getattr(repo_info, "private", False) and not allow_public:
-            raise RuntimeError(
-                f"refusing to upload to public dataset {plan.repo_id}; "
-                f"keep it private or explicitly set {ALLOW_PUBLIC_ENV}=1"
-            )
-        parent_commit = getattr(repo_info, "sha", None)
-        if not parent_commit:
-            raise RuntimeError("Hugging Face dataset repo did not report a head commit")
+) -> str:
+    """Return a private dataset head, failing closed on public repositories."""
+    repo_info = api.repo_info(repo_id=plan.repo_id, repo_type="dataset")
+    if not getattr(repo_info, "private", False) and not allow_public:
+        raise RuntimeError(
+            f"refusing to upload to public dataset {plan.repo_id}; "
+            f"keep it private or explicitly set {ALLOW_PUBLIC_ENV}=1"
+        )
+    parent_commit = getattr(repo_info, "sha", None)
+    if not parent_commit:
+        raise RuntimeError("Hugging Face dataset repo did not report a head commit")
+    return parent_commit
 
+
+def _artifact_groups(plan: UploadPlan) -> tuple[tuple[Path, ...], ...]:
+    """Group every final JSON with its approved companions."""
+    approved = set(plan.artifact_paths)
+    groups = []
+    for final_path in plan.final_paths:
+        base_path = Path(str(final_path)[:-5])
+        family = (
+            final_path,
+            Path(f"{base_path}.results.json"),
+            Path(f"{base_path}.log"),
+            Path(f"{base_path}.transcript.pdf"),
+        )
+        groups.append(tuple(path for path in family if path in approved))
+
+    grouped_artifacts = {path for group in groups for path in group}
+    if grouped_artifacts != approved:
+        raise RuntimeError("completed-run artifact grouping is inconsistent")
+    return tuple(groups)
+
+
+def _artifact_group_chunks(
+    plan: UploadPlan,
+) -> tuple[tuple[tuple[Path, ...], ...], ...]:
+    """Pack whole run families into operation- and byte-bounded commits."""
+    chunks = []
+    current_groups = []
+    current_operations = 0
+    current_raw_bytes = 0
+    for group in _artifact_groups(plan):
+        group_raw_bytes = sum(path.stat().st_size for path in group)
+        if len(group) > MAX_COMMIT_OPERATIONS:
+            raise RuntimeError(
+                "one completed-run family exceeds the Hugging Face commit "
+                f"operation limit ({len(group)} > {MAX_COMMIT_OPERATIONS})"
+            )
+        if group_raw_bytes > MAX_COMMIT_RAW_BYTES:
+            raise RuntimeError(
+                "one completed-run family exceeds the Hugging Face commit "
+                f"raw-byte limit ({group_raw_bytes} > {MAX_COMMIT_RAW_BYTES}); "
+                "refusing to split a final JSON from its companions"
+            )
+
+        exceeds_operation_limit = (
+            current_operations + len(group) > MAX_COMMIT_OPERATIONS
+        )
+        exceeds_byte_limit = (
+            current_raw_bytes + group_raw_bytes > MAX_COMMIT_RAW_BYTES
+        )
+        if current_groups and (exceeds_operation_limit or exceeds_byte_limit):
+            chunks.append(tuple(current_groups))
+            current_groups = []
+            current_operations = 0
+            current_raw_bytes = 0
+        current_groups.append(group)
+        current_operations += len(group)
+        current_raw_bytes += group_raw_bytes
+    if current_groups:
+        chunks.append(tuple(current_groups))
+    return tuple(chunks)
+
+
+def _commit_completed_run_chunk(
+    api: Any,
+    plan: UploadPlan,
+    groups: tuple[tuple[Path, ...], ...],
+    *,
+    commit_message: str,
+    allow_public: bool,
+    operation_type: Any,
+) -> None:
+    """Commit only whole completed-run families, retrying remote head races."""
+    for attempt in range(MAX_UPLOAD_ATTEMPTS):
+        parent_commit = _private_repo_head(
+            api,
+            plan,
+            allow_public=allow_public,
+        )
+        # HfApi.create_commit mutates CommitOperationAdd objects while hashing
+        # and pre-uploading. Rebuild them for every optimistic-lock retry.
+        operations = [
+            operation_type(
+                path_in_repo=plan.remote_path_for(path),
+                path_or_fileobj=path,
+            )
+            for group in groups
+            for path in group
+        ]
         try:
-            api.upload_folder(
+            api.create_commit(
                 repo_id=plan.repo_id,
                 repo_type="dataset",
-                folder_path=str(plan.folder_path),
-                path_in_repo=plan.path_in_repo,
-                allow_patterns=list(plan.allow_patterns),
+                operations=operations,
                 commit_message=commit_message,
                 parent_commit=parent_commit,
             )
@@ -321,12 +402,14 @@ def _upload_with_conflict_retry(
             is_conflict = _http_status_code(exc) in {409, 412}
             if not is_conflict or attempt == MAX_UPLOAD_ATTEMPTS - 1:
                 raise
+            time.sleep(min(2**attempt, 16))
 
 
 def sync_completed_runs(
     final_paths: Iterable[str | Path],
     *,
     repo_id: str,
+    namespace: str,
     data_root: Path = DATA_JSON_ROOT,
     lock_path: Path | None = None,
     api: Any | None = None,
@@ -337,6 +420,7 @@ def sync_completed_runs(
     plan = build_upload_plan(
         final_paths,
         repo_id=repo_id,
+        namespace=namespace,
         data_root=data_root,
     )
     if not plan.artifact_paths:
@@ -351,6 +435,13 @@ def sync_completed_runs(
             ) from exc
         api = HfApi()
 
+    try:
+        from huggingface_hub import CommitOperationAdd
+    except ImportError as exc:
+        raise RuntimeError(
+            "huggingface_hub is not installed; install it or use the `hf` CLI"
+        ) from exc
+
     commit_label = f" for {label}" if label else ""
     commit_message = (
         f"Sync {len(plan.final_paths)} completed experiment run(s)"
@@ -358,12 +449,26 @@ def sync_completed_runs(
     )
     selected_lock_path = lock_path or _default_lock_path(plan.repo_id)
     with local_upload_lock(selected_lock_path):
-        _upload_with_conflict_retry(
-            api,
-            plan,
-            commit_message,
-            allow_public=allow_public,
-        )
+        chunks = _artifact_group_chunks(plan)
+        for chunk_index, groups in enumerate(chunks, start=1):
+            chunk_message = commit_message
+            if len(chunks) > 1:
+                chunk_message = (
+                    f"{commit_message} (chunk {chunk_index}/{len(chunks)})"
+                )
+            _commit_completed_run_chunk(
+                api,
+                plan,
+                groups,
+                commit_message=chunk_message,
+                allow_public=allow_public,
+                operation_type=CommitOperationAdd,
+            )
+            if len(chunks) > 1:
+                print(
+                    "Hugging Face dataset sync: "
+                    f"committed chunk {chunk_index}/{len(chunks)}"
+                )
     return plan
 
 
@@ -383,10 +488,16 @@ def maybe_sync_completed_runs(
         _warn(f"{AUTO_UPLOAD_ENV} is enabled but {REPO_ENV} is unset")
         return False
 
+    namespace = env.get(NAMESPACE_ENV, "").strip()
+    if not namespace:
+        _warn(f"{AUTO_UPLOAD_ENV} is enabled but {NAMESPACE_ENV} is unset")
+        return False
+
     try:
         plan = sync_completed_runs(
             final_paths,
             repo_id=repo_id,
+            namespace=namespace,
             label=label,
             allow_public=(
                 env.get(ALLOW_PUBLIC_ENV, "").strip().lower() in TRUE_VALUES
@@ -430,6 +541,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         help=f"Dataset repo (default: ${REPO_ENV})",
     )
     parser.add_argument(
+        "--namespace",
+        default=os.environ.get(NAMESPACE_ENV, ""),
+        help=f"Unique remote uploader namespace (default: ${NAMESPACE_ENV})",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the exact remote artifact paths without importing or contacting Hugging Face",
@@ -452,10 +568,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     finals = discover_completed_final_jsons(scan_paths, data_root=args.data_root)
     repo_id = args.repo_id.strip() or "dry-run/unspecified-dataset"
 
+    if not args.namespace.strip():
+        _warn(f"{NAMESPACE_ENV} is unset")
+        return 2
+
     try:
         plan = build_upload_plan(
             finals,
             repo_id=repo_id,
+            namespace=args.namespace,
             data_root=args.data_root,
         )
     except ValueError as exc:
@@ -479,6 +600,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         plan = sync_completed_runs(
             finals,
             repo_id=args.repo_id,
+            namespace=args.namespace,
             data_root=args.data_root,
             lock_path=args.lock_file,
             label="backfill",

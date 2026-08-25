@@ -17,7 +17,13 @@ Generated experiment artifacts can be backed up to a private Hugging Face datase
    ```dotenv
    HF_DATASET_AUTO_UPLOAD=1
    HF_DATASET_REPO=organization/dataset
+   HF_DATASET_NAMESPACE=your-unique-uploader-name
    ```
+
+   The namespace must be unique to each collaborator (or each independently
+   writing clone). For example, Aron and Ivar can use `vallinder` and
+   `ivarfresh`. This prevents two machines running the same configuration from
+   overwriting each other's stochastic replicates.
 
 Never commit a Hugging Face token or add it to `.env.example`.
 
@@ -30,7 +36,7 @@ The sync treats a run as complete only when its final full-state JSON exists and
 - `run.log`
 - `run.transcript.pdf`
 
-Checkpoints, error snapshots, malformed JSON, results without a matching final JSON, and other partial artifacts are excluded. Remote paths mirror the contents below `data/json/`.
+Checkpoints, error snapshots, malformed JSON, results without a matching final JSON, and other partial artifacts are excluded. Remote paths mirror the contents below `data/json/` under `uploaders/<namespace>/data/json/`. The reserved `uploaders/` root keeps collaborator data separate from repository-level files such as the dataset card.
 
 The uploader also rejects symlinks and refuses to write unless Hugging Face reports that the target dataset is private. After deliberate publication, continued uploads require the explicit `HF_DATASET_ALLOW_PUBLIC_UPLOAD=1` override.
 
@@ -56,7 +62,14 @@ After authentication and configuration, backfill the same manifest:
 python3 scripts/hf_sync_completed_runs.py
 ```
 
-The backfill is append/update-only: it does not delete remote files.
+The backfill is append/update-only: it does not delete remote files. Large
+manifests are split into commits of at most 100 files and 500 MiB of raw local
+data. Each commit is built from whole run families; when a file is already
+unchanged on the Hub it may be omitted from the new commit, but the resulting
+repository tree will never introduce a companion without its final JSON. A run
+family larger than the byte limit is rejected rather than split. This avoids
+slow all-files-by-all-patterns filtering without publishing an orphan log or
+results file if an upload is interrupted.
 
 ## Downloading updates
 
@@ -67,7 +80,9 @@ hf auth login
 hf download organization/dataset --repo-type dataset --local-dir nlet-hf-data
 ```
 
-Re-running the download updates only changed files. The experiment files will be under `nlet-hf-data/` with the same layout they have below `data/json/` locally.
+Re-running the download updates only changed files. Experiment files will be
+under `nlet-hf-data/uploaders/<namespace>/data/json/`, followed by the same
+layout they have below `data/json/` locally.
 
 ## Publication
 
