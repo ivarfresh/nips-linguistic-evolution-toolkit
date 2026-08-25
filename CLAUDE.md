@@ -39,6 +39,10 @@ python experiments/run_trust_game.py
 # Available analyses: cooperativity, trajectory, similarity, plot_similarity, embedding, wordchain, ngram
 ```
 
+### Sharing completed runs
+
+Completed experiment artifacts can be synced to a private Hugging Face dataset after each batch. The hook is opt-in, excludes checkpoints and failed/partial runs, and never changes an experiment's success status if the upload fails. See `docs/hugging_face_dataset_sync.md` for account setup, backfill, and download commands.
+
 ### Python Environment
 
 ```bash
