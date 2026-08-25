@@ -1,0 +1,399 @@
+% Canonical simulation protocol for the linguistic-evolution toolkit.
+% Protocol version: corrected v2. Last verified against the repository on
+% 2026-08-19. This file intentionally contains no document preamble so that it
+% can be uploaded to Overleaf and included with:
+%     \input{canonical_simulation_protocol}
+% Change \section to \subsection (etc.) if embedding below another heading.
+% Requires: amsmath, natbib, booktabs, and array (all already loaded by the
+% current Overleaf manuscript). The bibliography should contain berg1995.
+
+\section{Canonical simulation protocol (corrected v2)}
+\label{sec:canonical-simulation-protocol}
+
+\paragraph{Scope and precedence.}
+This section is the canonical description of the corrected-v2 simulation
+workflow. It covers the current memory-primary, informed-noise experiments,
+including the completed task-order comparison and the configured population,
+identity, and scripted-defector follow-ups. Earlier project phases used
+materially different noise and memory implementations and should not be
+described using this protocol. In particular, the current implementation keeps
+separate actual and communicated ledgers: communication noise changes what an
+agent observes about another agent's action, but it does not change the actual
+transfer or the ground-truth payoff calculation.
+
+\subsection{System overview}
+\label{sec:protocol-overview}
+
+Each simulation run consists of a population of same-model LLM agents playing
+ten rounds of a repeated trust game, optionally interleaved with a myth-writing
+task. The simulation is centrally orchestrated. Agents do not exchange
+free-form chat messages. Their inter-agent information channels are (i) game
+actions and communicated outcomes, (ii) any explicitly supplied game-history
+or reputation block, and (iii) myths transmitted between rounds. Each agent
+has a private rolling chat history; no agent receives another agent's private
+conversation memory.
+
+An experiment set is defined in a YAML configuration and expanded into the
+Cartesian product of model, system-prompt template, persona, task order, myth
+topic, game-parameter preset, myth-prompt arm, and replicate. Each expanded
+combination becomes one independent simulation run. Replicates may be executed
+in separate worker processes, while the state transitions within any one run
+remain ordered. In seeded follow-up protocols, the exogenous pairing and noise
+processes are reproducible conditional on their recorded seeds; model sampling
+remains stochastic.
+
+The three primary task orders are:
+\begin{itemize}
+    \item \textbf{Game only}: one game interaction per agent per round and no
+    myth-writing task.
+    \item \textbf{Game $\rightarrow$ myth}: agents make the current game
+    decision before writing the current-round myth. The new myth can therefore
+    affect later rounds, but not the game decision that preceded it.
+    \item \textbf{Myth $\rightarrow$ game}: agents write the current-round myth
+    before making the current game decision. Because both tasks use the same
+    private memory, the new myth is available to the immediately following game
+    call.
+\end{itemize}
+Whenever a run contains both tasks, every current game prompt contains exactly
+once the instruction that the agent should take myths written in the session
+into account when deciding. This explicit link is held constant across the two
+myth-present task orders.
+
+\subsection{Agents, prompts, and private memory}
+\label{sec:protocol-agents-memory}
+
+All agents in a run share the configured base model, temperature, neutral
+persona, and prompt templates, but each agent has a distinct identifier,
+optional display name, system prompt, and private message buffer. Unless a
+condition states otherwise, current experiments use Claude Sonnet 4.5,
+temperature $0.8$, and a neutral persona. The protected confirmatory launcher
+routes these calls directly to Anthropic and fixes the maximum response length
+at 4,096 tokens.
+
+The system prompt explains both roles of the trust game, the payoff rules, the
+required decision format, and the possible myth-writing task. In informed-noise
+conditions it also states that communicated amounts may differ slightly from
+the amounts actually sent or returned. Population-setting text tells agents
+whether partners are fixed or rotating and whether identities are visible.
+
+Memory capacity is measured in completed user--assistant exchanges, not in raw
+messages. The system message is always preserved. Before a new model call, the
+buffer retains at most the configured number of preceding exchanges and then
+adds the current user prompt. In the canonical \emph{memory-primary} regime,
+accepted game and myth exchanges are written to the same private buffer. Game-
+only cells use capacity three. Two-task cells use capacity six, so both regimes
+retain approximately three completed rounds of task interaction: three game
+exchanges in the former and roughly three game-plus-myth pairs in the latter.
+This matching prevents the addition of the myth task from mechanically
+shortening the intended round-level memory horizon.
+
+The exact request and response for every interaction are also copied to a
+non-truncated audit history. This audit record includes the prompt, the full
+message list supplied to the provider, the response text, available reasoning
+and token usage, task and round metadata, role, opponent, dyad, response source,
+and any error. The rolling private memory controls agent behaviour; the audit
+history is retained only for provenance and verification.
+
+\subsection{Population structure and pairings}
+\label{sec:protocol-pairings}
+
+Every round partitions the population into sender--receiver dyads. Within a
+dyad, the sender always acts before the receiver. Pairing metadata is saved at
+both the round and dyad levels.
+
+For two-agent runs, the same pair remains together for all rounds and sender
+and receiver roles alternate by round. For populations larger than two, two
+pairing modes are available:
+\begin{itemize}
+    \item \textbf{Balanced rotating}: a full-run schedule balances sender and
+    receiver assignments while preferentially pairing agents who have met less
+    often. A recorded pairing seed makes the schedule reproducible.
+    \item \textbf{Fixed}: adjacent agents form persistent dyads and roles
+    alternate within each dyad. Thus an eight-agent fixed run consists of four
+    parallel repeated dyads.
+\end{itemize}
+Names may be shown or hidden. When names are hidden, prompts use relational
+labels such as ``your current co-player'' rather than stable identity labels.
+The \texttt{self\_and\_coplayer} history policy can additionally insert a
+bounded summary of earlier games involving the current co-player. This is
+reputation information assembled from the public simulation record; it is not
+access to that co-player's private LLM context.
+
+The completed eight-agent task-order comparison uses balanced rotating
+partners, hidden names, and up to three earlier games involving the current
+co-player. The completed two-agent comparison is a repeated dyad. These arms
+therefore differ simultaneously in population size, partner rotation,
+anonymity, and supplied reputation information. They must be described as a
+\emph{population-regime comparison}, not as a pure population-size
+manipulation. The configured population-isolation follow-up removes these
+differences by comparing one fixed dyad with four fixed dyads under unified
+prompts, hidden names, and no injected history.
+
+\subsection{Repeated trust game}
+\label{sec:protocol-trust-game}
+
+We use a role-swapping repeated trust game \citep{berg1995} with endowment
+$E=\$5$ and multiplier $m=3$. In dyad $d$ and round $t$, the sender selects an
+actual transfer $s_{td}\in[0,E]$. The receiver's actual allocation is
+$m s_{td}$ and the receiver selects an actual return
+$r_{td}\in[0,m s_{td}]$. The ground-truth per-round payoffs are
+\begin{equation}
+    \pi^{S}_{td}=E-s_{td}+r_{td},
+    \qquad
+    \pi^{R}_{td}=m s_{td}-r_{td}.
+    \label{eq:trust-game-payoffs}
+\end{equation}
+Actual cumulative balances are the sums of these payoffs over the rounds in
+which an agent participates.
+
+The sender is prompted first and returns a JSON-like object containing a
+\texttt{send} amount. The parsed amount is bounded to $[0,E]$ and stored before
+the receiver prompt is constructed. The receiver is then shown the current
+communicated send, responds with a \texttt{return} amount, and that amount is
+bounded to the feasible actual interval $[0,m s_{td}]$. The complete response,
+the parsed action, any clamping, payoffs, and cumulative balances are retained.
+A decision response that cannot be parsed causes the run to fail closed rather
+than silently inventing an action.
+
+\subsection{Communication noise and the two ledgers}
+\label{sec:protocol-noise}
+
+In the primary corrected-v2 condition, both sends and returns are transmitted
+through informed bidirectional uniform communication noise with range $a=\$1$.
+For an action $x$ with feasible upper bound $u$, the communicated amount is
+\begin{equation}
+    \widetilde{x}
+    = \operatorname{clip}\!\left(x+\epsilon,0,u\right),
+    \qquad
+    \epsilon\sim\mathcal{U}(-a,a),
+    \label{eq:communication-noise}
+\end{equation}
+rounded to two decimal places. Noise is generated separately for the send and
+return events. With seeded protocols, the random draw is a deterministic
+function of the noise seed, round, dyad identifier, and action type. This makes
+the exogenous communication channel reproducible without coupling it to model
+sampling.
+
+The environment maintains parallel actual and communicated views:
+\begin{itemize}
+    \item The receiver observes $\widetilde{s}_{td}$ and is told that its
+    visible receipt is $m\widetilde{s}_{td}$, while the ground-truth allocation
+    remains $m s_{td}$.
+    \item The sender later observes $\widetilde{r}_{td}$ rather than
+    $r_{td}$.
+    \item Actual payoffs and balances use Equation~\ref{eq:trust-game-payoffs}.
+    The sender's visible payoff is $E-s_{td}+\widetilde{r}_{td}$, and the
+    receiver's visible payoff is $m\widetilde{s}_{td}-r_{td}$. Parallel visible
+    balances accumulate these quantities for use in later prompts.
+\end{itemize}
+Thus noise perturbs perceived intentions and feedback, not the underlying
+economic transaction. Communicated sends are generated only after the current
+actual send exists and while constructing the receiver's prompt. Missing
+current transfers raise an error; they never fall back to zero.
+
+\subsection{Myth writing and cultural transmission}
+\label{sec:protocol-myths}
+
+In myth-present conditions, every active agent writes one myth per round. In
+round one, the prompt requests an approximately 200-word myth and allows any
+mythic setting, characters, or symbols. It states that the myth and game are
+connected and asks for a story reflecting how the game should be played. In
+later rounds, the memory-primary prompt quotes the myth written by the agent's
+co-player in the preceding round. It asks the agent to write a new myth that
+adapts its earlier work and continues to reflect how the game should be played.
+The agent's own earlier myths are available through its private message buffer
+rather than duplicated in the current prompt.
+
+Myth transmission therefore has a one-round lag. In a rotating population, an
+agent receives the previous round's partner myth, which need not have been
+written by its current game partner. The myth channel consequently propagates
+text along the realised pairing network rather than creating a population-wide
+broadcast. All agents' myth calls within a round are issued concurrently after
+their prompts have been prepared, so no agent sees another agent's myth from
+the same round.
+
+Before a myth response is committed to memory or the simulation state, a
+validator checks that it is non-empty and does not appear to continue into a
+game prompt. To avoid false positives from ordinary story language, rejection
+requires at least two independent prompt-continuation markers. A rejected myth
+is retained in the audit trail, the unanswered prompt is removed from private
+memory, and the call is retried once from the same clean conversation state. If
+the retry is also invalid, the run stops and writes an error artifact.
+
+\subsection{Scripted-defector and monitor extensions}
+\label{sec:protocol-extensions}
+
+The scripted-defector treatment assigns a reproducible subset of agents to a
+\texttt{forced\_zero} game policy. A scripted defector always sends zero as a
+sender and returns zero as a receiver. These game actions do not consume an LLM
+call, but the corresponding prompt and scripted response may still be written
+to the agent's private memory so its subsequent myth writing can respond to its
+experience. Defectors use the normal LLM myth-writing path. In the planned
+primary treatment, two of eight agents are defectors, agent names are hidden,
+and the treatment role is not disclosed to the agents.
+
+The engine also contains an optional silent myth monitor. When explicitly
+enabled, a separate model flags myths that communicate actionable game
+strategy, and a flagged agent's current-round game earnings are removed from
+its cumulative balance without a textual notification. The underlying
+transaction and payoff records remain unchanged. This monitor is not part of
+the corrected-v2 task-order comparison and must not be assumed active unless a
+run's metadata records an enabled monitor configuration.
+
+\subsection{Execution, retries, and persistence}
+\label{sec:protocol-execution}
+
+At launch, the batch runner records the source commit, whether the worktree is
+dirty, the absolute configuration path and SHA-256 digest, provider route,
+resolved provider model, maximum output-token setting, task order, prompt arm,
+population settings, memory policy, and all explicit seeds. The protected
+confirmatory launcher refuses to start from a dirty worktree, uses a fresh
+output directory, requires the expected number of completed runs in every
+cell, and audits each cell before proceeding.
+
+Provider adapters make up to three attempts for errors they classify as
+retryable, with exponential backoff. For the direct Anthropic route used in the
+confirmatory batch, this includes rate-limit, connection, timeout, server, and
+empty-response failures. If all provider attempts fail, any unanswered user
+prompt is removed from the private buffer and the failed attempt remains in the
+audit history. Myth validation has the additional single clean retry described
+above. Scripted game actions are recorded with a distinct response source so
+they are never counted as LLM calls.
+
+After every successful round, the runner atomically writes a lightweight
+\texttt{.results.json} containing the simulation state without agent message
+histories. At the configured checkpoint interval (ten rounds in the current
+batch runners), it also writes a full ordinary checkpoint containing the agent
+buffers. If that ordinary checkpoint exists, a subsequent launch resumes at
+the first unfinished round. On an exception, the runner writes a separate full
+\texttt{.error.json} artifact for diagnosis before re-raising the error; this
+error artifact is not selected automatically as a resume point. On successful
+completion the runner writes (i) a full-state \texttt{.json}, (ii) the
+lightweight results file, (iii) a verbatim \texttt{.log}, and (iv) a
+human-readable \texttt{.transcript.pdf}, then removes the ordinary checkpoint.
+Output paths are organised by output batch, experiment set, model, task order,
+and named game-parameter preset.
+
+\subsection{Protocol audit}
+\label{sec:protocol-audit}
+
+Final outputs are admitted to substantive analysis only after a strict audit.
+For every run, the audit verifies:
+\begin{itemize}
+    \item the configured number of rounds, agents, dyads, game responses, myths,
+    and accepted interactions;
+    \item the absence of unrecovered provider or validation errors and the
+    correct accounting of recovered attempts;
+    \item the informed-noise notice in system prompts and the numerical bounds
+    on every communicated send and return;
+    \item the presence of the myth-decision instruction exactly once in each
+    applicable current game prompt and its absence from game-only prompts;
+    \item private-memory lengths and the configured explicit-history windows;
+    \item partner stability in fixed-pair conditions, population-setting text,
+    name visibility, scripted-response counts, and defector disclosure policy;
+    \item execution provenance, including the source revision, configuration
+    digest, provider route, and output-token setting; and
+    \item identical realised pairing schedules across runs that share a nominal
+    paired-protocol key.
+\end{itemize}
+The completed corrected-v2 task-order batch contains 60 final runs (six cells,
+ten runs per cell). All 60 passed the protocol audit. The completed cells did
+not, however, record the intended pairing and noise seeds; their inferential
+comparisons must therefore treat runs as independent rather than paired.
+
+\subsection{Outcome measures and statistical unit}
+\label{sec:protocol-outcomes}
+
+The independent statistical unit is a complete simulation run, not an
+individual dyadic transaction or model call. Primary behavioural summaries are
+computed from the actual ledger:
+\begin{align}
+    \text{trust ratio} &= s_{td}/E, \\
+    \text{return ratio} &=
+    \begin{cases}
+        r_{td}/(m s_{td}), & m s_{td}>0,\\
+        0, & m s_{td}=0,
+    \end{cases} \\
+    \text{final balance} &= \text{mean final actual balance across agents}.
+\end{align}
+We additionally report mean sent and returned amounts, joint population
+balance, and round-level trust and return trajectories. For the completed
+six-cell confirmatory comparison, between-condition contrasts use independent-
+group Welch tests and Welch confidence intervals, with Holm adjustment across
+the six prespecified within-population balance contrasts. Population-regime
+interactions are estimated as independent differences-in-differences. Seeded
+follow-up designs should preserve replicate identifiers and the shared
+exogenous pairing/noise schedules so that their paired structure can be used in
+the corresponding analysis.
+
+The linguistic outputs support complementary analyses of within-agent myth
+retention, between-agent and population-level semantic convergence, lexical
+and structural change, strategy content, and links between myth features and
+subsequent game behaviour. Such analyses operate on the accepted myths saved in
+the final state; rejected continuation attempts are audit artifacts and are
+never treated as cultural outputs.
+
+\subsection{Current experimental matrix and interpretation}
+\label{sec:protocol-current-matrix}
+
+Table~\ref{tab:current-protocol-matrix} separates completed evidence from
+implemented follow-ups. This distinction is part of the protocol: configured
+or smoke-tested cells must not be described as substantive results.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\caption{Current corrected-v2 experimental matrix as of 19 August 2026.}
+\label{tab:current-protocol-matrix}
+\begin{tabular}{p{0.22\linewidth}p{0.31\linewidth}p{0.15\linewidth}p{0.22\linewidth}}
+\toprule
+Comparison & Design & Status & Permitted interpretation \\
+\midrule
+Task order by population regime & Repeated two-agent dyad versus anonymous,
+rotating eight-agent population with co-player reputation; game only,
+game$\rightarrow$myth, and myth$\rightarrow$game & 60/60 complete and audited
+& Task-order and population-regime effects; not a pure agent-count effect \\
+\addlinespace
+Population isolation & One fixed dyad versus four fixed dyads, unified prompts,
+hidden names, and no injected history, crossed with all three task orders &
+Implemented; no substantive batch & Cleaner population-size test with partner
+structure held fixed \\
+\addlinespace
+Identity isolation & Eight-agent balanced rotating population, no injected
+history, hidden versus stable visible names & Implemented; no substantive batch
+& Effect of stable partner identity under rotation \\
+\addlinespace
+Scripted defectors & Eight-agent rotating population, 0\% versus 25\%
+\texttt{forced\_zero} agents, crossed with all three task orders & Implemented
+and smoke-tested; no substantive batch & Cultural and behavioural response to
+exogenous defection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Repository sources of truth}
+\label{sec:protocol-source-files}
+
+The prose above is implemented by the following repository files:
+\begin{itemize}
+    \item experiment definitions and prompt text:
+    \texttt{config/experiments\_noisy.yaml};
+    \item configuration expansion, provenance capture, execution, and output
+    layout: \texttt{experiments/run\_noisy\_batch.py};
+    \item round orchestration, task ordering, memory modes, checkpoints, and
+    state serialization: \texttt{src/simulation.py};
+    \item private message buffers and interaction audit records:
+    \texttt{src/agents.py};
+    \item trust-game prompts, communication noise, actual/visible ledgers, and
+    payoff calculations: \texttt{games/trust\_game\_noisy.py};
+    \item population assignment, pairings, identity presentation, and scripted
+    policies: \texttt{games/dyadic\_pairing.py};
+    \item myth prompting, one-round transmission, and response validation:
+    \texttt{src/myth\_writer.py};
+    \item protected confirmatory launch:
+    \texttt{scripts/run\_corrected\_v2\_confirmatory\_20260812.sh}; and
+    \item admissibility audit: \texttt{scripts/audit\_v2\_protocol.py}.
+\end{itemize}
+If this prose and an older manuscript description disagree, the saved run
+metadata and these implementation files determine what was actually executed.

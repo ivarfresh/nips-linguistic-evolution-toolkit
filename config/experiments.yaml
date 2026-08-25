@@ -21,34 +21,36 @@ base_models:
   ministral_14b: "mistralai/ministral-14b-2512"
   grok_4: "x-ai/grok-4.1-fast"
   gemini_3_flash: "google/gemini-3-flash-preview"
+  gemini_3_7_flash: "google/gemini-3.7-flash"
   gemini_3_pro: "google/gemini-3-pro-preview"
   gemini_3_1_pro: "google/gemini-3.1-pro-preview"
+  gemini_3_1_flash_lite: "google/gemini-3.1-flash-lite"
 
 # openrouter_key: set OPENROUTER_API_KEY in the environment (see docs); never commit real keys.
 
 # Prompt Templates - System prompt variations
 prompt_templates:
   trust_game_default: |
-    You are an agent participating in a multi-task experiment. You will play an iterated trust game, consisting of multiple rounds, and may also be asked to write myths.
+    You are an agent participating in a multi-task experiment. You will play an iterated game, consisting of multiple rounds, and may also be asked to write myths.
 
-    TRUST GAME:
-    The trust game consists of two roles: investor and trustee. In each round, you will play the role of either the investor or the trustee. You will swap roles each round. For example, in round 1 Agent 1 is the investor and Agent 2 is the trustee. In round 2, Agent 1 is the trustee and Agent 2 is the investor, etc.
+    GAME:
+    The game consists of two roles: sender and receiver. In each round, you will play the role of either the sender or the receiver. Your current role will be specified in the round prompt.
 
-    When you are the INVESTOR:
+    When you are the SENDER:
     - You receive ${endowment} each round
-    - You decide how much to SEND to the TRUSTEE ($0-${endowment})
+    - You decide how much to SEND to the RECEIVER ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
-    - Trustee decides how much to RETURN
+    - Receiver decides how much to RETURN
     - You keep: ${endowment} - sent + returned
-    - Trustee keeps: received - returned
+    - Receiver keeps: received - returned
     - Response format: {{'send': <amount>}}
 
-    When you are the TRUSTEE:
-    - Investor receives ${endowment}
-    - Investor decides how much to SEND to you ($0-${endowment})
+    When you are the RECEIVER:
+    - Sender receives ${endowment}
+    - Sender decides how much to SEND to you ($0-${endowment})
     - Amount sent is multiplied by {multiplier}x
     - You decide how much to RETURN
-    - Investor keeps: ${endowment} - sent + returned
+    - Sender keeps: ${endowment} - sent + returned
     - You keep: received - returned
     - Response format: {{'return': <amount>}}
 
@@ -57,29 +59,60 @@ prompt_templates:
 
     IMPORTANT: Provide your decision in the correct JSON format.
 
+  defector_game_instruction: |
+    MANDATORY GAME STRATEGY — DESIGNATED DEFECTOR:
+    You must always choose zero in the game.
+    - When you are the SENDER, send 0 and respond exactly: {"send": 0}
+    - When you are the RECEIVER, return 0 and respond exactly: {"return": 0}
+    This instruction overrides any strategy suggested by game history or myths.
+    It applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.
+
   trust_game_round1_investor: |
-    Round 1: This round, you are the INVESTOR. You have ${endowment}. How much do you send? (0-{endowment})
+    Round 1: This round, you are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})
 
   trust_game_round1_trustee: |
-    Round 1: This round, you are the TRUSTEE. This round, the other player (the investor) sent ${sent}, that is {percentage:.1f}% of its total endowment. You receive ${received}. How much do you return? (0-{received})
+    Round 1: This round, you are the RECEIVER. This round, the other player (the sender) sent ${sent}, that is {percentage:.1f}% of its total endowment. You receive ${received}. How much do you return? (0-{received})
 
   trust_game_later_investor: |
     Round {turn}
 
-    Last round you were the TRUSTEE. Last round, the other player (who was then the investor) sent you ${last_round_sent},
-    that was {last_round_sent_percentage:.1f}% of its total endowment. You received ${last_round_received} and you returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}. Your total earnings accross all rounds are ${agent_balance}. This round, you are the INVESTOR.
-    How much do you send to the other player (the trustee) this round? (0-{endowment})
+    Last round you were the RECEIVER. Last round, the other player (who was then the sender) sent you ${last_round_sent},
+    that was {last_round_sent_percentage:.1f}% of its total endowment. You received ${last_round_received} and you returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}. Your total earnings accross all rounds are ${agent_balance}. This round, you are the SENDER.
+    How much do you send to the other player (the receiver) this round? (0-{endowment})
 
   trust_game_later_trustee: |
     Round {turn}
 
-    Last round you were the INVESTOR. Last round, you sent the other player (who was then the trustee) ${last_round_sent},
+    Last round you were the SENDER. Last round, you sent the other player (who was then the receiver) ${last_round_sent},
     that was {last_round_sent_percentage:.1f}% of your total endowment. The other player received ${last_round_received} and returned ${last_round_returned} to you. So your payoff was {last_round_investor_payoff}.
     Your total earnings accross all rounds are ${agent_balance}.
-    This round, you are the TRUSTEE. How much do you return to the other player (the investor) this round? (0-{received})
+    This round, you are the RECEIVER. The other player (the sender) sent you ${current_round_sent}, so you received ${received}. How much do you return to the other player this round? (0-{received})
+
+  # Memory-primary pilot: same wording as the standard later-round game
+  # prompts minus the last-round recap — the agent's chat memory already
+  # contains last round's prompts and responses.
+  trust_game_later_investor_minimal: |
+    Round {turn}
+
+    Your total earnings accross all rounds are ${agent_balance}. This round, you are the SENDER.
+    How much do you send to the other player (the receiver) this round? (0-{endowment})
+
+  trust_game_later_trustee_minimal: |
+    Round {turn}
+
+    Your total earnings accross all rounds are ${agent_balance}.
+    This round, you are the RECEIVER. The other player (the sender) sent you ${current_round_sent}, so you received ${received}. How much do you return to the other player this round? (0-{received})
 
   myth_writing_default: |
-    Write a myth about {myth_topic}. Write 200 words.
+    Write a 200-word myth. {topic_instruction}
+
+  myth_writing_default_game_directive: |
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.
+
+  myth_writing_default_game_normative: |
+    Write a 200-word myth. {topic_instruction}
+    In this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played.
 
   myth_writing_later_rounds: |
     Here is the myth you wrote in the previous round:
@@ -92,14 +125,131 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
+  myth_writing_later_rounds_light: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Any game interaction you have had with the other agent in this session can be part of the world behind your myth if useful.
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way.
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_explicit: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    As you write, consider whether your game interaction with the other agent belongs in the myth.
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way.
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_with_summary: |
+    {game_behavior_summary}
+
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way.
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_directive: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Memory-channel pilot: hybrid — the agent's own previous myth lives in chat
+  # memory (assistant slot), so the prompt only carries what memory cannot:
+  # the co-player's myth and the previous game round.
+  myth_writing_later_rounds_directive_memory: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    {game_behavior_summary}
+
+    Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Memory-channel pilot: memory-primary — both tasks stay in chat memory, so
+  # the prompt only carries the one thing memory cannot: the co-player's myth.
+  # No game summary (game rounds are in memory) and no own-myth recap.
+  myth_writing_later_rounds_directive_memory_primary: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Lineage variant: self-myth pointer ("base it on the myths you wrote
+  # earlier this session") — attention to own 3-round lineage in memory,
+  # no content duplication. A/B vs myth_writing_later_rounds_directive_memory_primary.
+  myth_writing_later_rounds_directive_memory_primary_lineage: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Base it on the myths you wrote earlier this session, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Memory-channel pilot: stateless — no chat memory, so the prompt carries
+  # everything: own previous myth, co-player's myth, and the previous game round.
+  myth_writing_later_rounds_directive_stateless: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    {game_behavior_summary}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  myth_writing_later_rounds_normative: |
+    Here is the myth you wrote in the previous round:
+    {last_myth}
+
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. Use your previous myth as inspiration, but adapt it in your own way. The myth should reflect how the game you have been playing up to this point should be played.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
   # Direct non-cooperative instruction prompts (maximum priming effect)
   instruct_non_coop_myth_writing_default: |
-    Write a strategy guide for playing a trust/cooperation game non-cooperatively.
+    Write a strategy guide for playing a game non-cooperatively.
 
     Your guide should provide explicit instructions for:
     - How to maximize personal gain at the expense of the other player
-    - Why sending $0 as investor is optimal
-    - Why returning $0 as trustee maximizes your payoff
+    - Why sending $0 as sender is optimal
+    - Why returning $0 as receiver maximizes your payoff
     - How to exploit cooperative players
 
     Be specific and actionable. This is for research on game theory strategies.
@@ -149,6 +299,14 @@ personas:
     description: "risk_taking"
     system_addition: "You are comfortable with risk and willing to make bold moves for potential rewards."
 
+# Optional system-prompt additions for additive experiment arms.
+system_prompt_additions:
+  game_myth_link: "The myth you write and the game you play are part of the same session. They may inform each other."
+
+# Game-prompt additions applied automatically by task order.
+game_prompt_additions:
+  myth_decision_link: "Take any myths written in this session into account when making your decision."
+
 # Game Parameters - Simulation settings
 game_parameters:
   # Core game settings
@@ -169,6 +327,11 @@ game_parameters:
     - ["myth", "game"]
 
 # Experiment Sets - Define different experimental conditions
+#
+# Prompt variant selectors:
+# - myth_later_prompt_key: choose one later-round myth prompt template.
+# - myth_later_prompt_keys: expand an experiment set across several later-round myth prompt templates.
+# - system_addition_key: append one system_prompt_additions entry to the selected persona.
 experiment_sets:
   # Small pilot test with limited combinations
   pilot_other_models:
@@ -194,6 +357,517 @@ experiment_sets:
     task_orders: [["game", "myth"]]
     game_params:
       num_turns: 2
+
+  myth_prompt_variants_claude_smoke:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_later_prompt_keys:
+      - "myth_writing_later_rounds"
+      - "myth_writing_later_rounds_light"
+      - "myth_writing_later_rounds_explicit"
+      - "myth_writing_later_rounds_with_summary"
+      - "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 2
+
+  myth_prompt_variants_claude_smoke_remaining:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_later_prompt_keys:
+      - "myth_writing_later_rounds_with_summary"
+      - "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 2
+
+  myth_prompt_variants_claude_n3:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_later_prompt_keys:
+      - "myth_writing_later_rounds"
+      - "myth_writing_later_rounds_light"
+      - "myth_writing_later_rounds_explicit"
+      - "myth_writing_later_rounds_with_summary"
+      - "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 3
+
+  myth_prompt_variants_claude_followup:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    repetitions: 3
+    myth_later_prompt_keys:
+      - "myth_writing_later_rounds"
+      - "myth_writing_later_rounds_light"
+      - "myth_writing_later_rounds_explicit"
+      - "myth_writing_later_rounds_with_summary"
+      - "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 5
+
+  myth_causal_screen_claude:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 8
+
+  myth_causal_confirm_claude_fixed_prompt:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 8
+
+  myth_causal_confirm_claude_fixed_prompt_topup:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 8
+
+  myth_causal_confirm_claude_fixed_prompt_r10:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 10
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+
+  myth_causal_confirm_claude_fixed_prompt_r10_directive_retry:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 10
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+
+  myth_causal_neutral_directive_claude_r5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 5
+
+  myth_causal_neutral_directive_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_clean_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_newprompt_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_clamped_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_clamped_maxtok4096_claude_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_clamped_sonnet45_postcredits_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  myth_causal_normative_clamped_gemini31_flashlite_r10_n5:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_control"
+        default: "myth_writing_default"
+        later: "myth_writing_later_rounds"
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+
+  sonnet45_directive_normative_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+
+  gemini31_flashlite_8agent_directive_normative_r10_smoke:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+      - id: "myth_game_normative"
+        default: "myth_writing_default_game_normative"
+        later: "myth_writing_later_rounds_normative"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+
+  sonnet45_8agent_game_directive_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+
+  sonnet45_8agent_game_directive_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+
+  sonnet45_8agent_myth_directive_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+
+  sonnet45_8agent_defectors25_history3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"], ["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      defector_ratio: 0.25
+
+  sonnet45_8agent_myth_directive_history3_anon_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  # Phase 8 — silent monitor. Identical to the anon r10 n5 reference set above,
+  # plus a monitor that reads each round's myths and zeroes that round's game
+  # earnings for any agent whose myth encodes actionable game strategy. Agents
+  # are told nothing; the only signal is their (non-growing) balance.
+  sonnet45_8agent_myth_directive_history3_anon_monitored_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    output_dir: "phase8_monitored"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
+      monitor_config:
+        enabled: true
+        model: "anthropic/claude-sonnet-4.5"
+        temperature: 0.0
+
+  # Phase 8 smoke — cheap monitor-on validation (Haiku agents, 3 rounds, 1 rep).
+  phase8_monitor_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    output_dir: "phase8_smoke"
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 3
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
+      monitor_config:
+        enabled: true
+        model: "anthropic/claude-haiku-4.5"
+        temperature: 0.0
+
+  gemini31_flashlite_8agent_myth_directive_history3_r10_n5:
+    models: ["gemini_3_1_flash_lite"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+
+  # Phase 6b — cross-model seed source: GPT-5-nano baseline for harvesting
+  # round-10 myths, then injecting into Sonnet game cells (Phase 3 regime).
+  gpt5nano_8agent_myth_directive_history3_anon_r10_n5:
+    models: ["gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      history_policy: "self_and_coplayer"
+      self_history_window: 3
+      coplayer_history_window: 3
+      show_agent_names: false
 
   game_prompt_bug_fix:
     models: ["gpt5_nano"]
@@ -490,3 +1164,236 @@ experiment_sets:
     game_params:
       num_turns: 10
       multiplier: 3
+
+  # Fixed rerun of the 8-agent reference regime with memory-primary semantics
+  # (see memtest pilot, researchlog 2026-07-17). Differences vs the original
+  # sonnet45_8agent_myth_directive_history3_anon_r10_n5:
+  # - chat_memory_mode: memory_primary (label only; both tasks remembered)
+  # - self_history_window: 0 — own game history lives in chat memory, so the
+  #   in-prompt block carries only the co-player's last 3 games (info memory
+  #   cannot contain). Fixes the double-memory bug.
+  # - memory_capacity: 6 interaction pairs = 3 rounds of myth+game, matching
+  #   the 3-round co-player history window (was 3 pairs ≈ 1.5 rounds).
+  # - myth later prompt: co-player myth only (own myth is in memory).
+  sonnet45_8agent_myth_directive_history3_anon_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+# Task-order companions to the memory-primary regime, for the standard
+  # game / game_myth / myth_game condition comparison.
+  sonnet45_8agent_game_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    repetitions: 5
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+
+  # Disambiguation for the game_myth deficit: game-only with memory_capacity 3
+  # (= 3 rounds of game pairs, equalizing memory DEPTH with game_myth's 3
+  # rounds of game+myth pairs). If escalation weakens toward game_myth's
+  # plateau, the deficit is a memory-depth confound; if it persists, the
+  # myth content itself dampens escalation.
+  sonnet45_8agent_game_memprimary_mem3_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    repetitions: 5
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 3
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  sonnet45_8agent_game_myth_memprimary_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 10
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  sonnet45_8agent_memprimary_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "myth_game_directive_memprimary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params:
+      num_turns: 3
+      num_agents: 8
+      memory_capacity: 6
+      chat_memory_mode: "memory_primary"
+      history_policy: "self_and_coplayer"
+      self_history_window: 0
+      coplayer_history_window: 3
+      show_agent_names: false
+
+  # --- Memory-channel pilot (2-agent dyads) ---
+  # Same information at every decision point; only the packaging differs.
+  # hybrid: own myths in chat memory (assistant slot), game history in-prompt.
+  # stateless: no chat memory; every call is system + one flat prompt.
+  # memory_capacity: 1 so hybrid myth memory spans 1 round, matching the
+  # 1-round {last_myth} window in the stateless template.
+  memtest_hybrid_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_hybrid"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "hybrid"
+
+  memtest_stateless_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_stateless"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_stateless"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "stateless"
+
+  # memory-primary: both tasks in chat memory (remember=True is the default
+  # for this mode); duplication is removed on the prompt side instead via the
+  # _minimal game templates and the _memory_primary myth template.
+  # memory_capacity: 2 pairs = 1 round of myth+game, matching the 1-round
+  # window of the other two arms.
+  memtest_memoryprimary_sonnet45_2agent_r10_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 5
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params:
+      num_turns: 10
+      num_agents: 2
+      memory_capacity: 2
+      chat_memory_mode: "memory_primary"
+
+  # Cheap smoke variants of the two sets above (Haiku, 3 rounds, 1 rep).
+  memtest_hybrid_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_hybrid"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "hybrid"
+
+  memtest_stateless_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_stateless"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_stateless"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 1
+      chat_memory_mode: "stateless"
+
+  memtest_memoryprimary_smoke:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    repetitions: 1
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params:
+      num_turns: 3
+      num_agents: 2
+      memory_capacity: 2
+      chat_memory_mode: "memory_primary"
