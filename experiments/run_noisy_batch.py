@@ -36,6 +36,7 @@ from src.batch_utils import unique_json_path as _unique_json_path
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from games.trust_game_noisy import TrustGameNoisy
+from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
 
 def execution_provenance(config_path: str) -> Dict[str, Any]:
@@ -720,6 +721,7 @@ def run_experiment_set(
     else:
         print("Running sequentially (workers=1)")
 
+    completed_final_paths = []
     if workers == 1:
         # Sequential execution
         for i, combo in enumerate(combinations):
@@ -738,6 +740,7 @@ def run_experiment_set(
             result = run_single_experiment(combo, experiment_name, i, output_subdir)
 
             if result['success']:
+                completed_final_paths.append(result['file_path'])
                 print(f"Saved to {result['file_path']}")
                 print(f"Transcript PDF: {result['transcript_path']}")
             else:
@@ -763,6 +766,7 @@ def run_experiment_set(
                     completed += 1
 
                     if result['success']:
+                        completed_final_paths.append(result['file_path'])
                         print(f"[{completed}/{len(combinations)}] {result['combo_info']['model']} / "
                               f"{result['combo_info']['game_params']} / "
                               f"{result['combo_info']['task_order']} / "
@@ -799,6 +803,11 @@ def run_experiment_set(
                 print(f"  - {exp['combo_info']['model']} / {exp['combo_info']['game_params']}: "
                       f"{exp['error'][:100]}")
         print(f"{'='*60}")
+
+    maybe_sync_completed_runs(
+        completed_final_paths,
+        label=f"{output_subdir}/{experiment_name}",
+    )
 
 
 if __name__ == "__main__":

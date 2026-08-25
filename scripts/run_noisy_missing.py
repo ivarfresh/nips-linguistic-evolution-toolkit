@@ -25,6 +25,7 @@ from experiments.run_noisy_batch import (
     execution_provenance,
     run_single_experiment,
 )
+from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 from src.batch_utils import sanitize_for_filename
 
 
@@ -123,6 +124,7 @@ def main() -> int:
 
     combinations = load_combinations(args.experiment_name, args.config)
     missing: list[tuple[int, dict[str, Any], Path]] = []
+    expected_outputs: list[Path] = []
 
     for index, combo in enumerate(combinations):
         expected_path = expected_output_path(
@@ -131,6 +133,7 @@ def main() -> int:
             index,
             args.output_subdir,
         )
+        expected_outputs.append(expected_path)
         if not expected_path.exists():
             missing.append((index, combo, expected_path))
 
@@ -144,6 +147,10 @@ def main() -> int:
     )
 
     if not missing:
+        maybe_sync_completed_runs(
+            (path for path in expected_outputs if path.is_file()),
+            label=f"{args.output_subdir}/{args.experiment_name}",
+        )
         return 0
 
     failed: list[dict[str, Any]] = []
@@ -202,10 +209,16 @@ def main() -> int:
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(json.dumps(failed, indent=2), encoding="utf-8")
         print(f"failed={len(failed)} summary={summary_path}", flush=True)
-        return 1
+        exit_status = 1
+    else:
+        print(f"complete={completed} failed=0", flush=True)
+        exit_status = 0
 
-    print(f"complete={completed} failed=0", flush=True)
-    return 0
+    maybe_sync_completed_runs(
+        (path for path in expected_outputs if path.is_file()),
+        label=f"{args.output_subdir}/{args.experiment_name}",
+    )
+    return exit_status
 
 
 if __name__ == "__main__":

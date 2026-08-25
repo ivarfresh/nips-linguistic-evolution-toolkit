@@ -16,6 +16,7 @@ from src.experiment_config import ExperimentConfig
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from games.trust_game import TrustGame
+from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
 def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: int) -> Dict[str, Any]:
     """
@@ -239,6 +240,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
     else:
         print("Running sequentially (workers=1)")
 
+    completed_final_paths = []
     if workers == 1:
         # Sequential execution (backward compatible)
         for i, combo in enumerate(combinations):
@@ -256,6 +258,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
             result = run_single_experiment(combo, experiment_name, i)
 
             if result['success']:
+                completed_final_paths.append(result['file_path'])
                 print(f"✓ Saved to {result['file_path']}")
                 print(f"✓ Transcript PDF: {result['transcript_path']}")
             else:
@@ -283,6 +286,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                     completed += 1
 
                     if result['success']:
+                        completed_final_paths.append(result['file_path'])
                         print(f"[{completed}/{len(combinations)}] ✓ {result['combo_info']['model']} / "
                               f"{result['combo_info']['persona']} / "
                               f"{result['combo_info']['task_order']} / "
@@ -323,6 +327,11 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                 print(f"  - {exp['combo_info']['model']} / {exp['combo_info']['persona']} / "
                       f"{exp['combo_info']['task_order']}: {exp['error']}")
         print(f"{'='*60}")
+
+    maybe_sync_completed_runs(
+        completed_final_paths,
+        label=experiment_name,
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
