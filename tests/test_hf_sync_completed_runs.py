@@ -571,6 +571,41 @@ def test_automatic_hook_is_noop_unless_enabled(monkeypatch):
     assert called == []
 
 
+def test_automatic_hook_discovers_only_valid_finals_in_output_directory(
+    monkeypatch,
+    tmp_path,
+):
+    data_root = tmp_path / "data" / "json"
+    run_dir = data_root / "experiment"
+    final = write_json(run_dir / "run.json", FULL_STATE)
+    write_json(run_dir / "run.results.json", FULL_STATE)
+    write_json(run_dir / "run.checkpoint.json", FULL_STATE)
+    write_json(run_dir / "run.checkpoint.json.error.json", FULL_STATE)
+    write_json(run_dir / "analysis.json", {"metadata": {}, "trials": []})
+    (run_dir / "truncated.json").write_text("{", encoding="utf-8")
+
+    uploaded = []
+
+    def capture(paths, **kwargs):
+        uploaded.append((tuple(paths), kwargs))
+        return SimpleNamespace(artifact_paths=(), final_paths=())
+
+    monkeypatch.setattr(hf_sync, "DATA_JSON_ROOT", data_root)
+    monkeypatch.setattr(hf_sync, "sync_completed_runs", capture)
+
+    result = hf_sync.maybe_sync_completed_runs(
+        [run_dir],
+        environ={
+            "HF_DATASET_AUTO_UPLOAD": "1",
+            "HF_DATASET_REPO": "owner/dataset",
+            "HF_DATASET_NAMESPACE": "uploader",
+        },
+    )
+
+    assert result is True
+    assert uploaded[0][0] == (final.resolve(),)
+
+
 def test_automatic_hook_warns_and_swallows_upload_failure(monkeypatch, capsys):
     def fail(*args, **kwargs):
         raise RuntimeError("authentication failed")

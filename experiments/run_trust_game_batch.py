@@ -26,6 +26,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     Returns:
         dict with keys: success (bool), file_path (str), error (str or None), combo_info (dict)
     """
+    save_path = None
     try:
         # Configure game
         game_params = combo['game_params']
@@ -208,7 +209,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     except Exception as e:
         return {
             "success": False,
-            "file_path": None,
+            "file_path": save_path,
             "error": str(e),
             "combo_info": {
                 "model": combo['model'],
@@ -240,7 +241,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
     else:
         print("Running sequentially (workers=1)")
 
-    completed_final_paths = []
+    candidate_final_paths = []
     if workers == 1:
         # Sequential execution (backward compatible)
         for i, combo in enumerate(combinations):
@@ -256,9 +257,10 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
             print(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
 
             result = run_single_experiment(combo, experiment_name, i)
+            if result.get('file_path'):
+                candidate_final_paths.append(result['file_path'])
 
             if result['success']:
-                completed_final_paths.append(result['file_path'])
                 print(f"✓ Saved to {result['file_path']}")
                 print(f"✓ Transcript PDF: {result['transcript_path']}")
             else:
@@ -284,9 +286,10 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                 try:
                     result = future.result()
                     completed += 1
+                    if result.get('file_path'):
+                        candidate_final_paths.append(result['file_path'])
 
                     if result['success']:
-                        completed_final_paths.append(result['file_path'])
                         print(f"[{completed}/{len(combinations)}] ✓ {result['combo_info']['model']} / "
                               f"{result['combo_info']['persona']} / "
                               f"{result['combo_info']['task_order']} / "
@@ -329,7 +332,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
         print(f"{'='*60}")
 
     maybe_sync_completed_runs(
-        completed_final_paths,
+        candidate_final_paths,
         label=experiment_name,
     )
 

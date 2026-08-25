@@ -478,7 +478,12 @@ def maybe_sync_completed_runs(
     label: str | None = None,
     environ: dict[str, str] | os._Environ[str] | None = None,
 ) -> bool:
-    """Best-effort opt-in hook for runners; never raises or changes run status."""
+    """Best-effort opt-in hook for runners; never raises or changes run status.
+
+    ``final_paths`` may contain completed-final files or scoped output
+    directories. Discovery happens only after auto-upload is enabled, and only
+    validated full-state JSONs are handed to the uploader.
+    """
     env = os.environ if environ is None else environ
     if not auto_upload_enabled(env):
         return False
@@ -494,8 +499,12 @@ def maybe_sync_completed_runs(
         return False
 
     try:
-        plan = sync_completed_runs(
+        completed_final_paths = discover_completed_final_jsons(
             final_paths,
+            data_root=DATA_JSON_ROOT,
+        )
+        plan = sync_completed_runs(
+            completed_final_paths,
             repo_id=repo_id,
             namespace=namespace,
             label=label,
