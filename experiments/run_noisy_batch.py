@@ -366,6 +366,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     Returns:
         dict with keys: success, file_path, error, combo_info
     """
+    save_path = None
     try:
         game_params = combo['game_params']
         configured_pairing_mode = game_params.get("pairing_mode", "balanced")
@@ -663,7 +664,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
         import traceback
         return {
             "success": False,
-            "file_path": None,
+            "file_path": save_path,
             "error": f"{str(e)}\n{traceback.format_exc()}",
             "combo_info": {
                 "model": combo.get('model', 'unknown'),
@@ -721,7 +722,7 @@ def run_experiment_set(
     else:
         print("Running sequentially (workers=1)")
 
-    completed_final_paths = []
+    candidate_final_paths = []
     if workers == 1:
         # Sequential execution
         for i, combo in enumerate(combinations):
@@ -738,9 +739,10 @@ def run_experiment_set(
             print(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
 
             result = run_single_experiment(combo, experiment_name, i, output_subdir)
+            if result.get('file_path'):
+                candidate_final_paths.append(result['file_path'])
 
             if result['success']:
-                completed_final_paths.append(result['file_path'])
                 print(f"Saved to {result['file_path']}")
                 print(f"Transcript PDF: {result['transcript_path']}")
             else:
@@ -764,9 +766,10 @@ def run_experiment_set(
                 try:
                     result = future.result()
                     completed += 1
+                    if result.get('file_path'):
+                        candidate_final_paths.append(result['file_path'])
 
                     if result['success']:
-                        completed_final_paths.append(result['file_path'])
                         print(f"[{completed}/{len(combinations)}] {result['combo_info']['model']} / "
                               f"{result['combo_info']['game_params']} / "
                               f"{result['combo_info']['task_order']} / "
@@ -805,7 +808,7 @@ def run_experiment_set(
         print(f"{'='*60}")
 
     maybe_sync_completed_runs(
-        completed_final_paths,
+        candidate_final_paths,
         label=f"{output_subdir}/{experiment_name}",
     )
 

@@ -15,6 +15,7 @@ backfill. A JSON file counts as a completed simulation only when it is a full
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import json
 import os
@@ -52,6 +53,37 @@ MAX_COMMIT_OPERATIONS = 100
 MAX_COMMIT_RAW_BYTES = 500 * 1024 * 1024
 REMOTE_UPLOAD_ROOT = "uploaders"
 NAMESPACE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+TRANSIENT_HTTP_STATUS_CODES = {408, 409, 412, 425, 429}
+TRANSIENT_NETWORK_CLASS_NAMES = {
+    "ConnectError",
+    "ConnectTimeout",
+    "ConnectionError",
+    "MaxRetryError",
+    "NewConnectionError",
+    "PoolTimeout",
+    "ProtocolError",
+    "ReadError",
+    "ReadTimeout",
+    "Timeout",
+    "TimeoutException",
+    "WriteError",
+    "WriteTimeout",
+}
+TRANSIENT_NETWORK_MODULE_PREFIXES = ("httpcore", "httpx", "requests", "urllib3")
+TRANSIENT_OS_ERRNOS = {
+    value
+    for name in (
+        "EADDRNOTAVAIL",
+        "ECONNABORTED",
+        "ECONNREFUSED",
+        "ECONNRESET",
+        "EHOSTUNREACH",
+        "ENETDOWN",
+        "ENETUNREACH",
+        "ETIMEDOUT",
+    )
+    if (value := getattr(errno, name, None)) is not None
+}
 
 
 def _load_repo_env() -> None:
@@ -283,6 +315,49 @@ def _http_status_code(exc: Exception) -> int | None:
     return direct_status if isinstance(direct_status, int) else None
 
 
+def _exception_chain(exc: BaseException) -> Iterator[BaseException]:
+    """Yield an exception and nested transport errors without looping."""
+    pending = [exc]
+    seen: set[int] = set()
+    while pending:
+        current = pending.pop(0)
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        yield current
+
+        for nested in (current.__cause__, current.__context__, *current.args):
+            if isinstance(nested, BaseException):
+                pending.append(nested)
+
+
+def _is_transient_upload_error(exc: Exception) -> bool:
+    """Classify retryable Hub conflicts, throttling, and transport failures."""
+    chain = tuple(_exception_chain(exc))
+    for current in chain:
+        status_code = _http_status_code(current)
+        if status_code in TRANSIENT_HTTP_STATUS_CODES:
+            return True
+        if status_code is not None and 500 <= status_code <= 599:
+            return True
+        if status_code is not None:
+            return False
+
+    for current in chain:
+        if isinstance(current, (ConnectionError, TimeoutError)):
+            return True
+        if isinstance(current, OSError) and current.errno in TRANSIENT_OS_ERRNOS:
+            return True
+
+        error_type = type(current)
+        if (
+            error_type.__name__ in TRANSIENT_NETWORK_CLASS_NAMES
+            and error_type.__module__.startswith(TRANSIENT_NETWORK_MODULE_PREFIXES)
+        ):
+            return True
+    return False
+
+
 def _private_repo_head(
     api: Any,
     plan: UploadPlan,
@@ -374,22 +449,22 @@ def _commit_completed_run_chunk(
 ) -> None:
     """Commit only whole completed-run families, retrying remote head races."""
     for attempt in range(MAX_UPLOAD_ATTEMPTS):
-        parent_commit = _private_repo_head(
-            api,
-            plan,
-            allow_public=allow_public,
-        )
-        # HfApi.create_commit mutates CommitOperationAdd objects while hashing
-        # and pre-uploading. Rebuild them for every optimistic-lock retry.
-        operations = [
-            operation_type(
-                path_in_repo=plan.remote_path_for(path),
-                path_or_fileobj=path,
-            )
-            for group in groups
-            for path in group
-        ]
         try:
+            parent_commit = _private_repo_head(
+                api,
+                plan,
+                allow_public=allow_public,
+            )
+            # HfApi.create_commit mutates CommitOperationAdd objects while
+            # hashing and pre-uploading. Rebuild them after every fresh head.
+            operations = [
+                operation_type(
+                    path_in_repo=plan.remote_path_for(path),
+                    path_or_fileobj=path,
+                )
+                for group in groups
+                for path in group
+            ]
             api.create_commit(
                 repo_id=plan.repo_id,
                 repo_type="dataset",
@@ -399,8 +474,10 @@ def _commit_completed_run_chunk(
             )
             return
         except Exception as exc:
-            is_conflict = _http_status_code(exc) in {409, 412}
-            if not is_conflict or attempt == MAX_UPLOAD_ATTEMPTS - 1:
+            if (
+                not _is_transient_upload_error(exc)
+                or attempt == MAX_UPLOAD_ATTEMPTS - 1
+            ):
                 raise
             time.sleep(min(2**attempt, 16))
 
@@ -478,7 +555,12 @@ def maybe_sync_completed_runs(
     label: str | None = None,
     environ: dict[str, str] | os._Environ[str] | None = None,
 ) -> bool:
-    """Best-effort opt-in hook for runners; never raises or changes run status."""
+    """Best-effort opt-in hook for runners; never raises or changes run status.
+
+    ``final_paths`` may contain completed-final files or scoped output
+    directories. Discovery happens only after auto-upload is enabled, and only
+    validated full-state JSONs are handed to the uploader.
+    """
     env = os.environ if environ is None else environ
     if not auto_upload_enabled(env):
         return False
@@ -494,8 +576,12 @@ def maybe_sync_completed_runs(
         return False
 
     try:
-        plan = sync_completed_runs(
+        completed_final_paths = discover_completed_final_jsons(
             final_paths,
+            data_root=DATA_JSON_ROOT,
+        )
+        plan = sync_completed_runs(
+            completed_final_paths,
             repo_id=repo_id,
             namespace=namespace,
             label=label,
