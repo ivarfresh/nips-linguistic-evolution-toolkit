@@ -398,6 +398,111 @@ def test_remote_conflict_refreshes_head_and_retries(
     assert delays == [1]
 
 
+def test_nested_connection_error_refreshes_head_and_retries(monkeypatch, tmp_path):
+    data_root = tmp_path / "data" / "json"
+    final = write_json(data_root / "experiment" / "run.json", FULL_STATE)
+
+    class ProtocolError(RuntimeError):
+        pass
+
+    ProtocolError.__module__ = "urllib3.exceptions"
+
+    class FakeApi:
+        def __init__(self):
+            self.calls = []
+            self.repo_info_calls = 0
+
+        def repo_info(self, **kwargs):
+            self.repo_info_calls += 1
+            return SimpleNamespace(
+                sha=f"head-{self.repo_info_calls}",
+                private=True,
+            )
+
+        def create_commit(self, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 1:
+                raise ProtocolError(
+                    "connection aborted",
+                    OSError(hf_sync.errno.EADDRNOTAVAIL, "address unavailable"),
+                )
+
+    api = FakeApi()
+    delays = []
+    monkeypatch.setattr(hf_sync.time, "sleep", delays.append)
+
+    hf_sync.sync_completed_runs(
+        [final],
+        repo_id="owner/dataset",
+        namespace="uploader",
+        data_root=data_root,
+        lock_path=tmp_path / "sync.lock",
+        api=api,
+    )
+
+    assert [call["parent_commit"] for call in api.calls] == ["head-1", "head-2"]
+    assert delays == [1]
+
+
+def test_repo_info_connection_error_is_retried(monkeypatch, tmp_path):
+    data_root = tmp_path / "data" / "json"
+    final = write_json(data_root / "experiment" / "run.json", FULL_STATE)
+
+    class FakeApi:
+        def __init__(self):
+            self.repo_info_calls = 0
+            self.commit_calls = 0
+
+        def repo_info(self, **kwargs):
+            self.repo_info_calls += 1
+            if self.repo_info_calls == 1:
+                raise OSError(
+                    hf_sync.errno.EADDRNOTAVAIL,
+                    "address unavailable",
+                )
+            return SimpleNamespace(sha="fresh-head", private=True)
+
+        def create_commit(self, **kwargs):
+            self.commit_calls += 1
+
+    api = FakeApi()
+    delays = []
+    monkeypatch.setattr(hf_sync.time, "sleep", delays.append)
+
+    hf_sync.sync_completed_runs(
+        [final],
+        repo_id="owner/dataset",
+        namespace="uploader",
+        data_root=data_root,
+        lock_path=tmp_path / "sync.lock",
+        api=api,
+    )
+
+    assert api.repo_info_calls == 2
+    assert api.commit_calls == 1
+    assert delays == [1]
+
+
+@pytest.mark.parametrize("status_code", [408, 425, 429, 500, 503, 599])
+def test_transient_http_statuses_are_retryable(status_code):
+    class HttpError(RuntimeError):
+        def __init__(self):
+            super().__init__(f"HTTP {status_code}")
+            self.response = SimpleNamespace(status_code=status_code)
+
+    assert hf_sync._is_transient_upload_error(HttpError()) is True
+
+
+def test_terminal_http_status_overrides_nested_connection_error():
+    class AuthenticationError(RuntimeError):
+        response = SimpleNamespace(status_code=401)
+
+    error = AuthenticationError("denied")
+    error.__cause__ = ConnectionError("stale socket context")
+
+    assert hf_sync._is_transient_upload_error(error) is False
+
+
 def test_privacy_is_rechecked_between_commit_chunks(monkeypatch, tmp_path):
     data_root = tmp_path / "data" / "json"
     first_final = write_json(data_root / "experiment" / "first.json", FULL_STATE)
