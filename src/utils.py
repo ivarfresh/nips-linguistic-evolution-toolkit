@@ -3,6 +3,7 @@ import random
 import re
 import time
 import json
+import math
 import urllib.error
 import urllib.request
 
@@ -18,6 +19,8 @@ load_dotenv()
 
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MAX_TOKENS = os.environ.get("OPENROUTER_MAX_TOKENS", "")
+OPENROUTER_REASONING_EFFORT = os.environ.get("OPENROUTER_REASONING_EFFORT", "").strip()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
@@ -40,6 +43,7 @@ DIRECT_MODEL_ALIASES = {
     "anthropic/claude-opus-4.5": "claude-opus-4-5-20251101",
     "anthropic/claude-opus-4.6": "claude-opus-4-6",
     # OpenRouter-style Google slugs used in repo configs -> direct Gemini API IDs.
+    "google/gemini-3.7-flash": "gemini-3.7-flash",
     "google/gemini-3-flash-preview": "gemini-3-flash-preview",
     "google/gemini-3-pro-preview": "gemini-3.1-pro-preview",
     "google/gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
@@ -93,6 +97,73 @@ def resolve_model_for_provider(client, model):
     if model.startswith(prefix):
         return model[len(prefix):]
     return model
+
+
+def llm_runtime_metadata(client, model):
+    """Return non-secret provider settings needed to reproduce a run."""
+    provider, _ = _unwrap_client(client)
+    metadata = {
+        "llm_provider": provider,
+        "provider_model": resolve_model_for_provider(client, model),
+        "llm_provider_mode": (
+            _env("LLM_PROVIDER") or LLM_PROVIDER or "auto"
+        ).strip().lower(),
+    }
+    if provider == "anthropic":
+        metadata.update(
+            {
+                "max_output_tokens": int(
+                    _env("ANTHROPIC_MAX_TOKENS") or "1024"
+                ),
+                "max_output_tokens_source": "ANTHROPIC_MAX_TOKENS",
+            }
+        )
+    elif provider == "openrouter":
+        metadata.update(
+            {
+                "max_output_tokens": (
+                    int(OPENROUTER_MAX_TOKENS)
+                    if OPENROUTER_MAX_TOKENS
+                    else None
+                ),
+                "max_output_tokens_source": (
+                    "OPENROUTER_MAX_TOKENS"
+                    if OPENROUTER_MAX_TOKENS
+                    else "provider_default"
+                ),
+            }
+        )
+    elif provider == "google":
+        thinking_level = _env("GEMINI_THINKING_LEVEL")
+        metadata.update(
+            {
+                "max_output_tokens": None,
+                "max_output_tokens_source": "provider_default",
+                "thinking_level": thinking_level or "provider_default",
+                "thinking_level_source": (
+                    "GEMINI_THINKING_LEVEL"
+                    if thinking_level
+                    else "provider_default"
+                ),
+                "temperature_sent": _gemini_supports_temperature(
+                    resolve_model_for_provider(client, model)
+                ),
+                "request_timeout_seconds": _gemini_request_timeout_seconds(),
+                "request_timeout_source": (
+                    "GEMINI_REQUEST_TIMEOUT_SECONDS"
+                    if _env("GEMINI_REQUEST_TIMEOUT_SECONDS")
+                    else "default_120"
+                ),
+            }
+        )
+    else:
+        metadata.update(
+            {
+                "max_output_tokens": None,
+                "max_output_tokens_source": "provider_default",
+            }
+        )
+    return metadata
 
 
 def create_llm_client(model, provider=None):
@@ -308,16 +379,29 @@ def _call_openai_compatible(
             if _supports_reasoning_effort(provider, provider_model):
                 request_params["reasoning_effort"] = _direct_openai_reasoning_effort()
 
+            if provider == "openrouter" and OPENROUTER_MAX_TOKENS:
+                request_params["max_tokens"] = int(OPENROUTER_MAX_TOKENS)
+
             # OpenRouter-only extension. Direct OpenAI calls use standard OpenAI params.
+            # OPENROUTER_REASONING_EFFORT=none disables the extra reasoning body
+            # for low-budget runs where short direct answers are sufficient.
+            active_reasoning_effort = (
+                OPENROUTER_REASONING_EFFORT
+                if OPENROUTER_REASONING_EFFORT
+                else reasoning_effort
+            )
+            if isinstance(active_reasoning_effort, str) and active_reasoning_effort.lower() in {"", "none", "false", "0", "off"}:
+                active_reasoning_effort = None
+
             models_without_reasoning = ["openai/", "meta-llama/"]
             if (
                 provider == "openrouter"
-                and reasoning_effort
+                and active_reasoning_effort
                 and not any(provider_model.startswith(prefix) for prefix in models_without_reasoning)
             ):
                 request_params["extra_body"] = {
                     "reasoning": {
-                        "effort": reasoning_effort
+                        "effort": active_reasoning_effort
                     }
                 }
 
@@ -447,6 +531,13 @@ def _direct_openai_reasoning_effort():
     return _env("OPENAI_REASONING_EFFORT") or "minimal"
 
 
+def _anthropic_supports_temperature(provider_model):
+    # Opus 4.7 and later reject explicit temperature; omit when calling them.
+    if provider_model.startswith("claude-opus-4-7") or provider_model.startswith("claude-opus-4-8"):
+        return False
+    return True
+
+
 def _call_anthropic(client, provider_model, temperature, messages, max_retries):
     if anthropic is None:
         raise RuntimeError(
@@ -462,8 +553,9 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries):
                 "model": provider_model,
                 "messages": chat_messages,
                 "max_tokens": max_tokens,
-                "temperature": temperature,
             }
+            if _anthropic_supports_temperature(provider_model):
+                request_params["temperature"] = temperature
             if system:
                 request_params["system"] = system
 
@@ -515,6 +607,9 @@ def _should_retry_anthropic(error):
     return (
         name in {"RateLimitError", "APIConnectionError", "APITimeoutError"}
         or (status_code is not None and status_code >= 500)
+        # Stochastic refusals surface as empty content (no text blocks); at
+        # nonzero temperature a retry usually succeeds, so don't kill the run.
+        or (isinstance(error, ValueError) and "Empty response" in str(error))
     )
 
 
@@ -525,11 +620,12 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
     if not contents:
         raise ValueError("No user/assistant messages available for Gemini call.")
 
+    generation_config = {}
+    if _gemini_supports_temperature(provider_model):
+        generation_config["temperature"] = temperature
     payload = {
         "contents": contents,
-        "generationConfig": {
-            "temperature": temperature,
-        },
+        "generationConfig": generation_config,
     }
     if system_instruction:
         payload["system_instruction"] = system_instruction
@@ -551,7 +647,10 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(request, timeout=120) as response:
+            with urllib.request.urlopen(
+                request,
+                timeout=_gemini_request_timeout_seconds(),
+            ) as response:
                 response_data = json.loads(response.read().decode("utf-8"))
 
             content = _gemini_text(response_data)
@@ -585,6 +684,32 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
             raise
 
     raise Exception(f"Failed to get Gemini response after {max_retries} attempts")
+
+
+def _gemini_supports_temperature(provider_model):
+    """Return whether the direct GenerateContent endpoint accepts temperature.
+
+    Gemini 3.7 Flash removed the legacy sampling parameters. Keep the historical
+    parameter for earlier models so existing experiments remain unchanged.
+    """
+    return provider_model != "gemini-3.7-flash"
+
+
+def _gemini_request_timeout_seconds():
+    raw_value = _env("GEMINI_REQUEST_TIMEOUT_SECONDS")
+    if not raw_value:
+        return 120.0
+    try:
+        timeout = float(raw_value)
+    except ValueError as error:
+        raise RuntimeError(
+            "GEMINI_REQUEST_TIMEOUT_SECONDS must be a positive number"
+        ) from error
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise RuntimeError(
+            "GEMINI_REQUEST_TIMEOUT_SECONDS must be a positive number"
+        )
+    return timeout
 
 
 def _gemini_text(response_data):
@@ -638,5 +763,8 @@ def print_simulation_header(game, num_turns, num_agents, memory_capacity, agent_
     print(f"Memory capacity: {memory_capacity}")
     if agent_biases:
         print(f"Agent biases: {agent_biases}")
-    print(f"Role swapping: ENABLED (agents alternate roles each round)")
+    if num_agents == 2:
+        print("Role swapping: ENABLED (agents alternate roles each round)")
+    else:
+        print("Pairing mode: FULL-POOL RANDOM DYADS (role repeats allowed)")
     print("-" * 80)

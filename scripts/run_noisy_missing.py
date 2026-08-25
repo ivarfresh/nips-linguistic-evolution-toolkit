@@ -20,7 +20,11 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from experiments.run_noisy_batch import NoisyExperimentConfig, run_single_experiment
+from experiments.run_noisy_batch import (
+    NoisyExperimentConfig,
+    execution_provenance,
+    run_single_experiment,
+)
 from src.batch_utils import sanitize_for_filename
 
 
@@ -50,7 +54,14 @@ def expected_output_path(
     if "myth" in combo["task_order"]:
         myth_topic_str = "_" + sanitize_for_filename(combo.get("myth_topic_id", ""))
 
-    filename = f"{experiment_name}_{index:03d}_{combo['persona']['description']}{myth_topic_str}.json"
+    replicate = combo.get("replicate_id")
+    replicate_str = f"_rep{replicate:02d}" if replicate is not None else ""
+    myth_arm = combo.get("myth_prompt_arm_id")
+    myth_arm_str = f"_{sanitize_for_filename(myth_arm)}" if myth_arm else ""
+    filename = (
+        f"{experiment_name}_{index:03d}_{combo['persona']['description']}"
+        f"{replicate_str}{myth_arm_str}{myth_topic_str}.json"
+    )
     return save_dir / filename
 
 
@@ -79,7 +90,11 @@ def load_combinations(experiment_name: str, config_path: str | None) -> list[dic
         config_path = str(PROJECT_ROOT / "config" / "experiments_noisy.yaml")
 
     config = NoisyExperimentConfig(config_path)
-    return config.get_experiment_combinations(experiment_name)
+    combinations = config.get_experiment_combinations(experiment_name)
+    provenance = execution_provenance(config_path)
+    for combination in combinations:
+        combination["execution_provenance"] = provenance.copy()
+    return combinations
 
 
 def main() -> int:

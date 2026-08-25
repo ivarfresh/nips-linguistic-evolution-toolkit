@@ -1,3 +1,1351 @@
+### 2026-08-23 — Gemini 3.7 selectively punishes but shows no return crowding
+
+- Completed the frozen new-seed Gemini 3.7 Flash population screen crossing
+  deduction availability with 0%/25% hidden defectors (`n=3` matched
+  quadruplets). All 12 populations passed jointly: 2,400 accepted interactions,
+  2,010 model calls, 150 forced actions, 240 notices, 960 exact noise checks,
+  zero retries, and clean matched provenance.
+- Live targeting was perfect. Ordinary senders spent both points against all
+  25 mechanical-defector receivers and zero against all 65 ordinary receivers;
+  controls also had zero deductions in 120 opportunities. There were no
+  deductions after 112 visibly half-or-more returns.
+- The Flash-Lite return-crowding result did not reproduce. Available minus
+  unavailable returning with defectors was `+.00262` (95% CI `[-.00162,
+  +.00685]`) and positive in all three pairs; the interaction was `-.00094`
+  (`[-.00843,+.00654]`). Every ordinary sender still gave the full `$5`.
+- A strong model-specific fairness rule explains the lack of behavioral
+  movement: 280/370 positive-receipt ordinary decisions returned exactly half
+  of the noisy receipt shown, and 327/370 were within half a cent. Selective
+  punishment generalizes across Gemini versions; downstream crowding does not.
+- Myth responses were preliminary: deduction availability increased both
+  cooperation and threat language, consistent with sanctioning framed as norm
+  protection. The Flash-Lite defector-author cooperation/threat imprint did
+  not cleanly generalize at `n=3`.
+- The frozen decision is **do not scale this population design**. Accepted-run
+  list-price cost was `$5.66`. Report and analysis:
+  `docs/defector_punishment_gemini37_n3_overview_2026-08-23.md` and
+  `scripts/analyze_defector_punishment_gemini37_n3.py`.
+
+---
+
+### 2026-08-23 — Gemini 3.7 uses graded, selective punishment
+
+- Ran the frozen 50-call current-wording calibration with Gemini 3.7 Flash at
+  medium thinking: five controlled visible return levels x ten calls, holding
+  the myth, full send, receipt, payoffs, rules, and institution fixed. All 50
+  decisions were valid on the first attempt with clean provenance.
+- The model spent both points in every 0% and 10% return case, averaged .4
+  points at 25% (four one-point deductions), and spent zero in every 50% and
+  75% case. Low-minus-high separation was exactly +2, high-return punishment
+  was 0%, and the means decreased monotonically. All frozen gate components
+  passed.
+- Gemini 3.7 is more graded and sanctions a broader low-return band than
+  Flash-Lite under the same calibration, while both fully refrain at fair
+  returns. The live-noise prediction is near-universal mechanical-defector
+  targeting because a true zero can appear no more than about `$1` positive.
+- The model is eligible for a small new-seed 2x2 population screen crossing
+  deduction availability with 0%/25% hidden defectors. Calibration list-price
+  cost was about six cents. Report and analysis:
+  `docs/punishment_comprehension_gemini37_overview_2026-08-23.md` and
+  `scripts/analyze_punishment_comprehension_gemini37.py`.
+
+---
+
+### 2026-08-23 — Gemini 3.7 Flash is baseline ceiling-limited
+
+- Added direct support for Google's current `gemini-3.7-flash`, including the
+  model's removal of legacy temperature sampling, explicit medium-thinking
+  metadata, and a recorded configurable request timeout. Regression tests
+  preserve the historical request shape for Flash-Lite.
+- Froze and ran three matched eight-agent populations per task order (Game
+  only, Game→Myth, Myth→Game). All nine accepted runs passed jointly: 1,200
+  calls, 720 exact post-decision noise checks, zero accepted-run retries or
+  boundary failures, matched schedules/seeds, and clean provenance.
+- Gemini 3.7 sent the full `$5` in all 360 sender decisions. Every condition
+  therefore ended at exactly `$75` per agent; return ratios were also nearly
+  identical (.4731/.4733/.4733). The frozen headroom gate failed and prohibits
+  adding baseline replicates.
+- The result is ceiling limitation, not evidence of a null myth effect. Greater
+  capability did not solve the measurement problem. Next use a controlled
+  punishment calibration and a small 0%-versus-25%-defector stress test, where
+  behavior can vary. Accepted-run list-price cost was `$3.16`.
+- A late request in the first attempted run exceeded the historical timeout;
+  an outcome-blind amendment raised and recorded it. A resumable filename
+  mismatch was also caught, fixed, and tested before the full launch. Failed
+  and partial files are excluded. Report and analysis:
+  `docs/gemini37_flash_task_order_n3_overview_2026-08-23.md` and
+  `scripts/analyze_gemini37_flash_task_order_n3.py`.
+
+---
+
+### 2026-08-23 — Punishment crowding is independently defector-dependent
+
+- Completed the frozen new-seed Gemini 3.1 Flash-Lite 2x2 confirmation:
+  deduction available/unavailable x 0%/25% hidden defectors, with ten matched
+  population quadruplets. All 40 passed jointly: 8,000 accepted interactions,
+  6,700 Gemini calls, exactly 500 forced actions, 800 notices, 3,200 exact
+  post-decision noise checks, zero retries, and clean matched provenance.
+- Both primary claims confirmed. In defector populations, availability lowered
+  ordinary receiver return ratios by -.0455 (95% CI [-.0743, -.0166], Holm
+  p=.0121). The availability x defector interaction was -.0373 ([-.0718,
+  -.0027], Holm p=.0373); the no-defector simple effect was only -.0082 and
+  unresolved.
+- Selective use remained strong: ordinary senders punished hidden defectors in
+  72/84 opportunities (85.7%) versus ordinary receivers in 6/216 (2.8%). All
+  six ordinary-target deductions followed a visibly zero return; there were
+  none after 116 visibly half-or-more returns.
+- Sending was unchanged at ceiling in controls and had an unresolved -.0303
+  availability effect with defectors. The return effect was absent in round
+  one and grew later, reaching -.137 in round ten. Choices shifted toward exact
+  half and away from above-half generosity.
+- Ordinary myths became more threat-, betrayal-, withholding-, and punishment-
+  focused under the institution; the threat-language increase was larger with
+  defectors (secondary interaction +.1410, CI [+.0667,+.2152]). The most useful
+  next test isolates game-history and myth-content mediation rather than adding
+  more populations to the same factorial. Report and analysis:
+  `docs/defector_punishment_gemini_factorial_confirmation_n10_overview_2026-08-23.md`
+  and `scripts/analyze_defector_punishment_gemini_factorial_confirmation_n10.py`.
+
+---
+
+### 2026-08-22 — Punishment availability lowers Gemini return ratios
+
+- Added 10 punishment-unavailable Gemini populations matched to the completed
+  25%-defector punishment confirmation (replicates 70–79). Both arms passed
+  jointly: 4,000 accepted interactions, 3,100 LLM calls, exactly 500 forced
+  actions, 400 deduction notices, 1,600 signed-noise checks, zero retries, and
+  identical schedules, defector assignments, and exogenous noise seeds.
+- The exploratory punishment-available minus unavailable effect on ordinary
+  sending was −.0277 (95% paired CI [−.0668, +.0115], Holm p=.145), with only
+  five of ten pairs negative. It does not establish a sending effect.
+- Ordinary receiver return ratios fell by −.0491 ([−.0792, −.0191], Holm
+  p=.00988), with nine of ten pairs negative. Round one was virtually identical
+  (−.00076); all nine later round-level differences were negative. The on arm
+  shifted returns toward exact half (65 versus 38 `$7.50` returns) and away
+  from more generous choices (`$8`: 30 versus 47; `$10`: five versus 22), a
+  post-hoc pattern consistent with punishment anchoring the minimally fair rule.
+- Availability also changed ordinary myths: punishment/deduction density rose
+  +.221 matches/100 words (CI [+.164, +.277]) and the overlapping threat/
+  defection lexicon rose +.341 ([+.288, +.393]), in all ten pairs. The latter
+  was not only the word *punishment*: betrayal, threat, withholding, and other
+  hostile language also increased. These are descriptive institution effects,
+  not a defector interaction.
+- The frozen escalation rule passed on the return outcome. Next run a fully
+  independent new-seed 2×2 (punishment available/unavailable × 0%/25% hidden
+  defectors) to test the return effect and distinguish a general institutional
+  effect from a defector-contingent one. Report and analysis:
+  `docs/defector_punishment_gemini_availability_matched_n10_overview_2026-08-22.md`
+  and `scripts/analyze_defector_punishment_gemini_availability_matched_n10.py`.
+
+---
+
+### 2026-08-22 — Gemini's selective punishment independently confirms
+
+- Ran 10 pre-registered new-seed Gemini 3.1 Flash-Lite populations containing
+  25% hidden mechanical defectors. All passed jointly: 2,400 accepted
+  interactions, 1,700 LLM responses, exactly 300 forced defector decisions,
+  400 notices, 800 post-decision signed-noise checks, zero retries, no leakage,
+  and clean embedded commit/config provenance.
+- The prewritten analyzer halted before opening outcomes because the protocol
+  had incorrectly assumed a fixed 8/22 target-role split per population.
+  Balanced schedules guarantee 30 ordinary-sender opportunities but not that
+  exact split. A committed, outcome-blind amendment recorded the deterministic
+  frozen-seed counts (86 defector, 214 ordinary) and changed no statistical or
+  behavioral threshold.
+- Selective punishment replicated decisively. The population-level hidden-
+  defector-minus-ordinary contrast was +1.580 deduction points (95% CI
+  [+1.443, +1.718], Holm p=1.82e−9) and +.790 probability ([+.721, +.859],
+  same p). Both effects exceeded their frozen minimums.
+- Pooled, ordinary senders deducted in 70/86 hidden-defector opportunities
+  (81.4%; mean 1.628/2) versus 5/214 ordinary-receiver opportunities (2.34%;
+  mean .0467). All five ordinary-receiver deductions followed a visibly zero
+  return; no sender deducted in any of 112 opportunities with a visible return
+  ratio of at least .5.
+- This confirms a selective response to observed defection, not recognition
+  of a hidden role. Secondary treatment-only outcomes were ordinary sending
+  .930 (CI [.897, .963]) and returning .483 ([.470, .495]); without a control
+  arm they do not estimate a punishment effect. Report and analysis:
+  `docs/defector_punishment_gemini_confirmation_n10_overview_2026-08-22.md`
+  and `scripts/analyze_defector_punishment_gemini_confirmation_n10.py`.
+
+---
+
+### 2026-08-21 — Gemini targets hidden defectors in the population pilot
+
+- Ran the frozen three-pair Gemini 3.1 Flash-Lite Myth→Game pilot after its
+  controlled punishment calibration. All six substantive populations passed:
+  1,440 accepted interactions, 1,110 LLM responses, exactly 90 forced defector
+  decisions, 240 deduction notices, 480 signed-noise checks, and no retries,
+  leakage, or provenance failures. The two-population smoke remained excluded.
+- Ordinary senders spent a mean 1.50 of two deduction points toward hidden
+  defectors (18/24 opportunities, 75%) and exactly zero toward ordinary
+  receivers (0/66). The defector-minus-ordinary contrasts were therefore
+  +1.50 points and +.75 probability, clearing the frozen pilot thresholds in
+  every aggregate criterion.
+- Restraint also survived the full noisy histories: there were zero deductions
+  in all 43 opportunities where the visible return ratio was at least .5.
+  Across all three treatment populations, ordinary partners were never
+  punished, while defectors were targeted in 50%, 87.5%, and 87.5% of their
+  opportunities.
+- Cooperation was exploratory and near ceiling: ordinary sending was .978
+  with defectors versus 1.000 without (paired difference −.022, CI [−.118,
+  +.073]); ordinary return ratios were .505 versus .504 (+.0014, CI [−.050,
+  +.053]). No small-pilot myth-language contrast was clear.
+- Decision: the mechanism passes the pre-specified screen and merits an
+  independent new-seed confirmation. Do not yet treat the `n=3` population
+  result or its p-values as confirmatory. Report and analysis:
+  `docs/defector_punishment_gemini_n3_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_gemini_n3.py`.
+
+---
+
+### 2026-08-21 — Gemini's live-noise punishment threshold is $.25–$.50
+
+- Mapped Gemini's current-wording deduction choice at `$0`, `$.25`, `$.50`,
+  `$.75`, and `$1` visible returns (10 calls/cell), spanning the full band that
+  `U(−1,+1)` noise can produce from a defector's true zero. All 50 calls
+  passed with no retries and clean provenance.
+- Gemini spent both points in every `$0` and `$.25` case and zero in every
+  `$.50`, `$.75`, and `$1` case. The empirical switch lies between $.25 and
+  $.50.
+- Under the frozen piecewise-linear integration of the live clamped-noise
+  distribution, a true-zero defector is expected to be punished 68.75% of the
+  time, at mean intensity 1.375 points. This passes the population-pilot gate.
+- Next run three matched Gemini Myth→Game population pairs (0% versus 25%
+  defectors) and evaluate within-treatment targeting before cooperation or
+  myths. Report and analysis:
+  `docs/punishment_comprehension_gemini_noise_boundary_overview_2026-08-21.md`
+  and `scripts/analyze_punishment_comprehension_gemini_noise_boundary.py`.
+
+---
+
+### 2026-08-21 — Gemini selectively deducts where GPT does not
+
+- Repeated the unchanged current-wording controlled deduction calibration in
+  Gemini 3.1 Flash-Lite (five visible returns × 10 calls). All 50 direct Google
+  calls passed with exact cell balance, no retries, and clean commit/config
+  provenance.
+- Gemini spent both points in all 10 zero-return cases and zero in all 40
+  positive-return cases. It passed the frozen selectivity gate: low-minus-high
+  +1.00 (CI [+.520, +1.480], p=.00034), zero high-return deductions, and no
+  monotonicity reversal.
+- GPT-5 Nano used the same wording almost universally. The cross-model return-
+  slope interaction was −1.244 (CI [−2.117, −.371], p=.0057), showing a
+  qualitative model-policy difference rather than merely lower Gemini use.
+- Gemini is eligible for a small population pilot, but first map its threshold
+  at visible returns within `$0–$1`: signed noise can make a mechanical
+  defector's true zero appear slightly positive. Report and analysis:
+  `docs/punishment_comprehension_crossmodel_overview_2026-08-21.md` and
+  `scripts/analyze_punishment_comprehension_crossmodel.py`.
+
+---
+
+### 2026-08-21 — Controlled calibration rejects both GPT punishment prompts
+
+- Froze and ran a 100-call GPT-5 Nano mechanism calibration: current versus
+  cost-salient neutral wording × visible returns of 0%, 10%, 25%, 50%, or
+  75%, with the myth, full send, payoffs, rules, and model held fixed. All 100
+  direct OpenAI decisions passed, with 10/cell, no response-boundary retries,
+  and clean commit/config provenance.
+- Current wording showed some low-versus-high intensity difference (+.40
+  points, CI [+.101, +.699]) but deducted in 100% of high-return calls and rose
+  again from 1.1 points at a 25% return to 1.5 at 75%. It failed the frozen
+  selectivity gate.
+- Explicitly clarifying that spending is optional and personally costly cut
+  mean spending from 1.46 to .74 (−.72, CI [−.954, −.486]), but removed
+  rather than improved return sensitivity: slope +.003 (p=.994), low-minus-high
+  +.15 (CI [−.249, +.549]), and 65% high-return deduction use.
+- Conclusion: GPT-5 Nano treats the institution as a salient action, not a
+  calibrated sanction. Neither wording is eligible for a population pilot;
+  do not tune the prose further toward a desired result. Next either apply the
+  unchanged calibration to another model or redesign the economic mechanism.
+  Report and analysis:
+  `docs/punishment_comprehension_gpt_overview_2026-08-21.md` and
+  `scripts/analyze_punishment_comprehension_calibration.py`.
+
+---
+
+### 2026-08-21 — Punishment availability has no reliable cooperative benefit
+
+- Completed an exploratory GPT-5 Nano 2×2: deduction stage available versus
+  unavailable × 0% versus 25% hidden mechanical defectors (`n=5` matched
+  populations/cell). All 20 accepted populations passed jointly: 4,000
+  interactions, 3,350 LLM responses, exactly 250 forced decisions, 400
+  deduction notices, 1,600 noise checks, matched schedules/assignments, and no
+  leakage or unrecovered errors.
+- Caught a reproducibility gap before outcome analysis: the resumable launcher
+  omitted embedded Git/config provenance. Excluded the first off-stage batch,
+  fixed and tested the launcher, and reran all 10 new populations. Every
+  accepted replacement records commit `649dbc34`, one config hash, and a clean
+  worktree.
+- Deduction availability did not improve sending: −.0273 without defectors
+  (CI [−.0890, +.0344], p=.287) and +.0027 with defectors ([−.0908,
+  +.0961], p=.941). The availability×defector interaction was +.0300
+  ([−.0125, +.0724], p=.122).
+- Returning was directionally higher with deductions (+.0282 without and
+  +.0516 with defectors), but both intervals crossed zero and the interaction
+  was unresolved (+.0234, CI [−.0641, +.1110], p=.498). A post-hoc check
+  using the excluded first batch produced much smaller +.012 and +.015 return
+  estimates, suggesting sampling sensitivity.
+- No ordinary-myth cooperation, threat, or half-rule interaction was reliable.
+  Combined with 90.9% realized deduction use and no targeting of defectors,
+  this design elicits a routine action rather than selective norm enforcement.
+  Do not scale it unchanged; first run a controlled mechanism-comprehension
+  calibration across high- and low-return states. Report and analysis:
+  `docs/defector_punishment_factorial_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_factorial_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Costly deductions are common but not targeted in GPT-5 Nano
+
+- Added a sender-only costly deduction stage to the eight-agent Myth→Game
+  design: two optional points, a 1:3 cost-to-target effect, payoff floor zero,
+  explicit receiver notification, and neutral wording. Hidden mechanical
+  defectors write myths normally but always send, return, and deduct zero.
+- All 10 frozen GPT-5 Nano populations (`n=5` matched 0%-versus-25%-defector
+  pairs) passed: 2,400 accepted interaction records, 1,850 LLM responses,
+  exactly 150 forced decisions, 400 notices, 800 noise checks, and no leakage
+  or unrecovered failures.
+- Ordinary senders deducted in 90.9% of opportunities. They spent 1.295 points
+  toward defectors versus 1.472 toward ordinary receivers; the
+  defector-minus-ordinary population contrast was −.183 (CI [−.611,
+  +.245], p=.300). Deductions also remained common after at least half had
+  visibly been returned.
+- Defectors did not reduce ordinary sending (+.0052, CI [−.0212, +.0315],
+  p=.615). Ordinary returns were suggestively higher (+.0268, CI [−.0043,
+  +.0580], p=.075). Ordinary myth cooperation, threat, and punishment language
+  showed no reliable condition differences; much deduction vocabulary simply
+  echoed the announced institution.
+- Conclusion: the implementation is sound, but GPT-5 Nano treats deduction as
+  a routine affordance rather than a selective sanction. Next run the matched
+  punishment-unavailable cells to estimate the exploratory 2×2 availability ×
+  defector comparison. Report and analysis:
+  `docs/defector_punishment_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_punishment_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Defector-myth threat transmission does not independently replicate
+
+- Independently repeated the frozen Gemini defector-myth circulation
+  manipulation in 10 new matched population pairs. All 20 populations passed:
+  3,200 accepted interactions, 2,800 LLM calls, exactly 400 forced decisions,
+  1,600 noise checks, complete matched exposures, no leakage, and no retries or
+  unrecovered failures.
+- The sole confirmatory result was negative. Replacing the defector myth with
+  a natural ordinary-authored myth changed the target's next-myth threat
+  density by only −.0117 matches/100 words (95% CI [−.0639, +.0405], p=.624,
+  dz=−.16). The target texts contained 26 threat matches after defector myths
+  versus 22 after ordinary substitutes, rather than the screen's 23 versus
+  five.
+- The source manipulation again increased presented cooperation language
+  (+.521, CI [+.237, +.805], p=.0025). A secondary target outcome also showed
+  more cooperation language (+.145, CI [+.0297, +.260], unadjusted p=.0193),
+  but neither directly exposed nor population-wide game behavior changed.
+- Conclusion: the original one-step threat result was a false positive or
+  unstable seed-contingent pattern. Do not scale this same near-ceiling
+  circulation design. Report and analysis:
+  `docs/defector_myth_circulation_gemini_confirmation_n10_overview_2026-08-21.md`
+  and
+  `scripts/analyze_defector_myth_circulation_gemini_confirmation_n10.py`.
+
+---
+
+### 2026-08-21 — Defector myths transmit tone, not behavior, in Gemini screen
+
+- Added and froze a causal circulation manipulation: two hidden mechanical
+  defectors write normally in both arms, but at defector-to-ordinary cultural
+  exposures the intervention replaces the defector myth with a real
+  ordinary-authored myth from the same prior population-round. Source identity
+  and policy remain hidden, and call counts/memory are unchanged.
+- All 10 Gemini 3.1 Flash-Lite populations (`n=5` matched pairs) passed jointly:
+  1,600 accepted interactions, 1,400 LLM calls, exactly 200 forced decisions,
+  800 noise checks, 84 matched direct exposures per arm, and no leakage or
+  unrecovered failures. The separate two-run smoke set was excluded.
+- The source-text manipulation worked: ordinary substitutes had +.633
+  cooperation/fairness matches/100 words (CI [+.043, +1.223]) and −.129
+  threat matches ([−.223, −.034]) relative to defector myths.
+- The frozen cooperation outcome was suggestive but unresolved: the directly
+  exposed ordinary agent's next myth gained +.310 cooperation matches/100
+  words (CI [−.105, +.725], Holm p=.214). Same-round giving did not move
+  (`−.0158`, CI [−.218, +.186], Holm p=.838).
+- The predeclared secondary threat signal transmitted cleanly: target myths
+  used −.105 threat terms/100 words after substitution (CI [−.171, −.039],
+  p=.0115). Across 84 targets/arm, this was 23 threat-lexicon matches after
+  defector myths versus five after ordinary substitutes, spread across
+  withholding, betrayal, threat, punishment, retaliation, distrust, and other
+  terms rather than being driven only by *zero*.
+- Interpretation: Gemini's mechanically induced cultural tone survives one
+  transmission step, but it does not measurably change behavior in this
+  near-ceiling game. An independent new-seed threat-transmission confirmation
+  is the next test. Report and analysis:
+  `docs/defector_myth_circulation_gemini_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_myth_circulation_gemini_n5.py`.
+
+---
+
+### 2026-08-21 — Defector confirmation: no broad cascade, Gemini imprint replicates
+
+- Independently repeated the frozen Myth→Game 0%-versus-25% mechanical-defector
+  design in GPT-5 Nano and Gemini 3.1 Flash-Lite (`n=10` new populations/cell).
+  All 40 runs passed jointly: 6,400 accepted tasks, exactly 400 forced game
+  responses, 3,200 myths/noise checks, matched schedules, and no leakage or
+  unrecovered errors.
+- Neither broad confirmatory claim survived. The equal-model treatment effect
+  on ordinary-agent sending was −.01345 (95% CI [−.03142, +.00451],
+  Holm p=.258); the effect on cooperation/fairness density in ordinary-authored
+  myths was −.0652 matches/100 words ([−.194, +.0637], Holm p=.300).
+- Large ordinary-agent balance losses (−$18.80 GPT; −$21.73 Gemini) are
+  principally mechanical consequences of zero sends/returns, not evidence of
+  a comparably large behavioral cascade.
+- The Gemini author-specific cultural effect independently replicated. In
+  rounds 2–10, defector myths used .571 fewer cooperation terms/100 words
+  ([−.778, −.364], p=.00015) and .0577 more threat terms ([+.0293, +.0860],
+  p=.00128) than ordinary treatment myths; round-one author differences were
+  absent. GPT again showed no reliable author-type divergence.
+- Conclusion: hidden mechanical defectors impose direct welfare losses but do
+  not trigger a confirmed population-wide behavioral or cultural collapse.
+  Gemini shows a replicated, localized behavior-to-culture imprint. The next
+  causal test should manipulate whether defector-authored myths circulate.
+  Report and analysis:
+  `docs/defector_myth_game_crossmodel_confirmation_n10_overview_2026-08-21.md`
+  and `scripts/analyze_defector_myth_game_crossmodel_confirmation_n10.py`.
+
+---
+
+### 2026-08-21 — Cross-model defector pilot: modest spillover, cultural divergence
+
+- Froze and ran Myth→Game 0%-versus-25% mechanical-defector screens in GPT-5
+  Nano and Gemini 3.1 Flash-Lite (`n=5` populations/cell). All 20 runs passed
+  jointly: 3,200 accepted tasks, 3,000 LLM calls, exactly 200 forced zero game
+  responses, 1,600 myths/noise checks, matched schedules, and no label leakage.
+- Ordinary-agent sending fell in both models, but modestly and with intervals
+  spanning zero: GPT −.0326 (CI [−.0960, +.0307], p=.226) and Gemini −.0160
+  ([−.0368, +.0048], p=.099). Gemini left its full-send ceiling in three of
+  five treatment populations. Large balance losses are mostly mechanical and
+  are not evidence of a behavioral collapse.
+- Standard authors used less cooperation/fairness language with defectors:
+  GPT −.116 matches/100 words ([−.446, +.213]) and Gemini −.184
+  ([−.390, +.023], p=.069). Explicit threat language and half-return rules
+  barely changed among standard authors.
+- The distinctive result is model-specific cultural adaptation. Gemini
+  defector authors were similar in round 1, before forced play, then in rounds
+  2–10 used .697 fewer cooperation terms/100 words (CI [−1.191, −.203]) and
+  .0979 more threat terms ([+.0039, +.1918]) than standard treatment authors.
+  GPT defector myths remained as prosocial as standard myths.
+- Interpretation: hidden mechanical defectors create a modest population-level
+  cooperation spillover, not targeted punishment; forced behavior becomes
+  culturally visible in Gemini but not GPT. Report and analysis:
+  `docs/defector_myth_game_crossmodel_n5_overview_2026-08-21.md` and
+  `scripts/analyze_defector_myth_game_crossmodel_n5.py`.
+
+---
+
+### 2026-08-21 — Gemini identity screen is ceiling-limited
+
+- Froze and ran a new-seed Gemini 3.1 Flash-Lite replication of the stable-
+  versus-round-local identity contrast (`n=5` populations/arm). All 10 runs
+  passed jointly: 800 decisions/noise checks, no retries/errors, matched
+  schedules, and no identity leakage.
+- Gemini sent the full $5 in every sender decision in every round and condition.
+  Both arms therefore had proportion sent 1.000 and final balance 75.00 in all
+  five populations; the primary stable − round-local contrast was exactly 0.
+- This is not precise evidence of no identity effect. The test is uninformative
+  because the primary behavior is fully saturated; increasing n under the same
+  prompt would not recover variation.
+- Return behavior was also nearly identical: .4786 round-local versus .4782
+  stable (paired difference −.00033, CI [−.00144, +.00079], p=.465), or about
+  1.435 returned per dollar originally sent.
+- Cross-model conclusion: GPT-5 Nano has behavioral headroom and showed a
+  positive stable-ID effect; Gemini Flash-Lite adopts unconditional maximum
+  sending. Further Gemini work needs a harder dilemma or defectors, not more
+  replicates of this cell. Report and analysis:
+  `docs/identity_persistence_gemini_n5_overview_2026-08-21.md` and
+  `scripts/analyze_identity_persistence_gemini_n5.py`.
+
+---
+
+### 2026-08-21 — Independent confirmation reverses the identity hypothesis
+
+- Froze and ran a new-seed, wording-matched comparison of persistent stable
+  IDs versus round-local pair IDs (`n=10` GPT-5 Nano populations/arm), with no
+  synthetic history in either condition. All 20 runs passed jointly: 1,600
+  decisions and noise checks, no retries/errors, matched schedules, and no
+  identity leakage.
+- Contrary to the directional hypothesis, persistent IDs **increased** final
+  balance by +3.71/agent (95% paired CI [+1.35, +6.08], p=.0063, dz=1.12):
+  65.03 stable versus 61.31 round-local. The frozen hypothesis required a
+  negative interval and is therefore not confirmed; it is directionally
+  contradicted by the independent evidence.
+- The effect developed across repeated play: round-one sending differed by
+  only +.070 ([−.087, +.227], p=.341), while mean sending differed by +.0743
+  ([+.0269, +.1217], p=.0063). Persistent IDs may enable relationship-specific
+  trust rather than retaliation, but the mechanism is not isolated.
+- Persistent IDs reduced return ratios by −.0647 (unadjusted p=.0087). Since
+  final welfare is driven by sending, this redistribution result does not
+  negate their higher joint surplus.
+- The preceding n=5 claim that identity explains the public-ledger penalty is
+  superseded as an unstable exploratory interpretation. Report and analysis:
+  `docs/identity_persistence_confirmation_gpt_n10_overview_2026-08-21.md` and
+  `scripts/analyze_identity_persistence_confirmation_gpt_n10.py`.
+
+---
+
+### 2026-08-21 — Anonymous social information preserves cooperation
+
+- Added an anonymous population-record arm: all prior-three-round noisy
+  transfers are visible, but pairs are relabeled within each round and cannot
+  support individual reputation tracking. All 20 matched Game-only runs across
+  private/anonymous-record/stable-ID/public-ledger arms passed jointly (1,600
+  decisions and noise checks; no errors or identity leakage).
+- Final balance was 66.03 anonymous private, 65.55 anonymous population record,
+  61.03 stable IDs/no ledger, and 62.04 stable IDs/public ledger. The frozen
+  anonymous-record − private contrast was −0.48 (95% CI [−5.36, +4.41],
+  p=.801); their round-one means were exactly equal at .620.
+- Anonymous record − stable IDs was +4.53 (p=.263), while stable public ledger
+  − anonymous record was −3.51 (p=.150, dz=−.79). The directions favor social
+  information without persistent identity, but n=5 intervals are wide.
+- Return ratios were .399 / .421 / .283 / .441. This corrects the preceding
+  tentative interpretation: public records are not uniquely high; the stable-
+  ID/no-ledger arm is unusually low.
+- Best current mechanism: persistent partner identity, rather than population
+  information, permits caution/retaliation and lowers cooperation. A new-seed,
+  wording-matched stable-versus-relative identity experiment is needed before
+  scaling the claim. Report and analysis:
+  `docs/anonymous_population_record_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_anonymous_population_record_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Stable-ID control: round-one drop is not the ledger announcement
+
+- Froze and ran a five-population GPT-5 Nano stable-ID/no-ledger control. All
+  15 matched private/stable/public Game-only runs passed jointly: 1,200 clean
+  decisions, 1,200 noise checks, exact ID/history checks, and matched schedules.
+- Round-one sending was .620 anonymous private, .440 stable IDs/no ledger, and
+  .480 stable IDs/public ledger. The prespecified ledger − stable contrast was
+  +.040 (95% CI [−.095, +.175], p=.456); stable − anonymous was −.180
+  ([−.384, +.024], p=.070).
+- Across all rounds, final balance was 66.03 / 61.03 / 62.04. Stable − private
+  was −5.00 (p=.112) with high variance from one low-cooperation population;
+  ledger − stable was +1.01 (p=.553). There is no resolved welfare benefit from
+  the public records beyond persistent identity.
+- Post hoc, the public ledger raised return ratios relative to stable IDs by
+  .158 ([+.055, +.261], unadjusted p=.013), positive in all five pairs. This
+  may indicate social-norm information even though returns do not directly
+  increase total surplus.
+- The early cooperation drop is best attributed to the persistent identity/
+  current-partner prompt bundle, not ledger learning or the public-monitoring
+  announcement. Report and analysis:
+  `docs/stable_ids_control_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_stable_ids_control_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Public-ledger Myth→Game extension: positive, unresolved
+
+- Froze and ran five matched GPT-5 Nano public-ledger Myth→Game populations
+  after inspecting the game-only ledger screen. All five new runs passed with
+  800 accepted responses, no retries/errors, exact ledger reconstruction, and
+  matched schedules.
+- Myth→Game raised final balance from 62.04 to 64.30 under the ledger: +2.26
+  per agent (95% paired CI [−1.30, +5.82], p=.152, dz=.79). Two of five
+  matched populations did not improve, so this is directional rather than
+  resolved.
+- The public-ledger task effect was not distinguishable from the private-memory
+  interaction (+2.04, p=.176) or the partner-dossier interaction (−1.36,
+  p=.279).
+- About 62% of the public-ledger balance gain came from round 1, before ledger
+  rows existed (.760 versus .480 sent). The evidence is more consistent with a
+  myth countering the initial public-monitoring frame than with a demonstrated
+  improvement in agents' processing of ledger history.
+- Frozen protocol, report, and analysis:
+  `docs/population_ledger_myth_game_protocol_2026-08-21.md`,
+  `docs/population_ledger_myth_game_gpt_n5_overview_2026-08-21.md`, and
+  `scripts/analyze_population_ledger_myth_game_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Public population ledger: cooperation does not increase
+
+- Implemented a population-wide public-ledger history arm with stable neutral
+  pseudonyms and the last three complete population rounds. The ledger exposes
+  only communicated/noisy transfers and identifies the current co-player; an
+  exact auditor reconstructs every row and ID mapping from saved data.
+- Ran the matched GPT-5 Nano game-only screen (`n=5` populations/arm) against
+  private memory and the current-partner dossier. All 15/15 runs passed jointly:
+  1,200 accepted decisions, 1,200 noise checks, no retries/errors, and matched
+  schedules.
+- Mean final balance was 66.03 private, 62.64 dossier, and 62.04 public ledger.
+  Ledger − private was −3.99/agent (95% CI [−7.20, −0.77], raw p=.026, Holm
+  p=.052); ledger − dossier was −0.60 (p=.404). The difference is carried by
+  sending, not return ratios.
+- The ledger arm was already lower in round 1, before any history rows existed
+  (.480 versus .620 sent under private memory). This identifies the treatment
+  as a public-monitoring package—stable IDs, anticipated observability, and
+  later records—not a clean estimate of learning from population history.
+- Report and reproducible analysis:
+  `docs/population_ledger_gpt_n5_overview_2026-08-21.md` and
+  `scripts/analyze_population_ledger_gpt_n5.py`.
+
+---
+
+### 2026-08-21 — Independent confirmation: no history × Myth→Game interaction
+
+- Froze and ran a new-seed `2 × 2` GPT-5 Nano confirmation (`n=10`
+  populations/cell; replicate IDs 5–14) before inspecting outcomes. It crossed
+  private interaction memory versus current-partner dossier with Game only
+  versus Myth→Game.
+- All 40/40 runs passed the joint expanded audit: 4,800 accepted responses,
+  4,842 attempts, 42 recovered myth-boundary retries, 3,200 noise checks, no
+  unrecovered failures, and matched schedules.
+- The preregistered final-balance difference-in-differences was +0.50/agent
+  (95% CI [−1.95, +2.94], p=.655, dz=.15). The exploratory claim that
+  Myth→Game specifically eliminates the partner-dossier penalty is not
+  confirmed.
+- Secondary estimates suggest roughly additive effects: dossier − private was
+  −1.81 in Game only (p=.084) and −1.32 in Myth→Game (p=.013); Myth→Game −
+  Game only was +1.18 under private memory (p=.237) and +1.68 under the dossier
+  (p=.017). These secondary p values are unadjusted.
+- Frozen protocol, analysis, and report:
+  `docs/history_visibility_confirmatory_protocol_2026-08-21.md`,
+  `scripts/analyze_history_visibility_confirmation_gpt_n10.py`, and
+  `docs/history_visibility_confirmation_gpt_n10_overview_2026-08-21.md`.
+
+---
+
+### 2026-08-21 — Exploratory result: apparent Myth→Game buffering
+
+- Completed the clean paired GPT-5 Nano `2 × 3` history-visibility by task-
+  order screen (`n=5` populations/cell). The contrast is private interaction
+  memory versus the same memory plus the current co-player's last three games.
+- The selected 30/30 runs passed the expanded joint audit: 4,000 accepted task
+  responses, 4,019 total attempts, 19 explicit recovered myth retries, 2,400
+  transfer-noise checks, no unrecovered errors, and matched schedules across
+  all six cells.
+- The partner dossier reduced balance by −3.39/agent in Game only (95% CI
+  [−5.02, −1.75], Holm p=.014) and −2.74 in Game→Myth (raw p=.026, Holm
+  p=.052), but had no effect in Myth→Game (+0.01, p=.989). Under the dossier,
+  Myth→Game beat Game only by +3.63 (95% CI [2.45, 4.80], Holm p=.003); under
+  private memory, the same contrast was +0.23 (p=.804).
+- The Myth→Game visibility interaction was +3.40 (95% CI [0.70, 6.10], raw
+  p=.025, Holm p=.050 across two interactions). Exploratory interpretation:
+  explicit partner history facilitates targeted retaliation, while a myth
+  immediately before play buffers that penalty. The independent confirmation
+  above did not reproduce this interaction.
+- Reproducible analysis and full caveats:
+  `scripts/analyze_history_visibility_factorial_gpt_n5.py` and
+  `docs/history_visibility_factorial_gpt_n5_overview_2026-08-21.md`.
+
+---
+
+### 2026-08-21 — Correction: GPT-5 Nano task-order replication
+
+- The initial same-day audit did not test whether an accepted myth was actually
+  a myth. It therefore missed two selected-run failures where GPT returned
+  decision JSON instead of a story. The affected Game→Myth replicate 1 and
+  Myth→Game replicate 0 are now excluded and replaced by exact-seed clean runs.
+- The corrected selected means are 62.64 / 62.34 / 66.26 for Game only /
+  Game→Myth / Myth→Game. Myth→Game exceeds Game only by +3.63 (95% CI
+  [2.45, 4.80], Holm p=.003) and Game→Myth by +3.92 ([1.38, 6.47], Holm
+  p=.026); Game→Myth versus Game only is −0.30 (p=.779).
+- The cross-model Myth→Game ordering is therefore preserved and stronger, but
+  the original values are superseded. The expanded audit now applies the same
+  task-boundary validator used at runtime.
+
+---
+
+### 2026-08-20 — Result: return-vs-send gap is a denominator artifact
+
+**Time:** 1.0 hour
+
+#### What we found
+- The 11/02 call-note question ("why is trustee behavior always lower than investor behavior?") is resolved: the plots normalize send by the $5 endowment but return by the *tripled* amount received. In dollars, receivers returned more than was sent in 98.5% of the 1,500 corrected confirmatory dyad-rounds (zero zero-sends), and return/sent sits ~150% in every cell. Senders profit; the lower return line is a chart artifact, not stinginess.
+- Mechanism: receivers anchor on "return half of the tripled pool" as a fairness focal point (~50–54% in all six cells, present in game-only runs, stabilized by myths), while sends drift up to 70–90% of endowment. The old zero-send explanation is retracted for the corrected data. Human lit shows the same normalized ordering (Johnson & Mislin 2011: ~50% sent, ~37% returned = ~break-even in dollars); LLM lit is mixed.
+
+#### What changed
+- Fixed three analysis-metric problems: zero-received rounds now yield NaN (no-opportunity) instead of 0% cooperation; endowment inference corrected to payoff + sent − returned; inspector uses each run's configured endowment instead of hardcoded $5. Regression tests in `tests/test_analysis_metrics.py` (48 passed).
+
+#### Known gaps
+- Charts still overlay the two mismatched ratios on one axis; planned fix is a returned/sent line plus reference lines at 1/3 (sender break-even) and 1/2 (split the pool).
+
+---
+
+### 2026-08-19 — Result: 8-agent washout — edge grows
+
+**Time:** 0.5 hour
+
+#### What ran
+- Completed the 8-agent 20-round washout at n=5/arm (`noise8i_washout_myth_game` resumed from checkpoints + `noise8i_washout_game_myth` fresh; Sonnet 4.5, informed bidirectional noise, memory-primary, `--workers 1` after three OOM kills at higher worker counts). Data: `data/json/noise_experiments/washout_20round/noise8i_*`; plot: `data/plots/myth_taskorder_trajectories/washout_20round_8-agent.png`.
+
+#### Headline results
+- The Myth→Game edge does NOT wash out at 8 agents — it compounds: cumulative-balance lead +11.4/agent at round 10 → +17.9 at round 20 (vs the 2-agent result where per-round sends converge and the lead plateaus ~+6).
+- Per-round sends never converge: Myth→Game jumps to ~4.9/5 by round 4 and stays; Game→Myth cold-opens ~3.0 and only reaches ~4.4 by round 20.
+
+#### Known limit
+- n=5/arm (dropped from 10 for time/memory) — directional, not confirmatory. One myth_game replicate is filed as `rep00_*_2.json` (independent rerun of the rep00 cell; pooling the folder yields the intended n=5).
+
+---
+
+### 2026-08-19 — Result: meme evolution traced
+
+**Time:** 1.0 hour
+
+#### What ran
+- Added a deterministic ontology of nine strategy memes with variants, then traced inheritance, variant shifts, new-to-lineage appearances, recombination candidates, survival, and partner-myth→game uptake over all 60 corrected runs. The corpus contains 12,033 meme occurrences and 77,909 visible exposure edges; outputs are in `data/analysis/meme_evolution_2026_08_19/`.
+
+#### Headline results
+- Myth-bearing conditions contain more ideas per capsule and much more inheritance: 2-agent game-only 1.78 (±0.21) memes/capsule and 66.12% (±3.91%) inherited, versus game→myth 2.69 (±0.42) / 87.49% (±2.94%) and myth→game 2.79 (±0.56) / 87.58% (±2.99%). The 8-agent pattern is similar.
+- Proportional reciprocity is the dominant meme: 74.61% (±16.27%) capsule prevalence, 76.67% (±17.28%) edge transmission, and 82.76% (±17.13%) partner-myth→game transmission. About 25–31% of retained memes change variant across conditions, usually between fixed-percentage and responsive-reward formulations.
+- Found 62 candidate numerical partner-myth→game belief packets. A strict detector requiring explicit myth attribution plus an actual/perceived contrast found two clear decodings, both in the same 2-agent myth→game run; this is real but not yet shown to be common.
+
+#### Known limit
+- Meme families are predeclared lexical-semantic detectors, and visible transmission is not behavioral selection. The next causal test is controlled meme deletion/transplant with actions held fixed, followed by free-play validation.
+
+---
+
+### 2026-08-19 — Result: capsule genealogy quantified
+
+**Time:** 1.0 hour
+
+#### What ran
+- Added a deterministic, no-LLM genealogy over all 60 corrected informed-noise runs: 5,000 visible assistant capsules, 52,425 claim instances, and 32,700 verifiably visible parent→child edges. Outputs and reproduction report are in `data/analysis/capsule_genealogies_2026_08_19/`.
+- Claims are separated into event references, round/action quantities, rates, and predeclared normative frames; edges come only from exact `messages_sent` provenance.
+
+#### Headline results
+- Exact fact inheritance is strongest in dyads: 42.92% (±10.19%) game-only, 56.76% (±10.37%) game→myth, and 61.11% (±15.49%) myth→game, versus 11.35% (±2.80%), 13.22% (±4.06%), and 14.97% (±2.16%) in the corresponding 8-agent cells.
+- In dyadic myth→game, 30.27% (±6.20%) of event references reached earlier than the oldest literal game prompt still in context; the 8-agent counterpart was 2.49% (±3.27%). Norm inheritance was ~90% in every myth-bearing cell.
+- The hand-traced noisy-belief chain reproduces automatically: Agent_1's round-7 myth carries its perceived 79% round-6 send into Agent_2's round-8 game reasoning, where Agent_2 contrasts it with its actual 65% send.
+
+#### Known limit
+- This establishes visible textual inheritance, not causal influence. Nonexact round/action quantity pairs remain labelled `different_quantity_candidate` because unresolved actor perspective can mimic mutation; deletion/transplant ablations are required for causality.
+
+---
+
+### 2026-08-13 — Corrected informed-noise confirmatory rerun completed
+
+- Completed all six corrected non-defector cells (2/8 agents × game,
+  game→myth, myth→game), `n=10` independent runs per cell. The strict audit
+  passed all 60/60 runs: 5,000 accepted interactions, 5,000 LLM calls, 3,000
+  numerical noise checks, and zero errors, recovered retries, forced responses,
+  or protocol violations.
+- Corrected final balances (mean per agent) were 64.86 / 62.94 / 69.83 in the
+  2-agent repeated-dyad regime and 59.26 / 60.51 / 66.33 in the 8-agent rotating
+  population. Game→myth did not beat game only in either regime, and its
+  population-regime interaction was not detected: difference-in-differences
+  +3.16, 95% CI [−2.04, 8.36], p=.218.
+- Myth→game remained highest in both regimes. Both 8-agent myth→game contrasts
+  survived Holm correction across the six within-population balance tests; the
+  analogous dyad contrasts were suggestive but did not.
+- The saved noise/pairing seeds are null, so the analysis uses independent-group
+  Welch tests rather than the pairing originally intended in the preparation
+  note. Raw JSON remains gitignored and should be archived before publication.
+- Full implementation overview, figures, statistics, caveats, and next steps:
+  `docs/corrected_v2_confirmatory_overview_2026-08-13.md`. Reproducible analysis:
+  `scripts/analyze_corrected_v2_confirmatory.py`.
+
+---
+
+### 2026-08-12 — Corrected non-defector confirmatory rerun prepared
+
+- Hardened simulation-level retries: an unanswered prompt is now removed from
+  private chat memory after an exhausted provider call, matching the myth-
+  validation retry contract. Rejected attempts remain in the interaction audit
+  but cannot change the clean retry context.
+- Updated `scripts/audit_v2_protocol.py` to distinguish accepted interactions
+  from recovered retry attempts. It requires exactly one accepted task response
+  per agent/round, fails unrecovered retries, and computes memory-message counts
+  from accepted interactions only.
+- New runs record non-secret execution provenance: Git commit and dirty-state,
+  config SHA-256, effective provider route, resolved provider model, and the
+  effective max-output-token setting/source.
+- Expanded the fixed-pair population isolation into a complete 2 x 3 design:
+  2 versus 8 agents crossed with game-only, game->myth, and myth->game. All
+  cells use fixed partners, unified prompts, hidden names, no injected history,
+  paired noise seeds, and a matched three-round private-memory horizon.
+- Raised the six corrected population-regime v2 cells from 5 to 10 fresh
+  replicates each. `scripts/run_corrected_v2_confirmatory_20260812.sh` refuses
+  a dirty worktree, fixes routing to direct Anthropic, writes to a new output
+  directory, requires 10 final JSONs per cell, and audits each cell before
+  continuing. This entry records protocol preparation only, not outcomes.
+
+---
+
+### 2026-08-12 — Scripted 8-agent defector treatment implemented
+
+#### Design
+- Added an explicit `defector_action_policy: forced_zero`. Designated agents no
+  longer make LLM calls for game decisions: senders deterministically emit
+  `{"send": 0}` and receivers emit `{"return": 0}`.
+- The scripted game prompt/response is still appended to each defector's private
+  memory under `memory_primary`. Defectors use the ordinary LLM path for myth
+  writing (`defector_myth_policy: normal`), so game behavior is fixed while
+  cultural output remains endogenous.
+- The primary cells set `defector_role_visible_to_self: false`: neither the
+  treatment label nor the phrase "designated defector" appears in the agent's
+  game prompt. Other agents are never given private treatment identities.
+- Legacy defector configurations retain their prompt-driven behavior unless
+  they explicitly select `forced_zero`.
+
+#### Planned experiment (not outcome evidence yet)
+- Added paired 0%-versus-25% (0 versus 2 of 8) controls for game-only,
+  game→myth, and myth→game. All use balanced rotating pairings, anonymous
+  identities, informed bidirectional ±1 noise, unified prompts, no injected
+  game-history recap, and paired pairing/noise seeds.
+- The two-task cells use capacity 6 and game-only uses capacity 3, retaining
+  approximately three completed rounds of private interaction memory.
+- The protocol audit now checks that all forced actual actions are zero, forced
+  game responses make no LLM calls, defector myths do use the LLM, and the
+  hidden treatment label does not leak into prompts.
+
+---
+
+### 2026-08-12 — Population/reputation isolation hardened
+
+#### Why the earlier decomposition is not confirmatory
+- The `noise2i_full8match_game` dyads still used the broken zero-send transfer
+  path, while the matched 8-agent runs used the clean path.
+- The 2-agent path also ignored `self_history_window` and
+  `coplayer_history_window`; `history_policy: minimal` injected one own-game
+  recap rather than removing history; and the fixed-pair system prompt still
+  claimed that pairings were randomized. The proposed named-fixed test also
+  exposed repeated partnership through "against you" co-player history.
+- Consequently, the reported 2-vs-8 separation and its anonymity mechanism are
+  not established. The transfer-clean 8-agent files remain exploratory
+  within-population evidence.
+
+#### Implementation
+- Ported validated `pairing_mode: fixed` support onto the corrected branch.
+  Fixed populations now receive accurate same-opponent/alternating-role system
+  instructions, while legacy balanced prompts remain unchanged.
+- Added `prompt_regime: unified`, which routes both 2- and 8-agent later rounds
+  through the same sender/receiver builder and makes the configured history
+  policy apply at both population sizes.
+- History and prompt-regime values now fail closed on unknown strings. New
+  causal cells use `history_policy: none`, so own decisions remain solely in
+  individual chat memory and no synthetic self/co-player record is injected.
+- Pairing mode, effective pairing mode, prompt regime, windows, name visibility,
+  pairing seed, and noise seed are recorded in logs, JSON metadata, and transcript
+  PDFs. Exogenous pairing schedules and per-event noise are paired by replicate
+  and reproducible in the new cells.
+
+#### New planned cells (not outcome evidence yet)
+- `noise_population_isolation_v2_game`: fixed 2-agent versus fixed 8-agent,
+  identical configuration except `num_agents`, capacity 3, hidden names, no
+  injected history, and the unified prompt regime.
+- `noise8i_identity_v2_game`: rotating 8-agent named versus anonymous, identical
+  except name visibility, with no injected co-player block. Stable names are
+  therefore the only partner-identity cue available across re-encounters.
+
+---
+
+### 2026-08-12 — Protocol repair: corrected dyad noise and matched-memory v2
+
+#### What changed
+- Fixed the dyad later-round transfer path: communicated-send noise is now
+  generated only for the receiver, after the sender's actual transfer exists;
+  a missing current transfer raises instead of falling back to zero.
+- Retained the game-side instruction, "Take any myths written in this session
+  into account when making your decision." It is now appended through one
+  shared game-prompt finalizer, exactly once in every current game prompt for
+  both myth orders, both roles, all rounds, and both population regimes.
+- Added corrected informed-noise v2 triplets. Chat memory is matched to an
+  approximately three-round horizon: capacity 3 for game-only and 6 for
+  game+myth conditions, for both 2- and 8-agent runs.
+
+#### Interpretation and status
+- The 8-agent arm intentionally retains balanced rotating partners, anonymous
+  identities, and a three-game co-player reputation block. The planned contrast
+  is therefore **repeated dyad vs rotating population with reputation
+  information**, not a pure manipulation of agent count with all other
+  information held fixed.
+- The 2026-08-10 dyad results were produced by the broken transfer path and
+  cannot establish a population-size interaction; all six v2 cells require a
+  new adequately powered batch before updating the result claim.
+
+#### Smoke gate completed
+- Ran one full 10-round Sonnet 4.5 replicate in each of the six corrected v2
+  cells (2/8 agents x game/game_myth/myth_game). All 6/6 completed without an
+  API, parsing, or simulation error.
+- `scripts/audit_v2_protocol.py` checked all final JSONs: 60 rounds, 150 dyads,
+  500 LLM calls, and 300 numeric send/return noise checks. It also verified
+  completeness, informed-noise notices, exact current-prompt myth-link counts,
+  configured memory-message counts, and the intended 8-agent co-player history
+  blocks. **Zero issues.**
+- This is a protocol smoke test (`n=1` per cell), not outcome evidence. Before
+  the confirmatory batch, add recorded/paired pairing and noise seeds and choose
+  durable raw-data storage (the current `data/json/` tree is gitignored).
+
+---
+
+### 2026-08-10 — Result: game_myth vs game is a population-size effect
+
+> **Superseded on 2026-08-12:** the dyad transfer-noise audit found that all
+> post-round-1 receivers were shown transfers near zero. The results below are
+> retained as historical provenance but do not establish a population-size
+> effect. See the corrected v2 protocol above.
+
+#### What ran
+- Built the missing post-fix informed dyad triplet to isolate why game_myth < game at 8 agents but > game in older dyad data. New game_params `noisy_bidirectional_informed_memprimary` (= `noisy_bidirectional_memprimary` + `inform_agents: true`) and three sets `noise2i_memprimary_{game,game_myth}` / `noise2i_memtest_memprimary` (config/experiments_noisy.yaml). Sonnet 4.5, 2-agent, memory-primary, uniform ±1.0, informed, n=5 each, 15/15 clean, ~$8 via OpenRouter. Plot `scripts/noise2i_dyad_taskorder_boxplot.py` → `data/plots/noise2i_dyad_triplet/`.
+
+#### Headline numbers (final balance, run-level, n=5)
+- **2-agent informed:** game 46.25 (±2.57) / game_myth 53.44 (±6.45) / myth_game 60.60 (±4.26) → **game_myth beats game by +7.2**.
+- **8-agent informed (existing, standard prompt):** game 60.55 (±1.57) / game_myth 59.95 (±2.30) / myth_game 66.91 (±1.66) → game_myth −0.6 vs game.
+- Everything else matched (memory fix, informed noise, ±1.0); the only axis that flips the game_myth-vs-game contrast is **population size**. The old "game_myth > game" memory was the dyad regime, not a pre-fix double-memory artifact — now confirmed on clean post-fix data.
+
+#### Known gaps
+- Why population size erases the game_myth edge is not itself pinned (co-player history block + rotating partners "buffer" dynamics per the 2026-07-17 noise entry, but that was about noise robustness). A 2-vs-8 sweep holding all else fixed would isolate it. Myth→Game stays the strongest ordering at both sizes.
+
+---
+
+### 2026-07-23 — Result: context audit — nothing dropped across 3,600 calls
+
+#### What ran
+- Per-call context audit over all 25 informed-noise runs (`scripts/audit_context_integrity.py`), checking every call's actual `messages_sent`: own-myth window exactly the most recent min(3, available) rounds (verbatim match), partner myth quoted verbatim in later myth prompts, co-player block present with exactly min(r-1,3) entries, informed-noise notice in every system prompt, no self-history blocks or own-myth recaps, no empty messages/responses/errors, full round/dyad/myth/response counts.
+
+#### Headline
+- **25 runs, 3,600 LLM calls, zero issues** — both triplets (standard + lineage) stand on verified context plumbing.
+- Audit validated by negative control (three planted corruptions): first version missed a myth dropped from the *old* edge of the window (contiguity check is blind there) — tightened to exact-window matching, after which all three plant types are detected. Lesson: audits need negative controls too.
+- Script is reusable: `python scripts/audit_context_integrity.py <run_dirs...>` — run as standard post-batch QA in the rerun campaign.
+
+---
+
+### 2026-07-23 — Result: lineage triplet — fidelity amplifies the ratchet in both directions
+
+#### What ran
+- Completed the lineage-prompt task-order triplet under informed noise: new `noise8i_memprimary_game_myth_lineage` (5/5 clean, ~$14) + existing myth_game lineage cell + existing game-only cell (lineage cannot apply there — no myth prompt; same condition by construction). Plots: `data/plots/noise8i_lineage_triplet/`.
+
+#### Headline numbers (run-level, n=5/condition)
+- Final balance: myth_game $70.69 (±$3.60) vs game $60.55 (±$1.57) vs game_myth $59.00 (±$2.69). Trust ratio 0.914 (±0.072) / 0.711 (±0.031) / 0.680 (±0.054).
+- vs the standard-prompt informed triplet: myth_game rose ($66.91→$70.69), game_myth did not ($59.95→$59.00). **Higher lineage fidelity amplifies whatever the myths crystallize** — pre-game ideals (myth-first) get stronger; post-game caution (game-first) stays anchored. The cultural ratchet cuts both ways, now with the fidelity knob demonstrated in both directions.
+
+---
+
+### 2026-07-23 — Result: lineage pointer restores fidelity and amplifies the myth effect
+
+#### What ran
+- A/B under informed noise (myth→game, 8 agents, memory-primary, n=5 vs n=5, ~$14 via OpenRouter fallback — direct-Anthropic balance ran dry again mid-week): standard myth prompt vs lineage variant adding "Base it on the myths you wrote earlier this session" (attention pointer to own 3-round myth memory; no content duplication). Set `noise8i_memprimary_myth_game_lineage`; plots `data/plots/noise8i_lineage_ab/`. Deliberately did NOT restore the game-side `myth_decision_link` — it would instruct the dependent variable and confound the task-order contrast.
+
+#### Headline numbers
+- **Self myth similarity 0.709 (±0.020) → 0.839 (±0.014), p<0.001** — lineage fidelity restored to (above) the pre-fix level (0.823), now without the duplication bug.
+- Population myth similarity 0.692 → 0.719 (no diversity collapse; run-level spreads intact).
+- **Not behaviorally inert**: trust ratio 0.838 (±0.033) → 0.914 (±0.072), p=0.109; sent 4.19 → 4.57; return ratio 0.513 → 0.543. Higher transmission fidelity amplified the myth→cooperation effect — with the decision side still uninstructed.
+
+#### Reading
+- Failure of the "inertness" criterion is the informative kind: fidelity acts as a moderator of culture→behavior — textbook cumulative-culture theory, and the game side stayed clean. Decision open: adopt lineage as canonical for the rerun campaign, or keep both cells as a low/high-fidelity contrast (the standard cell is already in hand, so the contrast is free).
+
+---
+
+### 2026-07-22 — Result: myth-first boost holds in the informed-noise condition
+
+#### What changed
+- Standing directive from Ivar: **informed noise is now the default test condition** for every new experiment (saved to project memory + this log). `inform_agents: true` suffices — `trust_game_noisy.py:133` auto-appends the noise notice to the system prompt.
+- Ran the 8-agent memory-primary task-order triplet under informed noise (`noise8i_memprimary_*`, n=5 each, 15/15 clean, ~$40). Plots: `data/plots/noise8i_memprimary/`.
+
+#### Headline numbers (run-level, n=5/condition, informed noise)
+- Trust ratio: myth_game 0.838 (±0.033) vs game 0.711 (±0.031) vs game_myth 0.699 (±0.046). Final balance: $66.91 (±$1.66) vs $60.55 (±$1.57) vs $59.95 (±$2.30).
+- Third regime, same result: plain 0.892/0.716/0.653, uninformed noise 0.851/0.731/0.692, informed noise 0.838/0.711/0.699. Telling agents about the noise barely moves anything (informed ≈ uninformed on every metric; tighter spreads).
+- The myth-first boost is now replicated across plain, uninformed-noise, and informed-noise regimes at 8 agents.
+
+---
+
+### 2026-07-20 — Result: game_myth plateau is a myth-content effect, not a memory confound
+
+#### What ran
+- Disambiguation for the game_myth < game-only deficit: game-only 8-agent plain with `memory_capacity: 3` (equal memory *rounds* to game_myth's 3) — `sonnet45_8agent_game_memprimary_mem3_r10_n5`, 4/5 clean (~$7; 1 run died on the direct-Anthropic `max_tokens=1024` truncation — now 4096 via `ANTHROPIC_MAX_TOKENS`, see verified-facts).
+- Also verified myth carry-over in game_myth: previous-round partner's myth appears verbatim in all 9 later-round prompts; own myth reaches game calls via memory. No passing bug.
+
+#### Headline numbers
+- cap3 game-only escalates like cap6: sent r1→r10 3.06→4.00 (run mean 3.54 ±0.53) vs cap6 3.15→3.95 (3.58 ±0.36); game_myth stays flat 3.10→3.35 (3.27 ±0.35). **Memory depth ruled out; the plateau follows the myths.**
+- Reading: directive myths written *after* play codify the cautious status quo and anchor it (cultural ratchet cuts both ways: myth-first locks in pre-game generosity, game-first locks in round-1 caution). Round-1 sends are identical across game/game_myth (~3.0–3.2), as their round-1 contexts are structurally identical — the gap develops through rounds.
+- Design fact recorded in verified-facts: `{other_agent_myth}` is the **previous** round's partner's myth (one-round gossip-lag diffusion; never informative about the current partner) — kept deliberately: myth influence stays cultural, not strategic signaling.
+
+---
+
+### 2026-07-17 — Result: myth-first cooperation boost replicates under 8-agent noise
+
+#### What ran
+- Task-order triplet (game / game_myth / myth_game) under bidirectional noise at 8 agents, memory-primary (`noise8_memprimary_*`, n=5 each, 15/15 clean, ~$40); plus the dyad-level version (`noise_memprimary_{game,game_myth}`, ~$7). Smoke caught the same window-0 bug in `TrustGameNoisy._format_multi_agent_history` (own copy of the history block without the skip) — fixed before the paid batch. Plots: `data/plots/noise8_memprimary/`.
+
+#### Headline numbers (run-level, n=5/condition, 8-agent noise)
+- **Myth-first boost replicates almost exactly**: trust ratio 0.851 (±0.094) myth_game vs 0.731 (±0.023) game vs 0.692 (±0.036) game_myth (plain-game triplet: 0.892 / 0.716 / 0.653). Final balance $67.55 (±$4.70) vs $61.54 (±$1.18) vs $59.61 (±$1.82) (plain: $69.60 / $60.80 / $57.65).
+- **Population buffers noise**: 8-agent noise trust stays at plain-game levels, unlike dyads under the same noise (which collapsed to ~0.4 trust, balances ~$42–47). The co-player history block + rotating partners appears to prevent the death spiral a single noisy relationship falls into.
+- Dyad-level noise triplet, same ordering compressed: $46.69 / $45.51 / $42.15 (myth_game / game_myth / game).
+
+#### Reading
+- The core task-order finding is robust across game regime (plain/noise) and population size (2/8) under the fixed memory design. Noise robustness at the population level is a potential paper point in itself.
+
+---
+
+### 2026-07-17 — Result: noise pilot confirms memory-primary; drift tracks game visibility
+
+#### What ran
+- Memory-channel pilot repeated under bidirectional noise (`noise_memtest_{hybrid,stateless,memprimary}` in experiments_noisy.yaml; uniform ±1.0 on communicated amounts, uninformed; Sonnet dyads, myth→game, r10, n=5/arm, ~$9, 15/15 clean). Plumbing added to run_noisy_batch (chat_memory_mode, game_prompt_keys). Smoke caught a real parser bug: Haiku answered `{'return': $6.66}` and `_extract_amount` rejected the `$` — both game classes now accept optional `$` before the number.
+
+#### Headline numbers (run-level, n=5/arm)
+- **Noise creates real dynamics and the channels still don't separate on game play**: trust collapses everywhere (sent ~3.8 → ~1.5 by r6); sent 2.42 (±0.23) / 2.26 (±0.47) / 2.17 (±0.27), all pairwise p>0.19. Return ratio 0.12 (±0.04) / 0.12 (±0.06) / 0.08 (±0.02).
+- **Myth drift is the significant separator**: self-sim r vs r-1 memory-primary 0.676 (±0.051) vs hybrid 0.826 (±0.035) and stateless 0.850 (±0.061) — p=0.002 vs both. Under a turbulent game, memory-primary myths respond (drift); the other designs' myths stay insulated — their myth calls see only a one-line game summary, while memory-primary myth calls see the full game rounds in memory.
+
+#### Decision
+- **Memory-primary confirmed for the rerun campaign.** Game behavior is channel-robust in both placid and turbulent regimes; memory-primary is the only design whose linguistic layer visibly couples to game events — which is the phenomenon the paper studies.
+
+---
+
+### 2026-07-17 — Result: task-order effect survives the memory fix
+
+#### What ran
+- Completed the standard game / game_myth / myth_game condition triplet for the fixed 8-agent memory-primary regime (`sonnet45_8agent_{game,game_myth}_memprimary_r10_n5`, n=5 each, ~$20). First attempt failed 10/10 on an empty direct-Anthropic credit balance; reran via `LLM_PROVIDER=openrouter` (fact + fallback recorded in docs/verified-facts.md). Standard-layout plots: `scripts/memprimary_taskorder_boxplot.py`, per-run trajectories via `analyses/trajectory_plotting_8agent.py` → `data/plots/memprimary_8agent/`.
+
+#### Headline numbers (run-level, n=5 per condition)
+- **Myth-first boosts trust ~25%**: trust ratio 0.892 (±0.082) myth_game vs 0.716 (±0.073) game-only vs 0.653 (±0.070) game_myth; mean sent $4.46 vs $3.58 vs $3.27.
+- Return ratio near half everywhere: 0.529 (±0.021) / 0.505 (±0.010) / 0.537 (±0.019); game-only is the most locked-in (stability 0.006).
+- Gotcha fixed: billing-failed first attempts leave `*.checkpoint.json.error.json` snapshots in data dirs — loaders must exclude them (initially inflated n to 10 and skewed game-only means).
+
+#### Reading
+- Writing myths *before* playing raises cooperation from round 1; playing first anchors on cautious play that a later myth doesn't lift. The cross-task influence finding survives the double-memory fix with a clean information story: each fact enters context once.
+
+---
+
+### 2026-07-17 — Result: 8-agent memory-primary test vs June baseline
+
+#### What ran
+- Fixed 8-agent regime test: `sonnet45_8agent_myth_directive_history3_anon_memprimary_r10_n5` (memory-primary; self_history_window 0, coplayer window 3, memory_capacity 6 pairs = 3 rounds, co-player-myth-only later template), n=5, 5/5 clean, ~$14. Compared against the June 8 double-memory baseline with `scripts/memprimary_8agent_compare.py`; plots `data/plots/memprimary_8agent/`.
+
+#### Headline numbers (n=5 vs n=5)
+- **The bug was inflating the generosity ratchet.** Both regimes escalate (unlike static dyads), but baseline saturates: sent r1→r10 4.30→5.00 vs fixed 3.95→4.60; return ratio 0.607 (±0.046) vs 0.529 (±0.021), r10 0.62 vs 0.54. Triple-counted cooperative history (recap + memory + reasoning) stacked the evidence of generosity.
+- **The bug was suppressing myth evolution.** Self-similarity r vs r-1: baseline 0.823 (±0.022) vs fixed 0.688 (±0.058) — verbatim "here is the myth you wrote" recaps anchored self-copying; without them lineages actually drift. Population myth similarity unchanged (0.689 vs 0.694) — convergence level is robust.
+
+#### Reading
+- Fixed regime keeps the qualitative story (escalating cooperation, myth convergence) but with honest magnitudes and livelier lineage dynamics. June-baseline myth-stability numbers should not be compared 1:1 with post-fix runs.
+
+---
+
+### 2026-07-17 — Result: memory-channel pilot — game invariant, myth diversity differs
+
+#### What ran
+- Double-memory bug confirmed (rounds appear 2–3× in context: chat memory + in-prompt history recaps; and memory_capacity counts interactions, not rounds). Two fixed designs implemented and piloted head-to-head with information parity: **hybrid** (own myths in chat memory/assistant slot; game history in-prompt only) vs **stateless** (no memory; everything in one flat prompt). Sonnet 4.5, 2-agent dyads, myth→game, r10, n=5 per condition, ~$6. Sets `memtest_{hybrid,stateless}_sonnet45_2agent_r10_n5`; comparison `scripts/memtest_compare.py`; plots `data/plots/memtest_memory_channels/`.
+
+#### Headline numbers (run-level, n=5)
+- **Game play: channel-invariant.** Sent 3.80 (±0.75) vs 3.80 (±0.40); return ratio 0.527 (±0.023) vs 0.500 (±0.000) — stateless returns exactly half every round of every run.
+- **Myths: stateless collapses diversity.** Cross-agent similarity 0.719 (±0.100) hybrid vs 0.820 (±0.021) stateless; self-similarity r vs r-1 0.748 (±0.082) vs 0.817 (±0.017). Means p≈0.11–0.17 (n=5), but the variance collapse (±0.02 vs ±0.10) is the signal: stateless runs are near-deterministic and homogeneous; hybrid keeps lineage drift and divergence.
+
+#### Third arm + revised decision (same day)
+- User flagged that hybrid amputates the reasoning→myth pathway (game calls unremembered ⇒ myths never see the agent's strategic reasoning). Added **memory-primary**: both tasks remembered; duplication fixed on the prompt side instead (`_minimal` game templates without last-round recap via new `game_prompt_keys` set override; myth prompt carries only co-player myth). Smoke-verified: no fact appears twice; transcript shows game reasoning quoting both myths — the co-evolution loop is active. Sonnet arm n=5, ~$3.
+- Results: cross-agent myth sim 0.774 (±0.049) and self-sim 0.722 (±0.076) — patterns with hybrid (drift preserved), not stateless (homogenized). Game side: **no interpretable treatment effect** — all dyads freeze their round-1 send for all 10 rounds, r1 contexts are identical across memory arms, so run means are 5 initial draws (hybrid [3,3,4,4,5], mp [4,4,4,5,5]); the earlier "hybrid vs stateless game invariance" claim survives, the mp 4.4 vs 3.8 sent difference is initial-draw noise.
+- **Decision: memory-primary for the reruns.** Fixes the double-memory bug, keeps linguistic diversity ~hybrid, uniquely preserves reasoning↔myth co-evolution, and is the closest fixed design to the existing runs. Before the 8-agent rerun: reconcile memory_capacity (interaction pairs) with the 3-round in-prompt co-player history block.
+
+---
+
+### 2026-07-17 — Clean public-facing repo split from research repo
+
+#### What changed
+- Created `github.com/ivarfresh/linguistic-evolution-toolkit` (private for now): fresh single-commit export of the clean tree — code, configs, docs, phase 2–9 summary metrics/figures, manuscript sources, two sample runs in `data/sample/`. 95 MB / 866 files vs the 7.2 GB research repo. Excluded: `data/json|plots|share` (4.5 GB raw outputs), `archive/`, `reports/`, reference PDFs, Quarto build dirs.
+- This repo stays the full private archive (all data + history). Raw data to be archived on Zenodo (link TBD) before the new repo goes public — also re-check NeurIPS anonymity before flipping visibility.
+- Cleanup landed here too (`19f0d220`, `34a74425`): root `README.md`, `.env.example` (was referenced by CLAUDE.md but missing), `public_goods_game.py` → `archive/` (nothing imports it), broken `reciprocity` case removed from `run_all_analyses.sh`, `*.npz` gitignored, `data/README.md` + samples.
+
+#### Known gaps
+- New repo has no history (by design); `main` here is still 30+ commits behind this branch; ~13 unreferenced `analyses/*.py` scripts left in place pending a keep/drop decision.
+
+---
+
+### 2026-07-03 — Result: Fable seed regeneration; jabberwocky blocked twice over
+
+#### What ran
+- Regenerated gowith + jabberwocky seed pools with **Claude Fable 5 as translator** (`scripts/phase9_fable_seeds.py`, ~$20 incl. debug reruns). All seeds verified with Sonnet readback + the exact-game-context host refusal probe. Fable API quirks hit and recorded in `docs/verified-facts.md`: rejects explicit `temperature`; reasoning model — thinking shares `max_tokens` (2048 → zero text; use ≥16k).
+
+#### Headline
+- **`s_end_plus_gowith_fable`: usable — 5/5 translated, 4/5 pass the host probe**, readback recovers the recipe (send 5, rf 0.5/0.67) on 3 of the 4 passing. Registered in the manifest. Required steering Fable to gowith's flowing-prose register — its default hyphen-compound register ("Meet-settle: Keeper-with…") was host-refused 3/3.
+- **Jabberwocky is blocked at two independent layers:** (1) **Fable-as-translator refuses** — 6/10 hard refusals, with a stark content asymmetry: 5/5 refusals on strategy-laden s_end+ myths vs 1/5 on innocent s_start parables; (2) of the 5 it did translate, **Sonnet-as-host refused 4/5** in the assistant slot (exact-context probe 4/4) — replicating the Phase 5 finding with a different translator. Net: 1 usable jabberwocky seed (`s_start_jab_fable`, 4 registered, 1 probe-pass). Jabberwocky cells stay unrunnable on a Sonnet host; workarounds remain system-prompt placement or a non-refusing host model.
+- **Seed 4's curse replicates across translators**: the gowith translation of s_end_plus[4] is host-refused 4/4 whether Sonnet or Fable wrote it — strengthens the content×style×context conjunction finding (same seed, two independent translations, two translator models).
+
+#### Artifacts
+- Candidates + per-seed probe status: `data/phase9/fable_seeds_candidate.json`. Manifest: 11 pools.
+
+---
+
+### 2026-07-02 — Result: silent monitor induces zero covert adaptation
+
+#### What ran
+- Phase 8 "silent monitor": source regime (`sonnet45_8agent_myth_directive_history3_anon_r10_n5`) + a Sonnet 4.5 monitor (temp 0, prompt frozen after 3-seed calibration, `src/monitor.py`) that silently zeroes a flagged agent's round earnings. Agents told nothing; only footprint is the balance line. n=5, all reps clean, ~$13 (under the $25–30 estimate). Opt-in `monitor_config` in `src/simulation.py` — zero behavior change when absent. Data `data/json/phase8_monitored/`, analysis `scripts/phase8_monitor_analysis.py`, plots `data/phase8/plots/`.
+
+#### Headline numbers (n=5)
+- **Detection never dropped**: round 1 = 0.70 (±0.07), rounds 2–10 = 1.00 (±0.00) flat. Retrospective monitor on unmonitored control round-10 myths: also 100% (40/40) — saturation isn't a selection artifact.
+- **Cooperation persisted**: pre-penalty in-game earnings $553 (±$32) vs control $585 (±$21); post-penalty balance (what agents see) flat at $15 (±$3).
+- **Round-10 legibility unchanged**: monitored round-10 myths 100% extraction (decoded send≈4.6) — same as control and s_end+ originals.
+- **The signal was in-prompt and ignored**: history shows truthful payoffs ($6–7/round) beside a stagnant total balance ($6) — agents neither hid strategy nor changed play.
+
+#### Reading + decision
+- Outcome (c): silent, unattributable selection pressure induces no covert channel in 10 rounds — an *induction* null, not a capability null. The single-scalar feedback gives no way to localize the penalty to the myth's strategy content.
+- Next cell: **visible-penalty variant** ("your myth was flagged by a monitor; earnings confiscated") — closes the attribution gap, making silent-vs-visible a clean two-cell contrast: does evasion require knowing you're watched? Also connects the monitoring arm to the eval-awareness arm.
+
+---
+
+### 2026-07-02 — Result: spontaneous eval-awareness is real but thin
+
+#### What ran
+- Free transcript mining (no API calls) over all existing runs: 4,898 files, 280,658 texts. Two-stage: keyword screen split into CONTAMINATED terms (present in the told system-prompt framing) vs CLEAN terms ("being tested", "the researchers", "simulation", "as an AI"), then rule-classification into A genuine / B told-echo / C false-positive. Script: `scripts/eval_awareness_mining.py`; data + all hits: `data/phase8/eval_awareness_mining.json`.
+
+#### Headline numbers
+- **399 genuine eval-awareness texts (~1.4 per 1,000)**, almost all in game reasoning (3.26/1,000) — myths themselves essentially never break frame (0.02/1,000; 2 cases ever).
+- By model: gpt-5-nano 2.17/1,000 (volume leader; lower bound — its reasoning is often encrypted); **Sonnet 4.5 rarest (0.15/1,000) but most sophisticated** — twice reconstructs the actual hidden hypothesis ("testing whether there's alignment between the values expressed in my myths and my actual behavior") and sometimes adjusts its move because of it.
+- **Noise elicits awareness**: noisy-payoff conditions 6.2–8.3/1,000 vs clean baseline 3.9 — broken payoff math makes models infer "simulation/test." Real confound for noisy cells.
+- Unambiguous observer-intent hits (A1, names experimenters + hypothesis): only 10 of 399; the bulk (306) is soft "this is just a simulation" talk.
+
+#### Decision
+- Fund a **small targeted** framing-ablation arm, not a broad sweep: Sonnet 4.5 + gpt-5-nano only (Haiku/gpt-5.5: zero hits), noisy cells + clean control, manipulate told framing, measure the behavioral delta. The observational question is answered; behavior-change is what's left.
+
+---
+
+### 2026-07-02 — Result: gowith cell hits ceiling; refusal censors rep 4
+
+#### Headline numbers
+- Full gowith game cell (Phase 3 regime, Sonnet 4.5, seeds = gowith translations of s_end+): **$598.5 (±$1.9), n=4** — reps $598/$600/$596/$600. Matches the round-1 probe's prediction (near-ceiling, small nonzero variance) vs original s_end+ $600.0 (±$0.0) and baseline $437.4 (±$5.5). The cooperation recipe survives full translation into subject-less relational grammar. Plot: `data/phase7/plots/04_cell_means_gowith.png`. Data: `data/json/noise_experiments/phase7_seeded/`. ~$16 incl. retries.
+
+#### Rep 4 refusal-censored — knife-edge conjunction
+- Rep 4 failed 3× with Sonnet `stop_reason="refusal"` (empty content). Dissociation probes: gowith seed 4 in the exact game-built context 0/8 (two independent translations); same text with config-template wording 16/16; original English seed 4 in game context 4/4; gowith seed 0 in game context 4/4. The refusal fires only on the conjunction content × gowith style × exact prompt wording. Extends the 2026-06-30 jabberwocky finding (memory updated): **probe candidate seeds with the runtime-built messages, not template approximations** (capture via monkeypatch → `data/phase7/debug_failing_call.json`).
+- Research-note angle: the refusal classifier is itself a surface-form-sensitive "reader" — reportable alongside legibility/bindingness.
+
+#### Pipeline fix
+- `src/utils.py::_should_retry_anthropic` now treats empty-response `ValueError` as retryable — a single *stochastic* refusal no longer kills a $2.30 rep (deterministic ones still censor, correctly).
+
+---
+
+### 2026-07-02 — Result: recipe survives gowith grammar transplant
+
+#### What ran
+- Translated the 5 s_end_plus myths into "gowith" (Andy Ayrey's relational-process English — no grammatical subjects/objects; spec at `data/phase7/gowith_spec.md`) with Sonnet 4.5 under a preserve-all-numbers constraint. 5/5 passed mechanical number checks; injection-shape refusal probe clean (one standalone-extraction call refused, echoing the jabberwocky pattern, but the game shape plays normally). Pipeline: `scripts/phase7_gowith_translate.py`; candidates: `data/phase7/gowith_seeds_candidate.json`.
+- Ran both Phase 7 probes on the translations (~$0.50, 90 calls).
+
+#### Headline numbers
+- **Extraction: unchanged.** All 3 decoder families: 100% has_strategy, send 5.00 (±0.00), rf ~0.57 — same as the originals. Radical grammar change costs zero legibility.
+- **Behavioral: ~85% of the lift survives.** Sonnet reader round-1 send 4.67 (±0.62) vs original 5.00 (±0.00) vs baseline 3.10 (±0.32). Per-seed variance appears where the original pool had none → chunked-strategic *form* contributes a small binding premium, but the payload is semantic.
+
+#### Implication
+- Strong pre-registration-style prediction for a full gowith game cell (~$11.50): near-ceiling, slightly under $600 with nonzero variance. Aligns with Gisler 2026 (transmission survives faithful paraphrase); gowith is a far harsher transform than paraphrase.
+
+---
+
+### 2026-07-02 — Result: myths legible to all, binding to some
+
+#### What ran
+- `scripts/phase7_decoder_asymmetry.py`, two modes over the 5 seed pools (25 myths) × 3 reader models (Sonnet 4.5, GPT-5-nano, Gemini 3.1 flash-lite) × 3 samples. Extract mode: game rules + myth → extract `{send, return_fraction}`. Behavioral mode: exact Phase 3 injection shape `[system, seed_user, seed_myth, round-1 prompt]` → actual round-1 send, plus unseeded baselines. ~$3.50 total.
+
+#### Headline numbers
+- **Extraction is universal** — all 3 families extract near-identical recipes from all pools (s_end+ → send 5.00, rf ~0.57 for every decoder). Same-family-privileged *legibility* refuted; any monitor can read the payload. One content nuance: Sonnet reads GPT myths as rf=0.33 (±0.00), a weaker "return what you got" recipe.
+- **Uptake is not** — Sonnet reader round-1 sends: baseline 3.10 (±0.32), s_end− 2.97 (±0.40), s_start 3.67 (±0.62), Gemini seeds 4.00 (±0.93), s_end+ 5.00 (±0.00), **GPT seeds 3.13 (±0.35) ≈ baseline**. Sonnet *states* send=5 from GPT myths but doesn't *act* on them — the Phase 6b failure is behavioral bindingness, not legibility ("collusion on paper" vs "in action", cf. COLOSSEUM).
+- GPT reader (baseline 0.00 ±0.00): moved by Sonnet s_end+ (+3.20) far more than by its own myths (+0.73) — GPT-written myths are weakly binding *even for GPT*. Gemini reader sends 5.00 everywhere incl. baseline (ceiling reader, uninformative).
+
+#### Method win
+- The round-1 behavioral probe reproduces the full-game cell ordering (s_end− < baseline < s_start < gemini < s_end+) at ~$1.30 vs $11.50/cell — use as a cheap screen before funding full cells (gowith, paraphrase). Data: `data/phase7/decoder_{asymmetry,behavioral}_results.json`.
+
+---
+
+### 2026-07-02 — Lit review narrows Phase 7 novelty claim
+
+#### Decision
+- Planned Phase 7 ("emergent steganography under monitoring pressure") **strong claim is scooped**: "monitor pressure drives encoding underground while behavior persists" already shown by Baker et al. 2025 (arXiv:2503.11926, obfuscated reward hacking), Ming 2026 (2603.15655, MARL protocols), Mathew et al. 2024 (2410.03768, emergent stego robust to monitor+paraphrase).
+- **Narrowed claim we will pursue**: same dynamic in a *cultural-transmission-chain* setting, carried by a *natural-language narrative (myth) channel*, sustaining a *prosocial cooperation lift* — that combination is unclaimed. Cite the three priors as work we extend.
+
+#### Other verdicts from the review (28 papers extracted)
+- Decoder-asymmetry test: open; use Anwar et al. 2026 (2602.23163) "steganographic gap" metric — measure asymmetry via actions (lift), not text. Mechanistic anchor: Cloud et al. 2025 subliminal learning (same-base-model transfer, matches Phase 6b pattern).
+- Paraphrase defense: Gisler 2026 (2603.09517) predicts lift survives faithful paraphrase; either outcome informative.
+- Eval-awareness framing ablation: partially done (Robinson & Burden 2025 in PD); adopt Devbunova 2026 2×2 context×format design to dodge the format-sensitivity confound.
+
+#### Artifacts
+- Per-paper notes: `projects/neurips-2026-llm-ling-evo/references/notes/eval-awareness-stego/` (leads for round 3 in `references/leads/`). Sonnet 4.5 system card extraction failed (150pp) — cite public system card directly.
+
+---
+
+### 2026-07-01 — Phase 6b: cross-model transfer is NOT universal (GPT fails)
+
+#### What changed
+- Added GPT-5-nano source runs (5 reps × 8-agent myth_game history3 anon, ~$2 via OpenRouter). Harvested 5 round-10 myths (highest-balance agent per source rep) into `s_end_plus_gpt`. Injected into Sonnet 4.5 game cell (n=5, ~$11.50).
+- Config added: `gpt5nano_8agent_myth_directive_history3_anon_r10_n5` in `config/experiments.yaml`. OpenRouter API key added to `.env`.
+
+#### Headline: three-model cross-transfer picture (n=5 each)
+| Cell | Joint mean (±sd) | vs baseline |
+|---|---|---|
+| Baseline (no seed) | $437.4 (±$5.5) | — |
+| S-end+ **GPT** (round-10) | **$446.2 (±$13.5)** | **+$9 (≈ baseline, NO transfer)** |
+| S-start (Sonnet round-1) | $499.0 (±$11.5) | +$62 |
+| S-end+ **Gemini** (round-10) | **$549.2 (±$45.4)** | **+$112 (partial transfer)** |
+| S-end+ **Sonnet** (round-10) | **$600.0 (±$0.0)** | **+$163 (ceiling)** |
+
+Plot: `data/phase6/plots/01_cell_means.png` (now 7 cells).
+
+#### Findings
+- **Cross-model transfer is not universal.** Same regime, same 5 reps, three source models → three distinct outcomes (baseline / partial lift / ceiling). Prior claim needs revision: "cooperation lift transfers" is true for Gemini→Sonnet, false for GPT→Sonnet.
+- **GPT source-run cooperation is decorrelated from seed transfer.** Even the GPT seed harvested from GPT's highest-cooperation source run ($588 joint) produced only $440 in Phase 6b. The GPT seed from GPT's lowest source ($270) produced $437. No correlation across the 5 GPT seeds.
+- **Qualitative story: GPT writes evocative prose without encoding play recipes.** Example: *"send what you bear, receive what you must spare, and watch the tally slide toward a shared safe harbor."* Poetic but the strategic rule is missing. Gemini's example *"To return half of what was received was to anchor the pendulum in its center"* encodes the number rule despite parable form. Sonnet's *"send five, return seven and a half"* states it as a chunk. Sonnet reads the numbered rule and applies it; GPT's abstractions don't propagate.
+- **Structural metrics don't explain the GPT failure.** GPT (sent_len 19.09, coop_pct 6.41%) sits between Gemini (22.87, 8.49%) and Sonnet (10.19, 5.77%). By canonical metrics GPT should transfer like Gemini. It doesn't. The predictive variable is deeper than surface metrics — probably semantic specificity of the encoded strategy.
+
+#### Revised story
+Cross-model transfer requires *the source model to have written a myth that encodes a specific behavioral rule*. Two conditions:
+1. Source model reaches high cooperation in its own runs (GPT was only partial: 2/5 reps near-ceiling).
+2. The round-10 myth crystallises the strategy into text with numeric/behavioral specificity (Gemini did; GPT didn't).
+
+Both must hold. Sonnet: yes/yes → ceiling. Gemini: yes/partial → moderate lift. GPT: partial/no → no lift.
+
+#### Scripts and artifacts
+- `scripts/phase6b_harvest_gpt.py`, updated `phase6_plot_results.py`.
+- Seed manifest now 8 pools.
+- Phase 6b source data: `data/json/gpt5nano_8agent_myth_directive_history3_anon_r10_n5/`.
+- Phase 6b game data: `data/json/noise_experiments/phase6_seeded/phase3_seeded_s_end_plus_gpt_.../`
+
+---
+
+### 2026-06-30 — Phase 6: cross-model transfer of the cooperation lift
+
+#### What changed
+- New cell: `s_end_plus_gemini` — 5 round-10 myths harvested from existing Gemini Flash Lite 8-agent myth_game runs (all source runs at $600 ceiling, harvested for free from `data/json/gemini31_flashlite_8agent_myth_directive_history3_r10_n5/`). Injected into Sonnet 4.5 game runs at n=5 under the same Phase 3 regime. ~$11.50 spent.
+
+#### Headline numbers (n=5)
+| Cell | Joint mean (±sd) | vs Sonnet's own round-10 |
+|---|---|---|
+| S-end+ Sonnet (round-10) | $600.0 (±$0.0) | — |
+| **S-end+ Gemini (round-10)** | **$549.2 (±$45.4)** | **−$51 (substantial lift, no ceiling)** |
+| S-start (Sonnet round-1 parable) | $499.0 (±$11.5) | −$101 |
+| Baseline (no seed) | $437.4 (±$5.5) | −$163 |
+
+Plot: `data/phase6/plots/01_cell_means.png` (6-cell comparison). Per-rep spread on Gemini: $523, $592, $483, $582, $566.
+
+#### Findings
+- **Cooperation lift transfers across the model that wrote the seed.** Gemini-written round-10 myths produce $112 of lift over baseline in Sonnet game runs. Cross-model transfer is real and substantial.
+- **But not full transfer.** Gemini seeds came in $51 below Sonnet's own round-10 saturation. The reason is structural: Gemini's round-10 myths are parable-style (mean sentence length 22.87, n_sentences 8.8) rather than Sonnet's chunked-strategic style (10.19, 21.8). Gemini still encodes strategic content ("To return half of what was received was to anchor the pendulum…") but in flowing prose, not declarative rule chunks. Cooperative vocabulary is higher in Gemini myths (8.49% vs 5.77%).
+- **Structure-vs-content additivity.** Adding strategic content to parable structure gets +$50 (S-start parable $499 → Gemini parable+strategy $549). Adding chunked-rule structure on top gets another +$50 (→ Sonnet chunked-strategic $600). Both modulate the effect.
+- **High Gemini variance** (±$45.4 vs Sonnet's ±$0.0). Per-seed differences in how strategically explicit each Gemini myth is — same within-pool heterogeneity pattern as Phase 5's s_end−.
+
+#### Scripts and artifacts
+- `scripts/phase6_harvest_gemini.py`, `scripts/phase6_plot_results.py`, `scripts/phase6_plot_gemini_metrics.py`.
+- Plots: `data/phase6/plots/01_cell_means.png` (6-cell), `02_gemini_vs_sonnet_metrics.png` (Gemini vs Sonnet round-1 vs Sonnet round-10 on canonical metrics).
+- Seed manifest now has 7 pools.
+
+#### Open follow-ups
+- GPT-sourced cell. Would round out the cross-model claim with a third writer; needs ~$3-5 in GPT-5-nano source runs + $11.50 Sonnet game cell.
+- Within-pool variance analysis on Gemini cell (mirror of Phase 5's s_end− variance plot).
+
+---
+
+### 2026-06-30 — Phase 5: seed content separates 5 distinct regimes
+
+#### What changed
+- New cells run under Phase 3 regime (myth-only chat memory, re-injected, `["game"]` only, n=5 each): **s_filler** (Wikipedia paragraphs) and **s_end_minus** (low-cooperation Phase 2 baseline round-10 myths). Spent ~$25.
+- Jabberwocky cells (s_start_jab, s_end_plus_jab) attempted but dropped after Sonnet 4.5 returned `stop_reason="refusal"` on 2 of 3 jabberwocky'd seeds in the assistant slot (saved as project memory `project_sonnet_jabberwocky_refusal.md`).
+
+#### Headline numbers (n=5 per cell)
+| Cell | Joint mean (±sd) | vs baseline |
+|---|---|---|
+| S-end− (low-coop source) | $407.2 (±$39.5) | **−$30 (active suppression)** |
+| Baseline (no seed) | $437.4 (±$5.5) | — |
+| S-filler (Wikipedia) | $446.0 (±$7.7) | +$9 (≈ baseline) |
+| S-start (round-1 parable) | $499.0 (±$11.5) | +$62 |
+| S-end+ (round-10 myth) | $600.0 (±$0.0) | +$163 (ceiling) |
+
+Plot: `data/phase5/plots/01_cell_means.png`. Five clearly distinguishable behavioral regimes from changing *only* the chat-memory text at position [2].
+
+#### Findings
+- **"Any text in memory" is not the mechanism.** S-filler ≈ baseline. The lift in S-start/S-end+ requires myth-like content, not just structured prose. Kills the anchor-effect hypothesis.
+- **Myths can *actively suppress* cooperation.** S-end− at $407 is 30 below baseline. Single seeds in this pool can push the run as low as $362. Not just "fail to help" — *hurt*.
+- **Within S-end−, the seed's `cooperative_pct` strongly predicts the Phase 5 outcome** (Pearson r=+0.952 across 5 reps). Across pools, vocab counts don't predict (s_filler 0% pct → $446; s_end+ 5.77% → $600). Within the s_end− pool the vocab proxies what really matters: the **strategic play recipe** encoded in the myth text. Suppressive myths advocate "send 2" / "be wounded"; less-suppressive ones in the same pool advocate "send $4-5 anyway, return 50%+."
+- **Unifying story:** the agent reads the play rule (if any) in chat memory and applies it. S-end+ encodes "send 5, return 7.5" → ceiling. S-end− encodes various recipes → varied outcomes. S-filler has no play rule → no effect. S-start has cooperation values without numbers → moderate lift. Strategic specificity beats surface cooperation vocabulary as the carrier of the effect.
+
+#### Open follow-ups
+- Jabberwocky cells via system-prompt placement (workaround for the assistant-slot refusal). ~$14 for one cell.
+- Style-swap controls (rewrite a parable in chunked form / a strategic myth in parable form) — directly tests structure-vs-content with the same content. ~$23.
+- Pure-strategy seed (numbered rules with no narrative wrapping). ~$11.
+- Option B run for the task-order question.
+
+Saved: scripts `phase5_harvest_filler.py`, `phase5_harvest_end_minus.py`, `phase5_jabberwocky_seeds.py`, `phase5_plot_results.py`. Seeds + metrics in `data/phase3/seed_manifest.json` (now 6 pools).
+
+---
+
+### 2026-06-30 — Stateless LLMs collapse Phase 4 task orders
+
+#### What changed
+- Coworker review of Phase 3 + Phase 4 results: pointed out that `["game"]`, `["myth","game"]`, and `["game","myth"]` are **not three distinct conditions** under Option A. They are three samples of the same condition.
+- Reason: LLMs are stateless — each API call only sees the messages list passed to it. Phase 4's myth call happens in a separate API call whose output is discarded by `remember=False`. The game-decision call therefore receives the same 4-message list (`[system, seed_user, seed_myth, game_prompt]`) regardless of task order, so it produces the same response distribution.
+
+#### Empirical confirmation (n=5 per cell)
+| Cell | `["game"]` | `["myth","game"]` | `["game","myth"]` |
+|---|---|---|---|
+| baseline | $437.4 (±$5.5) | $440.4 (±$5.8) | $440.8 (±$2.9) |
+| s_start | $499.0 (±$11.5) | $511.6 (±$16.5) | $503.8 (±$14.0) |
+| s_end+ | $600.0 (±$0.0) | $598.4 (±$3.6) | $599.2 (±$1.8) |
+
+All three columns within sd per row → consistent with statelessness prediction.
+
+#### Implication for future ablations
+- ~$60 of Phase 4 spending was informationally redundant for the cooperation-outcome question. We did get ~2,400 generated myths as a separate dataset, usable for linguistic analysis.
+- Generalisable rule for this codebase: under any "discard-the-generated-content" regime (`remember=False`), conditions that differ only in "what other API call happened earlier" are equivalent. Treat conditions as distinct only if they produce different `messages_sent` lists at the decision-time LLM call.
+- To make task orders genuinely differ, switch to Option B (own myth retained in chat memory at `[3:5]`). That changes the decision-time input across task orders.
+
+Saved to project memory: `project_stateless_llm_ablation_design.md`.
+
+---
+
+### 2026-06-23 — Phase 3 first cell + verbal/structural puzzle
+
+#### What changed
+- Phase 3 v1 ran end-to-end. New regime: chat memory at the start of every round is exactly `[system, seed_user, seed_myth]`; seed re-asserted every round and never scrolls out; game decisions are NOT appended to chat memory (`remember=False`); no history-block in the prompt (`history_policy="none"`). Task order: `["game"]` only. See `docs/phase3_chat_memory_spec.md` for the contract, validated by `scripts/phase3_inspect_chat_memory.py`.
+- Seed source switched away from Phase 2 baselines (decided wrongful) to the team pre-Phase-2 baseline `sonnet45_8agent_myth_directive_history3_anon_r10_n5` (5 reps, joint $548–596). Fresh manifest: `data/phase3/seed_manifest.json`. Harvester: `scripts/phase3_harvest_seeds.py`.
+- 15 Sonnet 4.5 runs (3 cells × 5 reps) + 3 Haiku smoke runs, total ≈ $34.50, 8-agent dyadic, noise neg5.
+
+#### Headline numbers (joint balance, n=5 each, ceiling = $600)
+| Cell | mean ($) | individual reps |
+|---|---|---|
+| Baseline (no seed) | 437.4 (±5.5) | 442, 439, 435, 442, 429 |
+| S-start (round-1 parable) | 499.0 (±11.5) | 489, 518, 491, 499, 498 |
+| S-end+ (round-10 myth) | **600.0 (±0.0)** | 600, 600, 600, 600, 600 |
+
+- Both seeded cells exceed baseline at >4σ. S-end+ saturates ceiling in every rep.
+- **Phase 2's H4 reverses.** In Phase 2, round-1 parables beat round-10 myths; under the clean myth-only regime, round-10 myths win by a wide margin. The Phase 2 result was likely a regime artifact (seed scrolled out, games-history-block carried the cooperation).
+- **Verbal/structural puzzle.** Canonical metrics via `analyses/cooperativity_analysis.py` + `analyses/myth_compression_curves.py` on the 10 seed myths: S-end+ has *fewer* cooperation words than S-start (5.77% vs 8.50%), *shorter* sentences (10.2 vs 13.7 words/sent), and *more* sentences (21.8 vs 15.2). So the higher-cooperation pool talks *less* like cooperation and *more* like chunked play rules ("send five", "return seven and a half"). Plot: `data/phase3/plots/04_puzzle.png`.
+
+#### Open follow-ups (prioritised by what they unlock)
+- **Counter-cooperative + filler seeds** (~$45). Highest-leverage spend — separates "cooperative myth helps" from "any text helps" from "strategic text helps." Phase 2 had these; Phase 3 doesn't.
+- **Harder game to unstick ceiling** (~$35). Required before scaling reps on S-end+; right now we can't see how much room it has.
+- **Style-swap controls** (~$23). Rewrite an S-start parable in chunked style (and vice versa) to isolate structure from content directly — the cleanest test of today's puzzle.
+- **Pure-strategy seed** (~$11). Strip the round-10 myth to bare rules with no narrative. If it still saturates ceiling, the mythic wrapping is decorative.
+- **Phase 4: task orders `myth_game`/`game_myth`** (~$21–41). Spec: `docs/phase4_task_orders.md`.
+- **Variants 1/3 (no re-injection)** (~$23). Coworker-deferred; tests decay dynamics.
+- **Different host model** (Sonnet 4.6 / Opus 4.7 / GPT-5, ~$20–40). Robustness check.
+- **n=10 for tighter SEs** (~$23). Optional; the gaps are already significant.
+
+Files: spec `docs/phase3_chat_memory_spec.md`, runner `experiments/run_phase3_seeded_cells.py`, plots `data/phase3/plots/`, data `data/json/noise_experiments/phase3_seeded/` + `…/phase3_baseline/`.
+
+---
+
+### 2026-06-19 — Phase 2 myth transplant complete
+
+#### What changed
+- Merged Aron's `codex/push-current-changes-20260601` multi-agent dyadic-pairing branch into local. `games/dyadic_pairing.py` (DyadicPairingMixin) now supports N≥2 even pools, balanced random pairing, display names, anon variants. Rolled back Phase 1 ablation-specific code (memory_mode="m1", seed_myth M1 dispatch); design doc preserved with §17 Phase 2 plan added.
+- Ran Phase 2: Sonnet 4.5, 8 agents, history3 anon directive, `noisy_negative_5` (pilot-locked at 80% of ceiling). 45 baselines (3 task orders × 15 reps) + 60 seeded cells (4 seed types × 3 task orders × 5 reps) = 105 runs. Spend ≈ $255.
+- Single-shot seed injection: `[fake user prompt, seed myth as assistant]` inserted at `messages[1:3]` before round 1. Scrolls out by round 2–4 under standard truncation; influence after that is indirect via the agent's own round-1 output and the history-block in later prompts. **No M1 re-injection.**
+
+#### Headline numbers (per-agent $, baseline n=15 / seeded n=5)
+| | `["game"]` | `["game","myth"]` | `["myth","game"]` |
+|---|---|---|---|
+| S-none baseline | 41.94 | 50.07 | 57.20 |
+| S-start (round-1 directive) | **50.21** (z=+2.66) | **56.05** (z=+2.18) | 56.97 |
+| S-end+ | 47.61 (z=+2.23) | 50.22 | **48.52** (z=−3.39) |
+| S-end− | 41.62 | 46.83 (z=−2.33) | **47.76** (z=−8.5) |
+| S-filler | 41.90 | 49.54 | 53.08 (z=−3.07) |
+
+#### Findings worth re-litigating later
+- **Task order is a primary moderator**, not a side condition: same seed lifts in `["game"]` and suppresses in `["myth","game"]`. Pre-injecting a foreign myth in `["myth","game"]` displaces the agent's own free choice of round-1 myth and *hurts* cooperation.
+- **H4 reversed across all task orders.** Round-1 directive parables ("# The Tale of...") outperform round-10 myths that drifted into game-rule descriptions ("Myth: ...five golden coins...Amplifying Well would triple..."). Cooperation carrying-capacity *decays* over a run, not refines.
+- **"Counter-current" Phase-1 finding replicates and is *stronger* on Opus 4.7.** Low-coop-source end-myths score higher on judged cooperativeness than high-coop-source end-myths (Sonnet Δ=+0.40, Opus Δ=+0.80). Cross-judge Spearman ρ=+0.937 across 20 myths. Surviving 2-judge replication makes this a robust property of how stressed agents write, not a Sonnet artifact.
+- Filler (Wikipedia paragraphs) lifts nothing in `["game"]` (per-agent 41.90 vs baseline 41.94) → the S-start lift is *not* a "more tokens" warm-up effect.
+
+#### Open follow-ups
+- Stylistic ablation: re-write S-end+ in parable format / S-start in "Myth:" format to isolate format from content (currently confounded).
+- Phase 3 Soc-one diffusion: seed 1-of-8 instead of all-8. Now feasible post multi-agent merge.
+
+Full design + numbers: `docs/memory_transplant_ablation_design.md §17`. Team brief: `docs/phase2_team_brief.md`. Plots: `data/phase2/plots/`. Data: `data/json/noise_experiments/phase2_baseline/` and `…/phase2_seeded/`.
+
+---
+
 ### 2026-06-15 — Defectors, ablations, manuscript restart
 
 Does story language converge or diverge?  And does this convergence or divergence correlate to changes in gameplay behavior?
