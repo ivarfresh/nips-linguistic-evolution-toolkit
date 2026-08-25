@@ -793,6 +793,44 @@ game_params:
       inform_agents: true
     other_player_names: "default"
 
+  # Wash-out test: identical to _twotask_r3 but 20 rounds instead of 10, to see
+  # whether the Myth->Game vs Game->Myth send gap (still +0.37 at round 10)
+  # closes with more rounds. Memory horizon stays 3 rounds (cap unchanged).
+  noisy_bidirectional_informed_memprimary_twotask_r3_r20:
+    endowment: 5
+    multiplier: 3
+    num_turns: 20
+    num_agents: 2
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+
+  # 8-agent 20-round wash-out (copy of noisy8..._twotask_r3, num_turns 20)
+  noisy8_bidirectional_informed_memprimary_twotask_r3_r20:
+    endowment: 5
+    multiplier: 3
+    num_turns: 20
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+
   # The 8-agent arm intentionally retains the established population regime:
   # balanced rotating partners, anonymous identities, and up to three prior
   # games by the current co-player. It is therefore a population-with-
@@ -3774,6 +3812,72 @@ experiment_sets:
     game_params_list:
       - "noisy_bidirectional_informed_memprimary_twotask_r3"
     num_runs: 10
+
+  # --- Wash-out test: 20-round versions of the 2-agent two-task cells ---
+  # Does the Myth->Game advantage close with more rounds? Compare send
+  # trajectories vs the 10-round v2 cells.
+  noise2i_washout_myth_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_twotask_r3_r20"
+    num_runs: 5
+
+  noise2i_washout_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_prompt_keys:
+      trust_game_later_investor: "trust_game_later_investor_minimal"
+      trust_game_later_trustee: "trust_game_later_trustee_minimal"
+    game_params_list:
+      - "noisy_bidirectional_informed_memprimary_twotask_r3_r20"
+    num_runs: 5
+
+  # 8-agent 20-round wash-out (both orders)
+  noise8i_washout_myth_game:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary_twotask_r3_r20"
+    num_runs: 2
+
+  noise8i_washout_game_myth:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list:
+      - "noisy8_bidirectional_informed_memprimary_twotask_r3_r20"
+    num_runs: 5
 
   # Interpretation: this is the established rotating 8-agent population with
   # anonymous identities and a three-game co-player reputation block. Compare
