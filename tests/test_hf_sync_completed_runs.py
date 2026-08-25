@@ -135,6 +135,30 @@ def test_sync_uses_one_locked_exact_folder_upload(tmp_path):
     assert calls[0]["parent_commit"] == "remote-head"
 
 
+def test_local_upload_lock_uses_windows_fallback(monkeypatch, tmp_path):
+    class FakeMsvcrt:
+        LK_NBLCK = 1
+        LK_UNLCK = 2
+
+        def __init__(self):
+            self.calls = []
+
+        def locking(self, file_descriptor, mode, byte_count):
+            self.calls.append((file_descriptor, mode, byte_count))
+
+    fake_msvcrt = FakeMsvcrt()
+    monkeypatch.setattr(hf_sync, "_fcntl", None)
+    monkeypatch.setattr(hf_sync, "_msvcrt", fake_msvcrt)
+
+    with hf_sync.local_upload_lock(tmp_path / "sync.lock"):
+        pass
+
+    assert [call[1:] for call in fake_msvcrt.calls] == [
+        (fake_msvcrt.LK_NBLCK, 1),
+        (fake_msvcrt.LK_UNLCK, 1),
+    ]
+
+
 @pytest.mark.parametrize("status_code", [409, 412])
 def test_remote_conflict_refreshes_head_and_retries(tmp_path, status_code):
     data_root = tmp_path / "data" / "json"

@@ -14,16 +14,26 @@ backfill. A JSON file counts as a completed simulation only when it is a full
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
 import sys
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Sequence
+
+try:
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - Windows only
+    _fcntl = None
+
+try:
+    import msvcrt as _msvcrt
+except ImportError:  # pragma: no cover - POSIX only
+    _msvcrt = None
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -240,12 +250,32 @@ def _default_lock_path(repo_id: str) -> Path:
 def local_upload_lock(lock_path: Path) -> Iterator[None]:
     """Serialize Hub commits made by concurrent local batch processes."""
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    with lock_path.open("a+", encoding="utf-8") as lock_handle:
-        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+    with lock_path.open("a+b") as lock_handle:
+        if _fcntl is not None:
+            _fcntl.flock(lock_handle.fileno(), _fcntl.LOCK_EX)
+        elif _msvcrt is not None:
+            lock_handle.seek(0, os.SEEK_END)
+            if lock_handle.tell() == 0:
+                lock_handle.write(b"\0")
+                lock_handle.flush()
+            lock_handle.seek(0)
+            while True:
+                try:
+                    _msvcrt.locking(lock_handle.fileno(), _msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError:
+                    time.sleep(0.1)
+        else:  # pragma: no cover - supported Python platforms provide one
+            raise RuntimeError("no supported local file-locking API is available")
+
         try:
             yield
         finally:
-            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+            if _fcntl is not None:
+                _fcntl.flock(lock_handle.fileno(), _fcntl.LOCK_UN)
+            else:
+                lock_handle.seek(0)
+                _msvcrt.locking(lock_handle.fileno(), _msvcrt.LK_UNLCK, 1)
 
 
 def _http_status_code(exc: Exception) -> int | None:
