@@ -184,6 +184,74 @@ def main():
     fig.savefig(out, dpi=200, facecolor=SURFACE, bbox_inches="tight")
     print(f"Saved {out}")
 
+    build_headline(perm, eight, elicit, args.output_dir)
+
+
+def build_headline(perm, eight, elicit, output_dir):
+    """One-panel version for talks/main text: the genuine effect only.
+
+    Bar = observed exposure effect minus the rewiring-null mean (the part not
+    explained by coincidence).  A family is flagged as confounded when the
+    future-myth control reaches at least half the observed effect: a myth the
+    agent never saw "predicting" adoption that well means shared context, not
+    copying.
+    """
+    df = perm.copy()
+    df["future"] = eight["future_control_diff_mean"]
+    df["confounded"] = (df["observed_diff"] > 0) & (
+        df["future"] >= 0.5 * df["observed_diff"]
+    )
+    df = df.sort_values("excess")
+    y = np.arange(len(df))
+    excess = df["excess"].to_numpy() * 100
+
+    fig, ax = plt.subplots(figsize=(10.5, 5.6))
+    fig.patch.set_facecolor(SURFACE)
+    style_axis(ax)
+
+    colors = [NULL_BAND if c else OBSERVED for c in df["confounded"]]
+    ax.barh(y, excess, height=0.62, color=colors, zorder=3)
+    for yi, (family, row) in zip(y, df.iterrows()):
+        value = row["excess"] * 100
+        note = f"+{value:.1f}pp"
+        if row["confounded"]:
+            note += "  — unseen myths 'predict' adoption just as well"
+        elif family == "noise_adaptation":
+            note += "  — but announced in every system prompt"
+        ax.annotate(note, (max(value, 0) + 0.25, yi), va="center",
+                    fontsize=9, color=INK_SECONDARY)
+    ax.axvline(0, color=BASELINE, linewidth=1, zorder=1)
+    ax.set_yticks(y)
+    ax.set_yticklabels([PRETTY.get(f, f) for f in df.index], fontsize=10,
+                       color=INK)
+    ax.xaxis.grid(True, color=GRIDLINE, linewidth=0.8, zorder=0)
+    ax.set_xlim(0, max(excess) + 9)
+    ax.set_xlabel("Adoption boost beyond coincidence (percentage points)",
+                  color=INK_SECONDARY, fontsize=10)
+    ax.set_title("Which norms actually spread between agents?",
+                 color=INK, fontsize=13, loc="left", pad=14)
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=OBSERVED),
+        plt.Rectangle((0, 0), 1, 1, color=NULL_BAND),
+    ]
+    ax.legend(handles,
+              ["Credible transmission signal",
+               "Explained by shared game context"],
+              frameon=True, facecolor=SURFACE, edgecolor="none", framealpha=1,
+              fontsize=9, labelcolor=INK_SECONDARY, loc="lower right")
+    fig.text(
+        0.01, 0.01,
+        "Bar = adoption difference after seeing a norm in a partner's myth, "
+        "minus what random rewiring of who-saw-whom produces. 20 8-agent "
+        "informed-noise runs; all bars p<0.05 (Holm) vs the rewiring null. "
+        "Full diagnostics: meme_transmission_null.png.",
+        fontsize=8, color=INK_MUTED)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+
+    out = os.path.join(output_dir, "meme_transmission_headline.png")
+    fig.savefig(out, dpi=200, facecolor=SURFACE, bbox_inches="tight")
+    print(f"Saved {out}")
+
 
 if __name__ == "__main__":
     main()
