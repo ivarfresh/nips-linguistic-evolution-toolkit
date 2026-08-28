@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 from collections import defaultdict
 from dataclasses import dataclass
@@ -424,6 +425,13 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--permutations", type=int, default=10_000)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--labels",
+        type=Path,
+        default=None,
+        help="judge_labels.jsonl from judge_meme_labels.py; replaces regex "
+        "detection as the family signal (regex kept for the agreement table)",
+    )
     args = parser.parse_args()
 
     rng = np.random.default_rng(args.seed)
@@ -441,7 +449,61 @@ def main() -> None:
         capsules_by_run[capsules[0].run_id] = capsules
 
     all_capsules = [c for capsules in capsules_by_run.values() for c in capsules]
-    hits_by_capsule = {c.capsule_id: family_hits(c.text) for c in all_capsules}
+    regex_hits = {c.capsule_id: family_hits(c.text) for c in all_capsules}
+    hits_by_capsule = regex_hits
+    agreement_rows: list[dict] = []
+    if args.labels:
+        judge_hits: dict[str, set[str]] = {}
+        with args.labels.open(encoding="utf-8") as handle:
+            for line in handle:
+                record = json.loads(line)
+                if "error" not in record:
+                    judge_hits[record["capsule_id"]] = set(record["present"])
+        missing = [c.capsule_id for c in all_capsules if c.capsule_id not in judge_hits]
+        if missing:
+            raise SystemExit(
+                f"{len(missing)} capsules lack judge labels (e.g. {missing[0]}); "
+                "finish or rerun judge_meme_labels.py first"
+            )
+        hits_by_capsule = judge_hits
+        # Regex-vs-judge agreement, judge as reference.
+        for family in FAMILIES:
+            tp = sum(
+                1
+                for c in all_capsules
+                if family in regex_hits[c.capsule_id]
+                and family in judge_hits[c.capsule_id]
+            )
+            fp = sum(
+                1
+                for c in all_capsules
+                if family in regex_hits[c.capsule_id]
+                and family not in judge_hits[c.capsule_id]
+            )
+            fn = sum(
+                1
+                for c in all_capsules
+                if family not in regex_hits[c.capsule_id]
+                and family in judge_hits[c.capsule_id]
+            )
+            agreement_rows.append(
+                {
+                    "meme_family": family,
+                    "regex_precision_vs_judge": round(tp / (tp + fp), 3)
+                    if tp + fp
+                    else math.nan,
+                    "regex_recall_vs_judge": round(tp / (tp + fn), 3)
+                    if tp + fn
+                    else math.nan,
+                    "judge_positives": tp + fn,
+                    "regex_positives": tp + fp,
+                }
+            )
+        write_csv(
+            args.output / "regex_vs_judge_agreement.csv",
+            agreement_rows,
+            list(agreement_rows[0].keys()),
+        )
 
     # ------------------------------------------------------------------
     # Prompt-elicitation audit
@@ -620,6 +682,14 @@ def permutation_test_positional(
 def write_report(args, contrast_rows, permutation_rows, elicitation_rows) -> None:
     lines = [
         "# Does meme co-occurrence beat a no-transmission null?",
+        "",
+        (
+            f"Family signal: blinded LLM-judge labels ({args.labels}). The "
+            "prompt-elicitation table's system/direct-prompt columns remain "
+            "regex-based (prompts were not judged)."
+            if args.labels
+            else "Family signal: regex ontology from analyze_meme_evolution.py."
+        ),
         "",
         "Partner-myth channel only: a child is *exposed* to a meme family when at",
         "least one partner myth visible in its prompt carries the family pattern.",
