@@ -201,6 +201,7 @@ def build_headline(perm, eight, elicit, output_dir):
     df["confounded"] = (df["observed_diff"] > 0) & (
         df["future"] >= 0.5 * df["observed_diff"]
     )
+    df["significant"] = df["p_holm"] < 0.05
     df = df.sort_values("excess")
     y = np.arange(len(df))
     excess = df["excess"].to_numpy() * 100
@@ -209,12 +210,17 @@ def build_headline(perm, eight, elicit, output_dir):
     fig.patch.set_facecolor(SURFACE)
     style_axis(ax)
 
-    colors = [NULL_BAND if c else OBSERVED for c in df["confounded"]]
+    colors = [
+        NULL_BAND if (confounded or not significant) else OBSERVED
+        for confounded, significant in zip(df["confounded"], df["significant"])
+    ]
     ax.barh(y, excess, height=0.62, color=colors, zorder=3)
     for yi, (family, row) in zip(y, df.iterrows()):
         value = row["excess"] * 100
-        note = f"+{value:.1f}pp"
-        if row["confounded"]:
+        note = f"{value:+.1f}pp"
+        if not row["significant"]:
+            note += "  — not significant vs null"
+        elif row["confounded"]:
             note += "  — unseen myths 'predict' adoption just as well"
         elif family == "noise_adaptation":
             note += "  — but announced in every system prompt"
@@ -225,7 +231,7 @@ def build_headline(perm, eight, elicit, output_dir):
     ax.set_yticklabels([PRETTY.get(f, f) for f in df.index], fontsize=10,
                        color=INK)
     ax.xaxis.grid(True, color=GRIDLINE, linewidth=0.8, zorder=0)
-    ax.set_xlim(0, max(excess) + 9)
+    ax.set_xlim(min(0.0, excess.min()) - 1, max(excess) + 9)
     ax.set_xlabel("Adoption boost beyond coincidence (percentage points)",
                   color=INK_SECONDARY, fontsize=10)
     ax.set_title("Which norms actually spread between agents?",
@@ -236,14 +242,15 @@ def build_headline(perm, eight, elicit, output_dir):
     ]
     ax.legend(handles,
               ["Credible transmission signal",
-               "Explained by shared game context"],
+               "Confounded, or not significant vs null"],
               frameon=True, facecolor=SURFACE, edgecolor="none", framealpha=1,
               fontsize=9, labelcolor=INK_SECONDARY, loc="lower right")
     fig.text(
         0.01, 0.01,
-        "Bar = adoption difference after seeing a norm in a partner's myth, "
+    f"Bar = adoption difference after seeing a norm in a partner's myth, "
         "minus what random rewiring of who-saw-whom produces. 20 8-agent "
-        "informed-noise runs; all bars p<0.05 (Holm) vs the rewiring null. "
+        f"informed-noise runs; {int(df['significant'].sum())} of 9 families "
+        "p<0.05 (Holm) vs the rewiring null. "
         "Full diagnostics: meme_transmission_null.png.",
         fontsize=8, color=INK_MUTED)
     fig.tight_layout(rect=(0, 0.05, 1, 1))
