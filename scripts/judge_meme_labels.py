@@ -70,6 +70,13 @@ stated strategy, principle, or lesson. A passing word association is not \
 enough (e.g. the word "noise" alone does not express noise_adaptation; \
 "begin" near "trust" does not express trust_seeding).
 - Mentioning an amount or event is not a strategy; ignore pure bookkeeping.
+- Restating the game's rules or arithmetic is NOT a strategy idea. \
+Example for prosperity_through_cooperation: "sending gets tripled, creating \
+mutual benefit" is a rules restatement — NOT present; "generosity creates a \
+shared abundance from which both of us draw" espouses the idea as a \
+principle — present. Apply the same standard to every label.
+- Be conservative: when in doubt whether a text merely gestures at an idea \
+or genuinely espouses it, leave the label out.
 - Ideas may be expressed in mythic/metaphorical language; that counts if the \
 underlying strategy idea is clearly there.
 - Return strict JSON: {{"present": [<label>, ...], "evidence": {{<label>: \
@@ -149,9 +156,16 @@ def main() -> None:
                     done.add(record["capsule_id"])
     todo = [c for c in capsules if c.capsule_id not in done]
 
-    est_in = len(todo) * 1200 / 1e6
-    est_out = len(todo) * 150 / 1e6
-    est_cost = est_in * 0.25 + est_out * 2.00
+    # $/Mtok (input, output), verified against the OpenRouter models endpoint.
+    pricing = {
+        "openai/gpt-5-mini": (0.25, 2.00),
+        "openai/gpt-4o-mini": (0.15, 0.60),
+        "google/gemini-2.5-flash-lite": (0.10, 0.40),
+    }
+    price_in, price_out = pricing.get(args.model, (0.25, 2.00))
+    est_in = len(todo) * 700 / 1e6
+    est_out = len(todo) * 300 / 1e6
+    est_cost = est_in * price_in + est_out * price_out
     print(
         f"MODEL={args.model} N={len(todo)} (of {len(capsules)}, {len(done)} done) "
         f"WORKERS={args.workers} EST_COST=${est_cost:.2f}"
