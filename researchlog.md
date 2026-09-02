@@ -1,3 +1,90 @@
+### 2026-09-01 — Team meeting: game saturates; cooperation-ratio plots are the missing view
+
+**Time:** 1 hour
+
+#### Decisions / findings
+- Result: reviewed negative-only vs bidirectional noise (8-agent and 2-agent
+  dyads). Bidirectional: send and return fractions keep climbing past round
+  10–15, then stabilize. Negative-only: much flatter, weaker visible effect.
+- Result: return proportions across game-only, myth→game and if-game
+  conditions (slides 707/709/711/721; Aron added send proportions, slide 728).
+  Gemini 3.7 Flash ceiling-locks without forced defection; GPT-5 Nano beats
+  Claude on collective returns in some conditions; Claude degrades notably once
+  defectors are added.
+- Core problem: the trust game saturates at full cooperation, so condition
+  differences are hard to detect. Cooperation-ratio plots (not yet made) were
+  flagged as the most informative view.
+- Analysis direction: split myths by cooperativeness of *language* rather than
+  by outcome, then check whether outcomes follow. Earlier injection of the 25
+  most cooperative myths as starting conditions had a large effect. Find the
+  property (language convergence, cooperative words, ...) that correlates most
+  with outcomes and use it to split the main results analysis.
+
+#### Action items
+- Cooperation-ratio plots in the format of slides 724/725, on the same axes as
+  send/return proportions (dotted vs solid per condition).
+- Myth split by cooperative language (see above).
+- Verify Gemini and GPT API calls (Aron, Ivar): message roles and settings must
+  match Claude's, which was debugged extensively. Rule out format bugs behind
+  GPT-5 Nano's anomalous behavior.
+- Results scaffold in the overlay doc for Edward: which experiments are
+  finalized, which models were used, what goes in the results section.
+
+### 2026-08-28 — Meme transmission mostly base rate
+
+**Time:** 3 hours
+
+#### Result
+- Re-analyzed the 60-run informed-noise corpus with exposure contrasts, a
+  degree-preserving rewiring null (B=10,000, Holm), and negative controls
+  (`scripts/analyze_meme_transmission_null.py`, PR aronvallinder#10; outputs
+  `data/analysis/meme_transmission_null_2026_08_28/`). No new runs.
+- The Aug-19 report's 60–77% "edge transmission" was dominated by base rate:
+  honest excess over the null is single-digit pp. Largest raw families are
+  confounded — for consistency_over_volatility a *not-yet-visible* future myth
+  "predicts" adoption (+35pp) better than the seen myth (+32pp).
+- Regex candidates: sustainable_equilibrium (+10.9pp vs +1.7pp null) and
+  proportional_reciprocity (+3.6pp vs −4.1pp null). noise_adaptation is prompt
+  elicitation (system prompt announces noise in all 5,000 capsules).
+- Blinded LLM-judge relabel of all 5,000 capsules (gpt-4o-mini, $0.87,
+  `scripts/judge_meme_labels.py`) then same analysis on semantic labels
+  (`data/analysis/meme_transmission_null_judge_2026_08_28/`): NO family
+  survives cleanly. The two Holm-significant ones (proportional_reciprocity
+  +8.4pp excess, consistency +4.0pp) fail the future-myth control;
+  sustainable_equilibrium drops to p=0.11. Regex vs judge agreement is poor
+  (punitive precision 1%, noise 12%, trust_escalation recall 14%).
+
+#### Why / method choice
+- Deep-research review (Shalizi & Thomas 2011; Anagnostopoulos 2008; Bentley
+  2004) + external model review: co-occurrence can never establish transmission
+  between same-model agents; nulls and exposure contrasts are the accepted fix.
+- 2-agent dyads have no within-run rewiring null; dyadic claims need the
+  seeding/transplant intervention. Next: LLM-judge relabeling of all 5,000
+  responses, then rerun these contrasts on semantic labels.
+
+### 2026-08-25 — Shared run-data store on Hugging Face
+
+**Time:** 1.5 hours
+
+#### What changed
+- Raw run JSONs (`data/json/`, gitignored) now sync to the shared private HF
+  dataset `machine-cultural-evolution/nips-linguistic-evolution-runs`, one
+  namespace per user. `scripts/sync_data.sh push|pull`; optional Claude Code
+  hook (`scripts/data_sync_hook.sh`) auto-pushes after each batch run.
+- Ivar's corpus is uploaded and verified: 16,222 files, 4.1 GB under
+  `ivarfresh/json/`. Tooling PR to shared main: aronvallinder#8. Aron's
+  onboarding: HF login + one push.
+- Uploads are resumable and content-deduplicated (only new runs transfer);
+  pulls land in `data/shared_runs/` and never touch local `data/json`.
+
+#### Rationale / rejected alternatives
+- Raw data never fit in git (3.8 GB, 10k+ files; GitHub LFS free tier is 1 GB).
+  Drive+rclone rejected (slow on many small files); plain git rejected
+  (permanent history bloat). HF repo doubles as the citable public dataset at
+  publication.
+
+---
+
 ### 2026-08-23 — Gemini 3.7 selectively punishes but shows no return crowding
 
 - Completed the frozen new-seed Gemini 3.7 Flash population screen crossing

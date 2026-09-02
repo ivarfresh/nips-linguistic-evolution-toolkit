@@ -47,6 +47,10 @@ if __name__ == "__main__":
     )
 
     # Save results
-    sim_data.save_state(base_path + "config_test.json")
+    state_path = base_path + "config_test.json"
+    transcript_path = base_path + "config_test.transcript.pdf"
+    sim_data.save_state(state_path)
+    sim_data.save_transcript_pdf(transcript_path, source_path=state_path)
     print(f"\n✓ Simulation state saved to config_test.json")
     print(f"✓ Log file saved to {log_file}")
+    print(f"✓ Transcript PDF saved to {transcript_path}")

@@ -18,7 +18,6 @@
 #   embedding      - Myth similarity embedding
 #   wordchain      - Word chain evolution
 #   ngram          - N-gram sentence structure
-#   reciprocity    - Reciprocity analysis (trust game)
 #
 # Arguments:
 #   -all           Run all analyses
@@ -65,13 +64,9 @@ run_analysis() {
             echo "Running N-gram Sentence Structure..."
             python "$PROJECT_ROOT/analyses/n_gram_sentence_structure.py"
             ;;
-        reciprocity)
-            echo "Running Reciprocity Analysis..."
-            python "$PROJECT_ROOT/analyses/reciprocity_analysis.py" "$ANALYSIS_INPUT_FILE" "$ANALYSIS_OUTPUT_DIR"
-            ;;
         *)
             echo "Error: Unknown analysis '$name'"
-            echo "Available: cooperativity, trajectory, similarity, plot_similarity, embedding, wordchain, ngram, reciprocity"
+            echo "Available: cooperativity, trajectory, similarity, plot_similarity, embedding, wordchain, ngram"
             exit 1
             ;;
     esac
@@ -84,7 +79,7 @@ show_usage() {
     echo "  $0 -a <analyses> <input_json> <output_dir> [task_name]"
     echo ""
     echo "Available analyses (comma-separated for -a):"
-    echo "  cooperativity, trajectory, similarity, plot_similarity, embedding, wordchain, ngram, reciprocity"
+    echo "  cooperativity, trajectory, similarity, plot_similarity, embedding, wordchain, ngram"
     echo ""
     echo "Examples:"
     echo "  $0 -all data/json/model_comparison/file.json data/plots/output"
@@ -103,7 +98,7 @@ FLAG="$1"
 shift
 
 if [ "$FLAG" == "-all" ]; then
-    ANALYSES="cooperativity,trajectory,similarity,plot_similarity,embedding,wordchain,ngram,reciprocity"
+    ANALYSES="cooperativity,trajectory,similarity,plot_similarity,embedding,wordchain,ngram"
     INPUT_FILE="$1"
     OUTPUT_DIR="$2"
     TASK_NAME="${3:-game_myth}"

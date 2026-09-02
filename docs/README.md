@@ -135,6 +135,23 @@ python experiments/run_trust_game_batch.py my_experiment
 - **Multi-Round Interaction**: Repeated interactions build or erode trust
 - **Role Switching**: Agents alternate between investor and trustee roles
 - **Memory Integration**: Agents remember previous interactions (configurable capacity)
+- **Defector Populations**: Assign a reproducible fraction of agents a game-only instruction to always send and return zero
+
+Configure defectors inside an experiment set:
+
+```yaml
+game_params:
+  num_agents: 8
+  defector_ratio: 0.25  # Two of eight agents
+  # Optional: choose exact agents instead of sampling by ratio
+  # defector_agent_ids: ["Agent_2", "Agent_7"]
+  # Optional: override the replicate-derived assignment seed
+  # defector_seed: 42
+```
+
+Defectors use the normal agent and myth-writing flow. The mandatory zero-action
+instruction is appended only to their game prompts, so their own game responses
+remain in memory and can influence subsequent myths.
 
 ### Myth Writing Tasks
 - **Creative Collaboration**: Agents write and adapt myths based on others' work
