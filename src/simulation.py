@@ -28,6 +28,27 @@ DEFAULT_AGENT_NAMES = [
 ]
 
 
+def _format_initial_system_prompt(game, template, agent_id, agent):
+    """Format an optional pre-game system prompt for myth-first controls."""
+    base_prompt = template.format(
+        endowment=getattr(game, "endowment", ""),
+        multiplier=getattr(game, "multiplier", ""),
+    )
+    personas = getattr(game, "personas", {}) or {}
+    if agent_id in personas and personas[agent_id].get("system_addition"):
+        base_prompt += f"\n\n{personas[agent_id]['system_addition']}"
+    return base_prompt
+
+
+def _replace_agent_system_prompt(agent, system_prompt):
+    """Replace the live system message without altering interaction history."""
+    agent.system_prompt = system_prompt
+    if agent.messages and agent.messages[0].get("role") == "system":
+        agent.messages[0] = {"role": "system", "content": system_prompt}
+    else:
+        agent.messages.insert(0, {"role": "system", "content": system_prompt})
+
+
 def _build_agent_names(agent_ids, configured_names=None):
     if configured_names is None:
         names = {}
@@ -345,6 +366,8 @@ def run_simulation(
     seed_reinject: bool = False,
     monitor_config: Optional[Dict[str, Any]] = None,
     run_metadata_extra: Optional[Dict[str, Any]] = None,
+    initial_system_prompt_template: Optional[str] = None,
+    switch_to_game_system_before_game: bool = False,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -387,7 +410,15 @@ def run_simulation(
             bias = agent_biases[i] if agent_biases and i < len(agent_biases) else None
             agent = Agent(agent_id, model, temperature, client, memory_capacity=memory_capacity, initial_bias=bias, log_file=log_file)
             agent.display_name = resolved_agent_names[agent_id]
-            system_prompt = game.get_system_prompt(agent_id, agent)
+            if initial_system_prompt_template:
+                system_prompt = _format_initial_system_prompt(
+                    game,
+                    initial_system_prompt_template,
+                    agent_id,
+                    agent,
+                )
+            else:
+                system_prompt = game.get_system_prompt(agent_id, agent)
             agent.system_prompt = system_prompt
             agent.messages.append({"role": "system", "content": system_prompt})
             # Phase 2 memory-transplant: seed lands at messages[1:3] so
@@ -418,6 +449,12 @@ def run_simulation(
             "seed_user_prompt": seed_user_prompt,
             "chat_memory_mode": chat_memory_mode,
             "seed_reinject": seed_reinject,
+            "initial_system_prompt_overridden": bool(
+                initial_system_prompt_template
+            ),
+            "switch_to_game_system_before_game": bool(
+                switch_to_game_system_before_game
+            ),
             **runtime_metadata,
             **(run_metadata_extra or {}),
             **{
@@ -464,6 +501,13 @@ def run_simulation(
     if start_turn > num_turns:
         return sim_data
 
+    game_system_applied = (
+        not switch_to_game_system_before_game
+        or bool(
+            sim_data.run_metadata.get("game_system_prompt_applied_at_round")
+        )
+    )
+
     for turn in range(start_turn, num_turns + 1):
         print("\n" + "=" * 80)
         print(f"ROUND {turn}")
@@ -486,6 +530,11 @@ def run_simulation(
 
         try:
             pairings = _get_round_pairings(game, turn, sim_data)
+            # Make the complete current state available before either role is
+            # prompted. Sequential transfer handling still requires the sender
+            # to act first; this reference only supports prompt context shared
+            # by both roles (including legacy myth-injection controls).
+            game.sim_data_ref = sim_data
             roles_by_agent = _roles_by_agent(pairings)
             move_order = game.get_move_order(turn, sim_data)
             active_agent_order = _unique_order(move_order) or list(sim_data.agents.keys())
@@ -532,6 +581,24 @@ def run_simulation(
             # Execute tasks in specified order
             for task_index, task in enumerate(task_order):
                 if task == "game":
+                    if (
+                        switch_to_game_system_before_game
+                        and not game_system_applied
+                    ):
+                        for switch_agent_id, switch_agent in sim_data.agents.items():
+                            game_system_prompt = game.get_system_prompt(
+                                switch_agent_id,
+                                switch_agent,
+                            )
+                            _replace_agent_system_prompt(
+                                switch_agent,
+                                game_system_prompt,
+                            )
+                        sim_data.run_metadata[
+                            "game_system_prompt_applied_at_round"
+                        ] = turn
+                        game_system_applied = True
+
                     # PHASE 1: GAME PLAY
                     print("\n--- PHASE 1: GAME PLAY ---")
 

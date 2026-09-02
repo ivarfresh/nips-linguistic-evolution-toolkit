@@ -16,6 +16,7 @@ from src.experiment_config import ExperimentConfig
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from games.trust_game import TrustGame
+from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
 def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: int) -> Dict[str, Any]:
     """
@@ -25,6 +26,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     Returns:
         dict with keys: success (bool), file_path (str), error (str or None), combo_info (dict)
     """
+    save_path = None
     try:
         # Configure game
         game_params = combo['game_params']
@@ -207,7 +209,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
     except Exception as e:
         return {
             "success": False,
-            "file_path": None,
+            "file_path": save_path,
             "error": str(e),
             "combo_info": {
                 "model": combo['model'],
@@ -239,6 +241,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
     else:
         print("Running sequentially (workers=1)")
 
+    candidate_final_paths = []
     if workers == 1:
         # Sequential execution (backward compatible)
         for i, combo in enumerate(combinations):
@@ -254,6 +257,8 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
             print(f"Myth Later Prompt Key: {combo.get('myth_later_prompt_key', 'myth_writing_later_rounds')}")
 
             result = run_single_experiment(combo, experiment_name, i)
+            if result.get('file_path'):
+                candidate_final_paths.append(result['file_path'])
 
             if result['success']:
                 print(f"✓ Saved to {result['file_path']}")
@@ -281,6 +286,8 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                 try:
                     result = future.result()
                     completed += 1
+                    if result.get('file_path'):
+                        candidate_final_paths.append(result['file_path'])
 
                     if result['success']:
                         print(f"[{completed}/{len(combinations)}] ✓ {result['combo_info']['model']} / "
@@ -323,6 +330,11 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
                 print(f"  - {exp['combo_info']['model']} / {exp['combo_info']['persona']} / "
                       f"{exp['combo_info']['task_order']}: {exp['error']}")
         print(f"{'='*60}")
+
+    maybe_sync_completed_runs(
+        candidate_final_paths,
+        label=experiment_name,
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
