@@ -1,3 +1,44 @@
+### 2026-09-04 — Config over env shipped; Claude's defector behaviour is mostly its own prose
+
+**Time:** 6 hours
+
+#### Result
+- Result: `llm_settings` (provider / reasoning / temperature) is now pinned
+  per experiment set in `config/*.yaml`; the batch runners fail closed
+  without it, env vars only override and are recorded, and `run_metadata`
+  carries `llm_settings_effective` plus a per-call `finish_reason`
+  (PR aronvallinder#16, `src/llm_settings.py`). Guards: the analysis loader
+  refuses mixed regimes, HF sync refuses unprovenanced runs, and
+  `tests/test_settings_pinned.py` fails CI for any new unpinned experiment
+  set, launch script, or output directory without `provenance.json`.
+- Result: decision-format confound cell (Claude Sonnet 4.5, 8 agents, 25%
+  forced-zero defectors, negative-only noise, myth->game, direct Anthropic,
+  thinking off, T=0.8; same seeds and prompts as Aron's 2026-08-25 cell,
+  plus one OUTPUT FORMAT line). Ordinary agents, mean (±std) over runs:
+  free prose (reference, n=5) send 0.592 (±0.042), return 0.444 (±0.007),
+  balance 50.35 (±1.35), 1286 chars/decision; two sentences then JSON (n=5)
+  0.531 (±0.033) / 0.428 (±0.019) / 47.78 (±1.22) / 352 chars; JSON only
+  (n=4) 0.384 (±0.049) / 0.382 (±0.028) / 41.81 (±3.39) / 14 chars.
+  Forbidding visible reasoning cuts Claude's sending by ~21 points. The
+  "Claude degrades with defectors" ordering against bare-JSON models is
+  therefore a format effect until formats are equalized.
+- Result: under JSON-only, Claude as sender answered with the receiver's key
+  in every run and a plain retry repeated it (5/5 runs died). The game retry
+  is now corrective (role + key named, 2 attempts, `games/base_game.py`);
+  1–7 corrections per run were needed and all succeeded. The prose was doing
+  role-orientation work.
+- Gemini 3.6 Flash is the no-thinking Gemini arm (`thinking_level=minimal`
+  → 0 thought tokens on the game prompt); temperature is ignored on 3.6/3.7
+  Flash, rejected on GPT-5 and Claude Opus 4.7+, so cross-model cells run at
+  vendor-default temperature (PR aronvallinder#15, `docs/verified-facts.md`).
+
+#### Caveats / next
+- json_only rep04 stopped at the Anthropic credit limit; resumes from
+  checkpoint after top-up. n=4 vs 5 does not change the direction.
+- Decision: cross-model reruns use `reasoning_then_json` for every model
+  (equal shape, keeps the reasoning->myth pathway) with the pinned regime
+  Claude off / GPT-5 Nano low / Gemini 3.6 Flash minimal, temperature default.
+
 ### 2026-09-04 — Cross-model API calls are not equivalent (provider + reasoning audit)
 
 **Time:** 2 hours
