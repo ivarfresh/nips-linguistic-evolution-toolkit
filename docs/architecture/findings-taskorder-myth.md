@@ -1,7 +1,7 @@
 ---
 title: Findings — task order, myths, and the cultural ratchet
 status: current
-updated: 2026-08-25
+updated: 2026-09-04
 owner: ivar
 ---
 
@@ -28,7 +28,12 @@ The ordering is model-general: a corrected GPT-5 Nano replication gives
 _(from researchlog 2026-08-21)_ Earlier Sonnet triplets show the same ordering
 in plain, uninformed-noise, and informed-noise regimes (trust ratio ~0.84–0.89
 myth-first vs ~0.65–0.70 game-first); telling agents about the noise barely
-moves anything. _(from researchlog 2026-07-17, 2026-07-22)_
+moves anything. _(from researchlog 2026-07-17, 2026-07-22)_ Caveat on the
+plain 2026-07-17 triplet only: its game and game→myth legs were rerun via
+OpenRouter (extended thinking on) after a credit outage while myth→game ran
+direct (thinking off), so that triplet mixes provider regimes; the
+informed-noise and corrected confirmatory triplets are consistently direct.
+_(from researchlog 2026-09-04)_
 
 ## Mechanism: the cultural ratchet cuts both ways
 
@@ -61,14 +66,23 @@ Deterministic no-LLM analyses over the 60 corrected runs:
   literal context window (8-agent: 2.5%). Norm inheritance ~90% in every
   myth-bearing cell. _(from researchlog 2026-08-19)_
 - **Meme evolution:** myth-bearing conditions carry more ideas per capsule
-  (~2.7 vs ~1.8) and much higher inheritance (~88% vs ~66–73%). Proportional
-  reciprocity dominates (75% capsule prevalence); 25–31% of retained memes
-  shift variant, mostly between fixed-percentage and responsive-reward forms.
-  Two decoded private-belief packets (myth-carried noisy perceptions surfacing
-  in a partner's game reasoning) exist but are rare. _(from researchlog 2026-08-19)_
+  (~2.7 vs ~1.8). Proportional reciprocity dominates (75% capsule prevalence);
+  25–31% of retained memes shift variant, mostly between fixed-percentage and
+  responsive-reward forms. Two decoded private-belief packets (myth-carried
+  noisy perceptions surfacing in a partner's game reasoning) exist but are
+  rare. _(from researchlog 2026-08-19)_
+- **Meme transmission is mostly base rate.** Against a degree-preserving
+  rewiring null with exposure contrasts, the raw ~88% "inheritance" reduces to
+  single-digit percentage-point excess; the largest regex families fail a
+  future-myth control (a not-yet-visible myth predicts adoption as well as the
+  seen one), and `noise_adaptation` is prompt elicitation. Under blinded
+  LLM-judge labels (5,000 capsules) no family survives cleanly. Two weak regex
+  candidates remain (sustainable_equilibrium, proportional_reciprocity).
+  _(from researchlog 2026-08-28)_
 
-Both establish visible textual inheritance only; meme deletion/transplant
-ablations with actions held fixed are the planned causal test.
+Genealogy and meme counts establish visible textual inheritance only, and the
+null analysis shows that inheritance is not evidence of transmission; the
+seeding/transplant intervention with actions held fixed is the causal test.
 
 ## Return behavior: the send/return gap is a denominator artifact
 
@@ -80,6 +94,10 @@ sends, not returns. The old zero-send explanation is retracted.
 _(from researchlog 2026-08-20)_
 
 ## Superseded claims
+
+- **"60–77% edge transmission" of memes (2026-08-19)** was base rate; honest
+  excess over the rewiring null is single-digit pp and no family survives
+  under judge labels. _(2026-08-28 supersedes 2026-08-19)_
 
 - **"game_myth vs game is a population-size effect" (2026-08-10)** ran on the
   broken dyad transfer-noise path (post-round-1 receivers saw ~$0) and is

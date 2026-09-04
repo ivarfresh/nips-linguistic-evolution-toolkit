@@ -1,5 +1,12 @@
 # Docs changelog
 
+## 2026-09-04
+- design-constraints.md updated from researchlog 2026-08-28, 2026-09-01, 2026-09-04 (new §6 provider route/reasoning, §7 co-occurrence ≠ transmission; saturation is general) — compile
+- experiment-protocol.md updated from researchlog 2026-09-01, 2026-09-04 (negative-only noise regime; provider-route pinning; provenance gaps) — compile
+- findings-taskorder-myth.md updated from researchlog 2026-08-28, 2026-09-04 (meme transmission null supersedes inheritance claim; mixed-provider caveat on the 2026-07-17 triplet) — compile
+- findings-defectors-punishment.md updated from researchlog 2026-09-01, 2026-09-04 (cross-model defector set marked provisional) — compile
+- _index.md descriptions updated — compile
+
 ## 2026-08-25
 - findings-taskorder-myth.md created from researchlog 2026-07-17 → 2026-08-21 — compile
 - findings-social-information.md created from researchlog 2026-08-21 — compile

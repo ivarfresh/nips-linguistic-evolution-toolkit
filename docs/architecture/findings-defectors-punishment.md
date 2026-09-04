@@ -1,7 +1,7 @@
 ---
 title: Findings — hidden defectors and costly punishment
 status: current
-updated: 2026-08-25
+updated: 2026-09-04
 owner: aron
 ---
 
@@ -73,6 +73,25 @@ CI [−.0016,+.0069]) — 3.7's rigid "return exactly half of receipt" rule
 (280/370 decisions exact to the cent) leaves no motivational room. Selective
 punishment generalizes across Gemini versions; crowding does not. Frozen
 decision: do not scale the 3.7 population design. _(from researchlog 2026-08-23)_
+
+## Cross-model defector set (Claude / GPT-5 Nano / Gemini 3.7): provisional
+
+The negative-only cross-model defector series (2026-08-25; 2 and 8 agents ×
+game / game→myth / myth→game × 0 / 25 / 50% defectors, n=5) showed Gemini 3.7
+Flash ceiling-locking without forced defection, GPT-5 Nano beating Claude
+Sonnet 4.5 on collective returns in some conditions, and Claude degrading
+notably once defectors are added. _(from researchlog 2026-09-01)_
+
+**These cross-model orderings are unconfirmed.** The three models ran on three
+direct vendor APIs with unmatched settings: Claude with thinking off at T=0.8
+and a 4096 cap, GPT-5 Nano at reasoning effort *minimal* (the code default,
+zero reasoning tokens on every call) with temperature fixed at 1.0, Gemini 3.7
+with medium thinking. Claude also carries ~1,000+ characters of its own
+strategy prose in memory each round while the other two carry bare JSON.
+Message roles are equivalent, and no parse defaults, truncation or model
+aliasing occurred, so the data are clean but the conditions are not matched.
+Rerun the GPT-5 Nano cells at matched effort and control the prose confound
+before citing a ranking. _(from researchlog 2026-09-04)_
 
 ## Standing design gates
 
