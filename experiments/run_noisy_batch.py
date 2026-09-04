@@ -35,6 +35,7 @@ from src.batch_utils import sanitize_for_filename as _sanitize_for_filename
 from src.batch_utils import unique_json_path as _unique_json_path
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
+from src.llm_settings import resolve_llm_settings
 from games.trust_game_noisy import TrustGameNoisy
 from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
@@ -394,6 +395,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             later_investor_template=combo['trust_game_later_investor'],
             later_trustee_template=combo['trust_game_later_trustee'],
             noise_config=game_params.get('noise_config'),
+            decision_format=game_params.get("decision_format"),
             noise_semantics=combo.get("noise_semantics", "communication"),
             other_player_names=game_params.get('other_player_names', 'default'),
             myth_injection_mode=combo.get("myth_injection_mode", "partner"),
@@ -520,6 +522,13 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             f.write(f"Deduction Budget: {game_params.get('punishment_budget', 2)}\n")
             f.write(f"Deduction Effect Multiplier: {game_params.get('punishment_effect_multiplier', 3)}\n")
             f.write(f"Deduction Prompt Variant: {game_params.get('punishment_prompt_variant', 'current')}\n")
+            f.write(f"Decision Format: {game_params.get('decision_format') or 'legacy'}\n")
+            _ls = combo.get("llm_settings")
+            f.write(
+                "LLM Settings: "
+                + (f"{_ls.as_dict()} (source={_ls.source}, overrides={_ls.overrides})" if _ls is not None else "legacy env-driven (no llm_settings block)")
+                + "\n"
+            )
             f.write(f"{'='*80}\n\n")
 
         # Run simulation
@@ -547,7 +556,11 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
                 "switch_to_game_system_before_game",
                 False,
             ),
-            "run_metadata_extra": combo.get("execution_provenance", {}),
+            "run_metadata_extra": {
+                **combo.get("execution_provenance", {}),
+                "decision_format": game_params.get("decision_format"),
+            },
+            "llm_settings": combo.get("llm_settings"),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
@@ -703,6 +716,19 @@ def run_experiment_set(
         experiment_name,
         max_runs=max_runs,
     )
+    # Fail closed: the experiment set must pin provider / reasoning /
+    # temperature. Env overrides are applied here once and recorded.
+    llm_settings = resolve_llm_settings(
+        config.config["experiment_sets"][experiment_name],
+        experiment_name,
+        config_path=config_path,
+    )
+    print(
+        f"LLM settings: {llm_settings.as_dict()} "
+        f"(source={llm_settings.source}, overrides={llm_settings.overrides})"
+    )
+    for combo in combinations:
+        combo["llm_settings"] = llm_settings
     provenance = execution_provenance(config_path)
     provenance.update(
         {

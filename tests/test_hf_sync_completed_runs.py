@@ -11,8 +11,27 @@ FULL_STATE = {
     "conversation_history": [],
     "game_data": {},
     "task_order": ["game"],
-    "run_metadata": {},
+    # Provenance fields are required for upload (researchlog 2026-09-04).
+    "run_metadata": {
+        "llm_provider": "anthropic",
+        "provider_model": "claude-sonnet-4-5-20250929",
+    },
 }
+
+
+def test_discovery_skips_runs_without_llm_provenance(tmp_path, capsys):
+    data_root = tmp_path / "data" / "json"
+    unprovenanced = dict(FULL_STATE, run_metadata={"model": "anthropic/claude-sonnet-4.5"})
+    write_json(data_root / "experiment" / "old.json", unprovenanced)
+    write_json(data_root / "experiment" / "new.json", FULL_STATE)
+
+    assert not hf_sync.is_completed_final_json(
+        data_root / "experiment" / "old.json", data_root=data_root
+    )
+    assert hf_sync.is_completed_final_json(
+        data_root / "experiment" / "new.json", data_root=data_root
+    )
+    assert "lacks LLM provenance" in capsys.readouterr().err
 
 
 def write_json(path: Path, payload) -> Path:

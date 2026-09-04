@@ -15,6 +15,7 @@ from src.batch_utils import unique_json_path as _unique_json_path
 from src.experiment_config import ExperimentConfig
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
+from src.llm_settings import resolve_llm_settings
 from games.trust_game import TrustGame
 from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
@@ -155,6 +156,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "agent_names": game_params.get("agent_names"),
             "monitor_config": game_params.get("monitor_config"),
             "chat_memory_mode": game_params.get("chat_memory_mode", "default"),
+            "llm_settings": combo.get("llm_settings"),
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
@@ -234,6 +236,19 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
     # Load configuration
     config = ExperimentConfig('config/experiments.yaml')
     combinations = config.get_experiment_combinations(experiment_name)
+    # Fail closed: the experiment set must pin provider / reasoning /
+    # temperature (see src/llm_settings.py). Env overrides are recorded.
+    llm_settings = resolve_llm_settings(
+        config.config["experiment_sets"][experiment_name],
+        experiment_name,
+        config_path="config/experiments.yaml",
+    )
+    print(
+        f"LLM settings: {llm_settings.as_dict()} "
+        f"(source={llm_settings.source}, overrides={llm_settings.overrides})"
+    )
+    for combo in combinations:
+        combo["llm_settings"] = llm_settings
 
     print(f"Running {experiment_name} with {len(combinations)} combinations")
     if workers > 1:

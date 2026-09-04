@@ -6,7 +6,14 @@ from src.utils import (
     _call_gemini,
     _gemini_request_timeout_seconds,
     _gemini_supports_temperature,
+    plan_request_settings,
 )
+
+
+def _legacy_plan(model, temperature=0.8):
+    # Legacy env-driven plan (no llm_settings block), as the runners used
+    # before config-over-env landed.
+    return plan_request_settings("google", model, temperature, None)
 
 
 class _FakeResponse:
@@ -51,7 +58,7 @@ class GeminiProviderTests(unittest.TestCase):
         result = _call_gemini(
             self.client,
             "gemini-3.7-flash",
-            0.8,
+            _legacy_plan("gemini-3.7-flash"),
             self.messages,
             max_retries=1,
         )
@@ -65,7 +72,7 @@ class GeminiProviderTests(unittest.TestCase):
         _call_gemini(
             self.client,
             "gemini-3.1-flash-lite",
-            0.8,
+            _legacy_plan("gemini-3.1-flash-lite"),
             self.messages,
             max_retries=1,
         )
@@ -87,7 +94,7 @@ class GeminiProviderTests(unittest.TestCase):
             _call_gemini(
                 self.client,
                 "gemini-3.6-flash",
-                0.8,
+                _legacy_plan("gemini-3.6-flash"),
                 self.messages,
                 max_retries=1,
             )

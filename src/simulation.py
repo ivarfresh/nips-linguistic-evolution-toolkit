@@ -368,6 +368,7 @@ def run_simulation(
     run_metadata_extra: Optional[Dict[str, Any]] = None,
     initial_system_prompt_template: Optional[str] = None,
     switch_to_game_system_before_game: bool = False,
+    llm_settings=None,
 ):
     """
     Run a multi-agent simulation with any game.
@@ -375,13 +376,22 @@ def run_simulation(
     Args:
     task_order: List of tasks to execute in order. Options: "game", "myth"
                 Examples: ["game"], ["myth"], ["game", "myth"], ["myth", "game"]
+    llm_settings: src.llm_settings.LLMSettings pinning provider route,
+                reasoning level and temperature policy. The batch runners
+                always pass one (they fail closed without it); None keeps the
+                legacy env-driven behaviour for ad-hoc scripts and tests.
     """
-    client = create_llm_client(model)
-    runtime_metadata = llm_runtime_metadata(client, model)
+    client = create_llm_client(
+        model,
+        provider=llm_settings.provider_mode if llm_settings is not None else None,
+    )
+    runtime_metadata = llm_runtime_metadata(client, model, llm_settings)
     if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
         if task_order is not None:
             sim_data.task_order = task_order
+        for agent in sim_data.agents.values():
+            agent.llm_settings = llm_settings
         agent_ids = list(sim_data.agents.keys())
         saved_agent_names = (
             sim_data.run_metadata.get("agent_names")
@@ -408,7 +418,7 @@ def run_simulation(
         # Initialize agents
         for i, agent_id in enumerate(agent_ids):
             bias = agent_biases[i] if agent_biases and i < len(agent_biases) else None
-            agent = Agent(agent_id, model, temperature, client, memory_capacity=memory_capacity, initial_bias=bias, log_file=log_file)
+            agent = Agent(agent_id, model, temperature, client, memory_capacity=memory_capacity, initial_bias=bias, log_file=log_file, llm_settings=llm_settings)
             agent.display_name = resolved_agent_names[agent_id]
             if initial_system_prompt_template:
                 system_prompt = _format_initial_system_prompt(

@@ -157,6 +157,17 @@ def test_general_noisy_runner_syncs_candidate_even_when_wrapper_fails(monkeypatc
     class FakeConfig:
         def __init__(self, config_path):
             self.config_path = config_path
+            self.config = {
+                "experiment_sets": {
+                    "example": {
+                        "llm_settings": {
+                            "provider": "direct",
+                            "reasoning": "minimal",
+                            "temperature": "default",
+                        }
+                    }
+                }
+            }
 
         def get_experiment_combinations(self, experiment_name, max_runs=None):
             return [combo]
@@ -205,6 +216,17 @@ def test_general_trust_runner_syncs_candidate_even_when_wrapper_fails(monkeypatc
     class FakeConfig:
         def __init__(self, config_path):
             self.config_path = config_path
+            self.config = {
+                "experiment_sets": {
+                    "example": {
+                        "llm_settings": {
+                            "provider": "direct",
+                            "reasoning": "minimal",
+                            "temperature": "default",
+                        }
+                    }
+                }
+            }
 
         def get_experiment_combinations(self, experiment_name):
             return [combo]

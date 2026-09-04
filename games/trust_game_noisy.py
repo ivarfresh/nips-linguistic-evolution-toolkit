@@ -76,8 +76,14 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
         punishment_budget=2,
         punishment_effect_multiplier=3,
         punishment_prompt_variant="current",
+        decision_format=None,
     ):
         super().__init__()
+        # decision_format equalizes the *shape* of game replies across models
+        # (audit 2026-09-04: Claude wrote ~1,000 chars of strategy prose per
+        # decision that stayed in memory; GPT/Gemini wrote bare JSON). None
+        # keeps the historical prompts unchanged.
+        self.decision_format = self._validate_decision_format(decision_format)
         self.set_pairing_mode(pairing_mode)
         self.set_pairing_seed(pairing_seed)
         self.noise_seed = noise_seed
@@ -441,7 +447,34 @@ class TrustGameNoisy(DyadicPairingMixin, Game):
                 f"{prompt.rstrip()}\n\n"
                 f"{self.game_prompt_addition}\n"
             )
+        format_instruction = self.decision_format_instruction()
+        if format_instruction:
+            prompt = f"{prompt.rstrip()}\n\n{format_instruction}\n"
         return self.with_prompt_context(prompt, agent_id, opponent_id)
+
+    DECISION_FORMATS = {
+        None: "",
+        "json_only": (
+            "OUTPUT FORMAT: Reply with the JSON object only. No explanation, "
+            "no reasoning, and no text before or after it."
+        ),
+        "reasoning_then_json": (
+            "OUTPUT FORMAT: First give at most two sentences of reasoning. "
+            "Then put the JSON object on its own final line, with nothing after it."
+        ),
+    }
+
+    @classmethod
+    def _validate_decision_format(cls, value):
+        if value in cls.DECISION_FORMATS:
+            return value
+        raise ValueError(
+            f"Unknown decision_format={value!r}. Expected one of: "
+            + ", ".join(repr(k) for k in cls.DECISION_FORMATS)
+        )
+
+    def decision_format_instruction(self):
+        return self.DECISION_FORMATS[self.decision_format]
 
     def get_system_prompt(self, agent_id, agent):
         if not self.system_prompt_template:

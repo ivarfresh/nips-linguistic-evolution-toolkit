@@ -165,7 +165,28 @@ def is_completed_final_json(path: str | Path, *, data_root: Path = DATA_JSON_ROO
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return False
 
-    return isinstance(payload, dict) and FULL_STATE_KEYS.issubset(payload)
+    if not (isinstance(payload, dict) and FULL_STATE_KEYS.issubset(payload)):
+        return False
+    return has_llm_provenance(payload, candidate)
+
+
+# A run without these fields cannot be classified by provider/reasoning
+# regime, so it must not enter the shared store (researchlog 2026-09-04).
+PROVENANCE_KEYS = ("llm_provider", "provider_model")
+
+
+def has_llm_provenance(payload: dict, path: Path | None = None) -> bool:
+    metadata = payload.get("run_metadata")
+    if isinstance(metadata, dict) and all(metadata.get(key) for key in PROVENANCE_KEYS):
+        return True
+    _warn(
+        "skipping "
+        + (str(path) if path is not None else "run")
+        + ": run_metadata lacks LLM provenance ("
+        + ", ".join(PROVENANCE_KEYS)
+        + "); runs must record provider and resolved model before upload."
+    )
+    return False
 
 
 def discover_completed_final_jsons(

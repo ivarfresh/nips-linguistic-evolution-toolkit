@@ -25,6 +25,91 @@ def load_simulation_data(filepath: str) -> Dict:
         return json.load(f)
 
 
+class MixedLLMSettingsError(ValueError):
+    """Raised when runs with different provider/reasoning/temperature
+    settings are pooled without an explicit opt-in."""
+
+
+def llm_settings_signature(data: Dict) -> Dict[str, object]:
+    """Return the (provider, reasoning, temperature) regime a run used.
+
+    Reads the ``llm_settings_effective`` block written since 2026-09-04, falls
+    back to the provider fields written since 2026-08-12, and marks anything
+    older as ``unknown``. Two runs with different signatures must not be
+    pooled in one analysis (researchlog 2026-09-04; design-constraints §6).
+    """
+    meta = data.get("run_metadata", {}) or {}
+    effective = meta.get("llm_settings_effective")
+    if isinstance(effective, dict):
+        return {
+            "model": meta.get("model"),
+            "provider": effective.get("provider"),
+            "reasoning": effective.get("reasoning"),
+            "temperature": (
+                effective.get("temperature_value")
+                if effective.get("temperature_sent")
+                else "default"
+            ),
+        }
+    if meta.get("llm_provider"):
+        # Provider-era metadata (2026-08-12 .. 2026-09-04): reasoning level is
+        # only recorded for Gemini; temperature_sent only for Gemini.
+        provider = meta.get("llm_provider")
+        reasoning = meta.get("thinking_level") if provider == "google" else "unrecorded"
+        if provider == "google":
+            temperature = meta.get("temperature") if meta.get("temperature_sent") else "default"
+        else:
+            temperature = meta.get("temperature", "unrecorded")
+        return {
+            "model": meta.get("model"),
+            "provider": provider,
+            "reasoning": reasoning,
+            "temperature": temperature,
+        }
+    return {
+        "model": meta.get("model"),
+        "provider": "unknown",
+        "reasoning": "unknown",
+        "temperature": meta.get("temperature", "unknown"),
+    }
+
+
+def load_simulation_runs(
+    filepaths: Sequence[str],
+    *,
+    allow_mixed_settings: bool = False,
+) -> Dict[str, Dict]:
+    """Load several run JSONs and refuse to pool mismatched LLM regimes.
+
+    Within one model, every run must share the same provider, reasoning level
+    and temperature policy. Pass ``allow_mixed_settings=True`` only when the
+    mix is deliberate and stated in the analysis.
+    """
+    runs = {path: load_simulation_data(path) for path in filepaths}
+    by_model: Dict[str, Dict[str, list]] = {}
+    for path, data in runs.items():
+        sig = llm_settings_signature(data)
+        key = json.dumps(
+            {k: sig[k] for k in ("provider", "reasoning", "temperature")},
+            sort_keys=True,
+        )
+        by_model.setdefault(str(sig["model"]), {}).setdefault(key, []).append(path)
+    mixed = {model: sigs for model, sigs in by_model.items() if len(sigs) > 1}
+    if mixed and not allow_mixed_settings:
+        lines = []
+        for model, sigs in mixed.items():
+            lines.append(f"  {model}:")
+            for key, paths in sigs.items():
+                lines.append(f"    {key}: {len(paths)} run(s), e.g. {paths[0]}")
+        raise MixedLLMSettingsError(
+            "Refusing to pool runs with different LLM settings "
+            "(provider / reasoning / temperature). Pass "
+            "allow_mixed_settings=True only if the mix is deliberate.\n"
+            + "\n".join(lines)
+        )
+    return runs
+
+
 def infer_endowment(
     sent: Sequence[float],
     returned: Sequence[float],

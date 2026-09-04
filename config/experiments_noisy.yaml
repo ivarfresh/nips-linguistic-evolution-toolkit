@@ -1876,6 +1876,101 @@ game_params:
 # These experiment sets predate the corrected communication-noise protocol.
 # Keep their original environmental-noise semantics when running them from the
 # merged config; new/corrected sets default to communication-only noise.
+  # --- Decision-format confound cells (researchlog 2026-09-04) -------------
+  # Same protocol as Aron's negative-only cross-model defector population
+  # cell (8 agents, 25% hidden forced-zero defectors, two-task, ~3 rounds of
+  # memory, history_policy self_and_coplayer with a 3-round co-player window,
+  # legacy prompt regime, seed base 202608250 as in the reference run
+  # metadata) but with an explicit OUTPUT FORMAT line on every game prompt so
+  # every model returns the same shape. Temperature stays 0.8 so the only
+  # difference from the 2026-08-25 Claude cell is the format line.
+  noisy8_negative_defectors25_twotask_r3_json_only:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "legacy"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    decision_format: "json_only"
+
+  noisy8_negative_defectors25_twotask_r3_reasoning_then_json:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "legacy"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    decision_format: "reasoning_then_json"
+
+  noisy8_negative_defectors25_twotask_r2_smoke_json_only:
+    endowment: 5
+    multiplier: 3
+    num_turns: 2
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    prompt_regime: "legacy"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    decision_format: "json_only"
+
 legacy_environmental_experiment_sets:
   - noise_pilot
   - baseline_v4_mem3_direct
@@ -4781,3 +4876,53 @@ experiment_sets:
     game_params_list:
       - "noisy8_bidirectional_informed_memprimary"
     num_runs: 5
+
+
+  # --- Decision-format confound cells (researchlog 2026-09-04) -------------
+  # Measures how much of "Claude degrades with defectors" is the prose that
+  # Claude keeps in its own memory. Two arms, identical otherwise; compare
+  # both against the 2026-08-25 Claude myth->game population cell.
+  # llm_settings pins the regime (config over env): direct Anthropic, no
+  # thinking, temperature 0.8 to match the reference cell.
+  fmt_claude_defectors25_myth_game_json_only_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy8_negative_defectors25_twotask_r3_json_only"
+    num_runs: 5
+    llm_settings:
+      provider: direct
+      reasoning: "off"
+      temperature: 0.8
+
+  fmt_claude_defectors25_myth_game_reasoning_then_json_n5:
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy8_negative_defectors25_twotask_r3_reasoning_then_json"
+    num_runs: 5
+    llm_settings:
+      provider: direct
+      reasoning: "off"
+      temperature: 0.8
+
+  # Two-round Haiku smoke for the config-over-env path (cents).
+  fmt_smoke_haiku_json_only:
+    models: ["claude_haiku_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    game_params_list:
+      - "noisy8_negative_defectors25_twotask_r2_smoke_json_only"
+    num_runs: 1
+    llm_settings:
+      provider: direct
+      reasoning: "off"
+      temperature: 0.8

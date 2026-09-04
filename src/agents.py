@@ -5,7 +5,11 @@ import datetime
 class Agent:
     """Represents a single LLM agent with memory capacity"""
 
-    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None): #system prompt is none, so it can be set later.
+    def __init__(self, agent_id, model, temperature, client, memory_capacity, initial_bias, system_prompt=None, log_file=None, llm_settings=None): #system prompt is none, so it can be set later.
+        # llm_settings (src.llm_settings.LLMSettings) pins provider route,
+        # reasoning level and temperature policy from the experiment config.
+        # None means the legacy env-driven path.
+        self.llm_settings = llm_settings
         self.agent_id = agent_id
         self.model = model
         self.temperature = temperature
@@ -171,7 +175,16 @@ class Agent:
 
         # Call the LLM and get structured response
         try:
-            response_data = call_llm(self.client, self.model, self.temperature, messages_for_call)
+            if self.llm_settings is not None:
+                response_data = call_llm(
+                    self.client,
+                    self.model,
+                    self.temperature,
+                    messages_for_call,
+                    llm_settings=self.llm_settings,
+                )
+            else:
+                response_data = call_llm(self.client, self.model, self.temperature, messages_for_call)
         except Exception as exc:
             if remember:
                 self._rollback_pending_prompt(prompt)

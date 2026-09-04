@@ -15,6 +15,15 @@ try:
 except ImportError:
     anthropic = None
 
+from src.llm_settings import (
+    ANTHROPIC_BUDGET_BY_LEVEL,
+    LLMSettings,
+    LLMSettingsError,
+    anthropic_uses_adaptive_thinking,
+    model_cannot_disable_reasoning,
+    model_ignores_temperature,
+)
+
 load_dotenv()
 
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
@@ -100,16 +109,143 @@ def resolve_model_for_provider(client, model):
     return model
 
 
-def llm_runtime_metadata(client, model):
+def plan_request_settings(provider, provider_model, temperature, llm_settings):
+    """Decide exactly what sampling/reasoning parameters a call will send.
+
+    Returns a dict with:
+      temperature        float to send, or None (parameter omitted)
+      reasoning          effective level name ('off', 'minimal', ..., or
+                         'legacy_env' when no llm_settings block is active)
+      reasoning_param    the provider-specific parameter that will be sent
+      source             'llm_settings' or 'legacy_env'
+    Fails closed (LLMSettingsError) when llm_settings asks for something the
+    model cannot honour, so the run metadata never lies.
+    """
+    if llm_settings is None:
+        # Legacy path: behaviour decided by env vars and per-provider defaults.
+        legacy_temperature = temperature
+        if provider == "openai" and not _supports_custom_temperature(provider, provider_model):
+            legacy_temperature = None
+        elif provider == "anthropic" and not _anthropic_supports_temperature(provider_model):
+            legacy_temperature = None
+        elif provider == "google" and not _gemini_supports_temperature(provider_model):
+            legacy_temperature = None
+        if provider == "openai" and _supports_reasoning_effort(provider, provider_model):
+            reasoning_param = {"reasoning_effort": _direct_openai_reasoning_effort()}
+        elif provider == "google":
+            level = _env("GEMINI_THINKING_LEVEL")
+            reasoning_param = {"thinkingLevel": level} if level else None
+        elif provider == "openrouter":
+            effort = OPENROUTER_REASONING_EFFORT or "medium"
+            disabled = effort.lower() in {"none", "false", "0", "off"}
+            excluded = provider_model.startswith(("openai/", "meta-llama/"))
+            reasoning_param = None if (disabled or excluded) else {"reasoning": {"effort": effort}}
+        else:
+            reasoning_param = None
+        return {
+            "temperature": legacy_temperature,
+            "reasoning": "legacy_env",
+            "reasoning_param": reasoning_param,
+            "source": "legacy_env",
+        }
+
+    level = llm_settings.reasoning
+    native = provider_model.split("/", 1)[-1]
+
+    # Temperature: only send it when the model honours it.
+    if llm_settings.temperature is None:
+        send_temperature = None
+    else:
+        reason = model_ignores_temperature(provider_model)
+        if reason:
+            raise LLMSettingsError(
+                f"llm_settings.temperature={llm_settings.temperature} cannot be "
+                f"applied to {provider_model!r}: {reason}. Use temperature: default."
+            )
+        send_temperature = float(llm_settings.temperature)
+
+    # Reasoning: translate the level to the provider's parameter, or refuse.
+    if level == "off":
+        reason = model_cannot_disable_reasoning(provider_model)
+        if reason:
+            raise LLMSettingsError(
+                f"llm_settings.reasoning=off cannot be applied to {provider_model!r}: {reason}."
+            )
+
+    if provider == "anthropic":
+        if level == "off":
+            reasoning_param = (
+                {"thinking": {"type": "disabled"}}
+                if anthropic_uses_adaptive_thinking(native)
+                else None
+            )
+        elif anthropic_uses_adaptive_thinking(native):
+            effort = "low" if level == "minimal" else level
+            reasoning_param = {
+                "thinking": {"type": "adaptive"},
+                "output_config": {"effort": effort},
+            }
+        else:
+            reasoning_param = {
+                "thinking": {
+                    "type": "enabled",
+                    "budget_tokens": ANTHROPIC_BUDGET_BY_LEVEL[level],
+                }
+            }
+    elif provider == "openai":
+        reasoning_param = {"reasoning_effort": level} if level != "off" else None
+    elif provider == "google":
+        reasoning_param = {"thinkingLevel": level} if level != "off" else None
+    elif provider == "openrouter":
+        if level == "off":
+            reasoning_param = None
+        else:
+            reasoning_param = {"reasoning": {"effort": level}}
+    else:
+        reasoning_param = None
+
+    return {
+        "temperature": send_temperature,
+        "reasoning": level,
+        "reasoning_param": reasoning_param,
+        "source": "llm_settings",
+    }
+
+
+def llm_runtime_metadata(client, model, llm_settings=None):
     """Return non-secret provider settings needed to reproduce a run."""
     provider, _ = _unwrap_client(client)
+    provider_model = resolve_model_for_provider(client, model)
     metadata = {
         "llm_provider": provider,
-        "provider_model": resolve_model_for_provider(client, model),
+        "provider_model": provider_model,
         "llm_provider_mode": (
-            _env("LLM_PROVIDER") or LLM_PROVIDER or "auto"
-        ).strip().lower(),
+            llm_settings.provider_mode
+            if llm_settings is not None
+            else (_env("LLM_PROVIDER") or LLM_PROVIDER or "auto").strip().lower()
+        ),
     }
+    if llm_settings is not None:
+        plan = plan_request_settings(
+            provider, provider_model, llm_settings.temperature, llm_settings
+        )
+        metadata.update(
+            {
+                "llm_settings": llm_settings.as_dict(),
+                "llm_settings_source": llm_settings.source,
+                "llm_settings_overrides": dict(llm_settings.overrides),
+                "llm_settings_effective": {
+                    "provider": provider,
+                    "provider_model": provider_model,
+                    "reasoning": plan["reasoning"],
+                    "reasoning_param": plan["reasoning_param"],
+                    "temperature_sent": plan["temperature"] is not None,
+                    "temperature_value": plan["temperature"],
+                },
+            }
+        )
+    else:
+        metadata["llm_settings_source"] = "legacy_env"
     if provider == "anthropic":
         metadata.update(
             {
@@ -317,43 +453,49 @@ def _gemini_messages(messages):
     return system_instruction, contents
 
 
-def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effort="medium"):
+def call_llm(client, model, temperature, messages, max_retries=3, reasoning_effort="medium", llm_settings=None):
     """
     Call LLM with retry logic and provider-specific message adaptation.
 
     Args:
         client: LLMClient wrapper or OpenAI-compatible client instance
         model: Repo model slug
-        temperature: Temperature setting
+        temperature: Temperature setting (ignored when llm_settings is given;
+            the settings block decides whether and what to send)
         messages: Conversation messages
         max_retries: Maximum number of retry attempts (default: 3)
-        reasoning_effort: Reasoning effort level for OpenRouter models that support it
+        reasoning_effort: Legacy OpenRouter effort default when no llm_settings
+        llm_settings: LLMSettings from the experiment config. When present it
+            is the single source of truth for temperature and reasoning.
 
     Returns:
-        dict: Structured response with content, reasoning, and usage data
+        dict: Structured response with content, reasoning, and usage data.
+        usage always carries ``finish_reason`` (the provider's stop reason).
     """
     provider, api_client = _unwrap_client(client)
+    provider_model = resolve_model_for_provider(client, model)
+    plan = plan_request_settings(provider, provider_model, temperature, llm_settings)
     if provider == "anthropic":
         return _call_anthropic(
             api_client,
-            resolve_model_for_provider(client, model),
-            temperature,
+            provider_model,
+            plan,
             messages,
             max_retries,
         )
     if provider == "google":
         return _call_gemini(
             api_client,
-            resolve_model_for_provider(client, model),
-            temperature,
+            provider_model,
+            plan,
             messages,
             max_retries,
         )
     return _call_openai_compatible(
         provider,
         api_client,
-        resolve_model_for_provider(client, model),
-        temperature,
+        provider_model,
+        plan,
         messages,
         max_retries,
         reasoning_effort,
@@ -364,7 +506,7 @@ def _call_openai_compatible(
     provider,
     client,
     provider_model,
-    temperature,
+    plan,
     messages,
     max_retries,
     reasoning_effort,
@@ -375,36 +517,30 @@ def _call_openai_compatible(
                 "model": provider_model,
                 "messages": _chat_messages(messages),
             }
-            if _supports_custom_temperature(provider, provider_model):
-                request_params["temperature"] = temperature
-            if _supports_reasoning_effort(provider, provider_model):
-                request_params["reasoning_effort"] = _direct_openai_reasoning_effort()
+            if plan["temperature"] is not None:
+                request_params["temperature"] = plan["temperature"]
 
             if provider == "openrouter" and OPENROUTER_MAX_TOKENS:
                 request_params["max_tokens"] = int(OPENROUTER_MAX_TOKENS)
 
-            # OpenRouter-only extension. Direct OpenAI calls use standard OpenAI params.
-            # OPENROUTER_REASONING_EFFORT=none disables the extra reasoning body
-            # for low-budget runs where short direct answers are sufficient.
-            active_reasoning_effort = (
-                OPENROUTER_REASONING_EFFORT
-                if OPENROUTER_REASONING_EFFORT
-                else reasoning_effort
-            )
-            if isinstance(active_reasoning_effort, str) and active_reasoning_effort.lower() in {"", "none", "false", "0", "off"}:
-                active_reasoning_effort = None
+            reasoning_param = plan["reasoning_param"]
+            if plan["source"] == "legacy_env" and provider == "openrouter":
+                # Legacy path keeps the historical call-site default
+                # (reasoning_effort argument) when no env override is set.
+                active = OPENROUTER_REASONING_EFFORT or reasoning_effort
+                if isinstance(active, str) and active.lower() in {"", "none", "false", "0", "off"}:
+                    reasoning_param = None
+                elif not provider_model.startswith(("openai/", "meta-llama/")):
+                    reasoning_param = {"reasoning": {"effort": active}}
+                else:
+                    reasoning_param = None
 
-            models_without_reasoning = ["openai/", "meta-llama/"]
-            if (
-                provider == "openrouter"
-                and active_reasoning_effort
-                and not any(provider_model.startswith(prefix) for prefix in models_without_reasoning)
-            ):
-                request_params["extra_body"] = {
-                    "reasoning": {
-                        "effort": active_reasoning_effort
-                    }
-                }
+            if reasoning_param:
+                if provider == "openrouter":
+                    # OpenRouter-only extension; goes in the request body.
+                    request_params["extra_body"] = dict(reasoning_param)
+                else:
+                    request_params.update(reasoning_param)
 
             response = client.chat.completions.create(**request_params)
 
@@ -472,6 +608,8 @@ def _call_openai_compatible(
                     "output_tokens": getattr(response.usage, "completion_tokens", 0),
                     "reasoning_tokens": reasoning_tokens
                 }
+            usage = usage or {}
+            usage["finish_reason"] = getattr(response.choices[0], "finish_reason", None)
 
             return {
                 "content": response.choices[0].message.content,
@@ -539,7 +677,7 @@ def _anthropic_supports_temperature(provider_model):
     return True
 
 
-def _call_anthropic(client, provider_model, temperature, messages, max_retries):
+def _call_anthropic(client, provider_model, plan, messages, max_retries):
     if anthropic is None:
         raise RuntimeError(
             "The anthropic package is not installed. Run: pip install -r requirements.txt"
@@ -547,6 +685,14 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries):
 
     max_tokens = int(_env("ANTHROPIC_MAX_TOKENS") or "1024")
     system, chat_messages = _anthropic_messages(messages)
+    reasoning_param = plan["reasoning_param"] or {}
+    thinking = reasoning_param.get("thinking")
+    budget = (thinking or {}).get("budget_tokens")
+    if budget is not None and budget >= max_tokens:
+        raise LLMSettingsError(
+            f"Claude thinking budget {budget} must be below max_tokens "
+            f"({max_tokens}); raise ANTHROPIC_MAX_TOKENS."
+        )
 
     for attempt in range(max_retries):
         try:
@@ -555,10 +701,17 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries):
                 "messages": chat_messages,
                 "max_tokens": max_tokens,
             }
-            if _anthropic_supports_temperature(provider_model):
-                request_params["temperature"] = temperature
+            if plan["temperature"] is not None:
+                request_params["temperature"] = plan["temperature"]
             if system:
                 request_params["system"] = system
+            if thinking:
+                request_params["thinking"] = thinking
+            if reasoning_param.get("output_config"):
+                # Older SDKs do not know output_config; extra_body passes it through.
+                request_params["extra_body"] = {
+                    "output_config": reasoning_param["output_config"]
+                }
 
             response = client.messages.create(**request_params)
             content = _anthropic_text(response)
@@ -572,6 +725,8 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries):
                     "output_tokens": getattr(response.usage, "output_tokens", 0),
                     "reasoning_tokens": 0,
                 }
+            usage = usage or {}
+            usage["finish_reason"] = getattr(response, "stop_reason", None)
 
             return {
                 "content": content,
@@ -614,7 +769,7 @@ def _should_retry_anthropic(error):
     )
 
 
-def _call_gemini(client, provider_model, temperature, messages, max_retries):
+def _call_gemini(client, provider_model, plan, messages, max_retries):
     api_key = client["api_key"]
     base_url = client["base_url"].rstrip("/")
     system_instruction, contents = _gemini_messages(messages)
@@ -622,8 +777,8 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
         raise ValueError("No user/assistant messages available for Gemini call.")
 
     generation_config = {}
-    if _gemini_supports_temperature(provider_model):
-        generation_config["temperature"] = temperature
+    if plan["temperature"] is not None:
+        generation_config["temperature"] = plan["temperature"]
     payload = {
         "contents": contents,
         "generationConfig": generation_config,
@@ -631,9 +786,11 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
     if system_instruction:
         payload["system_instruction"] = system_instruction
 
-    thinking_level = _env("GEMINI_THINKING_LEVEL")
-    if thinking_level:
-        payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking_level}
+    reasoning_param = plan["reasoning_param"] or {}
+    if reasoning_param.get("thinkingLevel"):
+        payload["generationConfig"]["thinkingConfig"] = {
+            "thinkingLevel": reasoning_param["thinkingLevel"]
+        }
 
     url = f"{base_url}/models/{provider_model}:generateContent"
 
@@ -658,7 +815,9 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
             if not content:
                 raise ValueError(f"Empty response from Gemini: {_gemini_finish_reason(response_data)}")
 
-            usage = _gemini_usage(response_data)
+            usage = _gemini_usage(response_data) or {}
+            candidates = response_data.get("candidates") or [{}]
+            usage["finish_reason"] = candidates[0].get("finishReason")
             return {
                 "content": content,
                 "reasoning": None,
