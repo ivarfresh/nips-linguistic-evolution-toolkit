@@ -44,6 +44,7 @@ DIRECT_MODEL_ALIASES = {
     "anthropic/claude-opus-4.6": "claude-opus-4-6",
     # OpenRouter-style Google slugs used in repo configs -> direct Gemini API IDs.
     "google/gemini-3.7-flash": "gemini-3.7-flash",
+    "google/gemini-3.6-flash": "gemini-3.6-flash",
     "google/gemini-3-flash-preview": "gemini-3-flash-preview",
     "google/gemini-3-pro-preview": "gemini-3.1-pro-preview",
     "google/gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
