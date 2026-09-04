@@ -154,7 +154,7 @@ _(from researchlog 2026-09-04)_
 25% defectors, myth→game, thinking off, T=0.8), only an OUTPUT FORMAT line
 added: free prose sends 0.592 and ends at $50.35/agent (1,286 chars per
 decision); two sentences then JSON 0.531 / $47.78 (352 chars); JSON only
-0.384 / $41.81 (14 chars). Forbidding visible reasoning also made Claude
+0.394 / $42.12 (13 chars). Forbidding visible reasoning also made Claude
 answer with the other role's key in every run. Cross-model contrasts against
 bare-JSON models are format effects until the shape is equalized; the
 standard is `decision_format: reasoning_then_json` for every model, with a

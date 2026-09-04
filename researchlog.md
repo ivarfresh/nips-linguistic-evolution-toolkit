@@ -18,7 +18,7 @@
   free prose (reference, n=5) send 0.592 (±0.042), return 0.444 (±0.007),
   balance 50.35 (±1.35), 1286 chars/decision; two sentences then JSON (n=5)
   0.531 (±0.033) / 0.428 (±0.019) / 47.78 (±1.22) / 352 chars; JSON only
-  (n=4) 0.384 (±0.049) / 0.382 (±0.028) / 41.81 (±3.39) / 14 chars.
+  (n=5) 0.394 (±0.049) / 0.390 (±0.030) / 42.12 (±3.02) / 13 chars.
   Forbidding visible reasoning cuts Claude's sending by ~21 points. The
   "Claude degrades with defectors" ordering against bare-JSON models is
   therefore a format effect until formats are equalized.
@@ -33,8 +33,8 @@
   vendor-default temperature (PR aronvallinder#15, `docs/verified-facts.md`).
 
 #### Caveats / next
-- json_only rep04 stopped at the Anthropic credit limit; resumes from
-  checkpoint after top-up. n=4 vs 5 does not change the direction.
+- json_only rep04 hit the Anthropic credit limit mid-run and was rerun after
+  the top-up with the same replicate seeds (`replicate_ids`).
 - Decision: cross-model reruns use `reasoning_then_json` for every model
   (equal shape, keeps the reasoning->myth pathway) with the pinned regime
   Claude off / GPT-5 Nano low / Gemini 3.6 Flash minimal, temperature default.
