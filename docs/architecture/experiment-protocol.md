@@ -80,18 +80,30 @@ _(from researchlog 2026-08-12)_
 
 ## Provider route and sampling settings
 
-Which API a run hits is decided by the runner's `.env`, not the config:
-`LLM_PROVIDER=auto` goes direct to Anthropic / OpenAI / Google when that key
-exists and to OpenRouter otherwise, and each route sets temperature, thinking
-and output cap differently (table in
-[design-constraints.md §6](design-constraints.md)). Launch scripts for any
-cross-model or cross-era comparison must pin `LLM_PROVIDER`,
-`OPENROUTER_REASONING_EFFORT`, `OPENAI_REASONING_EFFORT` and
-`GEMINI_THINKING_LEVEL` explicitly and match effort across models. Existing
-runs split into an OpenRouter era (Claude and Gemini thinking on, GPT-5 Nano at
-vendor-default effort) and a direct era (Claude thinking off, GPT-5 Nano
-minimal, Gemini 3.7 medium); analyses must not pool across them.
-_(from researchlog 2026-09-04)_
+The regime is pinned in the experiment set, not in anyone's `.env`:
+
+```yaml
+llm_settings:
+  provider: direct        # or openrouter
+  reasoning: off          # off | minimal | low | medium | high
+  temperature: default    # or a float the model honours
+```
+
+The runners fail closed without it; `LLM_PROVIDER` / `LLM_REASONING` /
+`LLM_TEMPERATURE` may override and are recorded in
+`run_metadata.llm_settings_overrides`; the legacy per-vendor knobs are
+ignored with a warning (`src/llm_settings.py`, `.env.example`). Each route's
+actual parameters are in [design-constraints.md §6](design-constraints.md).
+Game prompts carry `decision_format: reasoning_then_json` so every model
+returns the same shape; rejected decisions get a corrective retry naming the
+role and key (two attempts). New analysis or figure directories must carry
+`provenance.json` (`scripts/write_provenance.py`), and
+`analyses/_shared.py::load_simulation_runs` refuses to pool runs whose
+provider / reasoning / temperature differ within a model unless told the mix
+is deliberate. Existing runs split into an OpenRouter era (Claude and Gemini
+thinking on, GPT-5 Nano at vendor-default effort) and a direct era (Claude
+thinking off, GPT-5 Nano minimal, Gemini 3.7 medium); classify legacy runs
+with `llm_settings_signature()` before pooling. _(from researchlog 2026-09-04)_
 
 ## QA: audits with negative controls
 

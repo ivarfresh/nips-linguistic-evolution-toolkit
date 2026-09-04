@@ -135,9 +135,30 @@ verified against saved runs on 2026-09-04:
   and never records the effective reasoning effort, whether temperature was
   sent (except Gemini), or `finish_reason`.
 
-Rule: pin `LLM_PROVIDER` and the reasoning-effort variables in the launch
-script, not in a per-machine `.env`, and match effort across models before any
-cross-model claim. _(from researchlog 2026-09-04)_
+Rule, now enforced in code: every experiment set carries an `llm_settings`
+block (`provider`, `reasoning`, `temperature`) in `config/*.yaml`; the batch
+runners refuse to start without it, env vars only override it and every
+override is recorded, and `run_metadata.llm_settings_effective` plus a
+per-call `finish_reason` say what was actually sent (`src/llm_settings.py`).
+Impossible combinations fail closed (reasoning off on GPT-5 or Gemini 3.x, a
+float temperature on GPT-5, Gemini 3.6+ Flash or Claude Opus 4.7+). Three
+guards keep it that way: the shared loader refuses to pool mixed regimes, the
+HF sync refuses unprovenanced runs, and `tests/test_settings_pinned.py` fails
+CI for any new unpinned set, launch script, or output directory without
+`provenance.json`. Matched low-reasoning regime for cross-model cells: Claude
+off, GPT-5 Nano low, Gemini 3.6 Flash minimal (3.7/3.8 cannot go below low),
+temperature at vendor default because only Sonnet 4.5 still honours it.
+_(from researchlog 2026-09-04)_
+
+**Reply format is part of the condition too.** Same Claude cell (8 agents,
+25% defectors, myth→game, thinking off, T=0.8), only an OUTPUT FORMAT line
+added: free prose sends 0.592 and ends at $50.35/agent (1,286 chars per
+decision); two sentences then JSON 0.531 / $47.78 (352 chars); JSON only
+0.384 / $41.81 (14 chars). Forbidding visible reasoning also made Claude
+answer with the other role's key in every run. Cross-model contrasts against
+bare-JSON models are format effects until the shape is equalized; the
+standard is `decision_format: reasoning_then_json` for every model, with a
+corrective (role + key) game retry. _(from researchlog 2026-09-04)_
 
 ## 7. Co-occurrence is not transmission
 
