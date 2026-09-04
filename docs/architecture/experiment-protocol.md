@@ -1,7 +1,7 @@
 ---
 title: Experiment protocol — memory regime, noise, QA, and data infrastructure
 status: current
-updated: 2026-08-25
+updated: 2026-09-04
 owner: ivar
 ---
 
@@ -35,6 +35,13 @@ bidirectional ±$1 uniform noise on communicated amounts — `inform_agents:
 true` auto-appends the notice via `trust_game_noisy.py`. Informed ≈ uninformed
 on every metric, with tighter spreads. _(from researchlog 2026-07-22)_
 
+The cross-model defector series (2026-08-25 onward) runs under **negative-only**
+noise instead. The two regimes have different dynamics: bidirectional noise
+keeps send and return fractions climbing past round 10–15 before they
+stabilize; negative-only noise gives flatter curves and a weaker visible
+effect. Do not compare cooperation curves across the two regimes without
+saying which one a run used. _(from researchlog 2026-09-01)_
+
 **Dyad transfer-noise fix (load-bearing):** communicated-send noise is
 generated only for the receiver, *after* the sender's actual transfer exists;
 a missing transfer raises instead of silently becoming zero. Every result from
@@ -62,8 +69,29 @@ _(from researchlog 2026-08-12)_
   after an exhausted provider call; rejected attempts stay in the audit but
   never contaminate the retry context. _(from researchlog 2026-08-12)_
 - Provenance: runs embed git commit + dirty state, config SHA-256, provider
-  route, resolved model, and max-output-token source. Batch launchers refuse a
-  dirty worktree. _(from researchlog 2026-08-12, 2026-08-21)_
+  route, resolved model, and max-output-token source (Gemini runs also record
+  thinking level and whether temperature was sent). Batch launchers refuse a
+  dirty worktree. _(from researchlog 2026-08-12, 2026-08-21)_ Gaps: the
+  effective reasoning effort on OpenRouter and direct-OpenAI routes, whether
+  temperature was sent on non-Gemini routes, and the response `finish_reason`
+  are not recorded; runs before 2026-08-12 carry no provider fields at all and
+  must be classified by their reasoning signature. _(from researchlog
+  2026-09-04)_
+
+## Provider route and sampling settings
+
+Which API a run hits is decided by the runner's `.env`, not the config:
+`LLM_PROVIDER=auto` goes direct to Anthropic / OpenAI / Google when that key
+exists and to OpenRouter otherwise, and each route sets temperature, thinking
+and output cap differently (table in
+[design-constraints.md §6](design-constraints.md)). Launch scripts for any
+cross-model or cross-era comparison must pin `LLM_PROVIDER`,
+`OPENROUTER_REASONING_EFFORT`, `OPENAI_REASONING_EFFORT` and
+`GEMINI_THINKING_LEVEL` explicitly and match effort across models. Existing
+runs split into an OpenRouter era (Claude and Gemini thinking on, GPT-5 Nano at
+vendor-default effort) and a direct era (Claude thinking off, GPT-5 Nano
+minimal, Gemini 3.7 medium); analyses must not pool across them.
+_(from researchlog 2026-09-04)_
 
 ## QA: audits with negative controls
 
