@@ -668,25 +668,35 @@ def run_simulation(
                             def validate_game_response(content, role=role):
                                 game.validate_game_response(content, role)
 
-                            try:
-                                response_data = agent.respond(
-                                    prompt,
-                                    transcript_metadata=interaction_metadata,
-                                    remember=remember_game,
-                                    response_validator=validate_game_response,
-                                )
-                            except Exception as e:
-                                print(
-                                    f"⚠️  Game decision failed for {agent_id}: "
-                                    f"{type(e).__name__}: {e}. Retrying once..."
-                                )
-                                time.sleep(1.0)
-                                response_data = agent.respond(
-                                    prompt,
-                                    transcript_metadata=interaction_metadata,
-                                    remember=remember_game,
-                                    response_validator=validate_game_response,
-                                )
+                            max_attempts = 1 + getattr(game, "GAME_RETRY_ATTEMPTS", 1)
+                            attempt_prompt = prompt
+                            for attempt in range(1, max_attempts + 1):
+                                try:
+                                    response_data = agent.respond(
+                                        attempt_prompt,
+                                        transcript_metadata=interaction_metadata,
+                                        remember=remember_game,
+                                        response_validator=validate_game_response,
+                                    )
+                                    break
+                                except Exception as e:
+                                    if attempt >= max_attempts:
+                                        raise
+                                    print(
+                                        f"⚠️  Game decision failed for {agent_id}: "
+                                        f"{type(e).__name__}: {e}. "
+                                        f"Retrying with correction ({attempt}/{max_attempts - 1})..."
+                                    )
+                                    time.sleep(1.0)
+                                    # Corrective retry: same prompt plus a
+                                    # suffix naming the role and required key
+                                    # (games/base_game.py::get_game_retry_prompt).
+                                    retry_builder = getattr(game, "get_game_retry_prompt", None)
+                                    attempt_prompt = (
+                                        retry_builder(prompt, role, e, attempt)
+                                        if retry_builder
+                                        else prompt
+                                    )
                         agent_responses[agent_id] = response_data
 
                         # Store full game response data in round_entry
