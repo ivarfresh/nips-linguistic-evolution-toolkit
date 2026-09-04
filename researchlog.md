@@ -1,3 +1,44 @@
+### 2026-09-04 — Cross-model API calls are not equivalent (provider + reasoning audit)
+
+**Time:** 2 hours
+
+#### Result
+- Result: the 2026-09-01 action item "verify Gemini/GPT/Claude API calls" is
+  answered: NO, they are not equivalent. Four independent read-only audits
+  (three Claude agents on code path, run data, history/provider docs; one
+  Codex agent) agree. Message roles and system-prompt placement ARE
+  equivalent across providers (`src/utils.py:270-316`); the inequivalence is
+  in provider routing and sampling/reasoning settings.
+- `LLM_PROVIDER=auto` (default since Aron's 2026-04-29 commits bf90f967,
+  1374148b) routes `anthropic/*`, `openai/*`, `google/*` slugs to the direct
+  vendor API whenever that key is in the runner's `.env`; OpenRouter is only
+  the fallback. Provider therefore depends on whose machine ran the batch.
+- Result: the slide-set defector runs (vallinder,
+  `negative_only_crossmodel_defectors_n5_20260825`, 270 runs) went direct to
+  all three vendors: Claude Sonnet 4.5 T=0.8, no thinking, cap 4096; GPT-5
+  Nano temperature not sent, reasoning effort `minimal` (code default,
+  `src/utils.py:531`; 0 reasoning tokens on 3,378/3,378 calls); Gemini 3.7
+  Flash temperature not sent, thinking `medium` (~106 hidden tokens/decision).
+- Result: the OpenRouter path sends `reasoning.effort=medium` for Claude and
+  Gemini slugs by default, so OpenRouter-era Claude runs (Arabella's sets;
+  baseline/v1/v2/v3/myth_causal/sonnet45_8agent, ~1,100 runs) had extended
+  thinking ON while direct runs had it OFF. GPT-5 Nano: ~1,000 reasoning
+  tokens/decision via OpenRouter vs 0 direct. The plain 8-agent memprimary
+  triplet mixes both regimes (game + game_myth OpenRouter, myth_game direct).
+- Format confound: Claude stores ~1,000-1,250 chars of strategy prose in its
+  assistant memory each round; GPT and Gemini store bare JSON.
+- Not bugs: no silent parse defaults, no truncation, no model aliasing bit,
+  Gemini ceiling-lock holds under both routes.
+
+#### Consequences
+- Do not pool Claude or GPT-5 Nano runs across the OpenRouter/direct eras
+  without splitting by reasoning signature. "GPT-5 Nano beats Claude" and
+  "Claude degrades with defectors" are unproven until GPT cells are rerun at
+  matched effort and the prose-in-memory confound is controlled.
+- Pin provider + reasoning effort in launch scripts; record effective effort,
+  temperature-sent and `finish_reason` in `run_metadata` (currently absent).
+- Full report: https://claude.ai/code/artifact/cecd3178-dbbb-4741-9f86-dcd97a8a19ec
+
 ### 2026-09-01 — Team meeting: game saturates; cooperation-ratio plots are the missing view
 
 **Time:** 1 hour
