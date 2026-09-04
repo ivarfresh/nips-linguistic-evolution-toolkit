@@ -44,6 +44,7 @@ DIRECT_MODEL_ALIASES = {
     "anthropic/claude-opus-4.6": "claude-opus-4-6",
     # OpenRouter-style Google slugs used in repo configs -> direct Gemini API IDs.
     "google/gemini-3.7-flash": "gemini-3.7-flash",
+    "google/gemini-3.6-flash": "gemini-3.6-flash",
     "google/gemini-3-flash-preview": "gemini-3-flash-preview",
     "google/gemini-3-pro-preview": "gemini-3.1-pro-preview",
     "google/gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
@@ -689,10 +690,15 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries):
 def _gemini_supports_temperature(provider_model):
     """Return whether the direct GenerateContent endpoint accepts temperature.
 
-    Gemini 3.7 Flash removed the legacy sampling parameters. Keep the historical
+    The 3.6+ Flash line accepts temperature but ignores it (probe 2026-09-04:
+    gemini-3.6-flash returned 5/5 distinct outputs at temperature 0), so we
+    omit it there and record temperature_sent=false. Keep the historical
     parameter for earlier models so existing experiments remain unchanged.
     """
-    return provider_model != "gemini-3.7-flash"
+    return provider_model not in _GEMINI_TEMPERATURE_IGNORED
+
+
+_GEMINI_TEMPERATURE_IGNORED = frozenset({"gemini-3.6-flash", "gemini-3.7-flash"})
 
 
 def _gemini_request_timeout_seconds():
