@@ -1884,7 +1884,7 @@ game_params:
   # metadata) but with an explicit OUTPUT FORMAT line on every game prompt so
   # every model returns the same shape. Temperature stays 0.8 so the only
   # difference from the 2026-08-25 Claude cell is the format line.
-  noisy8_negative_defectors25_twotask_r3_json_only:
+  noisy8_negative_defectors25_twotask_r3_json_only: &format_game_params
     endowment: 5
     multiplier: 3
     num_turns: 10
@@ -1912,6 +1912,10 @@ game_params:
     defector_myth_policy: "normal"
     defector_role_visible_to_self: false
     decision_format: "json_only"
+
+  fmt_controlled_v2_free_prose:
+    <<: *format_game_params
+    decision_format: null
 
   noisy8_negative_defectors25_twotask_r3_reasoning_then_json:
     endowment: 5
@@ -2039,6 +2043,15 @@ legacy_environmental_experiment_sets:
 # ============================================================================
 # EXPERIMENT SETS
 # ============================================================================
+
+comparison_sets:
+  decision_format_controlled_v2:
+    experiment_sets:
+      - fmt_controlled_v2_free_prose_n5
+      - fmt_controlled_v2_json_only_n5
+      - fmt_controlled_v2_reasoning_then_json_n5
+    allowed_differences:
+      game_params.decision_format: "The decision-format instruction is the manipulated variable."
 
 experiment_sets:
   baseline_v4_mem3_direct:
@@ -4913,6 +4926,32 @@ experiment_sets:
       temperature: 0.8
 
   # Two-round Haiku smoke for the config-over-env path (cents).
+  fmt_controlled_v2_free_prose_n5: &format_controlled_set
+    models: ["claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["fmt_controlled_v2_free_prose"]
+    num_runs: 5
+    llm_settings:
+      provider: direct
+      reasoning: "off"
+      temperature: 0.8
+      max_output_tokens: 4096
+
+  fmt_controlled_v2_json_only_n5:
+    <<: *format_controlled_set
+    game_params_list: ["noisy8_negative_defectors25_twotask_r3_json_only"]
+
+  fmt_controlled_v2_reasoning_then_json_n5:
+    <<: *format_controlled_set
+    game_params_list: ["noisy8_negative_defectors25_twotask_r3_reasoning_then_json"]
+
   fmt_smoke_haiku_json_only:
     models: ["claude_haiku_45"]
     templates: ["trust_game_default"]

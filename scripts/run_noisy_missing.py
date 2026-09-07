@@ -1,8 +1,8 @@
 """Run only missing outputs for a configured noisy experiment batch.
 
 This is a resumable wrapper around experiments/run_noisy_batch.py. It computes
-the canonical final JSON path for every configured combination, skips paths that
-already exist, and runs only the missing jobs.
+the canonical final JSON path for every configured combination, verifies existing
+completed runs against the requested configuration, and runs only missing jobs.
 """
 
 from __future__ import annotations
@@ -27,6 +27,9 @@ from experiments.run_noisy_batch import (
 )
 from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 from src.batch_utils import sanitize_for_filename
+from src.llm_settings import resolve_llm_settings
+from src.comparison_config import resolved_comparison_inputs, validate_config_comparisons
+from src.experiment_condition import ConditionMismatchError, check_conditions, condition_from_run, read_final_run
 
 
 def expected_output_path(
@@ -86,16 +89,31 @@ def run_missing_job(
     return result
 
 
-def load_combinations(experiment_name: str, config_path: str | None) -> list[dict[str, Any]]:
+def load_combinations(experiment_name: str, config_path: str | None, allow_legacy_settings=False) -> list[dict[str, Any]]:
     if config_path is None:
         config_path = str(PROJECT_ROOT / "config" / "experiments_noisy.yaml")
 
     config = NoisyExperimentConfig(config_path)
+    validate_config_comparisons(config, experiment_name)
+    settings = resolve_llm_settings(config.config["experiment_sets"][experiment_name], experiment_name, config_path=config_path, allow_legacy=allow_legacy_settings)
     combinations = config.get_experiment_combinations(experiment_name)
     provenance = execution_provenance(config_path)
     for combination in combinations:
         combination["execution_provenance"] = provenance.copy()
+        combination["llm_settings"] = settings
     return combinations
+
+
+def verify_existing_output(path, combo, allow_legacy=False):
+    data = read_final_run(path)
+    if allow_legacy and combo.get("llm_settings") is None:
+        print(f"WARNING: historical completion accepted without settings equivalence: {path}", file=sys.stderr)
+        return
+    condition_from_run(data)
+    recorded = data.get("run_metadata", {}).get("comparison_inputs")
+    if not isinstance(recorded, dict):
+        raise ConditionMismatchError(f"Existing run lacks resolved comparison inputs: {path}; use a distinct output directory for a new condition")
+    check_conditions([recorded, resolved_comparison_inputs(combo, combo.get("llm_settings"))])
 
 
 def main() -> int:
@@ -120,9 +138,10 @@ def main() -> int:
         help="Optional maximum number of missing jobs to run",
     )
 
+    parser.add_argument('--allow-legacy-settings', action='store_true', help='Explicitly allow environment-dependent historical settings')
     args = parser.parse_args()
 
-    combinations = load_combinations(args.experiment_name, args.config)
+    combinations = load_combinations(args.experiment_name, args.config, **({"allow_legacy_settings": True} if args.allow_legacy_settings else {}))
     missing: list[tuple[int, dict[str, Any], Path]] = []
     expected_outputs: list[Path] = []
 
@@ -134,7 +153,9 @@ def main() -> int:
             args.output_subdir,
         )
         expected_outputs.append(expected_path)
-        if not expected_path.exists():
+        if expected_path.exists():
+            verify_existing_output(expected_path, combo, args.allow_legacy_settings)
+        else:
             missing.append((index, combo, expected_path))
 
     if args.limit is not None:

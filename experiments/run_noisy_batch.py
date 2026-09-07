@@ -36,6 +36,7 @@ from src.batch_utils import unique_json_path as _unique_json_path
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from src.llm_settings import resolve_llm_settings
+from src.comparison_config import resolved_comparison_inputs, validate_config_comparisons
 from games.trust_game_noisy import TrustGameNoisy
 from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
@@ -559,6 +560,9 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "run_metadata_extra": {
                 **combo.get("execution_provenance", {}),
                 "decision_format": game_params.get("decision_format"),
+                "replicate_id": combo.get("replicate_id"),
+                "output_path": save_path,
+                "comparison_inputs": resolved_comparison_inputs(combo, combo.get("llm_settings")),
             },
             "llm_settings": combo.get("llm_settings"),
         }
@@ -699,6 +703,7 @@ def run_experiment_set(
     config_path: str = None,
     output_subdir: str = 'v2',
     max_runs: int = None,
+    allow_legacy_settings: bool = False,
 ):
     """
     Run a set of noise experiments.
@@ -712,6 +717,7 @@ def run_experiment_set(
         config_path = str(Path(__file__).resolve().parent.parent / 'config' / 'experiments_noisy.yaml')
 
     config = NoisyExperimentConfig(config_path)
+    validate_config_comparisons(config, experiment_name)
     combinations = config.get_experiment_combinations(
         experiment_name,
         max_runs=max_runs,
@@ -722,10 +728,10 @@ def run_experiment_set(
         config.config["experiment_sets"][experiment_name],
         experiment_name,
         config_path=config_path,
+        allow_legacy=allow_legacy_settings,
     )
     print(
-        f"LLM settings: {llm_settings.as_dict()} "
-        f"(source={llm_settings.source}, overrides={llm_settings.overrides})"
+        f"LLM settings: {llm_settings.as_dict() if llm_settings else 'explicit legacy environment'}"
     )
     for combo in combinations:
         combo["llm_settings"] = llm_settings
@@ -886,6 +892,7 @@ Examples:
         help='Limit replicates per configured cell without editing the config'
     )
 
+    parser.add_argument('--allow-legacy-settings', action='store_true', help='Explicitly run an unpinned historical set; excluded from strict comparisons')
     args = parser.parse_args()
 
     run_experiment_set(
@@ -894,4 +901,5 @@ Examples:
         config_path=args.config,
         output_subdir=args.output_subdir,
         max_runs=args.max_runs,
+        allow_legacy_settings=args.allow_legacy_settings,
     )

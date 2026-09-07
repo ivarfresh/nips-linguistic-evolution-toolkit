@@ -88,10 +88,17 @@ and a 4096 cap, GPT-5 Nano at reasoning effort *minimal* (the code default,
 zero reasoning tokens on every call) with temperature fixed at 1.0, Gemini 3.7
 with medium thinking. Claude also carries ~1,000+ characters of its own
 strategy prose in memory each round while the other two carry bare JSON.
-Message roles are equivalent, and no parse defaults, truncation or model
-aliasing occurred, so the data are clean but the conditions are not matched.
-Rerun the GPT-5 Nano cells at matched effort and control the prose confound
-before citing a ranking. _(from researchlog 2026-09-04)_
+The audit found no role-format bug. Missing historical finish reasons prevent
+conclusively ruling out truncation. These are descriptive rankings of the
+observed configurations, not isolated model effects. Specify the intended
+cross-model regime and control other inputs before generalizing a ranking.
+_(from researchlog 2026-09-04; qualified 2026-09-06)_
+
+The September 4 format comparison does not isolate prose: both new arms also
+changed myth templates, and JSON-only reruns changed retry behavior. Its lower
+sending cannot be attributed to prose or a memory mechanism. Corrected
+`fmt_controlled_v2_*` sets hold myth prompts fixed but have not been run.
+See [the correction](../../data/analysis/decision_format_confound_2026_09_04/README.md).
 
 ## Standing design gates
 

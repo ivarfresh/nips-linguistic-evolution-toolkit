@@ -99,7 +99,8 @@ _(from researchlog 2026-08-20)_
 
 ## 6. Provider route and reasoning settings are part of the condition
 
-Model slugs in `config/experiments.yaml` do not pin how a call is made.
+Historical behavior before explicit `llm_settings`: model slugs in
+`config/experiments.yaml` did not pin how a call was made.
 `LLM_PROVIDER=auto` (the default) sends `anthropic/*`, `openai/*` and
 `google/*` slugs to the **direct vendor API whenever that key is present in
 the runner's `.env`**, and falls back to OpenRouter otherwise. Each route
@@ -110,12 +111,12 @@ applies its own sampling policy (`src/utils.py`):
 | OpenRouter (Claude, Gemini slugs) | 0.8 | `reasoning.effort=medium` by default → extended thinking **on** | none |
 | OpenRouter (`openai/*`) | 0.8 requested, dropped upstream | vendor default | none |
 | Direct Anthropic | 0.8 | **off** (no thinking param) | `ANTHROPIC_MAX_TOKENS` (4096) |
-| Direct OpenAI, GPT-5 family | not sent (fixed 1.0) | `OPENAI_REASONING_EFFORT`, default **minimal** | none |
+| Direct OpenAI, original GPT-5 / Mini / Nano | not sent | `OPENAI_REASONING_EFFORT`, default **minimal** | none |
 | Direct Google | 0.8, except 3.7 Flash (not sent) | `GEMINI_THINKING_LEVEL` or vendor default | none |
 
-Message roles and system-prompt placement are equivalent on every route; the
-inequivalence is entirely in sampling and reasoning. Consequences, all
-verified against saved runs on 2026-09-04:
+The audit found equivalent message-role adaptation, but differing sampling
+and reasoning settings. Its historical observations follow; absent reasoning
+text does not by itself prove a provider route or absence of computation:
 
 - The cross-model defector set (Claude Sonnet 4.5 / GPT-5 Nano / Gemini 3.7
   Flash, 2026-08-25) compares a non-thinking Claude at T=0.8 with a
@@ -131,13 +132,20 @@ verified against saved runs on 2026-09-04:
 - Format confound: Claude stores ~1,000+ characters of strategy prose in its
   assistant memory each round; GPT and Gemini store bare JSON. Under
   memory-primary the models play with categorically different self-context.
-- `run_metadata` records provider and resolved model only since 2026-08-12,
-  and never records the effective reasoning effort, whether temperature was
-  sent (except Gemini), or `finish_reason`.
+- Historical `run_metadata` records provider and resolved model only since
+  2026-08-12; many earlier runs lack reasoning settings or finish reasons.
+  Missing reasoning text is not proof that no hidden reasoning occurred.
 
-Rule: pin `LLM_PROVIDER` and the reasoning-effort variables in the launch
-script, not in a per-machine `.env`, and match effort across models before any
-cross-model claim. _(from researchlog 2026-09-04)_
+Current rule: pin experiment-level `llm_settings`, record the complete condition,
+and declare individual inputs that a comparison intentionally varies. Equal
+reasoning labels across vendors are not evidence of equal computation. Resume
+cannot change the condition, and output provenance must expose prompt, memory,
+retry, and sampling differences as well as provider differences.
+See [condition checks](../experiment-condition-provenance.md). _(2026-09-06)_
+
+The September 4 format comparison changed myth prompts and retry behavior too;
+it does not establish that prose caused the sending difference. Controlled
+replacement sets are configured but not run. _(researchlog 2026-09-06)_
 
 ## 7. Co-occurrence is not transmission
 

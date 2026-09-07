@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import json
 import os
 import re
 import sys
@@ -37,7 +36,7 @@ from typing import Dict, List, Optional
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _shared import configure_matplotlib  # noqa: E402
+from _shared import configure_matplotlib, prepare_plot_provenance, read_final_run, save_plot_provenance
 
 import matplotlib  # noqa: E402
 
@@ -119,12 +118,13 @@ def load_runs(root: str) -> List[Dict]:
             cond = parse_condition(cond_dir)
             if cond is None:
                 continue
-            with open(os.path.join(dirpath, fn)) as fh:
-                data = json.load(fh)
+            source_path = os.path.join(dirpath, fn)
+            data = read_final_run(source_path)
             rep = re.search(r"_rep(\d+)", fn)
             runs.append(
                 {
                     "population": cond["population"],
+                    "source_path": source_path,
                     "defection": cond["defection"],
                     "model": model_dir,
                     "task_order": task_order,
@@ -215,14 +215,19 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", default=DEFAULT_ROOT)
     ap.add_argument("--out", default=DEFAULT_OUT)
+    ap.add_argument("--comparison-spec", help="JSON mapping of intentionally differing condition fields to reasons")
+    ap.add_argument("--legacy-reason", help="Explain why incompletely documented historical runs are included")
     args = ap.parse_args()
 
     configure_matplotlib()
-    os.makedirs(args.out, exist_ok=True)
     runs = load_runs(args.root)
     if not runs:
         sys.exit(f"No runs found under {args.root}")
     print(f"Loaded {len(runs)} runs from {args.root}")
+    provenance = prepare_plot_provenance(
+        [run["source_path"] for run in runs], args.comparison_spec, args.legacy_reason,
+    )
+    os.makedirs(args.out, exist_ok=True)
 
     summary: list = []
     figures = [
@@ -242,6 +247,7 @@ def main() -> None:
         w.writeheader()
         w.writerows(summary)
     print(f"wrote {csv_path}")
+    save_plot_provenance(provenance, args.out)
 
     # Cells with fewer than 5 runs, so the reader knows where max is on thin data.
     short = [r for r in summary if r["n_runs"] < 5 and r["agents"] == "all"]

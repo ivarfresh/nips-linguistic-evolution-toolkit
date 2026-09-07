@@ -16,6 +16,7 @@ from src.experiment_config import ExperimentConfig
 from src.simulation import run_simulation
 from src.myth_writer import MythWriter
 from src.llm_settings import resolve_llm_settings
+from src.comparison_config import validate_config_comparisons
 from games.trust_game import TrustGame
 from scripts.hf_sync_completed_runs import maybe_sync_completed_runs
 
@@ -157,6 +158,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             "monitor_config": game_params.get("monitor_config"),
             "chat_memory_mode": game_params.get("chat_memory_mode", "default"),
             "llm_settings": combo.get("llm_settings"),
+            "run_metadata_extra": {"replicate_id": combo.get("replicate_id"), "output_path": save_path},
         }
         quiet_batch = os.environ.get("TRUST_BATCH_QUIET", "").lower() in {"1", "true", "yes"}
         if quiet_batch:
@@ -225,7 +227,7 @@ def run_single_experiment(combo: Dict[str, Any], experiment_name: str, index: in
             }
         }
 
-def run_experiment_set(experiment_name: str, workers: int = 1):
+def run_experiment_set(experiment_name: str, workers: int = 1, allow_legacy_settings: bool = False):
     """
     Run a set of experiments either sequentially or in parallel.
 
@@ -235,6 +237,7 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
     """
     # Load configuration
     config = ExperimentConfig('config/experiments.yaml')
+    validate_config_comparisons(config, experiment_name)
     combinations = config.get_experiment_combinations(experiment_name)
     # Fail closed: the experiment set must pin provider / reasoning /
     # temperature (see src/llm_settings.py). Env overrides are recorded.
@@ -242,10 +245,10 @@ def run_experiment_set(experiment_name: str, workers: int = 1):
         config.config["experiment_sets"][experiment_name],
         experiment_name,
         config_path="config/experiments.yaml",
+        allow_legacy=allow_legacy_settings,
     )
     print(
-        f"LLM settings: {llm_settings.as_dict()} "
-        f"(source={llm_settings.source}, overrides={llm_settings.overrides})"
+        f"LLM settings: {llm_settings.as_dict() if llm_settings else 'explicit legacy environment'}"
     )
     for combo in combinations:
         combo["llm_settings"] = llm_settings
@@ -380,12 +383,13 @@ Examples:
         help='Number of parallel workers (default: 1 for sequential execution)'
     )
 
+    parser.add_argument('--allow-legacy-settings', action='store_true', help='Explicitly run an unpinned historical set; excluded from strict comparisons')
     args = parser.parse_args()
 
     if args.experiment_name:
-        run_experiment_set(args.experiment_name, workers=args.workers)
+        run_experiment_set(args.experiment_name, workers=args.workers, allow_legacy_settings=args.allow_legacy_settings)
     else:
         # Run default experiment sets
-        run_experiment_set("pilot", workers=args.workers)
-        run_experiment_set("persona_comparison", workers=args.workers)
+        run_experiment_set("pilot", workers=args.workers, allow_legacy_settings=args.allow_legacy_settings)
+        run_experiment_set("persona_comparison", workers=args.workers, allow_legacy_settings=args.allow_legacy_settings)
         # run_experiment_set("full_factorial", workers=args.workers)  # Comment out for now

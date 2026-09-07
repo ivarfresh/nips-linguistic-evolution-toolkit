@@ -49,6 +49,7 @@ def test_load_combinations_embeds_execution_provenance(monkeypatch, tmp_path):
     class FakeConfig:
         def __init__(self, path):
             assert path == str(config_path)
+            self.config = {"experiment_sets": {"example": {"llm_settings": {"provider": "direct", "reasoning": "off", "temperature": "default"}}}}
 
         def get_experiment_combinations(self, experiment_name):
             assert experiment_name == "example"

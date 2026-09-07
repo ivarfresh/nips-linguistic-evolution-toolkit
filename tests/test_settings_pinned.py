@@ -7,8 +7,8 @@ A PR check can only see what is in git, so these tests pin three things:
 2. every launch script references pinned experiment sets and does not export
    the legacy per-vendor reasoning knobs, except a frozen allowlist;
 3. every committed output directory under data/analysis/ and docs/figures/
-   carries provenance.json, and no model inside it mixes regimes without an
-   explicit acknowledgement, except a frozen allowlist.
+   carries provenance.json, with every differing condition field explicitly
+   declared and its outputs hashed, except unchanged historical directories.
 
 The allowlists are frozen: do not add to them. Remove entries as things get
 pinned.
@@ -16,18 +16,25 @@ pinned.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
 import yaml
 
 from src.llm_settings import LLMSettingsError, parse_llm_settings_block
+from src.experiment_condition import ConditionMismatchError, validate_output_provenance
+from scripts.write_provenance import output_hashes
 
 REPO = Path(__file__).resolve().parent.parent
 TESTS = Path(__file__).resolve().parent
-CONFIGS = ("config/experiments.yaml", "config/experiments_noisy.yaml")
+CONFIGS = tuple(str(path.relative_to(REPO)) for path in sorted((REPO / "config").glob("*.yaml")))
+BASELINE_BYTES = (TESTS / "fixtures" / "legacy_settings_baseline.json").read_bytes()
+assert hashlib.sha256(BASELINE_BYTES).hexdigest() == "d0bc771713afcf626785ff159140b28e9f94d3bf9b3eb29087b658e8d21607db"
+LEGACY_BASELINE = json.loads(BASELINE_BYTES)
 LEGACY_ENV_KNOBS = (
     "OPENAI_REASONING_EFFORT",
     "GEMINI_THINKING_LEVEL",
@@ -37,7 +44,29 @@ LEGACY_ENV_KNOBS = (
 
 def _allowlist(name: str) -> set[str]:
     lines = (TESTS / name).read_text(encoding="utf-8").splitlines()
-    return {line.strip() for line in lines if line.strip() and not line.startswith("#")}
+    current = {line.strip() for line in lines if line.strip() and not line.startswith("#")}
+    frozen = set(LEGACY_BASELINE["allowlists"][name])
+    assert current <= frozen, f"{name}: new exemptions are forbidden: {sorted(current - frozen)}"
+    return current
+
+
+def _definition_digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _unchanged_legacy(path):
+    changed = subprocess.run(["git", "diff", "--quiet", "--", path], cwd=REPO).returncode
+    untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "--", path], cwd=REPO, check=True, capture_output=True, text=True).stdout
+    indexed = subprocess.run(["git", "ls-files", "--stage", "-z", "--", path], cwd=REPO, check=True, capture_output=True, text=True).stdout
+    files = {}
+    for record in indexed.split("\0"):
+        if record:
+            info, filename = record.split("\t", 1)
+            _, blob, stage = info.split()
+            if stage != "0":
+                return False
+            files[filename] = blob
+    return not changed and not untracked and _definition_digest(files) == LEGACY_BASELINE["paths"].get(path)
 
 
 def _experiment_sets():
@@ -90,6 +119,14 @@ def test_legacy_experiment_set_allowlist_only_shrinks():
     )
 
 
+def test_modified_legacy_sets_must_pin_settings():
+    legacy = _allowlist("legacy_unpinned_experiment_sets.txt")
+    for config_path, sets in _experiment_sets().items():
+        for name, body in sets.items():
+            if f"{config_path}:{name}" in legacy:
+                assert _definition_digest(body) == LEGACY_BASELINE["experiment_sets"][f"{config_path}:{name}"], f"{config_path}:{name}: modified historical sets need llm_settings"
+
+
 # ---------------------------------------------------------------------------
 # 2. Launch scripts
 # ---------------------------------------------------------------------------
@@ -115,7 +152,7 @@ def test_new_launch_scripts_are_pinned():
     }
     problems = []
     for script in _launch_scripts():
-        if script.name in legacy:
+        if script.name in legacy and _unchanged_legacy(str(script.relative_to(REPO))):
             continue
         text = script.read_text(encoding="utf-8")
         for knob in LEGACY_ENV_KNOBS:
@@ -129,7 +166,7 @@ def test_new_launch_scripts_are_pinned():
                 problems.append(
                     f"{script.name}: runs experiment set {ref!r} which has no llm_settings"
                 )
-        if not refs and "run_simulation" not in text:
+        if not refs:
             # A launcher that never names a set cannot be checked; flag it.
             problems.append(f"{script.name}: no experiment set reference found")
     assert not problems, "\n".join(problems)
@@ -153,7 +190,7 @@ def test_new_output_dirs_carry_provenance():
     legacy = _allowlist("legacy_unprovenanced_output_dirs.txt")
     problems = []
     for rel, path in _output_dirs():
-        if rel in legacy:
+        if rel in legacy and _unchanged_legacy(rel):
             continue
         prov = path / "provenance.json"
         if not prov.is_file():
@@ -164,15 +201,12 @@ def test_new_output_dirs_carry_provenance():
         except json.JSONDecodeError as exc:
             problems.append(f"{rel}: provenance.json is not valid JSON ({exc})")
             continue
-        for key in ("provenance_version", "n_runs", "models", "mixed_settings_models"):
-            if key not in doc:
-                problems.append(f"{rel}: provenance.json lacks {key!r}")
-        if doc.get("mixed_settings_models") and not doc.get("mixed_settings_acknowledged"):
-            problems.append(
-                f"{rel}: runs mix LLM settings within "
-                + ", ".join(doc["mixed_settings_models"])
-                + " and no mixed_settings_acknowledged reason is given"
-            )
+        try:
+            validate_output_provenance(doc)
+            if doc.get("outputs") != output_hashes(path):
+                problems.append(f"{rel}: output content differs from provenance; regenerate it")
+        except (ConditionMismatchError, TypeError, ValueError) as exc:
+            problems.append(f"{rel}: {exc}")
     assert not problems, "\n".join(problems)
 
 
@@ -195,3 +229,32 @@ def test_allowlists_have_no_duplicates(name):
         if line.strip() and not line.startswith("#")
     ]
     assert len(lines) == len(set(lines))
+
+
+def test_declared_comparisons_match_resolved_inputs():
+    from experiments.run_noisy_batch import NoisyExperimentConfig
+    from src.experiment_config import ExperimentConfig
+    from src.comparison_config import validate_config_comparisons
+
+    for config_path in CONFIGS:
+        raw = yaml.safe_load((REPO / config_path).read_text())
+        if not raw.get("comparison_sets"):
+            continue
+        loader = NoisyExperimentConfig if config_path.endswith("experiments_noisy.yaml") else ExperimentConfig
+        validate_config_comparisons(loader(str(REPO / config_path)), environ={})
+
+
+def test_allowlist_cannot_gain_an_exemption(tmp_path, monkeypatch):
+    name = "legacy_unpinned_experiment_sets.txt"
+    (tmp_path / name).write_text("config/experiments.yaml:brand_new_unpinned_set\n")
+    monkeypatch.setitem(globals(), "TESTS", tmp_path)
+    with pytest.raises(AssertionError, match="new exemptions"):
+        _allowlist(name)
+
+
+def test_new_launcher_cannot_bypass_checks_with_a_function_name(tmp_path, monkeypatch):
+    script = tmp_path / "launch_unpinned.sh"
+    script.write_text("python -c 'from src.simulation import run_simulation'\n")
+    monkeypatch.setitem(globals(), "_launch_scripts", lambda: [script])
+    with pytest.raises(AssertionError, match="no experiment set reference"):
+        test_new_launch_scripts_are_pinned()

@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 from scripts import hf_sync_completed_runs as hf_sync
+from src.experiment_condition import build_condition, digest
 
 
 FULL_STATE = {
@@ -17,21 +18,34 @@ FULL_STATE = {
         "provider_model": "claude-sonnet-4-5-20250929",
     },
 }
+EFFECTIVE_SETTINGS = {
+    "provider": "anthropic", "provider_model": "claude-sonnet-4-5-20250929",
+    "reasoning": "off", "reasoning_param": None, "temperature_sent": False,
+    "temperature_value": None, "max_output_tokens": 4096,
+}
+CONDITION = build_condition(SimpleNamespace(), None, {"llm_settings_effective": EFFECTIVE_SETTINGS}, {})
+FULL_STATE["run_metadata"].update({
+    "llm_settings_effective": EFFECTIVE_SETTINGS,
+    "experiment_condition": CONDITION,
+    "condition_sha256": digest(CONDITION),
+})
 
 
-def test_discovery_skips_runs_without_llm_provenance(tmp_path, capsys):
+def test_upload_eligibility_does_not_change_completion(tmp_path, capsys):
     data_root = tmp_path / "data" / "json"
     unprovenanced = dict(FULL_STATE, run_metadata={"model": "anthropic/claude-sonnet-4.5"})
     write_json(data_root / "experiment" / "old.json", unprovenanced)
     write_json(data_root / "experiment" / "new.json", FULL_STATE)
 
-    assert not hf_sync.is_completed_final_json(
+    assert hf_sync.is_completed_final_json(
         data_root / "experiment" / "old.json", data_root=data_root
     )
     assert hf_sync.is_completed_final_json(
         data_root / "experiment" / "new.json", data_root=data_root
     )
-    assert "lacks LLM provenance" in capsys.readouterr().err
+    plan = hf_sync.build_upload_plan([data_root / "experiment" / "old.json", data_root / "experiment" / "new.json"], repo_id="owner/dataset", namespace="uploader", data_root=data_root)
+    assert plan.final_paths == ((data_root / "experiment" / "new.json").resolve(),)
+    assert "lacks complete condition provenance" in capsys.readouterr().err
 
 
 def write_json(path: Path, payload) -> Path:

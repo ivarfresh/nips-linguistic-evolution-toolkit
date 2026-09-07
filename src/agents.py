@@ -63,7 +63,7 @@ class Agent:
             "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
             "agent_id": self.agent_id,
             "model": self.model,
-            "temperature": self.temperature,
+            "temperature": self.llm_settings.temperature if self.llm_settings is not None else self.temperature,
             "memory_capacity": self.memory_capacity,
             "metadata": transcript_metadata or {},
             "prompt": prompt,

@@ -1,5 +1,10 @@
 # Docs changelog
 
+## 2026-09-06
+- Document complete-condition checks, explicit legacy migration, and separate completion/upload eligibility.
+- Correct the September 4 format comparison: myth prompts and retry policy also differ; no isolated prose effect established.
+- Replace the unsupported Gemini temperature claim with the distinction between omission policy and verified endpoint behavior.
+
 ## 2026-09-04
 - design-constraints.md updated from researchlog 2026-08-28, 2026-09-01, 2026-09-04 (new §6 provider route/reasoning, §7 co-occurrence ≠ transmission; saturation is general) — compile
 - experiment-protocol.md updated from researchlog 2026-09-01, 2026-09-04 (negative-only noise regime; provider-route pinning; provenance gaps) — compile

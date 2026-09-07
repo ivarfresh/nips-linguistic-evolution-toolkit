@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""How much of Claude's defector-cell behaviour is the prose it keeps in memory?
+"""Describe the exploratory decision-format runs, or compare controlled runs.
 
-Compares three Claude Sonnet 4.5 cells that share every protocol setting
-(8 agents, 25% hidden forced-zero defectors, negative-only informed noise,
-myth->game, memory-primary, T=0.8, thinking off, direct Anthropic) and differ
-only in the OUTPUT FORMAT line appended to game prompts:
+The archived September 4 comparison changed myth prompts and retry policy
+as well as decision format. It does not isolate a format or memory effect.
+Use --exploratory to reproduce that descriptive table. New controlled runs
+must pass a complete-condition comparison before any output is written.
 
   reference            no format line (Aron's 2026-08-25 cross-model cell;
                        Claude wrote ~1,000 chars of strategy per decision)
@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import statistics
 import sys
@@ -38,6 +39,25 @@ from analyses._shared import (  # noqa: E402
     llm_settings_signature,
     load_simulation_runs,
 )
+from scripts.write_provenance import build_provenance
+
+EXPLORATORY_REASON = (
+    "September 4 runs lack complete conditions. The reference used game-directed "
+    "memory-primary myth prompts; both format arms used generic myth prompts. "
+    "JSON-only used corrective game retries. Differences cannot be attributed "
+    "to output format or retained prose alone."
+)
+EXPLORATORY_DIFFERENCES = {
+    "replicate": "Five separately seeded replicates per condition.",
+    "llm.reasoning": "Reference effort was unrecorded; newer runs record off.",
+    "protocol.decision_format": "Different requested output formats.",
+    "protocol.myth_default_prompt_key": "Uncontrolled change from game-directed to generic myths.",
+    "protocol.myth_later_prompt_key": "Uncontrolled change in myth instructions and self-myth repetition.",
+    "protocol.myth_injection_mode": "Unrecorded in the reference metadata.",
+    "protocol.noise_semantics": "Unrecorded in the reference metadata.",
+    "implementation.code_commit": "Different code versions, including the corrective-retry change.",
+    "implementation.code_dirty": "Some original runs used a dirty worktree.",
+}
 
 REFERENCE_DIR = (
     "data/shared_runs/uploaders/vallinder/data/json/noise_experiments/"
@@ -143,6 +163,7 @@ def main():
     parser.add_argument("--reference", default=REFERENCE_DIR)
     parser.add_argument("--cells", nargs="*", default=[f"{k}={v}" for k, v in CELL_DIRS.items()])
     parser.add_argument("--out", default="data/analysis/decision_format_confound_2026_09_04/summary.csv")
+    parser.add_argument("--exploratory", action="store_true", help="Acknowledge the archived study's uncontrolled prompt and retry differences")
     args = parser.parse_args()
 
     cells = {"reference": args.reference}
@@ -150,17 +171,28 @@ def main():
         name, _, path = spec.partition("=")
         cells[name] = path
 
+    allowed = EXPLORATORY_DIFFERENCES if args.exploratory else {
+        "replicate": "Independent replicates within each format condition.",
+        "protocol.game.decision_format": "The format instruction is the manipulated variable.",
+    }
+    paths_by_cell = {name: final_jsons(directory) for name, directory in cells.items()}
+    if any(not paths for paths in paths_by_cell.values()):
+        parser.error("Every comparison cell must contain completed final runs")
+    all_paths = [path for paths in paths_by_cell.values() for path in paths]
+    checked_runs = load_simulation_runs(
+        all_paths, allowed_differences=allowed,
+        legacy_reason=EXPLORATORY_REASON if args.exploratory else None,
+    )
+    if args.exploratory:
+        print("EXPLORATORY: " + EXPLORATORY_REASON)
+
     all_rows = []
     for name, directory in cells.items():
         paths = final_jsons(directory)
         if not paths:
             print(f"{name}: no runs in {directory}")
             continue
-        # The reference cell predates llm_settings_effective, so its
-        # signature reads 'unrecorded' for reasoning; the mix is deliberate
-        # and stated here: same provider (direct Anthropic), thinking off
-        # (0 reasoning tokens on every call, audit 2026-09-04), T=0.8.
-        runs = load_simulation_runs(paths, allow_mixed_settings=True)
+        runs = {path: checked_runs[path] for path in paths}
         sigs = {str(llm_settings_signature(d)) for d in runs.values()}
         for path, data in runs.items():
             row = {"cell": name, "run": os.path.basename(path), **run_metrics(data)}
@@ -183,6 +215,12 @@ def main():
         writer.writeheader()
         writer.writerows(all_rows)
     print(f"\nwrote {out}")
+    provenance = build_provenance(
+        all_paths, allowed_differences=allowed,
+        legacy_reason=EXPLORATORY_REASON if args.exploratory else None,
+        output_dir=out.parent,
+    )
+    (out.parent / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -1,25 +1,8 @@
 #!/usr/bin/env python3
-"""Write provenance.json for a committed analysis or figure directory.
-
-Every new directory under data/analysis/ or docs/figures/ must say which runs
-it was computed from and which LLM regime (provider, reasoning level,
-temperature policy) those runs used, so a reader can tell whether a
-cross-model figure compares matched conditions (researchlog 2026-09-04).
-tests/test_settings_pinned.py enforces the file's presence and refuses mixed
-regimes within one model unless ``mixed_settings_acknowledged`` is set.
-
-Usage (from repo root):
-  python scripts/write_provenance.py <out_dir> <run.json or dir> [more ...]
-  python scripts/write_provenance.py docs/figures/my_fig data/json/some_set --acknowledge-mixed "why"
-
-The output lists one entry per model with the distinct settings signatures
-found and the run count per signature.
-"""
-
-from __future__ import annotations
+"""Write checked input conditions and content hashes beside analysis outputs."""
 
 import argparse
-import datetime as dt
+import hashlib
 import json
 import os
 import sys
@@ -28,82 +11,80 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from analyses._shared import llm_settings_signature  # noqa: E402
-from scripts.hf_sync_completed_runs import _is_non_final_name  # noqa: E402
-
-PROVENANCE_VERSION = 1
+from src.experiment_condition import (
+    NON_FINAL_SUFFIXES, check_conditions, comparison_condition, read_final_run,
+    validate_output_provenance,
+)
 
 
 def iter_run_jsons(paths):
+    seen = set()
     for raw in paths:
-        p = Path(raw)
-        if p.is_dir():
-            for f in sorted(p.rglob("*.json")):
-                if not _is_non_final_name(f):
-                    yield f
-        elif p.suffix == ".json" and not _is_non_final_name(p):
-            yield p
+        path = Path(raw)
+        candidates = sorted(path.rglob("*.json")) if path.is_dir() else [path]
+        for candidate in candidates:
+            if candidate.suffix == ".json" and not candidate.name.endswith(NON_FINAL_SUFFIXES):
+                resolved = candidate.resolve()
+                if resolved not in seen:
+                    seen.add(resolved)
+                    yield resolved
 
 
-def build_provenance(run_paths, acknowledge_mixed=None):
-    by_model = {}
-    n_runs = 0
+def output_hashes(directory):
+    directory = Path(directory)
+    return [
+        {"path": str(path.relative_to(directory)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        for path in sorted(directory.rglob("*"))
+        if path.is_file() and path.name not in {"provenance.json", ".DS_Store"}
+    ]
+
+
+def build_provenance(run_paths, *, allowed_differences=None, legacy_reason=None, output_dir=None):
+    runs = []
     for path in run_paths:
-        try:
-            data = json.loads(Path(path).read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        if not isinstance(data, dict) or "run_metadata" not in data:
-            continue
-        sig = llm_settings_signature(data)
-        model = str(sig["model"])
-        key = json.dumps(
-            {k: sig[k] for k in ("provider", "reasoning", "temperature")}, sort_keys=True
-        )
-        entry = by_model.setdefault(model, {})
-        bucket = entry.setdefault(key, {"settings": json.loads(key), "runs": 0, "example": None})
-        bucket["runs"] += 1
-        bucket["example"] = bucket["example"] or os.path.relpath(path, REPO_ROOT)
-        n_runs += 1
-    models = {
-        model: {"signatures": list(buckets.values())} for model, buckets in by_model.items()
+        path = Path(path)
+        data = read_final_run(path)
+        runs.append({
+            "path": os.path.relpath(path, REPO_ROOT),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "condition": comparison_condition(data, legacy_reason),
+        })
+    observed = check_conditions([run["condition"] for run in runs], allowed_differences)
+    document = {
+        "provenance_version": 2,
+        "n_runs": len(runs),
+        "runs": runs,
+        "allowed_differences": allowed_differences or {},
+        "observed_differences": observed,
+        "outputs": output_hashes(output_dir) if output_dir else [],
     }
-    mixed = sorted(m for m, b in by_model.items() if len(b) > 1)
-    doc = {
-        "provenance_version": PROVENANCE_VERSION,
-        "written_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-        "n_runs": n_runs,
-        "models": models,
-        "mixed_settings_models": mixed,
-    }
-    if acknowledge_mixed:
-        doc["mixed_settings_acknowledged"] = acknowledge_mixed
-    return doc
+    if legacy_reason:
+        document["legacy_reason"] = legacy_reason
+    validate_output_provenance(document)
+    return document
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("out_dir")
-    parser.add_argument("runs", nargs="+", help="run JSON files or directories")
-    parser.add_argument(
-        "--acknowledge-mixed",
-        metavar="REASON",
-        help="record that mixed regimes within a model are deliberate",
-    )
+    parser.add_argument("runs", nargs="+")
+    parser.add_argument("--allow-difference", action="append", default=[], metavar="FIELD=REASON")
+    parser.add_argument("--legacy-reason", help="Explicitly document missing historical provenance")
     args = parser.parse_args()
-    doc = build_provenance(iter_run_jsons(args.runs), args.acknowledge_mixed)
-    if doc["n_runs"] == 0:
-        sys.exit("No run JSONs found; nothing written.")
-    out = Path(args.out_dir) / "provenance.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote {out} ({doc['n_runs']} runs, {len(doc['models'])} model(s))")
-    if doc["mixed_settings_models"] and not args.acknowledge_mixed:
-        print(
-            "WARNING: mixed LLM settings within "
-            + ", ".join(doc["mixed_settings_models"])
-            + "; the pinned-settings test will fail unless you pass --acknowledge-mixed."
-        )
+    allowed = {}
+    for value in args.allow_difference:
+        field, separator, reason = value.partition("=")
+        if not separator or not field or not reason.strip():
+            parser.error("--allow-difference requires FIELD=REASON")
+        allowed[field] = reason
+    document = build_provenance(
+        iter_run_jsons(args.runs), allowed_differences=allowed,
+        legacy_reason=args.legacy_reason, output_dir=args.out_dir,
+    )
+    output = Path(args.out_dir) / "provenance.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {output} ({document['n_runs']} runs)")
 
 
 if __name__ == "__main__":

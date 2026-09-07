@@ -80,6 +80,16 @@ _(from researchlog 2026-08-12)_
 
 ## Provider route and sampling settings
 
+**Current protocol (2026-09-06):** experiment sets pin `llm_settings`; the runner
+records the complete resolved condition and per-call request settings. Resume
+requires unchanged settings, prompts, seeds, and implementation. Comparisons
+declare intentional differing fields rather than asserting that similarly
+named effort levels are equivalent. Historical runs require explicit opt-ins;
+unknown provenance is not evidence of matching. Completion remains separate
+from HF upload eligibility. See [condition checks and migration](../experiment-condition-provenance.md).
+
+**Historical behavior, not guidance for new runs:**
+
 Which API a run hits is decided by the runner's `.env`, not the config:
 `LLM_PROVIDER=auto` goes direct to Anthropic / OpenAI / Google when that key
 exists and to OpenRouter otherwise, and each route sets temperature, thinking

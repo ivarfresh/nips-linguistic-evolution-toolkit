@@ -4,9 +4,15 @@ Keep this module minimal — only helpers duplicated in 2+ places belong here.
 """
 
 import json
+import sys
+from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 import numpy as np
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.experiment_condition import (
+    ConditionMismatchError, check_conditions, comparison_condition, read_final_run,
+)
 
 
 def configure_matplotlib() -> None:
@@ -25,7 +31,7 @@ def load_simulation_data(filepath: str) -> Dict:
         return json.load(f)
 
 
-class MixedLLMSettingsError(ValueError):
+class MixedLLMSettingsError(ConditionMismatchError):
     """Raised when runs with different provider/reasoning/temperature
     settings are pooled without an explicit opt-in."""
 
@@ -78,36 +84,47 @@ def load_simulation_runs(
     filepaths: Sequence[str],
     *,
     allow_mixed_settings: bool = False,
+    allowed_differences=None,
+    legacy_reason=None,
 ) -> Dict[str, Dict]:
-    """Load several run JSONs and refuse to pool mismatched LLM regimes.
+    """Compare complete conditions; every varying field requires a reason.
 
-    Within one model, every run must share the same provider, reasoning level
-    and temperature policy. Pass ``allow_mixed_settings=True`` only when the
-    mix is deliberate and stated in the analysis.
+    Historical inputs additionally require legacy_reason. The single-file
+    load_simulation_data reader remains available for historical readers.
     """
-    runs = {path: load_simulation_data(path) for path in filepaths}
-    by_model: Dict[str, Dict[str, list]] = {}
-    for path, data in runs.items():
-        sig = llm_settings_signature(data)
-        key = json.dumps(
-            {k: sig[k] for k in ("provider", "reasoning", "temperature")},
-            sort_keys=True,
+    if allow_mixed_settings:
+        raise MixedLLMSettingsError("Replace allow_mixed_settings=True with named allowed_differences and reasons")
+    runs = {str(path): read_final_run(path) for path in filepaths}
+    try:
+        check_conditions(
+            [comparison_condition(data, legacy_reason) for data in runs.values()],
+            allowed_differences,
         )
-        by_model.setdefault(str(sig["model"]), {}).setdefault(key, []).append(path)
-    mixed = {model: sigs for model, sigs in by_model.items() if len(sigs) > 1}
-    if mixed and not allow_mixed_settings:
-        lines = []
-        for model, sigs in mixed.items():
-            lines.append(f"  {model}:")
-            for key, paths in sigs.items():
-                lines.append(f"    {key}: {len(paths)} run(s), e.g. {paths[0]}")
-        raise MixedLLMSettingsError(
-            "Refusing to pool runs with different LLM settings "
-            "(provider / reasoning / temperature). Pass "
-            "allow_mixed_settings=True only if the mix is deliberate.\n"
-            + "\n".join(lines)
-        )
+    except ConditionMismatchError as exc:
+        raise MixedLLMSettingsError(str(exc)) from exc
     return runs
+
+
+def prepare_plot_provenance(run_paths, comparison_spec=None, legacy_reason=None):
+    """Validate plotted inputs before writing any output files."""
+    from scripts.write_provenance import build_provenance
+
+    allowed = {"replicate": "Independent replicates of the same condition"}
+    if comparison_spec is not None:
+        with open(comparison_spec, encoding="utf-8") as handle:
+            allowed = json.load(handle)
+    return build_provenance(
+        run_paths, allowed_differences=allowed, legacy_reason=legacy_reason,
+    )
+
+
+def save_plot_provenance(document, output_dir):
+    from scripts.write_provenance import output_hashes
+
+    document = dict(document, outputs=output_hashes(output_dir))
+    (Path(output_dir) / "provenance.json").write_text(
+        json.dumps(document, indent=2) + "\n", encoding="utf-8",
+    )
 
 
 def infer_endowment(

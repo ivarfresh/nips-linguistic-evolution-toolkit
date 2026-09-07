@@ -4,6 +4,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from src.agents import Agent
+from games.base_game import InvalidGameResponseError
+from src.experiment_condition import ConditionMismatchError, build_condition, check_conditions, digest
 from src.utils import create_llm_client, llm_runtime_metadata, print_simulation_header
 from concurrent.futures import ThreadPoolExecutor
 
@@ -386,8 +388,33 @@ def run_simulation(
         provider=llm_settings.provider_mode if llm_settings is not None else None,
     )
     runtime_metadata = llm_runtime_metadata(client, model, llm_settings)
+    requested_condition = build_condition(
+        game, myth_writer, runtime_metadata,
+        {
+            "model": model, "num_turns": num_turns, "num_agents": num_agents,
+            "memory_capacity": memory_capacity, "agent_biases": agent_biases,
+            "task_order": task_order, "agent_names": agent_names,
+            "seed_myth": seed_myth, "seed_user_prompt": seed_user_prompt,
+            "chat_memory_mode": chat_memory_mode, "seed_reinject": seed_reinject,
+            "initial_system_prompt_template": initial_system_prompt_template,
+            "switch_to_game_system_before_game": switch_to_game_system_before_game,
+            "monitor_config": monitor_config,
+        },
+        replicate_id=(run_metadata_extra or {}).get("replicate_id"),
+    )
+    resumed_metadata = None
     if resume_from and Path(resume_from).exists():
         sim_data = SimulationData.load_state(resume_from, client, log_file=log_file)
+        saved_condition = sim_data.run_metadata.get("experiment_condition")
+        if saved_condition is None:
+            raise ConditionMismatchError(
+                "Checkpoint predates the complete condition record; automatic resume cannot "
+                "verify its settings. Preserve it and start a separately identified run."
+            )
+        if sim_data.run_metadata.get("condition_sha256") != digest(saved_condition):
+            raise ConditionMismatchError("Checkpoint condition digest is inconsistent")
+        check_conditions([saved_condition, requested_condition])
+        resumed_metadata = dict(sim_data.run_metadata)
         if task_order is not None:
             sim_data.task_order = task_order
         for agent in sim_data.agents.values():
@@ -474,6 +501,12 @@ def run_simulation(
             },
         }
     )
+    if resumed_metadata is not None:
+        sim_data.run_metadata.update(resumed_metadata)
+        sim_data.run_metadata.setdefault("resume_history", []).append(run_metadata_extra or {})
+    sim_data.run_metadata["experiment_condition"] = requested_condition
+    sim_data.run_metadata["condition_sha256"] = digest(requested_condition)
+    sim_data.run_metadata["llm_settings_effective"] = runtime_metadata.get("llm_settings_effective")
 
     # Phase 8 silent monitor: opt-in. When enabled, after each round's myths are
     # written a monitor model flags actionable game strategy; flagged agents have
@@ -691,7 +724,7 @@ def run_simulation(
                                     # Corrective retry: same prompt plus a
                                     # suffix naming the role and required key
                                     # (games/base_game.py::get_game_retry_prompt).
-                                    retry_builder = getattr(game, "get_game_retry_prompt", None)
+                                    retry_builder = getattr(game, "get_game_retry_prompt", None) if isinstance(e, InvalidGameResponseError) else None
                                     attempt_prompt = (
                                         retry_builder(prompt, role, e, attempt)
                                         if retry_builder

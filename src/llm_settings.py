@@ -23,11 +23,11 @@ Schema (per experiment set)::
       reasoning: off | minimal | low | medium | high
       temperature: default | <float>
 
-``temperature: default`` means "send no temperature parameter" (the vendor's
-default, 1.0 on every current model). A float is sent only when the model
-honours it; models known to reject or ignore temperature (GPT-5 family,
-Gemini 3.6+ Flash, Claude Opus 4.7+, Fable) fail closed instead of silently
-running at the vendor default while the metadata claims otherwise.
+``temperature: default`` means "send no temperature parameter". This is a
+sampling policy, not a claim that vendors use equivalent sampling.
+``max_output_tokens`` optionally pins the output cap. Pinned direct Anthropic
+requests otherwise use 4096; other providers omit the cap. Environment token
+limits apply only to the explicitly selected legacy path.
 
 Override environment variables (recorded when applied):
 
@@ -70,13 +70,17 @@ class LLMSettings:
     temperature: Optional[float]  # None == vendor default (parameter omitted)
     source: str = "config"
     overrides: Dict[str, str] = field(default_factory=dict)
+    max_output_tokens: Optional[int] = None
 
     def as_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "provider": self.provider,
             "reasoning": self.reasoning,
             "temperature": "default" if self.temperature is None else self.temperature,
         }
+        if self.max_output_tokens is not None:
+            result["max_output_tokens"] = self.max_output_tokens
+        return result
 
     @property
     def provider_mode(self) -> str:
@@ -133,7 +137,7 @@ def parse_llm_settings_block(block: Any, origin: str) -> Dict[str, Any]:
         raise LLMSettingsError(
             f"{origin}: llm_settings is missing required key(s): {', '.join(missing)}."
         )
-    unknown = sorted(set(block) - set(REQUIRED_KEYS))
+    unknown = sorted(set(block) - set(REQUIRED_KEYS) - {"max_output_tokens"})
     if unknown:
         raise LLMSettingsError(
             f"{origin}: llm_settings has unknown key(s): {', '.join(unknown)}."
@@ -151,7 +155,10 @@ def parse_llm_settings_block(block: Any, origin: str) -> Dict[str, Any]:
             f"{', '.join(VALID_REASONING)}; got {block['reasoning']!r}."
         )
     temperature = _parse_temperature(block["temperature"], origin)
-    return {"provider": provider, "reasoning": reasoning, "temperature": temperature}
+    max_tokens = block.get("max_output_tokens")
+    if max_tokens is not None and (isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or max_tokens <= 0):
+        raise LLMSettingsError(f"{origin}: max_output_tokens must be a positive integer")
+    return {"provider": provider, "reasoning": reasoning, "temperature": temperature, "max_output_tokens": max_tokens}
 
 
 def resolve_llm_settings(
@@ -161,7 +168,8 @@ def resolve_llm_settings(
     config_path: str = "",
     environ: Optional[Mapping[str, str]] = None,
     warn=print,
-) -> LLMSettings:
+    allow_legacy: bool = False,
+) -> Optional[LLMSettings]:
     """Resolve the LLM regime for an experiment set. Fails closed if unpinned.
 
     Env overrides (LLM_PROVIDER, LLM_REASONING, LLM_TEMPERATURE) are applied on
@@ -171,6 +179,9 @@ def resolve_llm_settings(
     origin = f"experiment set {experiment_name!r}"
     block = exp_set.get("llm_settings") if isinstance(exp_set, Mapping) else None
     if block is None:
+        if allow_legacy:
+            warn(f"Legacy settings explicitly selected for {experiment_name!r}; settings remain environment-dependent and are not eligible for strict comparisons.")
+            return None
         raise LLMSettingsError(missing_block_message(experiment_name, config_path))
     fields = parse_llm_settings_block(block, origin)
 
@@ -228,6 +239,7 @@ def resolve_llm_settings(
         temperature=fields["temperature"],
         source="config+env" if overrides else "config",
         overrides=overrides,
+        max_output_tokens=fields["max_output_tokens"],
     )
 
 
@@ -241,10 +253,8 @@ def model_ignores_temperature(provider_model: str) -> Optional[str]:
     """Return a reason string if the model rejects or ignores temperature."""
     m = provider_model.lower()
     native = m.split("/", 1)[-1]
-    if native.startswith("gpt-5"):
-        return "GPT-5 family accepts only the default temperature (400 otherwise)"
-    if native in {"gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash"}:
-        return "Gemini 3.6+ Flash accepts temperature but ignores it (probe 2026-09-04)"
+    if native in {"gpt-5", "gpt-5-mini", "gpt-5-nano"} or native.startswith(("gpt-5-2025", "gpt-5-mini-2025", "gpt-5-nano-2025")):
+        return "this GPT-5 model does not support custom temperature"
     if (
         native.startswith("claude-opus-4-7")
         or native.startswith("claude-opus-4-8")
@@ -260,8 +270,8 @@ def model_ignores_temperature(provider_model: str) -> Optional[str]:
 def model_cannot_disable_reasoning(provider_model: str) -> Optional[str]:
     """Return a reason string if reasoning='off' is impossible for the model."""
     native = provider_model.lower().split("/", 1)[-1]
-    if native.startswith("gpt-5"):
-        return "GPT-5 family cannot switch reasoning off; the floor is 'minimal'"
+    if native in {"gpt-5", "gpt-5-mini", "gpt-5-nano"} or native.startswith(("gpt-5-2025", "gpt-5-mini-2025", "gpt-5-nano-2025")):
+        return "this GPT-5 model cannot switch reasoning off; the floor is 'minimal'"
     if native.startswith("gemini-3"):
         return (
             "Gemini 3.x cannot switch thinking off; use 'minimal' on 3.6/3.5 "

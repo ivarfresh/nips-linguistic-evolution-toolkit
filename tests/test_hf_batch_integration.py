@@ -74,7 +74,17 @@ def test_run_noisy_missing_syncs_existing_completed_paths_once(
         "output",
     )
     final_path.parent.mkdir(parents=True, exist_ok=True)
-    final_path.write_text("{}", encoding="utf-8")
+    from types import SimpleNamespace
+    from src.comparison_config import resolved_comparison_inputs
+    from src.experiment_condition import build_condition, digest
+    from src.llm_settings import LLMSettings
+    from src.utils import LLMClient, llm_runtime_metadata
+
+    combo["llm_settings"] = LLMSettings("direct", "low", None)
+    metadata = llm_runtime_metadata(LLMClient("openai", object()), combo["model"], combo["llm_settings"])
+    condition = build_condition(SimpleNamespace(), None, metadata, {"task_order": ["game"]})
+    metadata.update(experiment_condition=condition, condition_sha256=digest(condition), comparison_inputs=resolved_comparison_inputs(combo, combo["llm_settings"]))
+    final_path.write_text(json.dumps({"agents": {}, "conversation_history": [], "game_data": {}, "task_order": ["game"], "run_metadata": metadata}), encoding="utf-8")
 
     sync_calls = []
 

@@ -118,17 +118,17 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(plan["reasoning_param"], {"reasoning_effort": "low"})
         self.assertIsNone(plan["temperature"])
 
-    def test_gemini_36_minimal_ok_off_refused_temperature_refused(self):
+    def test_gemini_36_minimal_and_explicit_sampling_policy(self):
         plan = plan_request_settings("google", "gemini-3.6-flash", 0.8, _settings(reasoning="minimal"))
         self.assertEqual(plan["reasoning_param"], {"thinkingLevel": "minimal"})
         with self.assertRaises(LLMSettingsError):
             plan_request_settings("google", "gemini-3.6-flash", 0.8, _settings())
-        with self.assertRaises(LLMSettingsError):
-            plan_request_settings("google", "gemini-3.6-flash", 0.8, _settings(reasoning="minimal", temperature=0.8))
+        plan = plan_request_settings("google", "gemini-3.6-flash", 0.8, _settings(reasoning="minimal", temperature=0.8))
+        self.assertEqual(plan["temperature"], 0.8)
 
-    def test_openrouter_off_sends_no_reasoning_body_even_for_claude(self):
+    def test_openrouter_off_explicitly_disables_reasoning(self):
         plan = plan_request_settings("openrouter", "anthropic/claude-sonnet-4.5", 0.8, _settings(provider="openrouter"))
-        self.assertIsNone(plan["reasoning_param"])
+        self.assertEqual(plan["reasoning_param"], {"reasoning": {"enabled": False}})
         plan = plan_request_settings("openrouter", "openai/gpt-5-nano", 0.8, _settings(provider="openrouter", reasoning="low"))
         self.assertEqual(plan["reasoning_param"], {"reasoning": {"effort": "low"}})
 
@@ -222,15 +222,57 @@ class PerCallTests(unittest.TestCase):
         out = _call_openai_compatible("openai", client, "gpt-5-nano", plan, self.messages, 1, "medium")
         params = client.chat.completions.calls[0]
         self.assertNotIn("temperature", params)
-        self.assertEqual(params["reasoning_effort"], "low")
+        self.assertEqual(params["extra_body"]["reasoning_effort"], "low")
         self.assertEqual(out["usage"]["finish_reason"], "stop")
+        self.assertIsNone(out["usage"]["reasoning_tokens"])
 
-    def test_openrouter_off_sends_no_extra_body(self):
+    def test_installed_openai_sdk_serializes_effort_and_cap(self):
+        import httpx
+        from openai import OpenAI
+
+        payloads = []
+
+        def respond(request):
+            payloads.append(json.loads(request.content))
+            return httpx.Response(200, json={
+                "id": "local-test", "object": "chat.completion", "created": 0,
+                "model": "gpt-5-nano",
+                "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": '{"send": 1}'}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "completion_tokens_details": {"reasoning_tokens": 0}},
+            })
+
+        with OpenAI(api_key="local-test-not-a-secret", http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client:
+            plan = plan_request_settings("openai", "gpt-5-nano", 0.8, _settings(reasoning="low", max_output_tokens=4096))
+            result = _call_openai_compatible("openai", client, "gpt-5-nano", plan, self.messages, 1, "medium")
+        self.assertEqual(len(payloads), 1)
+        self.assertEqual(payloads[0]["reasoning_effort"], "low")
+        self.assertEqual(payloads[0]["max_completion_tokens"], 4096)
+        self.assertNotIn("temperature", payloads[0])
+        self.assertNotIn("extra_body", payloads[0])
+        self.assertEqual(result["usage"]["finish_reason"], "stop")
+        self.assertEqual(result["usage"]["reasoning_tokens"], 0)
+
+    def test_missing_gemini_thought_count_is_not_zero(self):
+        from src.utils import _gemini_usage
+
+        self.assertIsNone(_gemini_usage({"usageMetadata": {"promptTokenCount": 1}})["reasoning_tokens"])
+        self.assertEqual(_gemini_usage({"usageMetadata": {"thoughtsTokenCount": 0}})["reasoning_tokens"], 0)
+
+    def test_reasoning_usage_handles_objects_dictionaries_and_missing_counts(self):
+        from src.utils import _reasoning_token_count
+
+        self.assertIsNone(_reasoning_token_count(None))
+        self.assertIsNone(_reasoning_token_count(SimpleNamespace(completion_tokens_details={})))
+        self.assertEqual(_reasoning_token_count(SimpleNamespace(completion_tokens_details={"reasoning_tokens": 12})), 12)
+        self.assertEqual(_reasoning_token_count({"output_tokens_details": {"thinking_tokens": 8}}), 8)
+        self.assertEqual(_reasoning_token_count(SimpleNamespace(completion_tokens_details=SimpleNamespace(reasoning_tokens=0))), 0)
+
+    def test_openrouter_off_sends_explicit_disable(self):
         client = _FakeOpenAIClient()
         plan = plan_request_settings("openrouter", "anthropic/claude-sonnet-4.5", 0.8, _settings(provider="openrouter"))
         _call_openai_compatible("openrouter", client, "anthropic/claude-sonnet-4.5", plan, self.messages, 1, "medium")
         params = client.chat.completions.calls[0]
-        self.assertNotIn("extra_body", params)
+        self.assertEqual(params["extra_body"], {"reasoning": {"enabled": False}})
         self.assertNotIn("temperature", params)
 
     def test_anthropic_off_sends_no_thinking_and_records_stop_reason(self):
@@ -246,7 +288,7 @@ class PerCallTests(unittest.TestCase):
     def test_anthropic_budget_must_fit_under_max_tokens(self):
         client = _FakeAnthropicClient()
         with patch.dict("os.environ", {"ANTHROPIC_MAX_TOKENS": "1024"}, clear=True):
-            plan = plan_request_settings("anthropic", "claude-sonnet-4-5-20250929", 0.8, _settings(reasoning="low"))
+            plan = plan_request_settings("anthropic", "claude-sonnet-4-5-20250929", 0.8, _settings(reasoning="low", max_output_tokens=1024))
             with self.assertRaises(LLMSettingsError):
                 _call_anthropic(client, "claude-sonnet-4-5-20250929", plan, self.messages, 1)
 
