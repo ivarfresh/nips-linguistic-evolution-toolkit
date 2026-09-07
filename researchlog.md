@@ -1,3 +1,58 @@
+### 2026-09-07 — Safeguards restart with review checkpoints
+
+**Time:** not recorded.
+
+#### Decision
+Restart the safeguards PR from shared main rather than extend the mixed
+implementation, experiment, and interpretation changes. Preserve the old
+branches and uncommitted work as an explicitly unreviewed local archive.
+The replacement first documents four promises: no silent machine-dependent
+settings, request provenance, declared comparison/resume differences, and
+regression checks. Human review of scope precedes implementation; independent
+review and a manual request-to-record walkthrough precede merge.
+
+#### Boundaries
+New experiments, model-profile decisions, prompt/retry changes, and Watcher
+installation are outside this restart. PR 17's scientific write-up remains
+separate and needs correction. No new experiment has been launched.
+
+### 2026-09-07 — Reasonable settings, human-readable verification
+
+**Time:** ~0.1 hours (meeting with Edward Hughes; user-provided transcript).
+
+#### Guidance
+Ed does not regard differing model settings as grounds to discard the prior
+six months of work. Reasoning labels are not calibrated across vendors; the
+goal is reasonable, explicit settings and understandable comparisons. He
+recommended manually checking actual code and calls rather than relying on
+agent summaries. He suggested high/extra-high thinking where supported, with
+sampling near vendor defaults, as a robustness direction. His expectation of
+small effects is untested, and no exact replacement profile was finalized.
+
+#### Follow-up
+Revisit the proposed low-reasoning profile, verify a few representative calls,
+and propose targeted robustness checks without also changing prompts or memory.
+Existing mixed-condition comparisons still need qualification. Ivar will propose
+a replacement meeting time on the existing email thread. No new run was launched.
+
+### 2026-09-06 — Guard complete conditions, not labels
+
+**Time:** not recorded.
+
+#### Correction
+The September 4 decision-format comparison also changed the myth templates and
+retry implementation. Its summaries are descriptive, not evidence that prose
+or memory caused the sending difference. Raw runs and past entries are retained;
+`data/analysis/decision_format_confound_2026_09_04/README.md` records the correction.
+
+#### Decision
+Record and compare complete resolved conditions, including prompts, output cap,
+retry policy, and seeds. Refuse changed-condition resumes; separate completion
+from upload eligibility; require named differences in comparisons and manifests.
+Legacy behavior needs an explicit opt-in. The controlled `fmt_controlled_v2_*`
+sets keep the myth prompts fixed and have not been run. Implementation and
+migration details: `docs/experiment-condition-provenance.md`.
+
 ### 2026-09-04 — Cross-model API calls are not equivalent (provider + reasoning audit)
 
 **Time:** 2 hours
