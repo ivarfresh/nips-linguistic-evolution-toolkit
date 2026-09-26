@@ -1,3 +1,153 @@
+### 2026-09-24 — Decision: Opus 5.5 replaces Opus 5 as the frontier Claude model
+
+**Time:** ~0.2 h (decision record only).
+
+Ivar confirmed the switch after the 2026-09-23 check (every cell within 2 points of
+Opus 5 on replicates 0–2, same task-order ordering, similar cost). New frontier
+cells, including the proposed frontier mixed-model runs, use Opus 5.5 with effort
+pinned high. The 90 Opus 5 finals stay as a robustness check. Disclose that Opus 5.5
+thinks 3–9× more per call at the same effort. See D011.
+
+### 2026-09-23 — Result: Opus 5.5 behaves like Opus 5 on the frontier matrix
+
+**Time:** ~2 h (arm setup, 18 runs, comparison).
+
+Ivar asked whether Opus 5.5 can replace Opus 5 as the frontier Claude model. We
+reran replicates 0–2 of the frontier matrix (2 and 8 agents × game / game→myth /
+myth→game) on Opus 5.5 with Opus 5's request profile, effort pinned high. 18/18
+audited finals, $31.79 (Opus 5 on the same replicates: $30.94).
+
+#### Result
+- Every cell mean is within 2 points of Opus 5 on the same seeds, and the
+  game < game→myth < myth→game ordering holds at both sizes.
+- The 2-agent game spreads wider: 61, 75, 73 against Opus 5's 68–70.
+- Opus 5.5 thinks 3–9× more per call at the same effort. Its 20% lower price
+  roughly cancels that. The thinking regime differs again (see D011).
+
+Switching the frontier model is proposed, pending Ivar. Table:
+`docs/figures/frontier_rerun_20260918/README.md`; script
+`scripts/compare_opus55_opus5.py`.
+
+### 2026-09-23 — Correction: scope of the moral-uptake and transmission wording
+
+**Time:** ~0.5 h (review follow-up, no runs).
+
+Narrows three phrases in the entry below. (1) "Morals move toward the shown
+myth within a family": this holds in 8-agent myth→game runs, where the shown
+myth was written before its author and the child played (+4.8 points
+homogeneous, +5.9 mixed same-family; cross-family +0.7, p = 0.37). Dyads show
+larger matches, cross-family included, but partners share their game history,
+so dyads are not evidence of moral transmission
+(`moral_uptake_by_task_order.csv`). (2) Cross-family word uptake is strong
+observational evidence, not "causal-grade". (3) The marginal alignment result
+is 1 of 15 before-the-game tests, not 30.
+
+### 2026-09-23 — Result: myths spread words across families, morals only within a family, and morals follow play
+
+**Time:** ~5 h (analysis + $8.18 judge labelling incl. the $0.11 reproduction check, no simulation runs).
+
+Linguistic analysis (Edward's priority A) on all 156 myth-bearing September
+informed negative-only runs: homogeneous controls and mixed dyads/populations,
+8,519 myths. Every test compares the myth an agent was shown with a comparable
+unseen myth. Write-up: `docs/figures/linguistic_analysis_20260923/README.md`.
+
+#### Result
+- Language uptake: agents start using new words from the shown myth 1.3–2.5x
+  the unseen rate in every setting. Across families it is causal-grade: a
+  partner-family signature word is adopted more when the shown myth used it
+  (p ≤ 0.006 in all 10 family × size cells, permutation null).
+- Style: families keep their voice (classifier 100% on held-out runs), except
+  an outnumbered GPT, which writes 0.26 (±0.16) Sonnet-like as 1 of 8 (all 10
+  runs above baseline), 0.16 as 2 of 8, 0.04 as 4 of 8.
+- Alignment does not predict cooperation within runs (one marginal p = 0.03 of
+  30 tests). The negative across-run correlation was a family artefact.
+- Morals (Arabella's 3-label rubric, GLM-5.2; 93% agreement with her June
+  labels): Gemini's generous morals turn to fairness among GPTs (79% → 30%),
+  Sonnet's with GPTs (40% → 15%); both judges show the direction. Morals move
+  toward the shown myth within a family but not across families in populations.
+- No carryover: with agent-within-run fixed effects, neither the agent's own
+  moral nor the shown myth's moral predicts its next move (both judges).
+  Generous games are followed by generous myths (+0.16 per unit send).
+- Judges agree 74.6% (κ 0.54); a blinded 90-myth human sheet is ready, not yet coded.
+
+#### Caveat
+The August null on observational norm transmission stands for morals; a causal
+claim still needs the seeding design.
+
+### 2026-09-22 — Correction: mixed-dyad timing was read from cohort-pooled traces
+
+**Time:** ~1 h (review fix, no runs).
+
+Supersedes the timing wording in the entries below dated 2026-09-22
+("Gemini … $5 twice, then $0") and 2026-09-17/18 ("Sonnet gives up by round
+5–8"). In a dyad each agent sends every other round and the first sender
+alternates across replicates, so a trace by global round places different
+replicates' first and second turns side by side (found by the PR #32 review).
+Re-read by each agent's own turn:
+
+- Gemini vs GPT, game only: $5 on its first turn, nothing back, then $0 in
+  five of six runs; one run sent $5 twice. It stops after one unreciprocated
+  send, not two.
+- Sonnet vs GPT, game only: opens with $2–4 and stops after its first to
+  fourth own turn (first $0 in global rounds 4–9).
+- Means, pair totals and the adaptation result are unchanged. Traces are now
+  plotted by own turn (`dyad_family_turn_traces_*.png`).
+
+### 2026-09-22 — Result: mixed-model scores are adaptation, not an average of fixed styles
+
+**Time:** ~2 h (figure relayout + family-split analysis, no runs).
+
+Arabella asked (meeting 2026-09-22) whether a mixed dyad's score is just the
+average of two fixed per-model styles or whether each model moves toward its
+partner. `analyses/mixed_dyad_family_split.py` re-aggregates the validated
+mixed-dyad and ladder tables per family; outputs in
+`docs/figures/mixed_model_family_split_20260922/`.
+
+#### Result
+- Adaptation, family-specific. Sonnet sends $2.5 alone, $1.1 vs GPT and $4.1
+  vs Gemini (game-only dyads; $4.6–4.8 vs Gemini with a myth task); its return
+  proportion stays 0.38–0.50. GPT sends ~$0 in game-only dyads whatever the
+  partner, but once a myth task unlocks it sends $4.1–4.7 to Gemini vs $2.9–3.5
+  to another GPT and returns ~0.40 vs ~0.32. Gemini sends $5 everywhere except
+  game-only vs GPT ($5 twice, then $0; mean $1.2).
+- Ladder: Sonnet's game-only sending falls $3.0 → $1.8 as GPTs are added but
+  is unchanged with a myth task; GPT's sending rises with every Gemini added;
+  a lone GPT among seven Sonnets sends $3.2 in game-only play (two or four:
+  ~$1.2). Return proportions of Sonnet and Gemini never move; only GPT's does.
+- Descriptive, n = 5–6 per cell.
+
+#### Figure fix
+- The mixed-dyad resource boxplot (Overleaf Fig. 7) repeated the homogeneous
+  panels in its 3×3 layout (Ed, meeting 2026-09-22). Now a 2×3 grid: homogeneous
+  row, mixed row, each of the six pairings once.
+
+### 2026-09-18 — Result: eight-agent contagion ladder complete (90/90)
+
+**Time:** batch 12:38 → 17:05 wall-clock with 20 workers, interrupted once by credit exhaustion at 48/90; analysis ~1 h.
+
+#### Result
+- All 90 runs passed the per-agent audit; standard-rate cost $104.51
+  (Anthropic $81.35, OpenAI $14.38, Google $8.77). Per-agent resources (max 75):
+- Gemini among GPT, game-only: 1 Gemini leaves the population at 26.1 (8 GPT:
+  25.0) and the Gemini agent itself at 20.6, exploited; 2 → 34.1, 4 → 53.7. GPT
+  only starts sending to Gemini at four ($2.69). With a myth task one Gemini
+  lifts the population to 52.2 / 58.9 (8 GPT: 38.0 / 45.0) and out-earns GPT.
+- GPT among Sonnet, game-only: one GPT cooperates (sends $3.21) and the
+  population holds at 53.5 (8 Sonnet: 55.2); two GPTs pull it to 43.7 and four
+  to 40.0, with Sonnet-to-Sonnet sends falling from $3.02 to $2.22. With myths
+  every mixture stays flat (55–57 game→myth, 63–69 myth→game).
+- Return proportions are unchanged across compositions; effects run through
+  sending.
+
+#### Failure modes
+- Two Sonnet prose-instead-of-JSON failures resampled; an 8-worker false start
+  and a three-provider credit exhaustion at 48/90 discarded in-flight runs,
+  which were rerun. Disclosed in the README.
+
+#### Evidence
+`docs/figures/mixed_model_populations_20260918/README.md` (tables, ladder and
+boxplot-grid figures, pooled provenance); finals and `completion_receipt.json`
+under `data/json/noise_experiments/mixed_model_populations_20260918/`.
 ### 2026-09-18 — Result: frontier-model rerun complete (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; 90/90)
 
 **Time:** ~5 hours (plan, three-agent cost review, config, launcher, smoke, pilot, main, figure).
