@@ -1,7 +1,7 @@
 # D011 — Rerun the September matrix on current frontier models with reasoning on
 
 - Recorded / last verified: 2026-09-18 / 2026-09-28
-- Decision status: agreed and executed (Opus 5, Gemini 3.1 Pro Preview, GPT-5.6 Sol at effort high); Sol at effort none skipped after its smoke run; GPT-5.6 Luna rejected as a non-frontier tier. Opus 5.5 checked on replicates 0–2 (2026-09-23); **decided 2026-09-24 (Ivar): Opus 5.5 replaces Opus 5 as the frontier Claude model**; Opus 5 stays as a robustness check. **2026-09-28 (Ivar):** GPT-6 Sol (effort high) run as a full arm (30/30) and Opus 5.5 completed to five replicates (30/30); whether GPT-6 Sol replaces GPT-5.6 Sol in the paper's frontier figure is not yet decided.
+- Decision status: agreed and executed (Opus 5, Gemini 3.1 Pro Preview, GPT-5.6 Sol at effort high); Sol at effort none skipped after its smoke run; GPT-5.6 Luna rejected as a non-frontier tier. Opus 5.5 checked on replicates 0–2 (2026-09-23); **decided 2026-09-24 (Ivar): Opus 5.5 replaces Opus 5 as the frontier Claude model**; Opus 5 stays as a robustness check. **2026-09-28 (Ivar):** GPT-6 Sol (effort high) run as a full arm (30/30) and Opus 5.5 completed to five replicates (30/30); **Decided 2026-09-28 (Ivar), superseding 2026-09-24: the main frontier model simulation is the 2026-09-18 set (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol)**, the set Ed referred to; frontier mixed dyads and populations use these three models. The Opus 5.5 / Gemini 3.1 Pro / GPT-6 Sol runs are kept as the **frontier update set** (name proposed by Claude, accepted by Ivar), a newer-model check.
 - Scope: the September no-defector matrix (2 and 8 agents × game / game→myth / myth→game × replicates 0–4, informed negative-only noise) on one flagship per provider. Excludes defector conditions, mixed-model runs, and any reasoning-off arm.
 - Decision authority: Ed's request in the 2026-08-18 team meeting (transcript: results stop being believed once the model is three or four months old); Ivar's authored instructions in the 2026-09-18 Claude session ("run full Opus 5, Gemini and sol High. Skip sol none"; reasoning kept on after the assistant's assessment).
 - Implementation status: sampled completed finals, 90/90 launcher-audited (`data/json/noise_experiments/frontier_rerun_20260918/main_reasoning_on_receipt.json`); config `config/frontier_rerun_20260918.yaml` (generated), launcher `scripts/run_frontier_rerun.py`, branch `run/frontier-rerun-20260918`.
@@ -84,6 +84,15 @@ is a recorded protocol difference, not a pure model swap (see D004).
   collapses. Opus 5.5 at five replicates stays within 2.3 points of Opus 5 in every cell,
   with the same task-order ordering. Opus 5.5 is now the only frontier model below the
   ceiling. See [the update README](../../figures/frontier_update_20260928/README.md).
+- 2026-09-28 (later the same day): Ivar, in the Claude session: "the frontier model
+  simulation Ed referred to, is the one with Opus 5, Gemini 3.1 pro and GPT 5.6 Sol. Lets
+  save this as the main frontier model simulation indeed. We want to run the frontier dyads
+  and the mixed frontier model with these models. Use a mix of 2/3/3 for gemini 3.1 pro,
+  Opus 5 and GPT 5.6 sol respectively." This supersedes the 2026-09-24 decision that
+  Opus 5.5 replaces Opus 5: the 90 finals of 2026-09-18 are the main frontier result, and
+  the Opus 5.5 / GPT-6 Sol runs above (with the 2/3/3 Opus 5.5 / GPT-6 Sol mixed
+  population of D010) become the frontier update set, reported as a newer-model check
+  (`docs/figures/frontier_update_20260928/`). Main-frontier mixed runs: see D010.
 - Does not supersede D004 (September profiles remain the September regime) or D010.
 
 On 2026-09-18 (corrected 2026-09-22 after review on PR #30) the frontier gap

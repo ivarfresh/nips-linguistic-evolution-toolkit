@@ -34,7 +34,17 @@ and [data audit](../research/mixed_future_data_audit.md).
   next move; generous games are followed by generous myths. The human
   validation of the moral labels is not yet done. See
   [the results README](../figures/linguistic_analysis_20260923/README.md).
-- **Frontier update (2026-09-28):** GPT-6 Sol (effort high, 30/30), Opus 5.5 completed to
+- **Main frontier set (decided 2026-09-28, Ivar):** the 2026-09-18 Opus 5 / Gemini 3.1 Pro /
+  GPT-5.6 Sol runs are the main frontier model simulation (the set Ed referred to); this
+  supersedes the 2026-09-24 switch to Opus 5.5. Main-frontier mixed dyads (Opus 5/Sol,
+  Opus 5/Gemini, Gemini/Sol; 54 runs) and an 8-agent 2 Gemini + 3 Opus 5 + 3 Sol
+  population (15 runs) completed 69/69 ($73.18): Sol sends more with other families, Gemini
+  sends less only in game-only dyads, game-only dyads with Sol track the round-1 sender
+  (74.4 vs 56.2; confounded with seed block), and a myth task brings every mixed pair to the
+  ceiling (see
+  [D010](decisions/010-mixed-model-population-sizes.md) and
+  [the results README](../figures/frontier_main_mixed_20260928/README.md)).
+- **Frontier update set (2026-09-28; newer-model check, not the main result):** GPT-6 Sol (effort high, 30/30), Opus 5.5 completed to
   five replicates (30/30) and a three-family eight-agent mixed run (2 Gemini 3.1 Pro +
   3 GPT-6 Sol + 3 Opus 5.5, 15/15; no frontier mixed dyads), $73.22 in total. GPT-6 Sol
   is ceiling-locked, unlike GPT-5.6 Sol; the mixed population is at the ceiling, and only
@@ -48,8 +58,8 @@ and [data audit](../research/mixed_future_data_audit.md).
   matrix, same profile as Opus 5, $31.79). Every cell is within 2 points of Opus 5 on
   the same seeds, with the same task-order ordering; the 2-agent game is more spread
   out (61/75/73). **Decided 2026-09-24 (Ivar): Opus 5.5 is now the frontier Claude
-  model**; new frontier cells (including frontier mixed-model runs) use it, and Opus 5
-  is a robustness check (see [D011](decisions/011-frontier-model-rerun.md)).
+  model** (superseded 2026-09-28: the Opus 5 set is the main frontier result; see
+  [D011](decisions/011-frontier-model-rerun.md)).
 - The **frontier-model rerun completed 90/90 validated finals** on 2026-09-18:
   the September no-defector matrix on Claude Opus 5 (adaptive thinking, effort
   high), Gemini 3.1 Pro Preview (thinking high) and GPT-5.6 Sol (effort high),

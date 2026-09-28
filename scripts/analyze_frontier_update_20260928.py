@@ -15,6 +15,9 @@ Outputs (docs/figures/frontier_update_20260928/):
                             return share in the mixed populations beside the same family's
                             homogeneous 8-agent frontier population
   mixed_vs_homogeneous.png  final resources per agent, mixed vs homogeneous, by family
+  frontier_update_set_resources_boxplots.png  grid in the style of the mixed-population figure (Figure 8): rows
+                            2 and 8 agents; columns Opus 5.5, Gemini 3.1 Pro, GPT-6 Sol and the
+                            2/3/3 mixed population; one dot per run (mean over its agents)
   provenance.json           hashes of every run and output; condition check
 """
 from __future__ import annotations
@@ -40,6 +43,8 @@ FAMILY_OF_MODEL = {"claude-opus-5-5": "Opus 5.5", "gpt-6-sol": "GPT-6 Sol", "gem
 FAMILIES = ("Gemini 3.1 Pro", "GPT-6 Sol", "Opus 5.5")
 FAMILY_COLORS = {"Opus 5.5": "#7570b3", "GPT-6 Sol": "#d95f02", "Gemini 3.1 Pro": "#1b9e77"}  # as analyses/mixed_dyad_family_split.py
 TASK_ORDERS = ("game", "game_myth", "myth_game")
+BOX_COLORS = ["#999999", "#e99675", "#72b6a1"]  # as scripts/analyze_mixed_model_populations.py
+DOT_COLORS = ["#777777", "#fc8d62", "#66c2a5"]
 ORDER_LABELS = {"game": "Game only", "game_myth": "Game → Myth", "myth_game": "Myth → Game"}
 ALLOWED = {
     **FRONTIER_ALLOWED,
@@ -159,6 +164,53 @@ def plot(homo, mix):
     plt.close(fig)
 
 
+def plot_grid(homo, mix):
+    import matplotlib.pyplot as plt
+    configure_matplotlib()
+    per_run = pd.concat([homo.assign(panel=homo.arm), mix.assign(panel="Mixed")])
+    per_run = per_run.groupby(["panel", "num_agents", "task_order", "path"])["resources"].mean().reset_index()
+    panels = [("Opus 5.5", "8 Opus 5.5", "2 Opus 5.5"), ("Gemini 3.1 Pro", "8 Gemini 3.1 Pro", "2 Gemini 3.1 Pro"),
+              ("GPT-6 Sol", "8 GPT-6 Sol", "2 GPT-6 Sol"), ("Mixed", "2 Gemini 3.1 Pro + 3 GPT-6 Sol + 3 Opus 5.5", None)]
+    labels = [ORDER_LABELS[o] for o in TASK_ORDERS]
+    fig, axes = plt.subplots(2, 4, figsize=(17, 8), sharey=True, squeeze=False)
+    for row, n_agents in enumerate((2, 8)):
+        for ax, (panel, title8, title2) in zip(axes[row], panels):
+            title = title2 if n_agents == 2 else title8
+            ax.set_xticks([1, 2, 3], labels, fontsize=8)
+            ax.set_xlim(.5, 3.5)
+            ax.set_ylim(0, 80)
+            ax.set_axisbelow(True)
+            ax.grid(axis="y", alpha=.22)
+            ax.spines[["top", "right"]].set_visible(False)
+            if title is None:
+                ax.set_title("Mixed dyads\nnot run for this model set", fontsize=11, fontweight="bold", pad=8, color="#777777")
+                ax.text(2, 40, "not run", ha="center", va="center", fontsize=11, color="#999999")
+                continue
+            n_runs = 0
+            for pos, order in enumerate(TASK_ORDERS, 1):
+                sel = per_run[(per_run.panel == panel) & (per_run.num_agents == n_agents) & (per_run.task_order == order)]
+                v = np.sort(sel.resources.to_numpy())
+                n_runs = max(n_runs, len(v))
+                ax.boxplot(v, positions=[pos], widths=.52, patch_artist=True, showfliers=False, whis=1.5,
+                           boxprops=dict(facecolor=BOX_COLORS[pos - 1], edgecolor="#666666"),
+                           medianprops=dict(color="#222222", linewidth=1.6),
+                           whiskerprops=dict(color="#666666"), capprops=dict(color="#666666"))
+                ax.scatter(pos + np.linspace(-.1, .1, len(v)), v, s=30, c=DOT_COLORS[pos - 1], edgecolors="white", linewidths=.6, zorder=3)
+            ax.set_xticks([1, 2, 3], labels, fontsize=8)  # boxplot() resets the ticks
+            ax.set_xlim(.5, 3.5)
+            kind = "mixed" if panel == "Mixed" else "homogeneous"
+            ax.set_title(f"{title}\n{kind} · n = {n_runs}", fontsize=11, fontweight="bold", pad=8)
+        axes[row][0].set_ylabel(f"{n_agents} agents", fontsize=12, fontweight="bold", labelpad=14)
+    fig.suptitle("Final cumulative resources per agent (all agents)\nFrontier update 2026-09-28 (Opus 5.5, Gemini 3.1 Pro, GPT-6 Sol) · "
+                 "Informed negative-only noise · No defectors · Round 10", fontsize=14, fontweight="bold")
+    fig.text(.5, .012, "Each dot = one run (mean over its agents) · Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
+             ha="center", fontsize=9, color="#444444")
+    fig.supylabel("Cumulative resources per agent", fontsize=12, x=.006)
+    fig.tight_layout(rect=(.02, .05, 1, .91), h_pad=2.2, w_pad=1.6)
+    fig.savefig(OUTPUT / "frontier_update_set_resources_boxplots.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     homo, mix, frontier, mixed = load()
     OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -167,6 +219,7 @@ def main():
     fam = mixed_summary(homo, mix)
     fam.to_csv(OUTPUT / "mixed_family_summary.csv", index=False)
     plot(homo, mix)
+    plot_grid(homo, mix)
     outputs = [p for p in OUTPUT.rglob("*") if p.is_file() and p.name != "provenance.json"]
     frontier_used = [p.resolve() for p in frontier]
     mixed_used = [p.resolve() for p in mixed]

@@ -1,3 +1,42 @@
+### 2026-09-28 — Result: main-frontier mixed dyads and population lift GPT-5.6 Sol
+
+**Time:** ~2 h (config check, 69 paid runs, two quarantines, analysis).
+
+Result: 69/69 audited finals, $73.18 at standard rates (estimate $73.47):
+- mixed dyads Opus 5 + Sol, Opus 5 + Gemini and Gemini + Sol, 54 runs;
+- an 8-agent population of 2 Gemini 3.1 Pro + 3 Opus 5 + 3 GPT-5.6 Sol, 15 runs.
+
+What it shows (descriptive, n = 5–6):
+- Sol sends more with either partner than among its own kind. In 8-agent game-only
+  play it sends 4.73 against 3.81.
+- Gemini drops only in game-only dyads: 3.83 with Sol and 4.15 with Opus 5, against 4.88.
+  Its drop there exceeds Sol's rise.
+- In game-only dyads with Sol, the outcome tracks the round-1 sender. Runs where the
+  partner opened end at 74.4; runs where Sol opened at $2.50–3 end at 56.2. First sender
+  and seed block are confounded, and the two-task orders show no such difference.
+- With myth → game every mixed pair ends at 74.3–75.0.
+
+Caveat: two dyads were quarantined for a Gemini dropped connection and resampled under
+the same seeds.
+
+Details: `docs/figures/frontier_main_mixed_20260928/README.md`; D010.
+
+### 2026-09-28 — Decision: the Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set is the main frontier simulation
+
+**Time:** ~0.3 h (decision record and run configuration).
+
+Ivar decided that the 2026-09-18 frontier runs (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol) are
+the main frontier model simulation, the one Ed referred to. This reverses the 2026-09-24
+switch to Opus 5.5. The Opus 5.5 / GPT-6 Sol runs of today become the frontier update
+set, kept as a newer-model check.
+
+Main-frontier mixed runs are configured but not yet launched, pending Ivar's config check:
+- dyads Opus 5/Sol, Opus 5/Gemini and Gemini/Sol, 54 runs;
+- an 8-agent population of 2 Gemini + 3 Opus 5 + 3 Sol, 15 runs;
+- estimate $73.47.
+
+See D010, D011.
+
 ### 2026-09-28 — Result: GPT-6 Sol and the frontier mixed population sit at the ceiling
 
 **Time:** ~3 h (config and launchers, smoke/pilot gates, 57 paid runs, analysis).
