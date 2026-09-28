@@ -44,6 +44,7 @@ across tools belongs here.
 - [D009 — Defector treatments](decisions/009-defector-treatments.md)
 - [D010 — Mixed-model population sizes](decisions/010-mixed-model-population-sizes.md)
 - [D011 — Frontier-model rerun](decisions/011-frontier-model-rerun.md)
+- [D012 — Myth-pressure pilot](decisions/012-myth-pressure-pilot.md)
 - [Decision template](decisions/TEMPLATE.md)
 
 ## Automatic maintenance

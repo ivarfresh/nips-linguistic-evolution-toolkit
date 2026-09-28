@@ -75,13 +75,87 @@ def validate_myth_response(content):
         )
 
 
+_MYTH_LABEL = re.compile(r"^\s*\**\s*Myth\s*:\s*\**\s*", re.IGNORECASE)
+_WORD = re.compile(r"\S+")
+
+
+def validate_myth_pressure(pressure):
+    """Check a myth-pressure block (word budget, delivery note, optional council).
+
+    The budget caps how many words of a myth the other agent receives; the
+    writer is told how much got through, and an optional council lets paired
+    agents talk between rounds about how they write their myths.
+    """
+    if not isinstance(pressure, dict):
+        raise ValueError("myth_pressure must be a mapping")
+    schedule = pressure.get("word_budget_schedule")
+    if (
+        not isinstance(schedule, list)
+        or not schedule
+        or not all(isinstance(n, int) and not isinstance(n, bool) and n > 0 for n in schedule)
+    ):
+        raise ValueError("myth_pressure.word_budget_schedule must be a non-empty list of positive integers")
+    exchanges = pressure.get("council_exchanges", 0)
+    if not isinstance(exchanges, int) or isinstance(exchanges, bool) or exchanges < 0:
+        raise ValueError("myth_pressure.council_exchanges must be a non-negative integer")
+    required = ["delivery_note_template"]
+    if exchanges:
+        required += ["council_prompt_template", "council_block_template"]
+    for key in required:
+        if not isinstance(pressure.get(key), str) or not pressure[key].strip():
+            raise ValueError(f"myth_pressure.{key} must be a non-empty prompt template")
+    unknown = set(pressure) - {
+        "word_budget_schedule", "council_exchanges", "delivery_note_template",
+        "council_prompt_template", "council_block_template",
+    }
+    if unknown:
+        raise ValueError(f"Unknown myth_pressure keys: {sorted(unknown)}")
+    return {
+        "word_budget_schedule": list(schedule),
+        "council_exchanges": exchanges,
+        "delivery_note_template": pressure["delivery_note_template"],
+        "council_prompt_template": pressure.get("council_prompt_template") if exchanges else None,
+        "council_block_template": pressure.get("council_block_template") if exchanges else None,
+    }
+
+
+def deliver_myth(content, budget):
+    """Cut a myth to its first `budget` words, keeping the 'Myth:' label and spacing.
+
+    Returns (delivered_text, written_words, delivered_words). The label does not
+    count toward the budget.
+    """
+    match = _MYTH_LABEL.match(content)
+    label, body = (content[: match.end()], content[match.end():]) if match else ("", content)
+    words = list(_WORD.finditer(body))
+    if len(words) <= budget:
+        return content, len(words), len(words)
+    return label + body[: words[budget - 1].end()], len(words), budget
+
+
+class InvalidCouncilResponseError(ValueError):
+    """Raised when a council message is empty."""
+
+
 class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
-    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None):
+    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
+        self.pressure = validate_myth_pressure(pressure) if pressure is not None else None
+
+    @property
+    def council_exchanges(self):
+        return self.pressure["council_exchanges"] if self.pressure else 0
+
+    def word_budget(self, turn):
+        """Words of this round's myth the other agent will see (None = no budget)."""
+        if not self.pressure:
+            return None
+        schedule = self.pressure["word_budget_schedule"]
+        return schedule[min(turn, len(schedule)) - 1]
     
     def get_myth_prompt_round_1(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing"""
@@ -97,6 +171,7 @@ class MythWriter:
             myth_topic=self.myth_topic,
             shared_context_block=shared_context_block,
             topic_instruction=self._get_topic_instruction(),
+            word_budget=self.word_budget(turn),
         )
 
     def _get_topic_instruction(self):
@@ -206,7 +281,52 @@ class MythWriter:
                 agent_id, sim_data, turn
             ),
             game_behavior_summary=game_behavior_summary,
+            word_budget=self.word_budget(turn),
+            delivery_note=self._delivery_note(agent_id, previous_entry),
+            council_block=self._council_block(agent_id, previous_entry),
         ).lstrip()
+
+    def _delivery_note(self, agent_id, previous_entry):
+        """Tell the writer how much of its previous myth reached the other agent."""
+        if not self.pressure or previous_entry is None:
+            return ""
+        record = (previous_entry.get("myth_delivery") or {}).get(agent_id)
+        if not record:
+            return ""
+        return self.pressure["delivery_note_template"].format(**record)
+
+    @staticmethod
+    def _council_transcript(agent_id, messages):
+        return "\n".join(
+            f"{'You' if message['agent'] == agent_id else 'The other agent'}: {message['content']}"
+            for message in messages
+        )
+
+    def _council_block(self, agent_id, previous_entry):
+        if not self.council_exchanges or previous_entry is None:
+            return ""
+        for council in (previous_entry.get("council") or {}).values():
+            if agent_id in council["agents"]:
+                return self.pressure["council_block_template"].format(
+                    transcript=self._council_transcript(agent_id, council["messages"])
+                )
+        return ""
+
+    def get_council_prompt(self, agent_id, partner_id, turn, sim_data, messages):
+        """Prompt for one council message after round `turn`, before round `turn + 1`."""
+        entry = next(e for e in sim_data.conversation_history if e["round"] == turn)
+        myths = entry.get("myths") or {}
+        return self.pressure["council_prompt_template"].format(
+            own_myth=myths.get(agent_id, ""),
+            other_agent_myth=myths.get(partner_id, ""),
+            next_word_budget=self.word_budget(turn + 1),
+            transcript=self._council_transcript(agent_id, messages),
+        )
+
+    @staticmethod
+    def validate_council_response(content):
+        if not isinstance(content, str) or not content.strip():
+            raise InvalidCouncilResponseError("Council message is empty.")
 
     def _apply_defector_myth_policy(
         self,
@@ -469,7 +589,24 @@ class MythWriter:
             validate_myth_response(content)
             myths_content[agent_id] = content
 
+        delivery = {}
+        budget = self.word_budget(turn)
+        if budget is not None:
+            # Other agents only ever see the delivered text; the full response
+            # stays in myth_responses and in the writer's own chat memory.
+            for agent_id, content in list(myths_content.items()):
+                delivered, written, kept = deliver_myth(content, budget)
+                myths_content[agent_id] = delivered
+                delivery[agent_id] = {
+                    "word_budget": budget,
+                    "written_words": written,
+                    "delivered_words": kept,
+                    "truncated": kept < written,
+                }
+
         for entry in sim_data.conversation_history:
             if entry["round"] == turn:
                 entry["myths"] = myths_content
+                if delivery:
+                    entry["myth_delivery"] = delivery
                 break
