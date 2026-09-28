@@ -1,3 +1,22 @@
+### 2026-09-28 — Result: myths act as written instructions that set the opening send
+
+**Time:** ~2.5 h (task-order decomposition, rule rubric and pilot, judge runs, analysis, review checks).
+
+Result: a GLM-5.2 judge extracted the play rules (send, return, after-letdown) from all 8,519
+September myths and the 60 slide-678 donor texts ($1.67; DeepSeek second judge on 1,000 myths,
+$0.05; send rule κ 0.76, letdown rule κ 0.38). Write-up: `docs/figures/myth_rules_20260928/README.md`.
+- Most of the myth-vs-game-only send gap exists at the first decision after an agent's own
+  myth, before any partner myth is shown. Myth prompts ask "how the game should be played";
+  myth-condition game prompts add "take any myths into account" (game-only prompts lack it).
+- Before any play (myth→game round 1), each prescribed dollar goes with $0.54–0.59 more sent
+  within GPT and within Sonnet. Transplant: within donor type, 8-agent hosts send +$0.41 per
+  prescribed dollar (+$0.29 without the "send nothing" donor); dyads weaker.
+- GPT's zero-lock breaks whatever amount its myth names (round-2 slope +0.04). No extracted
+  rule explains why myth runs stop repeating $0; later myths follow play (reverse +0.07).
+- Rulebooks: Gemini "all five, split in half"; GPT "measured"; Sonnet generous before play,
+  moderate after. Send amounts stay fixed per family; returns converge on half.
+Open: advice-text control and a run without the "take myths into account" line would
+separate story form from instruction.
 ### 2026-09-28 — Result: main-frontier mixed dyads and population lift GPT-5.6 Sol
 
 **Time:** ~2 h (config check, 69 paid runs, two quarantines, analysis).
