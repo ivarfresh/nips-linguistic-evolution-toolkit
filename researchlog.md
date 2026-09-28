@@ -1,3 +1,30 @@
+### 2026-09-28 — Result: GPT-6 Sol and the frontier mixed population sit at the ceiling
+
+**Time:** ~3 h (config and launchers, smoke/pilot gates, 57 paid runs, analysis).
+
+Result: at Ivar's request, three sets ran on the unchanged September no-defector
+protocol, all launcher-audited ($73.22 in total at standard rates):
+- GPT-6 Sol at effort high, 30/30 ($21.16).
+- Opus 5.5 completed to five replicates, adding 12 runs ($21.03).
+- One mixed 8-agent composition, 2 Gemini 3.1 Pro + 3 GPT-6 Sol + 3 Opus 5.5, 15/15 ($31.03).
+
+What it shows (descriptive, n=5 per cell):
+- GPT-6 Sol is ceiling-locked: it sends $5 in 732 of 750 decisions, where GPT-5.6 Sol
+  partly collapsed.
+- Opus 5.5 stays within 2.3 points of Opus 5 in every cell.
+- The mixed population sits at the ceiling. Only Opus 5.5 moves: in game-only play it
+  sends 4.79 among the other families against 4.47 among its own kind. It reaches $5
+  sooner after a similar opening, with no sign of partner-specific sending.
+
+Caveats:
+- No frontier model defects, so the frontier runs can show pull-up but not contagion of
+  defection.
+- GPT-6 Sol ran at `high`, which on that model sits below `xhigh` and `max`.
+- An Anthropic credit exhaustion interrupted the Opus top-up; it resumed after a top-up.
+- Frontier mixed dyads (Edward's 2026-09-22 proposal) were not run.
+
+Details: `docs/figures/frontier_update_20260928/README.md`; D010, D011.
+
 ### 2026-09-24 — Decision: Opus 5.5 replaces Opus 5 as the frontier Claude model
 
 **Time:** ~0.2 h (decision record only).
