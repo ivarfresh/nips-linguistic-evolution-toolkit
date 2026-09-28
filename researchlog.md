@@ -10,9 +10,10 @@ What it shows (descriptive, n = 5–6):
 - Sol sends more with either partner than among its own kind. In 8-agent game-only
   play it sends 4.73 against 3.81.
 - Gemini drops only in game-only dyads: 3.83 with Sol and 4.15 with Opus 5, against 4.88.
-- In game-only dyads the round-1 sender anchors the pair. Runs where Opus or Gemini sent
-  first end at 71.8; runs where Sol opened at $2.50–3 end at 56.2. First sender and seed
-  block are confounded.
+  Its drop there exceeds Sol's rise.
+- In game-only dyads with Sol, the outcome tracks the round-1 sender. Runs where the
+  partner opened end at 74.4; runs where Sol opened at $2.50–3 end at 56.2. First sender
+  and seed block are confounded, and the two-task orders show no such difference.
 - With myth → game every mixed pair ends at 74.3–75.0.
 
 Caveat: two dyads were quarantined for a Gemini dropped connection and resampled under
