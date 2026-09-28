@@ -8,7 +8,9 @@ Stages: smoke = replicate 0 of the 2-agent game cell, all arms (5 runs); pilot_m
 replicate 0 of the 2- and 8-agent myth->game cells for the three reasoning-on arms (6 runs);
 pilot = replicate 0 of every cell for those arms (18 runs); main_reasoning_on = all 30 runs of
 those three arms (90 runs, Sol-none skipped by decision of 2026-09-18); main = every run of every arm;
-reps3 = replicates 0-2 of every cell for opus55 (18 runs).
+reps3 = replicates 0-2 of every cell for opus55 (18 runs). Added 2026-09-28: GPT-6 Sol
+(Sol-high request profile) as arm sol6_high, with pilot_sol6 = replicate 0 of every cell (6 runs)
+and main_sol6 = all 30 runs; Opus 5.5 is completed to five replicates with --stage main --arms opus55.
 """
 from __future__ import annotations
 import argparse
@@ -39,18 +41,21 @@ OUTPUT = 'frontier_rerun_20260918'
 _BASE_MODELS = yaml.safe_load(CONFIG.read_text())['base_models']
 MODEL_SLUG = {arm: _BASE_MODELS[model_key] for arm, (model_key, _) in ARMS.items()}
 # The 2026-09-18 stages keep their original three arms; opus55 runs only through reps3.
-REASONING_ON = tuple(arm for arm in ARMS if arm not in ('sol_none', 'opus55'))
+REASONING_ON = tuple(arm for arm in ARMS if arm not in ('sol_none', 'opus55', 'sol6_high'))
 EXPECTED_POLICIES = {arm: PROFILES[profile] for arm, (_, profile) in ARMS.items()}
 RATES = {'anthropic': (5.0, 25.0), 'openai': (4.0, 20.0), 'google': (2.0, 12.0)}  # USD per MTok, verified 2026-09-18
-MODEL_RATES = {'claude-opus-5-5': (4.0, 20.0)}  # overrides RATES by provider model; verified on the Anthropic pricing page 2026-09-23
+MODEL_RATES = {'claude-opus-5-5': (4.0, 20.0),  # overrides RATES by provider model; verified on the Anthropic pricing page 2026-09-23
+               'gpt-6-sol': (2.0, 10.0)}  # developers.openai.com/api/docs/models/gpt-6-sol, standard tier, read 2026-09-28
 # Per-run estimates (USD): measured in the 2026-09-18 pilot (pilot_receipt.json) for the three
 # reasoning-on arms; Sol-none is the September-profile estimate (plan doc section 5).
 EST_PER_RUN = {
     'opus5': {'dyad_game': 0.1, 'dyad_game_myth': 0.83, 'dyad_myth_game': 0.91, 'population_game': 0.64, 'population_game_myth': 3.82, 'population_myth_game': 4.01},
     'gemini31pro': {'dyad_game': 0.11, 'population_game': 0.45, 'dyad_game_myth': 0.93, 'dyad_myth_game': 1.1, 'population_game_myth': 3.04, 'population_myth_game': 3.37},
     'sol_high': {'dyad_game': 0.08, 'population_game': 0.46, 'dyad_myth_game': 0.78, 'dyad_game_myth': 0.83, 'population_myth_game': 3.43, 'population_game_myth': 3.47},
-    # Opus 5.5: the Opus 5 per-run estimate at Opus 5.5's 20% lower token prices (not yet measured).
-    'opus55': {'dyad_game': 0.08, 'dyad_game_myth': 0.66, 'dyad_myth_game': 0.73, 'population_game': 0.51, 'population_game_myth': 3.06, 'population_myth_game': 3.21},
+    # Opus 5.5: measured means of the 2026-09-23 reps3 stage (reps3_opus55_receipt.json).
+    'opus55': {'dyad_game': 0.23, 'dyad_game_myth': 0.97, 'dyad_myth_game': 0.89, 'population_game': 0.75, 'population_game_myth': 3.91, 'population_myth_game': 3.84},
+    # GPT-6 Sol: the measured GPT-5.6 Sol-high token counts at GPT-6 Sol's rates (not yet measured).
+    'sol6_high': {'dyad_game': 0.04, 'population_game': 0.25, 'dyad_myth_game': 0.41, 'dyad_game_myth': 0.42, 'population_myth_game': 1.74, 'population_game_myth': 1.74},
     'sol_none': {'dyad_game': 0.04, 'dyad_game_myth': 0.43, 'dyad_myth_game': 0.45, 'population_game': 0.32, 'population_game_myth': 2.01, 'population_myth_game': 2.05},
 }
 STAGES = {
@@ -59,6 +64,8 @@ STAGES = {
     'pilot': lambda shape, arm, rep: rep == 0 and arm in REASONING_ON,
     'main_reasoning_on': lambda shape, arm, rep: arm in REASONING_ON,
     'reps3': lambda shape, arm, rep: rep < 3 and arm == 'opus55',  # Opus 5.5 test, 2026-09-23
+    'pilot_sol6': lambda shape, arm, rep: rep == 0 and arm == 'sol6_high',  # GPT-6 Sol, 2026-09-28
+    'main_sol6': lambda shape, arm, rep: arm == 'sol6_high',
     'main': lambda shape, arm, rep: True,
 }
 
