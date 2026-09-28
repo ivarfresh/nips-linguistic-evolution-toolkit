@@ -14,7 +14,7 @@ What it shows (descriptive, n=5 per cell):
 - Opus 5.5 stays within 2.3 points of Opus 5 in every cell.
 - The mixed population sits at the ceiling. Only Opus 5.5 moves: in game-only play it
   sends 4.79 among the other families against 4.47 among its own kind. It reaches $5
-  sooner after a similar opening; it does not favour its generous partners.
+  sooner after a similar opening, with no sign of partner-specific sending.
 
 Caveats:
 - No frontier model defects, so the frontier runs can show pull-up but not contagion of
