@@ -167,7 +167,7 @@ def main():
     fam = mixed_summary(homo, mix)
     fam.to_csv(OUTPUT / "mixed_family_summary.csv", index=False)
     plot(homo, mix)
-    outputs = [p for p in OUTPUT.iterdir() if p.is_file() and p.suffix in {".csv", ".png"}]
+    outputs = [p for p in OUTPUT.rglob("*") if p.is_file() and p.name != "provenance.json"]
     frontier_used = [p.resolve() for p in frontier]
     mixed_used = [p.resolve() for p in mixed]
     document = output_provenance(frontier_used + mixed_used, outputs, ALLOWED, output_root=OUTPUT,
