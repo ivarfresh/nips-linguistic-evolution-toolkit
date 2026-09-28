@@ -11,17 +11,25 @@ tables behind Figures 7 and 8. Four parts:
    play cannot explain the myth:
      T1  myth->game, round 1: the myth is written before any game.
      T2  game->myth, round 2: the myth follows one round, no partner myth seen
-         yet; controls for what happened to the agent in round 1.
-     T3  rounds 2-10, each agent compared with itself (agent + round fixed
-         effects, own previous send as control). Myths mostly describe recent
-         play, so a null is expected here; the reverse direction is reported too.
+         yet. Every round-2 sender was a round-1 receiver, so the only control
+         is the (true, pre-noise) amount it was sent in round 1.
+     T3  rounds 3-10 (the lagged send needs an earlier send in round 2+), each
+         agent compared with itself (agent + round fixed effects, own previous
+         send as control). Myths mostly describe recent play, so a null is
+         expected here; the reverse direction is reported too.
+   T1 and T2 are repeated with two stricter prescriptions from the second-pass
+   amount check (analyses/myth_rule_judge.py --amount-check): a named amount
+   counts only when the myth endorses it rather than merely narrating it.
 4. Transplant donors: the rule extracted from each injected donor text against
    what the hosts sent (the text was set by the experimenter, so this is the
    causal check).
 
 Prescribed send in dollars = the named amount when the myth gives one, else the
 midpoint of its send_rule band (all 5, most 4.25, moderate 2.75, little 1.25,
-none 0); "unspecified" is missing.
+none 0); "unspecified" is missing. The named amount may only be narrated (a
+character sends it); the amount check labels that, and the strict variants use
+  endorsed_only    named amount only if endorsed; narrated/contradicted -> missing
+  endorsed_or_band named amount only if endorsed; otherwise the send_rule band
 
   python3 analyses/myth_rules_analysis.py [--model z-ai/glm-5.2]
 """
@@ -64,11 +72,21 @@ def setting(size, mixed) -> str:
     return f"{size}-agent {'mixed' if mixed else 'homogeneous'}"
 
 
+def add_strict(r: pd.DataFrame) -> pd.DataFrame:
+    band = r["send_rule"].map(MIDPOINT)
+    named, endorsed = r["send_amount"].notna(), r["amount_status"] == "endorsed"
+    r["prescribed"] = r["send_amount"].where(named, band)
+    r["prescribed_endorsed_only"] = r["send_amount"].where(named & endorsed, band.where(~named))
+    r["prescribed_endorsed_or_band"] = r["send_amount"].where(named & endorsed, band)
+    return r
+
+
 def load_rules(model: str) -> pd.DataFrame:
     tag = model.replace("/", "__")
     r = pd.read_csv(DATA / f"myth_rules_september_{tag}.csv")
     r = r[r["status"] == "ok"].copy()
-    r["prescribed"] = r["send_amount"].where(r["send_amount"].notna(), r["send_rule"].map(MIDPOINT))
+    chk = pd.read_csv(DATA / f"myth_amount_check_september_{tag}.csv")[["run_id", "round", "agent", "amount_status"]]
+    r = add_strict(r.merge(chk, on=["run_id", "round", "agent"], how="left"))
     r["setting"] = [setting(s, m) for s, m in zip(r["size"], r["mixed"])]
     return r
 
@@ -174,11 +192,15 @@ def plot_prescribed_vs_actual(t: pd.DataFrame) -> None:
 # ---------------------------------------------------------------- part 3
 def decisions(r: pd.DataFrame) -> pd.DataFrame:
     dec = pd.read_csv(DATA / "decisions.csv")
-    key = r.set_index(["run_id", "round", "agent"])["prescribed"]
+    idx = r.set_index(["run_id", "round", "agent"])
+    key = idx["prescribed"]
     d = dec.copy()
     # the myth an agent had written before this decision
     d["myth_round"] = np.where(d["task_order"] == "myth_game", d["round"], d["round"] - 1)
-    d["prescribed_before"] = key.reindex(pd.MultiIndex.from_arrays([d.run_id, d.myth_round, d.agent])).to_numpy()
+    before = pd.MultiIndex.from_arrays([d.run_id, d.myth_round, d.agent])
+    d["prescribed_before"] = key.reindex(before).to_numpy()
+    for v in ("endorsed_only", "endorsed_or_band"):
+        d[f"prescribed_{v}_before"] = idx[f"prescribed_{v}"].reindex(before).to_numpy()
     # the myth written straight after this decision (reverse-direction check)
     after = np.where(d["task_order"] == "myth_game", d["round"] + 1, d["round"])
     d["prescribed_after"] = key.reindex(pd.MultiIndex.from_arrays([d.run_id, after, d.agent])).to_numpy()
@@ -202,39 +224,46 @@ def clean_tests(d: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     inv = d[d["role"] == "investor"]
 
     # T1: myth->game round 1
-    t1 = inv[(inv.task_order == "myth_game") & (inv["round"] == 1)].dropna(subset=["prescribed_before"])
-    for fam, g in [("all", t1), *t1.groupby("family")]:
-        f = "sent ~ prescribed_before" + (" + C(family)" if fam == "all" else "") + " + C(size) + mixed"
-        if g["prescribed_before"].nunique() > 1 and len(g) >= 10:
-            rho, p_rho = stats.spearmanr(g["prescribed_before"], g["sent"])
-            rows.append({"test": "T1 myth→game round 1", "family": fam, "spearman": rho, "spearman_p": p_rho,
-                         **ols(f, g, "prescribed_before")})
+    variants = {"any named amount": "prescribed_before",
+                "endorsed amounts only": "prescribed_endorsed_only_before",
+                "endorsed amount, else band": "prescribed_endorsed_or_band_before"}
+    t1_all = inv[(inv.task_order == "myth_game") & (inv["round"] == 1)]
+    for vname, col in variants.items():
+        t1v = t1_all.dropna(subset=[col]).assign(x=lambda f, c=col: f[c])
+        for fam, g in [("all", t1v), *t1v.groupby("family")]:
+            f = "sent ~ x" + (" + C(family)" if fam == "all" else "") + " + C(size) + mixed"
+            if g["x"].nunique() > 1 and len(g) >= 10:
+                rho, p_rho = stats.spearmanr(g["x"], g["sent"])
+                rows.append({"test": "T1 myth→game round 1", "prescription": vname, "family": fam,
+                             "spearman": rho, "spearman_p": p_rho, **ols(f, g, "x")})
+    t1 = t1_all.dropna(subset=["prescribed_before"])
     # T2: game->myth round 2, controlling for round-1 experience
     r1 = d[(d.task_order == "game_myth") & (d["round"] == 1)]
     got = r1[r1.role == "trustee"].set_index(["run_id", "agent"])["sent"].rename("sent_to_me_r1")
-    gave = r1[r1.role == "investor"].set_index(["run_id", "agent"])["sent"].rename("my_send_r1")
-    t2 = inv[(inv.task_order == "game_myth") & (inv["round"] == 2)].dropna(subset=["prescribed_before"])
-    t2 = t2.join(got, on=["run_id", "agent"]).join(gave, on=["run_id", "agent"])
-    t2["was_sender_r1"] = t2["my_send_r1"].notna().astype(int)
-    t2[["sent_to_me_r1", "my_send_r1"]] = t2[["sent_to_me_r1", "my_send_r1"]].fillna(0)
-    for fam, g in [("all", t2), *t2.groupby("family")]:
-        f = ("sent ~ prescribed_before + sent_to_me_r1 + my_send_r1 + was_sender_r1"
-             + (" + C(family)" if fam == "all" else "") + " + C(size) + mixed")
-        if g["prescribed_before"].nunique() > 1 and len(g) >= 10:
-            rho, p_rho = stats.spearmanr(g["prescribed_before"], g["sent"])
-            rows.append({"test": "T2 game→myth round 2", "family": fam, "spearman": rho, "spearman_p": p_rho,
-                         **ols(f, g, "prescribed_before")})
+    t2_all = inv[(inv.task_order == "game_myth") & (inv["round"] == 2)].join(got, on=["run_id", "agent"])
+    if t2_all["sent_to_me_r1"].isna().any():
+        raise SystemExit("a round-2 sender was not a round-1 receiver; T2 needs a role control again")
+    for vname, col in variants.items():
+        t2v = t2_all.dropna(subset=[col]).assign(x=lambda f, c=col: f[c])
+        for fam, g in [("all", t2v), *t2v.groupby("family")]:
+            f = "sent ~ x + sent_to_me_r1" + (" + C(family)" if fam == "all" else "") + " + C(size) + mixed"
+            if g["x"].nunique() > 1 and len(g) >= 10:
+                rho, p_rho = stats.spearmanr(g["x"], g["sent"])
+                rows.append({"test": "T2 game→myth round 2", "prescription": vname, "family": fam,
+                             "spearman": rho, "spearman_p": p_rho, **ols(f, g, "x")})
+    t2 = t2_all.dropna(subset=["prescribed_before"])
     # T3: rounds 2-10 within agent, forward and reverse
     w = inv[inv["round"] >= 2].copy()
     w["run_agent"] = w["run_id"] + "|" + w["agent"]
     w = w.sort_values(["run_agent", "round"])
     w["lag_send"] = w.groupby("run_agent")["sent"].shift(1)
-    w["lag_prescribed"] = w.groupby("run_agent")["prescribed_before"].shift(1)
     fw = w.dropna(subset=["prescribed_before", "lag_send"])
-    rows.append({"test": "T3 rounds 2-10, own myth → next send (agent FE)", "family": "all",
+    rows.append({"test": "T3 rounds 3-10, own myth → next send (agent FE)", "prescription": "any named amount",
+                 "family": "all",
                  **ols("sent ~ prescribed_before + lag_send + C(run_agent) + C(round)", fw, "prescribed_before")})
     rv = w.dropna(subset=["prescribed_after", "prescribed_before"])
-    rows.append({"test": "T3 reverse: send → next myth's prescription (agent FE)", "family": "all",
+    rows.append({"test": "T3 reverse: send → next myth's prescription (agent FE)",
+                 "prescription": "any named amount", "family": "all",
                  **ols("prescribed_after ~ sent + prescribed_before + C(run_agent) + C(round)", rv, "sent")})
 
     for name, t in (("T1 myth→game round 1", t1), ("T2 game→myth round 2", t2)):
@@ -263,10 +292,81 @@ def letdown_response(d: pd.DataFrame, r: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index().round(3)
 
 
+KEYWORDS = {  # judge-free theme counts
+    "consistency": r"\bconsisten(?:t|cy|tly)\b|\bsteady\b|\bsteadiness\b|\breliab",
+    "measured": r"\bmeasured\b|\bprudent|\bprudence|within (?:one's|their|his|her|your|its) means|\brestraint\b|\bmoderat",
+    "uncertainty": r"\buncertain|\bnois|\bstatic\b|\bfog\b|\bmist\b|\bturbulen|\bdistort|\bmisheard|\bwhisper",
+}
+
+
+def keyword_themes() -> pd.DataFrame:
+    m = pd.read_csv(DATA / "myths.csv")
+    m = m[~m["mixed"]]
+    text = m["text"].str.lower()
+    for k, pat in KEYWORDS.items():
+        m[k] = text.str.contains(pat, regex=True)
+    m["rounds"] = pd.cut(m["round"], [0, 1, 4, 7, 10], labels=["1", "2-4", "5-7", "8-10"])
+    return (m.groupby(["family", "task_order", "rounds"], observed=True)[list(KEYWORDS)].mean()
+            .mul(100).round(1).reset_index())
+
+
+def shares_round1_vs10(r: pd.DataFrame) -> pd.DataFrame:
+    """Section 1 of the README: homogeneous, both sizes pooled, by family, order and round (1 vs 10)."""
+    h = r[~r["mixed"] & r["round"].isin([1, 10])]
+    rows = []
+    for field in ORDERS:
+        g = h.groupby(["family", "task_order", "round"])[field].value_counts(normalize=True).mul(100).round(1)
+        rows.append(g.rename("percent").reset_index().rename(columns={field: "level"}).assign(field=field))
+    return pd.concat(rows)
+
+
+def zero_again_by_condition() -> pd.DataFrame:
+    """After being sent $0, how often does a GPT sender send $0 again? Game-only vs myth orders."""
+    d2 = pd.read_csv(ROOT / "docs/figures/mixed_model_dyads_20260917/decisions.csv").sort_values(["path", "round"])
+    d2["prev_sent_to_me"] = d2.groupby("path")["sent"].shift(1)  # dyad roles alternate every round
+    rows = [d2.assign(size=2, sender=None)]
+    d8 = pd.read_csv(ROOT / "docs/figures/mixed_model_populations_20260918/games.csv")
+    ev = pd.concat([d8.assign(agent=d8["sender"], kind=1), d8.assign(agent=d8["receiver"], kind=0)])
+    out = []
+    for (path, agent), g in ev.sort_values(["round", "kind"]).groupby(["path", "agent"]):
+        last = np.nan
+        for x in g.itertuples(index=False):
+            if x.kind == 0:
+                last = x.sent
+            else:
+                out.append({"path": path, "composition": x.composition, "mixed": x.mixed, "task_order": x.task_order,
+                            "sender_family": x.sender_family, "sent": x.sent, "prev_sent_to_me": last})
+    rows.append(pd.DataFrame(out).assign(size=8))
+    t = pd.concat(rows, ignore_index=True)
+    t = t[(t["sender_family"] == "GPT") & (t["prev_sent_to_me"] == 0)]
+    t["setting"] = [setting(s, m) for s, m in zip(t["size"], t["mixed"])]
+    return (t.groupby(["setting", "task_order"]).agg(n=("sent", "size"), runs=("path", "nunique"),
+                                                     zero_again=("sent", lambda s: (s == 0).mean()),
+                                                     next_send=("sent", "mean")).round(3).reset_index())
+
+
+def donor_type_models(dn: pd.DataFrame) -> pd.DataFrame:
+    import statsmodels.formula.api as smf
+    rows = []
+    for size in (8, 2):
+        for label, keep in (("all donors with an amount", lambda s: s),
+                            ("without the 'send nothing' donor", lambda s: s[s["send_rule"] != "none"]),
+                            ("endorsed amounts only", lambda s: s[s["amount_status"].fillna("band") != "narrated"])):
+            s = keep(dn[(dn["size"] == size) & dn["prescribed"].notna()])
+            fit = smf.ols("host_send_mean ~ prescribed + C(seed_type)", s).fit()
+            within = stats.spearmanr(s["prescribed"] - s.groupby("seed_type")["prescribed"].transform("mean"),
+                                     s["host_send_mean"] - s.groupby("seed_type")["host_send_mean"].transform("mean"))
+            rows.append({"size": size, "donors": label, "n": len(s), "coef_per_dollar": fit.params["prescribed"],
+                         "p": fit.pvalues["prescribed"], "within_type_spearman": within[0]})
+    return pd.DataFrame(rows).round(3)
+
+
 # ---------------------------------------------------------------- part 4
 def donors(model: str) -> pd.DataFrame:
     tag = model.replace("/", "__")
     dn = pd.read_csv(DATA / f"myth_rules_donors_{tag}.csv")
+    chk = pd.read_csv(DATA / f"myth_amount_check_donors_{tag}.csv")[["size", "seed_type", "rep", "amount_status"]]
+    dn = dn.merge(chk, on=["size", "seed_type", "rep"], how="left")
     dn["prescribed"] = dn["send_amount"].where(dn["send_amount"].notna(), dn["send_rule"].map(MIDPOINT))
     host_all, host_r1 = [], []
     for f in dn["final"]:
@@ -314,6 +414,12 @@ def main() -> None:
     r = load_rules(args.model)
     sends = load_sends()
     rule_shares(r).to_csv(OUT / "rule_shares_by_round.csv", index=False)
+    shares_round1_vs10(r).to_csv(OUT / "rule_shares_round1_vs10_pooled_sizes.csv", index=False)
+    keyword_themes().to_csv(OUT / "keyword_themes_by_round.csv", index=False)
+    za = zero_again_by_condition()
+    za.to_csv(OUT / "gpt_zero_again_by_condition.csv", index=False)
+    print(za.to_string())
+    print(r.groupby("family")["amount_status"].value_counts(normalize=True).round(3).to_string())
     plot_rule_shares(r)
 
     pva = prescribed_vs_actual(r, sends)
@@ -336,6 +442,9 @@ def main() -> None:
         base[size] = np.mean([np.mean([float(x["sent"]) for e in json.loads(p.read_text())["conversation_history"]
                                        for x in e.get("dyads") or []]) for p in runs])
     dn.drop(columns=["final"]).to_csv(OUT / "transplant_donor_rules.csv", index=False)
+    dtm = donor_type_models(dn)
+    dtm.to_csv(OUT / "transplant_within_donor_type.csv", index=False)
+    print(dtm.to_string())
     plot_donors(dn, base)
     for size in (8, 2):
         s = dn[(dn["size"] == size) & dn["prescribed"].notna()]

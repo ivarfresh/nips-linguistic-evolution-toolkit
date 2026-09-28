@@ -57,6 +57,8 @@ def main() -> None:
     mixed = keep(dyad_mixed + population_mixed)
     september = keep(dyad_september + population_september)
     listed = {str(p.relative_to(ROOT)) for p in mixed + september}
+    if not used <= listed:
+        raise SystemExit(f"{len(used - listed)} myth runs used by the analysis are missing from the run finals")
     if not args.with_game_only and listed != used:
         raise SystemExit(f"Myth runs and run finals disagree: {len(listed ^ used)} paths differ")
     # record where the finals really live (a worktree may reach them through a symlink)
@@ -68,6 +70,11 @@ def main() -> None:
         reason += (" The transplant pool is the slide-678 rerun (Sonnet hosts, injected donor texts, "
                    "historical game-only apparatus), read only to compare donor rules with host sends.")
     allowed = {**dyads.ALLOWED, **populations.ALLOWED}
+    if args.with_game_only:
+        # between game-only and myth runs this field is the "take any myths into account" line
+        allowed["protocol.game.game_prompt_addition"] = (
+            "Game-only vs myth task orders: myth-condition game prompts add 'Take any myths written in "
+            "this session into account'; the myth-rules analysis compares the two")
     if args.with_transplant:
         why = "Transplant rerun: the injected donor text is the manipulation, one donor per replicate"
         allowed.update({k: why for k in ("protocol.simulation.seed_myth", "protocol.simulation.seed_reinject",

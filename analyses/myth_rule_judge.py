@@ -21,6 +21,11 @@ OpenRouter, temperature 0, reasoning off, cached by exact prompt).
   python3 analyses/myth_rule_judge.py --sample 100          # pilot on a random sample
   python3 analyses/myth_rule_judge.py                       # full run, both corpora
   python3 analyses/myth_rule_judge.py --model deepseek/deepseek-v4-flash --sample 1000   # second judge
+  python3 analyses/myth_rule_judge.py --amount-check        # second pass: is the named amount endorsed or only narrated?
+
+The second pass exists because the first rubric's send_amount also picks up amounts a
+character merely sends in the story (review of PR #4). It re-reads every myth and donor
+with a send_amount and records amount_status (endorsed / narrated / contradicted).
 """
 from __future__ import annotations
 
@@ -34,6 +39,8 @@ import pandas as pd
 from myth_moral_judge import DATA, MIN_WORDS, PRICES, ROOT, Judge
 
 RUBRIC = ROOT / "analyses/rubrics/myth_rule_rubric.txt"
+AMOUNT_RUBRIC = ROOT / "analyses/rubrics/myth_amount_check_rubric.txt"
+AMOUNT_STATUS = ["endorsed", "narrated", "contradicted"]
 TRANSPLANT_ROOTS = {
     8: ROOT / "data/json/noise_experiments/slide678_rerun_20260916",
     2: ROOT / "data/json/noise_experiments/slide678_dyad_rerun_20260917",
@@ -76,6 +83,44 @@ def parse(raw: str) -> tuple[dict | None, str]:
         v = obj.get(f)
         out[f] = v if isinstance(v, bool) else str(v).strip().lower() == "true"
     return out, "ok"
+
+
+def render_amount(text: str, amount: float) -> str:
+    return AMOUNT_RUBRIC.read_text().replace("{amount}", f"{amount:g}").replace("{text}", text)
+
+
+def parse_amount(raw: str) -> tuple[str | None, str]:
+    s = raw.strip()
+    try:
+        v = json.loads(s[s.find("{"): s.rfind("}") + 1]).get("amount_status")
+    except Exception:  # noqa: BLE001
+        return None, "bad_json"
+    v = str(v).strip().lower()
+    return (v, "ok") if v in AMOUNT_STATUS else (None, "bad_status")
+
+
+def amount_check(judge: Judge, name: str, tag: str, frame: pd.DataFrame, workers: int) -> None:
+    rules = pd.read_csv(DATA / f"myth_rules_{name}_{tag}.csv")
+    key = ["run_id", "round", "agent"] if name == "september" else ["size", "seed_type", "rep"]
+    df = rules.merge(frame, on=key)
+    df = df[df["send_amount"].notna()].reset_index(drop=True)
+    prompts = [render_amount(t, a) for t, a in zip(df["text"], df["send_amount"])]
+    valid = lambda raw: parse_amount(raw)[1] == "ok"  # noqa: E731
+    results: list[dict | None] = [None] * len(prompts)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(judge, p, valid): i for i, p in enumerate(prompts)}
+        for fut in as_completed(futures):
+            results[futures[fut]] = fut.result()
+    out = df[key + ["send_amount"]].copy()
+    parsed = [parse_amount(r.get("raw", "")) for r in results]
+    out["amount_status"] = [p[0] for p in parsed]
+    out["amount_status_parse"] = [p[1] for p in parsed]
+    out["cost"] = [r.get("cost") or 0 for r in results]
+    out["cached"] = [bool(r.get("cached")) for r in results]
+    path = DATA / f"myth_amount_check_{name}_{tag}.csv"
+    out.to_csv(path, index=False)
+    print(f"{name} amount check: {len(out)} myths, {(out.amount_status_parse != 'ok').sum()} unparsed, "
+          f"${out.loc[~out['cached'], 'cost'].sum():.2f} billed; {out.amount_status.value_counts().to_dict()} -> {path}")
 
 
 def september() -> pd.DataFrame:
@@ -123,7 +168,22 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--sample", type=int, help="random sample of N September myths (pilot); skips donors")
     ap.add_argument("--preflight", action="store_true")
+    ap.add_argument("--amount-check", action="store_true", help="second pass on myths with a named amount")
     args = ap.parse_args()
+
+    if args.amount_check:
+        tag = args.model.replace("/", "__")
+        corpora = {"september": september(), "donors": donors()}
+        pin, pout = PRICES[args.model]
+        n = 3000
+        est = (n * 700 / 1e6 * pin + n * 15 / 1e6 * pout) * 1.5
+        print(f"MODEL={args.model} TASK=amount_check N<={n} WORKERS={args.workers} EST_COST=${est:.2f}")
+        if args.preflight:
+            return
+        judge = Judge(args.model)
+        for name, frame in corpora.items():
+            amount_check(judge, name, tag, frame, args.workers)
+        return
 
     corpora = {"september": september()}
     if args.sample:
