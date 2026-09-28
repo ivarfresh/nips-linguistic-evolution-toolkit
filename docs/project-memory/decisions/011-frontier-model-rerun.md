@@ -1,7 +1,7 @@
 # D011 — Rerun the September matrix on current frontier models with reasoning on
 
-- Recorded / last verified: 2026-09-18 / 2026-09-24
-- Decision status: agreed and executed (Opus 5, Gemini 3.1 Pro Preview, GPT-5.6 Sol at effort high); Sol at effort none skipped after its smoke run; GPT-5.6 Luna rejected as a non-frontier tier. Opus 5.5 checked on replicates 0–2 (2026-09-23); **decided 2026-09-24 (Ivar): Opus 5.5 replaces Opus 5 as the frontier Claude model**; Opus 5 stays as a robustness check.
+- Recorded / last verified: 2026-09-18 / 2026-09-28
+- Decision status: agreed and executed (Opus 5, Gemini 3.1 Pro Preview, GPT-5.6 Sol at effort high); Sol at effort none skipped after its smoke run; GPT-5.6 Luna rejected as a non-frontier tier. Opus 5.5 checked on replicates 0–2 (2026-09-23); **decided 2026-09-24 (Ivar): Opus 5.5 replaces Opus 5 as the frontier Claude model**; Opus 5 stays as a robustness check. **2026-09-28 (Ivar):** GPT-6 Sol (effort high) run as a full arm (30/30) and Opus 5.5 completed to five replicates (30/30); whether GPT-6 Sol replaces GPT-5.6 Sol in the paper's frontier figure is not yet decided.
 - Scope: the September no-defector matrix (2 and 8 agents × game / game→myth / myth→game × replicates 0–4, informed negative-only noise) on one flagship per provider. Excludes defector conditions, mixed-model runs, and any reasoning-off arm.
 - Decision authority: Ed's request in the 2026-08-18 team meeting (transcript: results stop being believed once the model is three or four months old); Ivar's authored instructions in the 2026-09-18 Claude session ("run full Opus 5, Gemini and sol High. Skip sol none"; reasoning kept on after the assistant's assessment).
 - Implementation status: sampled completed finals, 90/90 launcher-audited (`data/json/noise_experiments/frontier_rerun_20260918/main_reasoning_on_receipt.json`); config `config/frontier_rerun_20260918.yaml` (generated), launcher `scripts/run_frontier_rerun.py`, branch `run/frontier-rerun-20260918`.
@@ -67,6 +67,22 @@ is a recorded protocol difference, not a pure model swap (see D004).
   `september23_opus55` profile. Opus 5 (90 finals) is kept as a robustness check. The
   thinking-regime difference (3–8× more thinking tokens at the same effort) is to be
   disclosed alongside the switch.
+- 2026-09-28: Ivar asks for the frontier matrix on "opus 5.5 and gpt 6 sol" (Claude
+  session, user instruction; he recalled the earlier arm as GPT-5.6 Sol, confirmed in
+  `config/frontier_rerun_20260918.yaml`). GPT-6 Sol is on the direct OpenAI key
+  (model list, 2026-09-28) at $2/$10 per MTok (OpenAI model page), half GPT-5.6 Sol's
+  $4/$20 (also confirmed; the 2026-09-18 receipts stand). Arm `sol6_high` uses the Sol-high
+  request unchanged (`september28_sol6_high`); on GPT-6 Sol `high` is below `xhigh` and
+  `max`, a recorded regime note. Smoke, 6-run pilot, then 30/30 audited finals ($21.16,
+  `main_sol6_receipt.json`). Opus 5.5 replicates 3–4 added (12 runs, $21.03;
+  `main_opus55_receipt.json` lists all 30); the only code change since replicates 0–2 is
+  billing-error detection in `src/utils.py`. An Anthropic credit exhaustion interrupted
+  the top-up and it resumed after a top-up. **Result (descriptive, n=5):** GPT-6 Sol is
+  ceiling-locked (74.2–75.0 in five of six cells; $5 in 732 of 750 sends; one 2-agent
+  game→myth run locked at $3 gives that cell 70.7 ±8.8), unlike GPT-5.6 Sol's partial
+  collapses. Opus 5.5 at five replicates stays within 2.3 points of Opus 5 in every cell,
+  with the same task-order ordering. Opus 5.5 is now the only frontier model below the
+  ceiling. See [the update README](../../figures/frontier_update_20260928/README.md).
 - Does not supersede D004 (September profiles remain the September regime) or D010.
 
 On 2026-09-18 (corrected 2026-09-22 after review on PR #30) the frontier gap

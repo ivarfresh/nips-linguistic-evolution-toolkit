@@ -1,6 +1,6 @@
 # Current research state
 
-Last verified: 2026-09-24.
+Last verified: 2026-09-28.
 
 ## Research question
 
@@ -20,8 +20,9 @@ and [data audit](../research/mixed_future_data_audit.md).
   analysis of the mixed runs follow; noise strength, defector count and a
   possible message-board variant are ablations. Open figure fix: the dyad
   figure duplicates Sonnet/Gemini and must show six unique pairings. A frontier
-  mixed-model rerun is proposed, not launched (see
-  [D010](decisions/010-mixed-model-population-sizes.md)).
+  mixed-model population ran on 2026-09-28 (see below and
+  [D010](decisions/010-mixed-model-population-sizes.md)); frontier mixed dyads
+  (Edward's 2026-09-22 proposal) were not run.
 - The **linguistic analysis of the September runs completed** on 2026-09-23
   (156 myth-bearing homogeneous and mixed runs, 8,519 myths; no new runs,
   $8.18 judge labelling). Agents take up words from the myth they are shown,
@@ -33,6 +34,15 @@ and [data audit](../research/mixed_future_data_audit.md).
   next move; generous games are followed by generous myths. The human
   validation of the moral labels is not yet done. See
   [the results README](../figures/linguistic_analysis_20260923/README.md).
+- **Frontier update (2026-09-28):** GPT-6 Sol (effort high, 30/30), Opus 5.5 completed to
+  five replicates (30/30) and a three-family eight-agent mixed run (2 Gemini 3.1 Pro +
+  3 GPT-6 Sol + 3 Opus 5.5, 15/15; no frontier mixed dyads), $73.22 in total. GPT-6 Sol
+  is ceiling-locked, unlike GPT-5.6 Sol; the mixed population is at the ceiling, and only
+  Opus 5.5 moves (game-only resources 73.1 among other families vs 69.7 among its own).
+  Opus 5.5 is the only frontier model below the ceiling, so frontier runs can show
+  pull-up but not contagion of defection. See [D011](decisions/011-frontier-model-rerun.md),
+  [D010](decisions/010-mixed-model-population-sizes.md) and
+  [the update README](../figures/frontier_update_20260928/README.md).
 - **Opus 5.5 check (2026-09-23):** 18 audited runs (replicates 0–2 of the frontier
   matrix, same profile as Opus 5, $31.79). Every cell is within 2 points of Opus 5 on
   the same seeds, with the same task-order ordering; the 2-agent game is more spread
