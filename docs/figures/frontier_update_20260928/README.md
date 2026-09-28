@@ -1,11 +1,12 @@
 # Frontier update, 2026-09-28: GPT-6 Sol, Opus 5.5 at five replicates, frontier mixed populations
 
 **Headline.** The current frontier models all play the trust game at or near the ceiling.
-GPT-6 Sol fully cooperates in five of six cells, where GPT-5.6 Sol sat between 57 and 74.
+GPT-6 Sol ends at 74.2–75.0 in five of six cells, where GPT-5.6 Sol sat between 57 and 74.
 A mixed population of 2 Gemini 3.1 Pro, 3 GPT-6 Sol and 3 Opus 5.5 also sits at the
 ceiling. The only family that moves is Opus 5.5 in game-only play. Among the other two
-families it sends more (4.79 against 4.47 among its own kind), because it reaches $5 sooner
-after a similar opening. It does not favour its generous partners.
+families it sends more (4.79 against 4.47 among its own kind): after a similar opening it
+gets to $5 sooner. There is no sign that it sends more to its generous partners in
+particular.
 
 ## What was run
 
@@ -39,8 +40,12 @@ Request settings (`scripts/build_frontier_rerun_config.py`):
 same across task orders and models (checked on the homogeneous frontier finals). Over the
 5 replicates the 200 games are Opus–Sol 63, Gemini–Sol 43, Gemini–Opus 39, Opus–Opus 24,
 Sol–Sol 22 and Gemini–Gemini 9. Random pairing of a 2/3/3 population would give 64/43/43/
-21/21/7, so the block layout adds no bias. Myth exposure follows the previous partner, so
-these counts also set how often each family reads each other family's myths.
+21/21/7, close to random-pairing expectation; the schedule does not depend on which model sits in
+which slot. Myth exposure follows the previous partner
+(720 of 720 exposures), so these counts also set how often each family reads each other
+family's myths. The launcher checks non-model inputs against the September replicate-0
+cell; the finals additionally match the homogeneous Opus 5.5 finals replicate by
+replicate (inputs and noise/pairing seeds), checked in review.
 
 ## Results
 
@@ -61,14 +66,15 @@ single agents can end above or below 75 depending on what their partners return.
 
 - **GPT-6 Sol is ceiling-locked.** It sends $5 in 732 of 750 decisions (97.6%). The one lower
   cell, the 2-agent game → myth cell, comes from a single run (replicate 0). That pair
-  opened at $3 and stayed at $3 for all ten rounds. The other four runs are at the ceiling.
+  opened at $3 and stayed at $3 for all ten rounds. The other four runs end at 74.0–75.0.
   GPT-6 Sol no longer shows GPT-5.6 Sol's partial collapses, so the myth task has nothing
   left to rescue.
-- **Opus 5.5 at five replicates confirms the three-replicate check.** Every cell is within
-  2.3 points of Opus 5 on the same seeds. It keeps the same ordering: game only < game →
+- **Opus 5.5 at five replicates confirms the three-replicate check.** Every cell mean is
+  within 2.3 points of Opus 5. Single seeds differ by up to 8 points (2-agent game only,
+  replicate 0: 61.0 against 69.0). It keeps the same ordering: game only < game →
   myth < myth → game, at both sizes.
 - **Only Opus leaves room for a task-order effect.** Among the current frontier models,
-  Opus 5.5 is the only one below the ceiling. It gains about 5 points from a myth task.
+  Opus 5.5 is the only one below the ceiling. It gains 2–5 points from a myth task (myth → game +4.5 and +5.1; game → myth +3.7 and +2.4, at 2 and 8 agents).
 
 ### Frontier mixed populations
 
@@ -91,27 +97,34 @@ Sends measure an agent's own behaviour. Resources also include what its partners
 return, so in a mixed run a family's resources partly reflect the other families.
 
 - **The mix is at the ceiling.** Every family sends close to $5 and returns 44–46% of what
-  it receives, the same as on its own.
+  it receives, close to its own-family level (44–48%).
 - **The one visible shift is Opus 5.5 in game-only play.** It sends 4.79 (±0.18) among
   the other families against 4.47 (±0.13) among its own kind.
-  - It is not partner-specific: in the mixed runs Opus sends 4.73 to Gemini and Sol
-    receivers (51 decisions) and 4.92 to other Opus agents (24).
+  - There is no sign of partner-specific sending. In the mixed runs Opus sends 4.73 to
+    Gemini and Sol receivers (51 decisions) and 4.92 to other Opus agents (24). These are
+    pooled decisions, not independent, and names are hidden; both groups have the same
+    mean round (about 5.4).
   - It is timing: Opus opens at a similar level (round 1: 3.75 mixed, 8 decisions; 3.3 on
-    its own, 20), then reaches $5 sooner. Rounds 2–5 average 4.80 mixed against 4.13 on its
-    own; rounds 6–10 are at $5 in both.
+    its own, 20), then gets to $5 sooner. In round 2 it rises to 4.43 in the mixed runs but drops to
+    3.12 among its own kind. Rounds 2–5 average 4.80 mixed against 4.13 on its own;
+    rounds 6–10 are at or near $5 in both (4.98 on its own).
   - A reading consistent with this, not a tested mechanism: early rounds against ceiling
     partners are profitable, and Opus raises its send after a profitable round (the
     escalation pattern of the 2026-09-18 frontier-gap report).
   - With a myth task the gap closes, because Opus is already near the ceiling on its own.
   - Its resources (73.1 against 69.7) move more than its sends, partly because the other
     families send it $5.
-- **The mix doesn't drag anyone down.** Gemini loses 0.3–1.5 points against its own
-  population, within about one run-to-run sd.
+  - One composition, n=5; the own-family comparison runs for replicates 0–2 date from
+    2026-09-23.
+- **Sends barely drop anywhere.** The only send drops are Gemini in game-only play (4.88
+  against 4.97) and Sol in game → myth (4.92 against 5.00). Resource shifts are partly
+  redistribution between families: in myth → game, Sol ends 1.0 higher than on its own,
+  while Opus ends 0.7 and Gemini 0.3 lower.
 
 ## What this means for the paper
 
 The earlier mixed-model result (families track their partners; a lone Gemini is exploited
-by GPTs; two GPTs drag Sonnets down) depended on a low-cooperating family, GPT-5 Nano. No
+by GPTs; two GPTs drag Sonnets down) involved a low-cooperating family, GPT-5 Nano. No
 current frontier model plays that role. A frontier mixed run can therefore show pull-up
 (Opus), but not contagion of defection. To test contagion at the frontier, you'd need a
 defector or a lower-cooperation arm. GPT-6 Sol at effort none is untested, as is the

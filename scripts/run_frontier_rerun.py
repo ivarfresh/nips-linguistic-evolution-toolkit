@@ -1,10 +1,11 @@
 """Frozen frontier-model rerun (2026-09-18): dry-run by default, staged, resumable finals only.
 
 Arms: Claude Opus 5 (adaptive thinking, effort high), Gemini 3.1 Pro Preview (thinking high),
-GPT-5.6 Sol (effort high), GPT-5.6 Sol (effort none) and, added 2026-09-23, Claude Opus 5.5
-(same request profile as Opus 5; run with --arms opus55 to compare it against the Opus 5 finals). Each arm repeats the September
+GPT-5.6 Sol (effort high), GPT-5.6 Sol (effort none), added 2026-09-23 Claude Opus 5.5
+(same request profile as Opus 5; run with --arms opus55 to compare it against the Opus 5 finals)
+and, added 2026-09-28, GPT-6 Sol (effort high). Each arm repeats the September
 no-defector matrix (2 and 8 agents x game / game_myth / myth_game x 5 replicates).
-Stages: smoke = replicate 0 of the 2-agent game cell, all arms (5 runs); pilot_myth_game =
+Stages: smoke = replicate 0 of the 2-agent game cell, all arms (6 runs); pilot_myth_game =
 replicate 0 of the 2- and 8-agent myth->game cells for the three reasoning-on arms (6 runs);
 pilot = replicate 0 of every cell for those arms (18 runs); main_reasoning_on = all 30 runs of
 those three arms (90 runs, Sol-none skipped by decision of 2026-09-18); main = every run of every arm;

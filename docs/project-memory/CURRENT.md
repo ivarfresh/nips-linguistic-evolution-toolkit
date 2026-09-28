@@ -39,7 +39,7 @@ and [data audit](../research/mixed_future_data_audit.md).
   3 GPT-6 Sol + 3 Opus 5.5, 15/15; no frontier mixed dyads), $73.22 in total. GPT-6 Sol
   is ceiling-locked, unlike GPT-5.6 Sol; the mixed population is at the ceiling, and only
   Opus 5.5 moves (game-only send 4.79 among other families vs 4.47 among its own; it
-  reaches $5 sooner rather than favouring generous partners).
+  gets to $5 sooner; no sign of partner-specific sending).
   Opus 5.5 is the only frontier model below the ceiling, so frontier runs can show
   pull-up but not contagion of defection. See [D011](decisions/011-frontier-model-rerun.md),
   [D010](decisions/010-mixed-model-population-sizes.md) and

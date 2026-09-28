@@ -65,7 +65,14 @@ for _arm, _count in MIXED_POPULATION:
         _agent += 1
         EXPECTED_MODELS[f"Agent_{_agent}"] = _BASE_MODELS[_model_key]
         EXPECTED_POLICIES[f"Agent_{_agent}"] = PROFILES[_profile]
-assert _agent == 8
+if _agent != 8:
+    raise RuntimeError(f"expected 8 agents, found {_agent}")
+
+
+def require(condition, *message):
+    """Validation that survives ``python -O`` (a bare assert would not)."""
+    if not condition:
+        raise RuntimeError(" ".join(str(part) for part in message))
 
 
 def _quiet_combinations(name, config):
@@ -80,33 +87,33 @@ def plan():
             c for c in _quiet_combinations(f"negative_only_reasoning_rerun_population_{shape}_claude_n5", SEPTEMBER)
             if c["game_params_name"].endswith(("negative_game_r3", "negative_twotask_r3")) and c["replicate_id"] == 0
         ]
-        assert len(reference) == 1, shape
+        require(len(reference) == 1, shape)
         reference_inputs = {k: v for k, v in reference[0]["comparison_inputs"].items() if k not in MODEL_ONLY_KEYS}
         name = f"frontier_mixed_population_{shape}_{MIXED_NAME}_n5"
         combos = _quiet_combinations(name, CONFIG)
-        assert [c["replicate_id"] for c in combos] == [0, 1, 2, 3, 4], name
+        require([c["replicate_id"] for c in combos] == [0, 1, 2, 3, 4], name)
         for i, c in enumerate(combos):
-            assert c["agent_models"] == EXPECTED_MODELS, (name, c["agent_models"])
+            require(c["agent_models"] == EXPECTED_MODELS, (name, c["agent_models"]))
             params = c["game_params"]
-            assert params["num_agents"] == 8 and params["pairing_mode"] == "balanced" and params["show_agent_names"] is False
-            assert params["history_policy"] == "self_and_coplayer" and params["coplayer_history_window"] == 3
-            assert params["noise_config"]["inform_agents"] is True
+            require(params["num_agents"] == 8 and params["pairing_mode"] == "balanced" and params["show_agent_names"] is False, 'params["num_agents"] == 8 and params["pairing_mode"] == "balanced" and params["show_agent_names"] is False')
+            require(params["history_policy"] == "self_and_coplayer" and params["coplayer_history_window"] == 3, 'params["history_policy"] == "self_and_coplayer" and params["coplayer_history_window"] == 3')
+            require(params["noise_config"]["inform_agents"] is True, 'params["noise_config"]["inform_agents"] is True')
             request = c["request_plan"].as_dict()
-            assert is_mixed_plan(request) and request["model"] == c["model"]
+            require(is_mixed_plan(request) and request["model"] == c["model"], 'is_mixed_plan(request) and request["model"] == c["model"]')
             for agent_id, model in EXPECTED_MODELS.items():
                 agent_request = request["agents"][agent_id]
-                assert agent_request["model"] == model
-                assert agent_request["provider"] == EXPECTED_POLICIES[agent_id]["provider"], (name, agent_id)
-                assert agent_request["policy"] == EXPECTED_POLICIES[agent_id], (name, agent_id, agent_request["policy"])
+                require(agent_request["model"] == model, 'agent_request["model"] == model')
+                require(agent_request["provider"] == EXPECTED_POLICIES[agent_id]["provider"], (name, agent_id))
+                require(agent_request["policy"] == EXPECTED_POLICIES[agent_id], (name, agent_id, agent_request["policy"]))
             actual_inputs = {k: v for k, v in c["comparison_inputs"].items() if k not in MODEL_ONLY_KEYS}
             differing = sorted(k for k in set(actual_inputs) | set(reference_inputs) if actual_inputs.get(k) != reference_inputs.get(k))
-            assert not differing, (name, "non-model inputs differ from September control", differing)
-            assert params.get("defector_ratio", 0) == 0 and params.get("random_defection_probability", 0) == 0
+            require(not differing, (name, "non-model inputs differ from September control", differing))
+            require(params.get("defector_ratio", 0) == 0 and params.get("random_defection_probability", 0) == 0, 'params.get("defector_ratio", 0) == 0 and params.get("random_defection_probability", 0) == 0')
             game, _ = build_noisy_protocol(c, i)
-            assert len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0
-            assert not game.punishment_enabled
+            require(len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0, 'len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0')
+            require(not game.punishment_enabled, 'not game.punishment_enabled')
             jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT)))
-    assert len(jobs) == 15 and len({str(j[3]) for j in jobs}) == 15
+    require(len(jobs) == 15 and len({str(j[3]) for j in jobs}) == 15, 'len(jobs) == 15 and len({str(j[3]) for j in jobs}) == 15')
     # Two-task jobs are the slow, expensive path: start them first.
     jobs.sort(key=lambda j: (0 if "myth" in j[2]["task_order"] else 1, j[1]))
     return jobs
@@ -127,17 +134,17 @@ def audit(job):
     d = json.loads(path.read_text())
     m = d["run_metadata"]
     request = c["request_plan"].as_dict()
-    assert m["defector_count"] == 0 and m["random_defection_probability"] == 0
-    assert not m["code_dirty"]
-    assert m["llm_request"] == request and m["llm_provider"] == "mixed"
-    assert m["agent_models"] == c["agent_models"]
-    assert m["noise_config"] == c["game_params"]["noise_config"]
-    assert set(d["agents"]) == set(request["agents"])
+    require(m["defector_count"] == 0 and m["random_defection_probability"] == 0, 'm["defector_count"] == 0 and m["random_defection_probability"] == 0')
+    require(not m["code_dirty"], 'not m["code_dirty"]')
+    require(m["llm_request"] == request and m["llm_provider"] == "mixed", 'm["llm_request"] == request and m["llm_provider"] == "mixed"')
+    require(m["agent_models"] == c["agent_models"], 'm["agent_models"] == c["agent_models"]')
+    require(m["noise_config"] == c["game_params"]["noise_config"], 'm["noise_config"] == c["game_params"]["noise_config"]')
+    require(set(d["agents"]) == set(request["agents"]), 'set(d["agents"]) == set(request["agents"])')
     calls = 0
     cost = {model: 0.0 for model in RATES}
     for agent_id, a in d["agents"].items():
         expected = request["agents"][agent_id]
-        assert a["model"] == expected["model"], (agent_id, a["model"])
+        require(a["model"] == expected["model"], (agent_id, a["model"]))
         provider_model = expected["provider_model"]
         ir, orr = RATES[provider_model]
         for e in a.get("interaction_history", []):
@@ -145,11 +152,12 @@ def audit(job):
             if r.get("response_source", "llm") != "llm":
                 continue
             u = r.get("usage") or {}
-            assert u.get("request_settings") == expected, (name, agent_id)
-            assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS, (name, agent_id, u.get("finish_reason"))
+            require(u.get("request_settings") == expected, (name, agent_id))
+            require(u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS, (name, agent_id, u.get("finish_reason")))
             calls += 1
             output = (u.get("output_tokens") or 0) + ((u.get("reasoning_tokens") or 0) if expected["provider"] == "google" else 0)
             cost[provider_model] += ((u.get("input_tokens") or 0) * ir + output * orr) / 1e6
+    require(calls > 0, f"{path}: no LLM calls recorded")
     return {
         "path": str(path.relative_to(ROOT)),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -171,11 +179,11 @@ def main():
     p.add_argument("--audit-only", action="store_true")
     p.add_argument("--smoke", action="store_true", help="replicate 0 of the game-only cell (1 run)")
     args = p.parse_args()
-    assert 1 <= args.workers <= 20
+    require(1 <= args.workers <= 20, "--workers must be 1-20")
     jobs = plan()
     if args.smoke:
         jobs = [j for j in jobs if j[2]["task_order"] == ["game"] and j[1] == 0]
-        assert len(jobs) == 1
+        require(len(jobs) == 1, "smoke selects one run")
     pending, receipts = [], []
     for j in jobs:
         if j[3].exists():
@@ -190,12 +198,12 @@ def main():
         flush=True,
     )
     if args.audit_only:
-        assert not pending
+        require(not pending, f"{len(pending)} runs missing")
     elif not args.execute:
         print("DRY RUN: pass --execute to launch", flush=True)
         return
     if args.execute and pending:
-        assert not subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip(), "Clean checkout required"
+        require(not subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip(), "Clean checkout required")
         os.environ["HF_DATASET_AUTO_UPLOAD"] = "0"
         os.environ["TRUST_BATCH_QUIET"] = "1"
         logdir = str(ROOT / "data/json/noise_experiments" / OUTPUT / "worker_logs")

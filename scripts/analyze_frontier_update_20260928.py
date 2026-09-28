@@ -91,10 +91,10 @@ def load():
     mixed = list(audited(MIXED_ROOT, [MIXED_ROOT / "completion_receipt.json"]))
     homo = pd.DataFrame([row for p in frontier for row in agent_rows(p, arm_of(p))])
     mix = pd.DataFrame([row for p in mixed for row in agent_rows(p)])
-    for df in (homo, mix):
-        runs = df.drop_duplicates("path")
-        if runs.duplicated(["arm", "num_agents", "task_order", "replicate_id"]).any() and df is homo:
-            raise RuntimeError("more than one final for a homogeneous cell/replicate")
+    if homo.drop_duplicates("path").duplicated(["arm", "num_agents", "task_order", "replicate_id"]).any():
+        raise RuntimeError("more than one final for a homogeneous cell/replicate")
+    if mix.drop_duplicates("path").duplicated(["task_order", "replicate_id"]).any():
+        raise RuntimeError("more than one mixed final for a task order/replicate")
     if len(mixed) != 15:
         raise RuntimeError(f"expected 15 mixed finals, found {len(mixed)}")
     return homo, mix, frontier, mixed

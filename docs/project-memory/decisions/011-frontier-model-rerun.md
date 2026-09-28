@@ -75,8 +75,9 @@ is a recorded protocol difference, not a pure model swap (see D004).
   request unchanged (`september28_sol6_high`); on GPT-6 Sol `high` is below `xhigh` and
   `max`, a recorded regime note. Smoke, 6-run pilot, then 30/30 audited finals ($21.16,
   `main_sol6_receipt.json`). Opus 5.5 replicates 3–4 added (12 runs, $21.03;
-  `main_opus55_receipt.json` lists all 30); the only code change since replicates 0–2 is
-  billing-error detection in `src/utils.py`. An Anthropic credit exhaustion interrupted
+  `main_opus55_receipt.json` lists all 30); the code that makes the model calls (`src/`,
+  `games/`, `experiments/`) is identical for replicates 0–2 and 3–4 (no diff between
+  their recorded commits). An Anthropic credit exhaustion interrupted
   the top-up and it resumed after a top-up. **Result (descriptive, n=5):** GPT-6 Sol is
   ceiling-locked (74.2–75.0 in five of six cells; $5 in 732 of 750 sends; one 2-agent
   game→myth run locked at $3 gives that cell 70.7 ±8.8), unlike GPT-5.6 Sol's partial
