@@ -2,7 +2,7 @@
 
 **Status (decided 2026-09-28, Ivar):** this is the *frontier update set*, a newer-model
 check. The main frontier result is the 2026-09-18 Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set
-(`docs/figures/frontier_rerun_20260918/`). `resources_boxplots.png` shows this set as a grid
+(`docs/figures/frontier_rerun_20260918/`). `frontier_update_set_resources_boxplots.png` shows this set as a grid
 in the style of the mixed-population figure.
 
 **Headline.** The current frontier models all play the trust game at or near the ceiling.

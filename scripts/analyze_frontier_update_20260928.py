@@ -15,7 +15,7 @@ Outputs (docs/figures/frontier_update_20260928/):
                             return share in the mixed populations beside the same family's
                             homogeneous 8-agent frontier population
   mixed_vs_homogeneous.png  final resources per agent, mixed vs homogeneous, by family
-  resources_boxplots.png    grid in the style of the mixed-population figure (Figure 8): rows
+  frontier_update_set_resources_boxplots.png  grid in the style of the mixed-population figure (Figure 8): rows
                             2 and 8 agents; columns Opus 5.5, Gemini 3.1 Pro, GPT-6 Sol and the
                             2/3/3 mixed population; one dot per run (mean over its agents)
   provenance.json           hashes of every run and output; condition check
@@ -207,7 +207,7 @@ def plot_grid(homo, mix):
              ha="center", fontsize=9, color="#444444")
     fig.supylabel("Cumulative resources per agent", fontsize=12, x=.006)
     fig.tight_layout(rect=(.02, .05, 1, .91), h_pad=2.2, w_pad=1.6)
-    fig.savefig(OUTPUT / "resources_boxplots.png", dpi=200, bbox_inches="tight")
+    fig.savefig(OUTPUT / "frontier_update_set_resources_boxplots.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
