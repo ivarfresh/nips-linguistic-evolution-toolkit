@@ -133,6 +133,21 @@ families, 4.92 to Opus); Opus opens similarly and reaches $5 sooner (rounds 2–
 but not contagion of defection. See
 [the update README](../../figures/frontier_update_20260928/README.md).
 
+On 2026-09-28, later the same day, Ivar made the 2026-09-18 trio the main frontier set
+(D011) and asked for "the frontier dyads and the mixed frontier model with these models.
+Use a mix of 2/3/3 for gemini 3.1 pro, Opus 5 and GPT 5.6 sol respectively" (Claude
+session, user instruction). This covers Edward's email item (C), "a frontier models version
+of Figure 7". **Configured, awaiting Ivar's check before launch:**
+- dyads: Opus 5/Sol, Opus 5/Gemini and Gemini/Sol, copying the September mixed-dyad design
+  (the first-named family sends first in replicates 0/2/4, the reversed pair in 1/3/5); 3
+  pairings × 3 task orders × 6 replicates = 54 runs;
+- population: Agent_1–2 Gemini 3.1 Pro, Agent_3–5 Opus 5, Agent_6–8 GPT-5.6 Sol, balanced
+  rotation, 3 task orders × 5 replicates = 15 runs;
+- every agent at its D011 profile; launcher `scripts/run_frontier_main_mixed.py`
+  (plan-time check of all non-model inputs against the September controls); output
+  `frontier_mixed_main_20260928`; estimate $73.47 at standard rates.
+The earlier 2/3/3 run with Opus 5.5 and GPT-6 Sol belongs to the frontier update set.
+
 ## Unresolved / next evidence
 
 Which family's myth text moved which agent in the mixed myth conditions is

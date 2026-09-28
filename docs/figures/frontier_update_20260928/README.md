@@ -1,5 +1,10 @@
 # Frontier update, 2026-09-28: GPT-6 Sol, Opus 5.5 at five replicates, frontier mixed populations
 
+**Status (decided 2026-09-28, Ivar):** this is the *frontier update set*, a newer-model
+check. The main frontier result is the 2026-09-18 Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set
+(`docs/figures/frontier_rerun_20260918/`). `resources_boxplots.png` shows this set as a grid
+in the style of the mixed-population figure.
+
 **Headline.** The current frontier models all play the trust game at or near the ceiling.
 GPT-6 Sol ends at 74.2–75.0 in five of six cells, where GPT-5.6 Sol sat between 57 and 74.
 A mixed population of 2 Gemini 3.1 Pro, 3 GPT-6 Sol and 3 Opus 5.5 also sits at the
