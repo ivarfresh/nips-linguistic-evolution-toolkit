@@ -73,7 +73,8 @@ def main() -> None:
         allowed.update({k: why for k in ("protocol.simulation.seed_myth", "protocol.simulation.seed_reinject",
                                          "protocol.simulation.seed_user_prompt", "replicate.identity")})
         apparatus = ("Transplant pool uses the historical slide-678 apparatus (uninformed U(-5,0) noise, "
-                     "myth-only memory); it is never pooled with September runs, only compared within itself")
+                     "myth-only memory); it is never pooled with September runs, only compared within itself. "
+                     "Declared for the folder as a whole; the September pools do not differ in these fields")
         allowed.update({k: apparatus for k in ("protocol.game.defector_prompt_template",
                                                "protocol.game.noise_config.inform_agents",
                                                "protocol.game.noise_config.range",

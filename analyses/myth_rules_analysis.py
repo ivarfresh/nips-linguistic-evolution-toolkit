@@ -130,7 +130,10 @@ def prescribed_vs_actual(r: pd.DataFrame, sends: pd.DataFrame) -> pd.DataFrame:
     per_run = h.groupby(["size", "family", "task_order", "path", "round"])["sent"].mean().reset_index()
     actual = per_run.groupby(["size", "family", "task_order", "round"])["sent"].agg(["mean", "std"])
     actual.columns = ["sent_mean", "sent_sd"]
-    rh = r[~r["mixed"]]
+    rh = r[~r["mixed"]].copy()
+    # line each send up with the myth written before it: in game->myth that is the previous round's myth
+    rh["round"] = np.where(rh["task_order"] == "game_myth", rh["round"] + 1, rh["round"])
+    rh = rh[rh["round"] <= 10]
     presc = rh.groupby(["size", "family", "task_order", "round"]).agg(
         prescribed_mean=("prescribed", "mean"), prescribed_specified=("prescribed", lambda s: s.notna().mean()))
     return actual.join(presc, how="left").reset_index().round(3)
@@ -152,7 +155,7 @@ def plot_prescribed_vs_actual(t: pd.DataFrame) -> None:
                 ax.plot(o["round"], o["sent_mean"], color=c, alpha=alpha, lw=2, marker="o", ms=3,
                         label=f"{name}: sent")
                 ax.plot(o["round"], o["prescribed_mean"], color=c, alpha=alpha, lw=2, ls="--",
-                        label=f"{name}: myth prescribes")
+                        label=f"{name}: myth before this game prescribes")
             ax.set_ylim(-0.2, 5.3)
             ax.set_title(f"{fam}, {size}-agent homogeneous")
             if j == 0:

@@ -6,11 +6,21 @@ myths are does not predict how they play
 a myth raises cooperation? This folder extracts the concrete play rules each
 myth endorses and checks whether agents follow them.
 
-**Answer.** Each myth works as a written instruction to its author. The
-prescribed send amount is what matters. An agent sends close to what its own
-myth prescribes, and a transplanted myth moves its hosts toward the amount it
-prescribes. Each model family writes its own rulebook, and the rulebooks barely
-change over ten rounds.
+**Answer.** A myth works as a written instruction to its author, and it acts
+mainly on how generously play opens.
+
+- **The stated send amount sets the opening.** Before any play, agents send
+  more when their own myth names a bigger amount.
+- **The transplant confirms the direction.** A myth the experimenter injected
+  moves Sonnet hosts toward the amount it names, including within one donor
+  type in the 8-agent rerun.
+- **For GPT, what matters is writing a cooperative rule at all.** Its
+  game-only zero-lock breaks whatever amount its myth names.
+- **No rule we extracted explains why myth runs stop sliding to $0.** Neither
+  the letdown clause nor the send amount accounts for it.
+- **The rulebooks differ by family.** Send amounts stay fixed within each
+  family over ten rounds. Return rules converge on "half", and a
+  "consistency" theme grows.
 
 ## Why the myth can act as an instruction
 
@@ -70,14 +80,16 @@ Homogeneous runs, round 1 → round 10, both myth orders
   - Send "all": 86–100% of myths at round 1, 100% by round 10.
   - Return "half": rises to 96–100%. Early myths still said "more than half"
     (24–36%).
-  - "Keep trusting after a shortfall": 22–64% at round 1, 92–100% by round 10.
-    Gemini's myths increasingly tell the reader to trust through the noise.
+  - "Keep trusting after a shortfall": 22–64% at round 1, 92–100% by round 10
+    under GLM. *Tentative:* the second judge codes far fewer Gemini myths this
+    way (36% vs 76% on the same sample).
 - **GPT: send a measured amount, return about half.**
   - Send "moderate": 62–64% at round 1, 76–88% at round 10. "Not a flood",
     "within one's means".
   - Send "all": falls from 8–14% to 6%.
-  - "After being let down": GPT is the only family whose myths shift toward
-    "reduce" (6% → 34% in game→myth).
+  - "After being let down": under GLM, GPT is the only family whose myths
+    shift toward "reduce" (6% → 34% in game→myth). *Tentative:* the letdown
+    field has κ 0.29–0.42 per family.
 - **Sonnet: depends on when the myth is written.**
   - Myth written before play (myth→game): 60% "send all" at round 1. Its
     return rule leans generous: 58% "more than half".
@@ -99,20 +111,24 @@ Homogeneous runs, round 1 → round 10, both myth orders
   a few points of homogeneous runs for Sonnet and Gemini. GPT in mixed runs
   says "send all" more often (22% vs 6%).
 
-## 2. Agents send what their myths prescribe (`prescribed_vs_actual_send.png`)
+## 2. Prescriptions and sends move together (`prescribed_vs_actual_send.png`)
 
-Mean over runs, homogeneous, $ out of 5:
+Each send is lined up with the myth written before it. In game→myth that is
+the previous round's myth, so game→myth has no prescription at round 1. Only
+the myth→game round-1 column is free of past play (Section 3 tests it). Mean
+over runs, homogeneous, $ out of 5:
 
 | Setting | Game only: sent | Myth→game: prescribed | Myth→game: sent | Game→myth: prescribed | Game→myth: sent |
 |---|---:|---:|---:|---:|---:|
-| 8 Sonnet, round 1 | 3.10 (±0.14) | 4.20 | 4.15 (±0.42) | 3.00 | 3.00 (±0.00) |
-| 8 Sonnet, round 10 | 3.03 (±0.06) | 4.57 | 4.54 (±0.44) | 2.95 | 2.98 (±0.06) |
-| 8 GPT, round 2 | 0.00 (±0.00) | 2.85 | 1.84 (±0.55) | 2.92 | 1.30 (±0.57) |
-| GPT dyad, round 2 | 0.00 (±0.00) | 3.20 | 2.25 (±1.84) | 2.47 | 2.00 (±1.41) |
+| 8 Sonnet, round 1 | 3.10 (±0.14) | 4.20 | 4.15 (±0.42) | – | 3.00 (±0.00) |
+| 8 Sonnet, round 10 | 3.03 (±0.06) | 4.57 | 4.54 (±0.44) | 2.94 | 2.98 (±0.06) |
+| 8 GPT, round 2 | 0.00 (±0.00) | 2.85 | 1.84 (±0.55) | 2.71 | 1.30 (±0.57) |
+| GPT dyad, round 2 | 0.00 (±0.00) | 3.20 | 2.25 (±1.84) | 2.69 | 2.00 (±1.41) |
 | Gemini, all rounds | 5.00 | 5.00 | 5.00 | 5.00 | 5.00 |
 
-- **Sonnet populations send almost exactly what their myths prescribe.** This
-  holds in both orders and in every round.
+- **Sonnet populations send almost exactly what their myths prescribe,** in
+  both orders and in every round. After round 1, that partly reflects myths
+  describing settled play.
 - **GPT populations send less than their own rule.** They prescribe about
   $2.85, far above the $0 of game-only play, and send $1–2. GPT dyads send
   below the rule early on and above it by round 10.
@@ -125,17 +141,17 @@ Only three tests are free of the "myths describe the game just played" problem
 
 | Test | $ sent per $ prescribed | 95% CI | Spearman | n decisions / runs |
 |---|---:|---|---:|---:|
-| T1 myth→game round 1 (myth before any play), all families | +0.57 | 0.47 to 0.67 | 0.74 | 200 / 75 |
-| T1, Sonnet | +0.59 | 0.42 to 0.77 | 0.70 | 72 / 31 |
+| T1 myth→game round 1 (myth before any play), Sonnet | +0.59 | 0.42 to 0.77 | 0.70 | 72 / 31 |
 | T1, GPT | +0.54 | 0.41 to 0.68 | 0.50 | 78 / 37 |
+| T1, all families (family fixed effects; Gemini adds no variation) | +0.57 | 0.47 to 0.67 | 0.74 | 200 / 75 |
 | T2 game→myth round 2 (one round played, no partner myth yet), all | +0.16 | 0.02 to 0.30 | 0.53 | 204 / 77 |
 | T2, Sonnet | +0.17 | 0.04 to 0.30 | 0.30 | 74 / 30 |
 | T2, GPT | +0.04 | −0.22 to 0.30 | 0.02 | 83 / 39 |
 | T3 rounds 2–10, own myth → next send (each agent vs itself) | +0.01 | −0.09 to 0.12 | – | 2,869 / 156 |
 | T3 reverse: send → next myth's prescription | +0.07 | 0.03 to 0.10 | – | 3,395 / 155 |
 
-- **T1.** Before any play, each extra prescribed dollar goes with about 57
-  cents more sent. For example, GPT agents whose first myth says "send all"
+- **T1.** Before any play, within Sonnet and within GPT, each extra
+  prescribed dollar goes with 54–59 cents more sent. For example, GPT agents whose first myth says "send all"
   send $4.38 (±0.96, n=16). Those whose myth says "moderate" send $3.10
   (±1.20, n=50).
 - **T2.** After one round, the link is weak for Sonnet and absent for GPT.
@@ -157,6 +173,15 @@ received.
 - **The prescribed amount predicts host sending.** Spearman 0.72 in the
   8-agent rerun and 0.68 in the dyad rerun (23 donors with a stated rule in
   each). Baseline sends with no text: $2.81 (8-agent) and $2.00 (dyad).
+- **It isn't just the donor type.** Within donor types, with donor-type fixed
+  effects:
+  - 8-agent: +$0.41 host send per prescribed dollar (within-type Spearman
+    0.75, p<0.001). Without the single "send nothing" donor: +$0.29
+    (p=0.005).
+  - Dyads: +$0.34 (p=0.008). Without the "send nothing" donor: +$0.19
+    (p=0.12).
+  - So amount matters beyond donor type in populations. In dyads the
+    evidence rests largely on the one "send nothing" donor.
 - **The one donor that says "send nothing"** produced the collapse: host mean
   send $0.60 (8-agent) and $0.00 (dyad).
 - **Donors that say "all five"** lift hosts to $3.3–5.0 in the 8-agent
@@ -165,6 +190,28 @@ received.
 - **Tone adds something beyond the amount.** Late Gemini donors with no stated
   amount still lifted 8-agent hosts to $4.80, so generous language may help as
   well.
+
+## 5. What stops the slide to $0 is not in the rules we extracted
+
+Myth runs rarely repeat a $0 after being sent $0; game-only runs almost always
+do (see the task-order decomposition). If the letdown clause carried this,
+agents whose latest myth says "keep trusting" should resend more
+(`letdown_rule_vs_next_send.csv`). GPT agents after being sent $0:
+
+| Latest myth says | Sends $0 again | Next send | n (runs) |
+|---|---:|---:|---:|
+| Keep trusting | 52% | $1.67 | 69 (32) |
+| Reduce | 50% | $2.03 | 88 (32) |
+| Nothing on this | 45% | $1.99 | 227 (45) |
+
+- **No difference.** The anti-slide effect belongs to the myth condition as a
+  whole, not to any clause we coded. The letdown field is the least reliable
+  one, so this is a weak null.
+- **Candidates for what does carry it:**
+  - the standing instruction to consult the myths;
+  - the repeated restatement of the cooperative ideal;
+  - the fact that every myth names some positive amount (GPT's is about
+    $2.85).
 
 ## Caveats
 
