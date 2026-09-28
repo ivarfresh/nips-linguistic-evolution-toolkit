@@ -111,8 +111,21 @@ def main():
     # Invented tokens: not an English dictionary word, not a plain number, not in round 1.
     def tokens(text):
         return {w.lower().strip("'’-") for w in WORD.findall(text)}
+    def english(w):
+        # The system word list has no inflections, so strip possessives and
+        # common suffixes before looking a word up.
+        w = re.sub(r"(?:'s|’s|n't|n’t|'d|’d|'ll|’ll|'re|’re|'ve|’ve)$", "", w)
+        if not w or w.replace(".", "").isdigit() or w in dictionary:
+            return True
+        for suffix, repl in (("ies", "y"), ("ied", "y"), ("ing", ""), ("ing", "e"), ("ed", ""), ("ed", "e"),
+                             ("d", ""), ("es", ""), ("s", ""), ("ly", ""), ("er", ""), ("est", "")):
+            if w.endswith(suffix) and w[: -len(suffix)] + repl in dictionary:
+                return True
+        stem = w[:-3] if w.endswith("ing") else w[:-2] if w.endswith("ed") else None
+        return bool(stem and len(stem) > 2 and stem[-1] == stem[-2] and stem[:-1] in dictionary)
     def invented(w):
-        return w and not w.isdigit() and w not in dictionary and w.rstrip("s") not in dictionary
+        parts = [part for part in re.split(r"[-–]", w) if part]
+        return bool(parts) and not all(english(part) for part in parts)
     shared_rows = []
     for (arm, rep), g in myths.groupby(["arm", "rep"]):
         round1 = set().union(*g[g["round"] == 1].text.map(tokens))
@@ -178,7 +191,32 @@ def main():
     axes[0].legend(fontsize=8)
     fig.tight_layout()
     fig.savefig(out / "myth_pressure_pilot.png", dpi=140)
+    plt.close(fig)
+    write_provenance(out, [ROOT / final["path"] for final in receipt["finals"]])
     print("\n".join(lines))
+
+
+ALLOWED_DIFFERENCES = {
+    "protocol.myth.pressure.word_budget_schedule": "Word budget (loose / tight) is a design factor.",
+    "protocol.myth.pressure.council_exchanges": "Council (off / two exchanges) is a design factor.",
+    "protocol.myth.pressure.council_prompt_template": "Council prompt exists only in council arms.",
+    "protocol.myth.pressure.council_block_template": "Council transcript block exists only in council arms.",
+    "replicate.identity.replicate_id": "Replicates 0-4 per arm.",
+    "replicate.identity.output_path": "Each run has its own output path.",
+    "replicate.noise_seed": "Seeds follow the replicate; identical across arms for the same replicate.",
+    "replicate.pairing_seed": "Seeds follow the replicate; identical across arms for the same replicate.",
+    "replicate.run_seed": "Seeds follow the replicate; identical across arms for the same replicate.",
+    "replicate.defector_seed": "Seeds follow the replicate; no defectors in any run.",
+    "replicate.random_defection_seed": "Seeds follow the replicate; random defection is off in every run.",
+}
+
+
+def write_provenance(out, finals):
+    """Hash every output (README included) against the audited finals; rerun after editing the README."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from analyses._shared import write_output_provenance
+    write_output_provenance(out, finals, allowed_differences=ALLOWED_DIFFERENCES)
 
 
 if __name__ == "__main__":

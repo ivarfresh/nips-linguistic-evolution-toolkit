@@ -1,6 +1,6 @@
 # D012 — Myth-pressure pilot: word budget × council on Sonnet 4.5 dyads
 
-- Recorded / last verified: 2026-09-28 / 2026-09-28
+- Recorded / last verified: 2026-09-28 / 2026-09-29
 - Decision status: agreed (pilot only). Stage 2 (eight-agent populations with
   hidden co-player history, transplant and newcomer tests) is proposed, not agreed.
 - Scope: 20 Sonnet 4.5 myth-first dyads: word budget (loose 200 / tight
@@ -11,8 +11,10 @@
   assistant's proposal to write the design up, build it on a branch and run the
   dyad pilot). He did not choose between the council and budget-only options, and
   the 2 × 2 design covers both.
-- Implementation status: implemented and configured on branch
-  `run/myth-pressure-pilot-20260928`. No runs yet.
+- Implementation status: sampled completed finals, 20/20 launcher-audited
+  (`data/json/noise_experiments/myth_pressure_pilot_20260928/completion_receipt.json`,
+  $27.07), plus one separate smoke run (not pooled). Branch
+  `run/myth-pressure-pilot-20260928`.
 
 ## Decision and rationale
 
@@ -41,7 +43,8 @@ Design and pre-registered criteria:
   (`myth_pressure` resolution), `src/experiment_condition.py` (recorded only when
   configured), `tests/test_myth_pressure.py`,
   `scripts/build_myth_pressure_config.py`, `scripts/run_myth_pressure_pilot.py`.
-- Runs: none yet.
+- Runs: 20 finals with sha256 in the completion receipt; results in
+  `docs/figures/myth_pressure_pilot_20260928/README.md`.
 
 ## Chronology and supersession
 
@@ -49,10 +52,21 @@ Design and pre-registered criteria:
   reanalysis of existing runs.
 - 2026-09-22: trial reanalysis (scratch) finds no link between language change and
   cooperation.
-- 2026-09-28: Ivar approves the pressure pilot.
+- 2026-09-28: Ivar approves the pressure pilot. Design and criteria committed
+  before any run. After the smoke run and before the pilot, criterion 1 gained a
+  "planned for the cut" reading and criterion 3's coder was fixed (dated amendment
+  in the design doc).
+- 2026-09-29: pilot complete. Criteria 1 and 2 fail; criterion 3 passes. Sonnet
+  mostly keeps writing past the budget. What gets through is a plain English rule
+  of play ("send three of five faithfully, return proportionally"), not a code.
+  No shared invented word appears in either tight arm, and the council does not
+  raise perplexity (ratio 0.84). Resources 57–61 in every arm, not separable at
+  n=5. By the pre-registered stop rule, stage 2 does not proceed on this design.
 
 ## Unresolved / next evidence
 
-- Pilot results against criteria 1–3.
+- Whether a hard consequence for going over budget (as in GlossoGen, where
+  it failed the task) or information that has to be transmitted would change the
+  outcome. That needs a redesign and a new decision.
 - Whether the council's instruction not to discuss amounts holds (criterion 3).
 - Stage 2 needs a new decision.

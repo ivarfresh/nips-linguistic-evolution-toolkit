@@ -118,6 +118,11 @@ support an inference about it.
 **Go to stage 2** if criteria 1–3 all hold. **Stop** and report
 "Sonnet compresses into terse English, not a code" if 1 holds but 2 fails.
 
+## Result (added 2026-09-29)
+
+Criteria 1 and 2 fail, 3 passes; stage 2 does not proceed on this design. See
+[the results](../figures/myth_pressure_pilot_20260928/README.md).
+
 ## Stage 2 (not built)
 
 Eight-agent populations with the co-player's game history hidden, so the myth is

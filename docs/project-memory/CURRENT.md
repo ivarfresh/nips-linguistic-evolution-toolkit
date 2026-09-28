@@ -14,11 +14,12 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Current operational state
 
-- **Myth-pressure pilot (approved 2026-09-28, not yet run):** 20 Sonnet 4.5 myth-first
-  dyads, word budget (loose / tight) × council between rounds (off / on), to test
-  whether pressure turns myths into a shared code (GlossoGen conditions). Feasibility
-  only; it does not test the cooperation link. Pre-registered criteria in
-  [the pilot design](../research/myth_pressure_pilot_2026-09-28.md); see
+- **Myth-pressure pilot (2026-09-28/29, 20/20 audited finals, $27.07):** Sonnet 4.5
+  myth-first dyads, word budget (loose / tight) × council between rounds (off / on).
+  No shared code emerged. Sonnet mostly writes past the budget and gets cut. What gets
+  through is a plain English rule of play, and the council does not make myths less
+  English. Resources 57–61 in every arm (n=5 each). Stage 2 does not proceed on this
+  design. See [the results](../figures/myth_pressure_pilot_20260928/README.md) and
   [D012](decisions/012-myth-pressure-pilot.md).
 - **Submission target (team meeting 2026-09-22):** AAMAS, abstract 1 October
   2026, full paper 8 October 2026. The mixed-model dyad and eight-agent figures
