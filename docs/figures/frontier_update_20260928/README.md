@@ -3,8 +3,9 @@
 **Headline.** The current frontier models all play the trust game at or near the ceiling.
 GPT-6 Sol fully cooperates in five of six cells, where GPT-5.6 Sol sat between 57 and 74.
 A mixed population of 2 Gemini 3.1 Pro, 3 GPT-6 Sol and 3 Opus 5.5 also sits at the
-ceiling. The only family that moves is Opus 5.5: without a myth, it cooperates more among
-the other two families (73.1) than among its own kind (69.7).
+ceiling. The only family that moves is Opus 5.5 in game-only play. Among the other two
+families it sends more (4.79 against 4.47 among its own kind), because it reaches $5 sooner
+after a similar opening. It does not favour its generous partners.
 
 ## What was run
 
@@ -22,8 +23,9 @@ afterwards.
 
 Total $73.22 at standard rates, computed from recorded token usage. GPT-6 Sol is priced at
 $2/$10 per million input/output tokens (OpenAI model page, read 2026-09-28), half of
-GPT-5.6 Sol's $4/$20. The Anthropic credit ran out during the Opus top-up. The calls in
-flight at that moment were billed but produced no final, so they are not in this figure.
+GPT-5.6 Sol's $4/$20. The Anthropic credit ran out during the Opus top-up. Calls that
+completed inside the 8 runs that then failed were billed but left no final, so they are
+not in this figure.
 
 Request settings (`scripts/build_frontier_rerun_config.py`):
 - **GPT-6 Sol** uses the GPT-5.6 Sol profile: `reasoning_effort: high`, temperature
@@ -45,7 +47,8 @@ these counts also set how often each family reads each other family's myths.
 ### Homogeneous frontier arms
 
 Mean final resources per agent, averaged within each run, then mean (±sd) over the 5 runs
-(`cell_summary.csv`). The maximum under full cooperation is about 75.
+(`cell_summary.csv`). A population in which every send is $5 averages about 75 per agent;
+single agents can end above or below 75 depending on what their partners return.
 
 | Agents | Task order | GPT-6 Sol | GPT-5.6 Sol | Opus 5.5 | Opus 5 | Gemini 3.1 Pro |
 |---|---|---|---|---|---|---|
@@ -72,25 +75,36 @@ Mean final resources per agent, averaged within each run, then mean (±sd) over 
 Per family, mean (±sd over 5 runs) of the family's run-mean (`mixed_family_summary.csv`,
 figure `mixed_vs_homogeneous.png`).
 
-| Task order | Family | Resources, mixed | Resources, own family | Send, mixed | Send, own family |
+| Task order | Family | Send, mixed | Send, own family | Resources, mixed | Resources, own family |
 |---|---|---|---|---|---|
-| Game only | Gemini 3.1 Pro | 73.2 (±1.4) | 74.7 (±0.6) | 4.88 | 4.97 |
-| Game only | GPT-6 Sol | 74.9 (±1.5) | 74.9 (±0.2) | 4.97 | 4.99 |
-| Game only | Opus 5.5 | 73.1 (±0.9) | 69.7 (±1.3) | 4.79 | 4.47 |
-| Game → Myth | Gemini 3.1 Pro | 73.9 (±1.9) | 74.5 (±0.7) | 4.94 | 4.95 |
-| Game → Myth | GPT-6 Sol | 74.9 (±0.8) | 75.0 (±0.0) | 4.92 | 5.00 |
-| Game → Myth | Opus 5.5 | 72.9 (±0.7) | 72.1 (±0.8) | 4.83 | 4.71 |
-| Myth → Game | Gemini 3.1 Pro | 74.7 (±0.5) | 75.0 (±0.0) | 5.00 | 5.00 |
-| Myth → Game | GPT-6 Sol | 75.9 (±0.9) | 74.9 (±0.2) | 4.97 | 4.99 |
-| Myth → Game | Opus 5.5 | 74.1 (±0.6) | 74.8 (±0.2) | 5.00 | 4.98 |
+| Game only | Gemini 3.1 Pro | 4.88 (±0.11) | 4.97 (±0.06) | 73.2 (±1.4) | 74.7 (±0.6) |
+| Game only | GPT-6 Sol | 4.97 (±0.06) | 4.99 (±0.02) | 74.9 (±1.5) | 74.9 (±0.2) |
+| Game only | Opus 5.5 | 4.79 (±0.18) | 4.47 (±0.13) | 73.1 (±0.9) | 69.7 (±1.3) |
+| Game → Myth | Gemini 3.1 Pro | 4.94 (±0.13) | 4.95 (±0.07) | 73.9 (±1.9) | 74.5 (±0.7) |
+| Game → Myth | GPT-6 Sol | 4.92 (±0.09) | 5.00 (±0.00) | 74.9 (±0.8) | 75.0 (±0.0) |
+| Game → Myth | Opus 5.5 | 4.83 (±0.11) | 4.71 (±0.08) | 72.9 (±0.7) | 72.1 (±0.8) |
+| Myth → Game | Gemini 3.1 Pro | 5.00 (±0.00) | 5.00 (±0.00) | 74.7 (±0.5) | 75.0 (±0.0) |
+| Myth → Game | GPT-6 Sol | 4.97 (±0.06) | 4.99 (±0.02) | 75.9 (±0.9) | 74.9 (±0.2) |
+| Myth → Game | Opus 5.5 | 5.00 (±0.00) | 4.98 (±0.02) | 74.1 (±0.6) | 74.8 (±0.2) |
+
+Sends measure an agent's own behaviour. Resources also include what its partners send and
+return, so in a mixed run a family's resources partly reflect the other families.
 
 - **The mix is at the ceiling.** Every family sends close to $5 and returns 44–46% of what
   it receives, the same as on its own.
-- **The one visible shift is Opus 5.5 in game-only play.** It sends 4.79 among the other
-  families against 4.47 among its own kind, and ends 3.4 points higher. This matches the
-  September ladder, where a family's sending tracks its partners': Opus's partners here
-  are mostly ceiling players. With a myth task the gap closes, because Opus is already
-  near the ceiling on its own.
+- **The one visible shift is Opus 5.5 in game-only play.** It sends 4.79 (±0.18) among
+  the other families against 4.47 (±0.13) among its own kind.
+  - It is not partner-specific: in the mixed runs Opus sends 4.73 to Gemini and Sol
+    receivers (51 decisions) and 4.92 to other Opus agents (24).
+  - It is timing: Opus opens at a similar level (round 1: 3.75 mixed, 8 decisions; 3.3 on
+    its own, 20), then reaches $5 sooner. Rounds 2–5 average 4.80 mixed against 4.13 on its
+    own; rounds 6–10 are at $5 in both.
+  - A reading consistent with this, not a tested mechanism: early rounds against ceiling
+    partners are profitable, and Opus raises its send after a profitable round (the
+    escalation pattern of the 2026-09-18 frontier-gap report).
+  - With a myth task the gap closes, because Opus is already near the ceiling on its own.
+  - Its resources (73.1 against 69.7) move more than its sends, partly because the other
+    families send it $5.
 - **The mix doesn't drag anyone down.** Gemini loses 0.3–1.5 points against its own
   population, within about one run-to-run sd.
 

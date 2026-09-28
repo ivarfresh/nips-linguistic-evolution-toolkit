@@ -127,8 +127,9 @@ fixed per replicate; over five replicates the family-pair counts (Opus–Sol 63,
 Gemini–Sol 43, Gemini–Opus 39, Opus–Opus 24, Sol–Sol 22, Gemini–Gemini 9) match random
 pairing. **Result (descriptive, n=5; 15/15 audited finals, $31.03):** the mixed
 population sits at the ceiling; the only visible shift is Opus 5.5 in game-only play
-(send 4.79 vs 4.47 among its own kind, resources 73.1 vs 69.7); with a myth task the
-difference disappears. Because no frontier family defects, this design can show pull-up
+(send 4.79 vs 4.47 among its own kind). It is not partner-specific (4.73 to other
+families, 4.92 to Opus); Opus opens similarly and reaches $5 sooner (rounds 2–5: 4.80 vs
+4.13). With a myth task the difference disappears. Because no frontier family defects, this design can show pull-up
 but not contagion of defection. See
 [the update README](../../figures/frontier_update_20260928/README.md).
 
