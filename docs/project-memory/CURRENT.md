@@ -16,9 +16,9 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 - **Myth-pressure pilot (2026-09-28/29, 20/20 audited finals, $27.07):** Sonnet 4.5
   myth-first dyads, word budget (loose / tight) × council between rounds (off / on).
-  No shared code emerged. Sonnet mostly writes past the budget and gets cut. What gets
-  through is a plain English rule of play, and the council does not make myths less
-  English. Resources 57–61 in every arm (n=5 each). Stage 2 does not proceed on this
+  No shared code emerged. Without a council Sonnet ignores the budget; with one, half
+  the agents write to it. What gets through is a plain English rule of play, never an
+  invented code. Resources 57–61 in every arm (n=5 each). Stage 2 does not proceed on this
   design. See [the results](../figures/myth_pressure_pilot_20260928/README.md) and
   [D012](decisions/012-myth-pressure-pilot.md).
 - **Submission target (team meeting 2026-09-22):** AAMAS, abstract 1 October

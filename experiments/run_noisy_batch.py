@@ -364,10 +364,9 @@ class NoisyExperimentConfig:
         spec = game_params.get("myth_pressure")
         if spec is None:
             return None
-        resolved = {
-            "word_budget_schedule": spec.get("word_budget_schedule"),
-            "council_exchanges": spec.get("council_exchanges", 0),
-        }
+        # Pass every key through so MythWriter's unknown-key check still catches
+        # typos (e.g. `council_exchange`); only template keys become prompt text.
+        resolved = dict(spec)
         for key in ("delivery_note_template", "council_prompt_template", "council_block_template"):
             if spec.get(key) is not None:
                 resolved[key] = self._get_prompt_template(spec[key])

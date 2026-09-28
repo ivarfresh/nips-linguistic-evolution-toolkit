@@ -135,6 +135,16 @@ class PressureSimulationTests(unittest.TestCase):
 
 
 class ConfigTests(unittest.TestCase):
+    def test_config_typo_in_pressure_block_raises(self):
+        import copy
+        from experiments.run_noisy_batch import NoisyExperimentConfig, build_noisy_protocol
+        config = NoisyExperimentConfig("config/myth_pressure_pilot_20260928.yaml")
+        params = copy.deepcopy(config.config["game_params"]["myth_pressure_tight_council_noisy2_negative_twotask_r3"])
+        params["myth_pressure"]["council_exchange"] = params["myth_pressure"].pop("council_exchanges")
+        combo = {"myth_pressure": config._get_myth_pressure(params)}
+        with self.assertRaisesRegex(ValueError, "Unknown myth_pressure keys"):
+            MythWriter("anything", "a", "b", pressure=combo["myth_pressure"])
+
     def test_pilot_combos_and_september_combos(self):
         from scripts.run_noisy_missing import load_combinations
         with contextlib.redirect_stdout(io.StringIO()):

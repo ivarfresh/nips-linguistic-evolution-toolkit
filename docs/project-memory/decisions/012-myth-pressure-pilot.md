@@ -56,17 +56,23 @@ Design and pre-registered criteria:
   before any run. After the smoke run and before the pilot, criterion 1 gained a
   "planned for the cut" reading and criterion 3's coder was fixed (dated amendment
   in the design doc).
-- 2026-09-29: pilot complete. Criteria 1 and 2 fail; criterion 3 passes. Sonnet
-  mostly keeps writing past the budget. What gets through is a plain English rule
-  of play ("send three of five faithfully, return proportionally"), not a code.
-  No shared invented word appears in either tight arm, and the council does not
-  raise perplexity (ratio 0.84). Resources 57–61 in every arm, not separable at
-  n=5. By the pre-registered stop rule, stage 2 does not proceed on this design.
+- 2026-09-29: pilot complete. Criteria 1 and 2 fail; criterion 3 passes (pooled).
+  Without a council no agent adapts to the budget. With a council 5 of 10 agents
+  write to the limit (a budget that counts titles understates this: 43% of
+  tight/council myths fit once titles are excluded). What gets through is a plain
+  English rule of play ("send three of five faithfully, return proportionally"),
+  not a code. No shared invented word appears in either tight arm, and the tight-arm
+  perplexity jump is mostly fragment length. Resources are 57–61 in every arm, not
+  separable at n=5. The go rule needed all three criteria, so stage 2 does not
+  proceed on this design.
+- 2026-09-29: independent review (PR #5). No blocking issues. It led to the
+  council/length rewording, the perplexity explanation, and a fix so that a typo
+  in a `myth_pressure` key raises instead of silently disabling the council.
 
 ## Unresolved / next evidence
 
 - Whether a hard consequence for going over budget (as in GlossoGen, where
   it failed the task) or information that has to be transmitted would change the
   outcome. That needs a redesign and a new decision.
-- Whether the council's instruction not to discuss amounts holds (criterion 3).
+- Whether titles should count against the budget (the prompt is silent).
 - Stage 2 needs a new decision.

@@ -1,31 +1,41 @@
-### 2026-09-29 — Result: under a word budget, Sonnet writes maxims, not a code
+### 2026-09-28 — Result: main-frontier mixed dyads and population lift GPT-5.6 Sol
 
-**Time:** ~5 h (design, implementation and tests, smoke run, 20 paid runs, analysis).
+**Time:** ~2 h (config check, 69 paid runs, two quarantines, analysis).
 
-Result: we tested whether GlossoGen's conditions for language emergence (arXiv
-2609.01491: a cost on talking plus a channel to agree conventions) turn our myths into
-a shared code. Setup: 20 Sonnet 4.5 myth-first dyads on the September informed-noise
-protocol. The partner received only the first N words of each myth (loose: 200;
-tight: down to 20), crossed with an optional council between rounds. All 20 runs
-were launcher-audited ($27.07). Criteria were committed before any run.
+Result: 69/69 audited finals, $73.18 at standard rates (estimate $73.47):
+- mixed dyads Opus 5 + Sol, Opus 5 + Gemini and Gemini + Sol, 54 runs;
+- an 8-agent population of 2 Gemini 3.1 Pro + 3 Opus 5 + 3 GPT-5.6 Sol, 15 runs.
 
-- Criterion 1 fails. Sonnet mostly writes past the budget: about 190 words a round
-  without a council, about 107 with one, against a limit of 20. Only 19% of
-  tight-arm myths from round 4 were planned for the cut.
-- Criterion 2 fails. No invented word is shared in either tight arm, and the council
-  does not raise perplexity (0.84× the no-council arm). What gets through is an
-  English rule of play: "send three of five faithfully, return proportionally".
-- Criterion 3 passes. 10% of council messages talk amounts.
-- Resources are 57–61 in every arm, which n=5 cannot separate.
-- Stage 2 (populations, transplant, newcomer) does not proceed on this design.
+What it shows (descriptive, n = 5–6):
+- Sol sends more with either partner than among its own kind. In 8-agent game-only
+  play it sends 4.73 against 3.81.
+- Gemini drops only in game-only dyads: 3.83 with Sol and 4.15 with Opus 5, against 4.88.
+  Its drop there exceeds Sol's rise.
+- In game-only dyads with Sol, the outcome tracks the round-1 sender. Runs where the
+  partner opened end at 74.4; runs where Sol opened at $2.50–3 end at 56.2. First sender
+  and seed block are confounded, and the two-task orders show no such difference.
+- With myth → game every mixed pair ends at 74.3–75.0.
 
-Rejected alternatives and open redesigns: a trial reanalysis of the September runs
-(2026-09-22, scratch) found myth drift unrelated to cooperation, which is why we added
-pressure instead of mining the existing data further. A redesign would need a real
-consequence for going over budget, or information that has to be transmitted.
+Caveat: two dyads were quarantined for a Gemini dropped connection and resampled under
+the same seeds.
 
-Details: `docs/figures/myth_pressure_pilot_20260928/README.md`;
-`docs/research/myth_pressure_pilot_2026-09-28.md`; D012.
+Details: `docs/figures/frontier_main_mixed_20260928/README.md`; D010.
+
+### 2026-09-28 — Decision: the Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set is the main frontier simulation
+
+**Time:** ~0.3 h (decision record and run configuration).
+
+Ivar decided that the 2026-09-18 frontier runs (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol) are
+the main frontier model simulation, the one Ed referred to. This reverses the 2026-09-24
+switch to Opus 5.5. The Opus 5.5 / GPT-6 Sol runs of today become the frontier update
+set, kept as a newer-model check.
+
+Main-frontier mixed runs are configured but not yet launched, pending Ivar's config check:
+- dyads Opus 5/Sol, Opus 5/Gemini and Gemini/Sol, 54 runs;
+- an 8-agent population of 2 Gemini + 3 Opus 5 + 3 Sol, 15 runs;
+- estimate $73.47.
+
+See D010, D011.
 
 ### 2026-09-28 — Result: GPT-6 Sol and the frontier mixed population sit at the ceiling
 

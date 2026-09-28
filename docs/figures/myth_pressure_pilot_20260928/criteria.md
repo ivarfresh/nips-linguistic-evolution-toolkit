@@ -13,3 +13,10 @@ Runs: 20; myths: 400; council messages: 360
 2a. Perplexity ratio tight/council ÷ tight/no-council, rounds 6–10: 0.84 (criterion ≥ 2) → FAIL
 2b. Shared invented tokens, tight/council: 0.00 (±0.00); runs with ≥ 3: 0/5
 3. Council messages with amount/strategy talk: 10% (criterion ≤ 25%) → PASS
+   Highest single run: 64% (tight_council rep 2)
+
+## Descriptive, not pre-registered (added after the PR #5 review)
+
+Fit with a leading markdown title excluded, rounds 4+: tight_council 30/70 (43%), tight_nocouncil 0/70 (0%)
+Agents whose median untitled length in rounds 6-10 is at most 30 words: tight_council 5/10, tight_nocouncil 0/10
+Perplexity, rounds 6-10, delivered text vs the first 20 words of the full myth: loose_council 57 vs 333, loose_nocouncil 47 vs 468, tight_council 383 vs 727, tight_nocouncil 453 vs 503

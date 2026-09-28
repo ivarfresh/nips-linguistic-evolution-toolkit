@@ -33,6 +33,19 @@ AMOUNT = re.compile(
     r"fifteen|half|all|everything|nothing|a third|two-thirds|double|triple)\b",
     re.I,
 )
+# A leading markdown title line ("# The Bridge", "**The Invitation**"). The prompt
+# never says whether titles count, and deliver_myth counts them (review of PR #5).
+TITLE = re.compile(r"^\s*([^\n]{1,100})\n(?=\s*\S)")
+
+
+def strip_title(text):
+    """Drop a first line that reads as a title: at most 10 words, no sentence end."""
+    match = TITLE.match(text)
+    if match:
+        line = match.group(1).strip().strip("#*_ ").strip()
+        if line and len(line.split()) <= 10 and not re.search(r"[.!?][\"'’”)]*$", line):
+            return text[match.end():]
+    return text
 SENTENCE_END = re.compile(r"""[.!?]["'’”)\]*]*\s*$""")
 ARMS = ["loose_nocouncil", "loose_council", "tight_nocouncil", "tight_council"]
 
@@ -94,8 +107,12 @@ def main():
                 # Amendment (2026-09-28, pre-pilot): a cut myth whose delivered part
                 # ends a sentence was planned for the cut.
                 planned = fits or bool(SENTENCE_END.search(delivered))
+                full = body(entry["myth_responses"][agent]["content"])
+                untitled = len(WORD.findall(strip_title(full)))
                 myths.append(dict(arm=arm, rep=rep, round=entry["round"], agent=agent, **record,
-                                  fits=fits, planned=planned, text=delivered))
+                                  fits=fits, planned=planned, words_without_title=untitled,
+                                  fits_without_title=untitled <= record["word_budget"],
+                                  opening20=" ".join(full.split()[:20]), text=delivered))
             for council in (entry.get("council") or {}).values():
                 for i, message in enumerate(council["messages"]):
                     councils.append(dict(arm=arm, rep=rep, round=entry["round"], agent=message["agent"],
@@ -107,6 +124,8 @@ def main():
 
     myths = pd.DataFrame(myths)
     myths["ppl"] = perplexities(myths.text.tolist())
+    # Length-matched baseline: the first 20 words of the full myth, scored the same way.
+    myths["ppl_opening20"] = perplexities(myths.opening20.tolist())
 
     # Invented tokens: not an English dictionary word, not a plain number, not in round 1.
     def tokens(text):
@@ -164,6 +183,18 @@ def main():
     if len(councils):
         rate = councils.flagged.mean()
         lines.append(f"3. Council messages with amount/strategy talk: {rate:.0%} (criterion ≤ 25%) → {'PASS' if rate <= .25 else 'FAIL'}")
+        per_run = councils.groupby(["arm", "rep"]).flagged.mean()
+        lines.append(f"   Highest single run: {per_run.max():.0%} ({' rep '.join(map(str, per_run.idxmax()))})")
+    tight = myths[(myths["round"] >= 4) & myths.arm.str.startswith("tight")]
+    late = myths[myths["round"] >= 6]
+    agents = late[late.arm.str.startswith("tight")].groupby(["arm", "rep", "agent"]).words_without_title.median()
+    lines += ["", "## Descriptive, not pre-registered (added after the PR #5 review)", "",
+              "Fit with a leading markdown title excluded, rounds 4+: "
+              + ", ".join(f"{arm} {g.fits_without_title.sum()}/{len(g)} ({g.fits_without_title.mean():.0%})" for arm, g in tight.groupby("arm")),
+              "Agents whose median untitled length in rounds 6-10 is at most 30 words: "
+              + ", ".join(f"{arm} {(g <= 30).sum()}/{len(g)}" for arm, g in agents.groupby(level=0)),
+              "Perplexity, rounds 6-10, delivered text vs the first 20 words of the full myth: "
+              + ", ".join(f"{arm} {g.ppl.mean():.0f} vs {g.ppl_opening20.mean():.0f}" for arm, g in late.groupby("arm"))]
     (out / "criteria.md").write_text("\n".join(lines) + "\n")
     myths.to_csv(out / "myths.csv", index=False)
     runs.to_csv(out / "runs.csv", index=False)
