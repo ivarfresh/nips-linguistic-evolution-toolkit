@@ -1,3 +1,32 @@
+### 2026-09-29 — Result: under a word budget, Sonnet writes maxims, not a code
+
+**Time:** ~5 h (design, implementation and tests, smoke run, 20 paid runs, analysis).
+
+Result: we tested whether GlossoGen's conditions for language emergence (arXiv
+2609.01491: a cost on talking plus a channel to agree conventions) turn our myths into
+a shared code. Setup: 20 Sonnet 4.5 myth-first dyads on the September informed-noise
+protocol. The partner received only the first N words of each myth (loose: 200;
+tight: down to 20), crossed with an optional council between rounds. All 20 runs
+were launcher-audited ($27.07). Criteria were committed before any run.
+
+- Criterion 1 fails. Sonnet mostly writes past the budget: about 190 words a round
+  without a council, about 107 with one, against a limit of 20. Only 19% of
+  tight-arm myths from round 4 were planned for the cut.
+- Criterion 2 fails. No invented word is shared in either tight arm, and the council
+  does not raise perplexity (0.84× the no-council arm). What gets through is an
+  English rule of play: "send three of five faithfully, return proportionally".
+- Criterion 3 passes. 10% of council messages talk amounts.
+- Resources are 57–61 in every arm, which n=5 cannot separate.
+- Stage 2 (populations, transplant, newcomer) does not proceed on this design.
+
+Rejected alternatives and open redesigns: a trial reanalysis of the September runs
+(2026-09-22, scratch) found myth drift unrelated to cooperation, which is why we added
+pressure instead of mining the existing data further. A redesign would need a real
+consequence for going over budget, or information that has to be transmitted.
+
+Details: `docs/figures/myth_pressure_pilot_20260928/README.md`;
+`docs/research/myth_pressure_pilot_2026-09-28.md`; D012.
+
 ### 2026-09-28 — Result: GPT-6 Sol and the frontier mixed population sit at the ceiling
 
 **Time:** ~3 h (config and launchers, smoke/pilot gates, 57 paid runs, analysis).
