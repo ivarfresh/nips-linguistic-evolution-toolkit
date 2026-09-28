@@ -89,6 +89,29 @@ replicates.
    the council arm is confounded with cheap talk, which raises cooperation by
    itself.
 
+**Amendment, 2026-09-28, after the smoke run and before any pilot run.** In the
+smoke replicate (tight/council, replicate 0, run separately and not part of the
+pilot), one agent wrote exactly 20 words from round 5 on. The other wrote a
+complete 20-word myth, marked it "[20 words end here]", and kept writing for
+itself. The second agent is planning for the cut, not being cut, but criterion 1 as
+written counts it as cut. Criterion 1 is therefore reported two ways: as written
+(fits before truncation), and "planned", where a truncated myth also counts if its
+delivered part ends at a sentence boundary. Criterion 1 is met if the planned rate
+is at least 80%. Criterion 2 is unchanged.
+
+Criterion 3's coder is fixed here, calibrated on the smoke run's 36 council
+messages before any pilot run. A message counts as amount talk if it has a percent
+or dollar amount, or a quantity right after a transfer verb ("give half", "sent
+three", "returns ~65%"). Word counts ("20 words", "Words 11-15") and story
+structure ("Return action") do not count. On the smoke run this rate is 25%,
+exactly at the threshold. The flagged messages include real mapping of myth to
+play ("if someone sends ~50-60%, the myth character does similar").
+
+The smoke run itself is not pilot data and is not pooled. For the record, its late
+myths were terse English maxims in a different cultural frame each round, agreed
+in the council ("Biblical parable", then "Islamic", then "Aristotle taught:
+..."), with no invented code.
+
 Cooperation per arm is reported descriptively only. Five replicates cannot
 support an inference about it.
 
