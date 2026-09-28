@@ -1,7 +1,7 @@
 # Frontier update, 2026-09-28: GPT-6 Sol, Opus 5.5 at five replicates, frontier mixed populations
 
-**Status (decided 2026-09-28, Ivar):** this is the *frontier update set*, a newer-model
-check. The main frontier result is the 2026-09-18 Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set
+**Status (decided 2026-09-28, Ivar):** this is the *frontier update set* (name proposed by Claude,
+accepted by Ivar), a newer-model check. The main frontier result is the 2026-09-18 Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set
 (`docs/figures/frontier_rerun_20260918/`). `frontier_update_set_resources_boxplots.png` shows this set as a grid
 in the style of the mixed-population figure.
 

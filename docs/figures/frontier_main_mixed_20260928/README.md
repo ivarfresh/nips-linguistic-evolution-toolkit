@@ -1,12 +1,11 @@
 # Main-frontier mixed-model runs, 2026-09-28: Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol
 
-**Headline.** Mixing the main frontier models lifts the weakest cooperator, GPT-5.6 Sol.
-In a dyad the round-1 sender sets the level for the whole game. When Opus 5 or Gemini
-3.1 Pro sends first, it opens at $5 and Sol follows to about $5. When Sol sends first, it
-opens at $2.50–3; its partner matches that and the pair stays low. A myth task removes
-the difference: with myth → game, every mixed pair ends at or near the ceiling. In the
-8-agent mix, Sol sends more than it does among its own kind, and the population sits
-near the ceiling.
+**Headline.** In mixed runs, GPT-5.6 Sol, the weakest cooperator of the three, sends more
+than it does among its own kind, most clearly in the 8-agent population. In game-only
+dyads the outcome tracks who sends first. In pairs with Sol, runs where Opus 5 or Gemini
+opened (at $5) end at 74.4, and runs where Sol opened (at $2.50–3) end at 56.2; the
+partner usually answers near Sol's opening. In the two-task orders no such first-sender
+difference appears, and with myth → game every mixed pair ends at or near the ceiling.
 
 These are the frontier versions of the mixed-model Figures 7 and 8, in the same style.
 The 2026-09-18 Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set is the main frontier simulation
@@ -71,26 +70,30 @@ Mean send per family, mean (±sd over runs) (`family_summary.csv`):
 | Gemini | with Sol | 3.83 (±1.29) | 4.93 (±0.16) | 4.93 (±0.16) |
 | Gemini | with Opus 5 | 4.15 (±1.05) | 4.87 (±0.33) | 5.00 (±0.00) |
 
-- **Sol is pulled up.** It sends more with either partner than with another Sol, in
-  every task order.
-- **Gemini is pulled down, in game-only play only.** With Sol it drops from 4.88 to 3.83,
-  and with Opus 5 to 4.15. With a myth task Gemini stays at about $5.
+- **Sol sends more with either partner than with another Sol,** in every task order.
+- **Gemini sends less in game-only dyads only.** With Sol it drops from 4.88 to 3.83
+  (−1.05, more than Sol's rise of +0.85), and with Opus 5 to 4.15. With a myth task Gemini
+  stays at about $5.
 - **Opus 5 sends more with Gemini (4.68) than with its own kind (4.28)** in game-only
   play, and the same as its own kind with Sol.
-- **The round-1 sender sets the level in game-only play.**
-  - Opus 5 or Gemini sent first in 12 runs; 11 opened at $5 and these runs ended at
-    71.8 (±5.2).
-  - Sol sent first in 6 runs, opening at $2.50–3 each time. These runs ended at
-    56.2 (±5.1).
-  - In 16 of 18 runs the second sender matches the first sender's opening and keeps it
-    (per-run send traces). The two exceptions are both Opus 5 + Gemini runs where Opus
-    opened at $5: Gemini stayed at $2.50 in one and climbed from $3 to $5 in the other.
-  - Homogeneous Sol dyads open at 2.5, 2.5, 3, 5 and 5, so a low opening is Sol's own habit.
+- **In game-only play, the outcome tracks the round-1 sender.**
+  - Within the pairs that include Sol: when Opus 5 or Gemini sent first (6 runs, all
+    opening at $5) the runs ended at 74.4 (±0.7); when Sol sent first (6 runs, opening at
+    $2.50–3) they ended at 56.2 (±5.1).
+  - Across all 18 game-only mixed dyads, the second sender's first send is within $1 of the
+    opening in 16. The two exceptions are both Opus 5 + Gemini runs where Opus opened at
+    $5 and Gemini answered at $2.50 and $3.
+  - The level does not always stay put. Of the 6 Sol-first runs, 4 stay low throughout; in
+    the other 2 one or both partners climb to $5 later (Sol→Opus replicate 3, Sol→Gemini
+    replicate 5).
+  - Sol opens low in 3 of 5 homogeneous dyads (openings 2.5, 2.5, 3, 5, 5) and in all 6
+    mixed dyads it opened.
   - Caveat: the two first-sender blocks also use different seeds (replicates 0/2/4
     against 1/3/5), so first sender and seed are not separated. At n = 6 and 12 runs this
     is descriptive.
-- **A myth task closes the gap.** With myth → game every mixed pair ends at 74.3–75.0;
-  with game → myth at 70.9–73.4.
+- **No first-sender difference in the two-task orders.** Within Sol pairs, game → myth
+  ends at 72.3 (partner first) vs 71.9 (Sol first), and myth → game at 75.0 vs 74.3. With
+  myth → game every mixed pair ends at 74.3–75.0; with game → myth at 70.9–73.4.
 
 ## Populations (Figure 8 style)
 
@@ -111,7 +114,7 @@ Mean send per family, mixed population against its own kind (mean ± sd over run
 | Opus 5 | 4.55 (±0.14) vs 4.34 (±0.18) | 4.78 (±0.11) vs 4.80 (±0.06) | 4.98 (±0.04) vs 4.97 (±0.03) |
 | Gemini | 4.94 (±0.13) vs 4.97 (±0.06) | 5.00 (±0.00) vs 4.95 (±0.07) | 5.00 (±0.00) vs 5.00 (±0.00) |
 
-- **Sol is pulled up.** Among Opus 5 and Gemini its game-only send rises from 3.81 to 4.73,
+- **Sol sends more in the mix.** Among Opus 5 and Gemini its game-only send is 4.73 against 3.81,
   and the run-to-run spread shrinks from ±1.50 to ±0.17. No mixed run shows a partial
   collapse like the homogeneous Sol populations' low runs (36.6 in game only, 51.8 in game →
   myth).
@@ -122,13 +125,16 @@ Mean send per family, mixed population against its own kind (mean ± sd over run
 
 ## What this means for the paper
 
-- **The mixed-model story holds at the frontier.** Families adapt to their partners, and
-  the lower-cooperating family moves most. At the frontier that is GPT-5.6 Sol, where in
-  September it was GPT-5 Nano.
+- **Families' sending tracks their partners at the frontier too.** In the population and
+  in two-task dyads, the lower cooperator (GPT-5.6 Sol) moves most. In game-only dyads the
+  higher cooperator (Gemini) drops about as much as Sol rises, as in September, when
+  Gemini fell from 5.0 to 1.17 against GPT-5 Nano while Nano barely moved
+  (`docs/figures/mixed_model_dyads_20260917/family_behaviour.csv`).
 - **The effect is smaller than in September.** The weakest frontier model cooperates far
   more than Nano did.
-- **The dyads add a mechanism:** in game-only play the round-1 sender anchors the pair,
-  and a myth task makes the anchor irrelevant.
+- **The dyads add a pattern:** in game-only play the outcome is associated with who sends
+  first (confounded with the seed block); no such difference appears in the two-task
+  orders.
 - **Descriptive only:** n = 5–6 runs per cell. For comparison, the newer-model check with
   Opus 5.5 and GPT-6 Sol is in `docs/figures/frontier_update_20260928/`; there every
   family starts at the ceiling.

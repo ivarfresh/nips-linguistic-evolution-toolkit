@@ -38,9 +38,10 @@ and [data audit](../research/mixed_future_data_audit.md).
   GPT-5.6 Sol runs are the main frontier model simulation (the set Ed referred to); this
   supersedes the 2026-09-24 switch to Opus 5.5. Main-frontier mixed dyads (Opus 5/Sol,
   Opus 5/Gemini, Gemini/Sol; 54 runs) and an 8-agent 2 Gemini + 3 Opus 5 + 3 Sol
-  population (15 runs) completed 69/69 ($73.18): Sol is pulled up by its partners, Gemini
-  is pulled down only in game-only dyads, the round-1 sender anchors game-only dyads, and a
-  myth task brings every mixed pair to the ceiling (see
+  population (15 runs) completed 69/69 ($73.18): Sol sends more with other families, Gemini
+  sends less only in game-only dyads, game-only dyads with Sol track the round-1 sender
+  (74.4 vs 56.2; confounded with seed block), and a myth task brings every mixed pair to the
+  ceiling (see
   [D010](decisions/010-mixed-model-population-sizes.md) and
   [the results README](../figures/frontier_main_mixed_20260928/README.md)).
 - **Frontier update set (2026-09-28; newer-model check, not the main result):** GPT-6 Sol (effort high, 30/30), Opus 5.5 completed to

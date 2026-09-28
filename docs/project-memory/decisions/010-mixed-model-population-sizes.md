@@ -137,7 +137,7 @@ On 2026-09-28, later the same day, Ivar made the 2026-09-18 trio the main fronti
 (D011) and asked for "the frontier dyads and the mixed frontier model with these models.
 Use a mix of 2/3/3 for gemini 3.1 pro, Opus 5 and GPT 5.6 sol respectively" (Claude
 session, user instruction). This covers Edward's email item (C), "a frontier models version
-of Figure 7". **Configured, awaiting Ivar's check before launch:**
+of Figure 7". **Configured (checked by Ivar before launch):**
 - dyads: Opus 5/Sol, Opus 5/Gemini and Gemini/Sol, copying the September mixed-dyad design
   (the first-named family sends first in replicates 0/2/4, the reversed pair in 1/3/5); 3
   pairings × 3 task orders × 6 replicates = 54 runs;
@@ -150,12 +150,12 @@ The earlier 2/3/3 run with Opus 5.5 and GPT-6 Sol belongs to the frontier update
 **Executed 2026-09-28 (Ivar's "go" after reviewing the config): 69/69 audited finals, $73.18**
 (two dyads quarantined for a Gemini `RemoteDisconnected` and resampled under the same seeds;
 a first 6-worker launch was cancelled to restart at 20 workers). **Result (descriptive,
-n=5–6):** GPT-5.6 Sol is pulled up by either partner in dyads and in the population
-(8-agent game-only send 4.73 vs 3.81 among its own kind); Gemini is pulled down only in
-game-only dyads (3.83 with Sol, 4.15 with Opus 5, vs 4.88); in game-only dyads the round-1
-sender anchors the pair (Opus/Gemini first: 71.8 ±5.2; Sol first, opening $2.50–3:
-56.2 ±5.1; first sender and seed block not separated); myth → game puts every mixed pair
-at 74.3–75.0. See [the results README](../../figures/frontier_main_mixed_20260928/README.md).
+n=5–6):** GPT-5.6 Sol sends more with either partner than among its own kind
+(8-agent game-only send 4.73 vs 3.81); Gemini sends less only in game-only dyads (3.83 with
+Sol, 4.15 with Opus 5, vs 4.88; its drop exceeds Sol's rise there, as in September); in
+game-only dyads with Sol the outcome tracks the round-1 sender (partner first 74.4 ±0.7;
+Sol first, opening $2.50–3, 56.2 ±5.1; first sender and seed block not separated), with no
+such difference in the two-task orders; myth → game puts every mixed pair at 74.3–75.0. See [the results README](../../figures/frontier_main_mixed_20260928/README.md).
 
 ## Unresolved / next evidence
 

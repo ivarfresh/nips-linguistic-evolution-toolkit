@@ -50,7 +50,6 @@ def rows(path, homogeneous_family=None):
     if homogeneous_family:
         panel = f"{homogeneous_family} + {homogeneous_family}" if len(family) == 2 else f"8 {homogeneous_family}"
     elif len(family) == 2:
-        panel = " + ".join(family[a] for a in sorted(family))  # Agent_1 first
         panel = " + ".join(sorted(fams, key=["Opus 5", "Gemini", "Sol"].index))
     else:
         panel = "2 Gemini + 3 Opus 5 + 3 Sol"
