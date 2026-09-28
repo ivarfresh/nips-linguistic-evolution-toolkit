@@ -1,3 +1,25 @@
+### 2026-09-28 — Result: main-frontier mixed dyads and population lift GPT-5.6 Sol
+
+**Time:** ~2 h (config check, 69 paid runs, two quarantines, analysis).
+
+Result: 69/69 audited finals, $73.18 at standard rates (estimate $73.47):
+- mixed dyads Opus 5 + Sol, Opus 5 + Gemini and Gemini + Sol, 54 runs;
+- an 8-agent population of 2 Gemini 3.1 Pro + 3 Opus 5 + 3 GPT-5.6 Sol, 15 runs.
+
+What it shows (descriptive, n = 5–6):
+- Sol sends more with either partner than among its own kind. In 8-agent game-only
+  play it sends 4.73 against 3.81.
+- Gemini drops only in game-only dyads: 3.83 with Sol and 4.15 with Opus 5, against 4.88.
+- In game-only dyads the round-1 sender anchors the pair. Runs where Opus or Gemini sent
+  first end at 71.8; runs where Sol opened at $2.50–3 end at 56.2. First sender and seed
+  block are confounded.
+- With myth → game every mixed pair ends at 74.3–75.0.
+
+Caveat: two dyads were quarantined for a Gemini dropped connection and resampled under
+the same seeds.
+
+Details: `docs/figures/frontier_main_mixed_20260928/README.md`; D010.
+
 ### 2026-09-28 — Decision: the Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol set is the main frontier simulation
 
 **Time:** ~0.3 h (decision record and run configuration).
