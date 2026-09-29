@@ -7,8 +7,9 @@ comparing the mixed runs of scripts/run_frontier_main_mixed.py with the homogene
 launcher-audited finals are read (a run is used only if a receipt lists its sha256).
 
 Outputs (docs/figures/frontier_main_mixed_20260928/):
-  frontier_mixed_dyads_resources_boxplots.png        Figure 7 style: homogeneous vs mixed dyads
-  frontier_mixed_populations_resources_boxplots.png  Figure 8 style: homogeneous vs mixed population
+  frontier_mixed_dyads_resources_boxplots.png        Figure 7 style: the three mixed dyad pairings
+  frontier_mixed_populations_resources_boxplots.png  Figure 8 style: the mixed 2/3/3 population
+  (homogeneous comparisons are in the tables and in docs/figures/frontier_rerun_20260918/)
   cell_summary.csv     per panel x task order: runs, mean (±sd over runs) of run-mean resources
   family_summary.csv   per setting x family x task order: resources, send, return share
                        (family's per-run mean, then mean ±sd over runs)
@@ -120,23 +121,16 @@ def draw(ax, df, panel, n_agents, setting):
 def plot_dyads(df):
     import matplotlib.pyplot as plt
     configure_matplotlib()
-    fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.2), sharey=True, squeeze=False)
-    top = ["Opus 5 + Opus 5", "Sol + Sol", "Gemini + Gemini"]
-    bottom = ["Opus 5 + Sol", "Opus 5 + Gemini", "Gemini + Sol"]
-    for ax, panel in zip(axes[0], top):
-        n = draw(ax, df, panel, 2, "homogeneous")
-        ax.set_title(f"{panel}\nhomogeneous · n = {n} per box", fontsize=12, fontweight="bold", pad=8)
-    for ax, panel in zip(axes[1], bottom):
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6), sharey=True, squeeze=False)
+    for ax, panel in zip(axes[0], ["Opus 5 + Sol", "Opus 5 + Gemini", "Gemini + Sol"]):
         n = draw(ax, df, panel, 2, "mixed")
         ax.set_title(f"{panel}\nmixed · n = {n} per box", fontsize=12, fontweight="bold", pad=8)
-    axes[0][0].set_ylabel("Homogeneous dyads\n(frontier, 2026-09-18)", fontsize=12, fontweight="bold", labelpad=14)
-    axes[1][0].set_ylabel("Mixed dyads", fontsize=12, fontweight="bold", labelpad=14)
-    fig.suptitle("Final cumulative resources · Frontier models (Opus 5, GPT-5.6 Sol, Gemini 3.1 Pro)\n"
-                 "Homogeneous vs mixed-model dyads · Informed negative-only noise · No defectors · Round 10", fontsize=14, fontweight="bold")
-    fig.text(.5, .012, "Each dot = one run, mean of its 2 agents (n = 5 per homogeneous box; 6 per mixed box, 3 with each family sending first)\n"
+    fig.suptitle("Final cumulative resources · Frontier mixed-model dyads (Opus 5, GPT-5.6 Sol, Gemini 3.1 Pro)\n"
+                 "Informed negative-only noise · No defectors · Round 10", fontsize=13, fontweight="bold")
+    fig.text(.5, .005, "Each dot = one run, mean of its 2 agents (n = 6 per box, 3 with each family sending first) · "
              "Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR", ha="center", fontsize=9, color="#444444")
-    fig.supylabel("Cumulative resources per agent", fontsize=12, x=.006)
-    fig.tight_layout(rect=(.02, .05, 1, .91), h_pad=2.4, w_pad=1.6)
+    fig.supylabel("Cumulative resources per agent", fontsize=11, x=.006)
+    fig.tight_layout(rect=(.02, .05, 1, .86), w_pad=1.6)
     fig.savefig(OUTPUT / "frontier_mixed_dyads_resources_boxplots.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
@@ -144,17 +138,16 @@ def plot_dyads(df):
 def plot_populations(df):
     import matplotlib.pyplot as plt
     configure_matplotlib()
-    fig, axes = plt.subplots(1, 4, figsize=(17, 4.8), sharey=True, squeeze=False)
-    panels = [("8 Opus 5", "homogeneous"), ("8 Sol", "homogeneous"), ("8 Gemini", "homogeneous"), ("2 Gemini + 3 Opus 5 + 3 Sol", "mixed")]
-    for ax, (panel, setting) in zip(axes[0], panels):
-        n = draw(ax, df, panel, 8, setting)
-        ax.set_title(f"{panel}\n{setting} · n = {n}", fontsize=11, fontweight="bold", pad=8)
-    fig.suptitle("Final cumulative resources per agent (all agents) · Frontier models (Opus 5, GPT-5.6 Sol, Gemini 3.1 Pro)\n"
-                 "8-agent populations · Informed negative-only noise · No defectors · Round 10", fontsize=13, fontweight="bold")
-    fig.text(.5, .005, "Each dot = one run (mean over its 8 agents) · Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
-             ha="center", fontsize=9, color="#444444")
-    fig.supylabel("Cumulative resources per agent", fontsize=11, x=.006)
-    fig.tight_layout(rect=(.02, .05, 1, .86), w_pad=1.6)
+    fig, axes = plt.subplots(1, 1, figsize=(6.4, 5.2), squeeze=False)
+    ax = axes[0][0]
+    n = draw(ax, df, "2 Gemini + 3 Opus 5 + 3 Sol", 8, "mixed")
+    ax.set_title(f"2 Gemini + 3 Opus 5 + 3 Sol\nmixed · n = {n}", fontsize=11, fontweight="bold", pad=8)
+    ax.set_ylabel("Cumulative resources per agent", fontsize=11)
+    fig.suptitle("Final cumulative resources per agent (all agents)\nFrontier mixed-model population · 8 agents\n"
+                 "Informed negative-only noise · No defectors · Round 10", fontsize=11, fontweight="bold", y=.97)
+    fig.text(.5, .005, "Each dot = one run (mean over its 8 agents)\nBox = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
+             ha="center", fontsize=8, color="#444444")
+    fig.subplots_adjust(left=.14, right=.97, bottom=.15, top=.74)
     fig.savefig(OUTPUT / "frontier_mixed_populations_resources_boxplots.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
