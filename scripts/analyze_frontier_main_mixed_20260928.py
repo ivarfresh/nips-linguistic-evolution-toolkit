@@ -144,10 +144,10 @@ def plot_populations(df):
     ax.set_title(f"2 Gemini + 3 Opus 5 + 3 Sol\nmixed · n = {n}", fontsize=11, fontweight="bold", pad=8)
     ax.set_ylabel("Cumulative resources per agent", fontsize=11)
     fig.suptitle("Final cumulative resources per agent (all agents)\nFrontier mixed-model population · 8 agents\n"
-                 "Informed negative-only noise · No defectors · Round 10", fontsize=11, fontweight="bold")
+                 "Informed negative-only noise · No defectors · Round 10", fontsize=11, fontweight="bold", y=.97)
     fig.text(.5, .005, "Each dot = one run (mean over its 8 agents)\nBox = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
              ha="center", fontsize=8, color="#444444")
-    fig.tight_layout(rect=(0, .07, 1, .86))
+    fig.subplots_adjust(left=.14, right=.97, bottom=.15, top=.74)
     fig.savefig(OUTPUT / "frontier_mixed_populations_resources_boxplots.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
