@@ -67,6 +67,20 @@ before, the share it starts using.
 | 8-agent mixed, shown own family | 14.1% (±2.1) | 7.7% (±0.7) | 60/60 |
 | 8-agent mixed, shown other family | 6.0% (±1.5) | 4.5% (±0.6) | 57/60 |
 
+**Significance** (added 2026-09-29, `--replot` from the saved per-myth table;
+numbers unchanged). Each row is a paired Wilcoxon test over runs (shown minus
+unseen), Holm-corrected across the five settings: word adoption p < 0.001 in all
+five, including both "shown other family" rows. Meaning closeness: p < 0.001 in
+four settings, p = 0.005 in 8-agent homogeneous (21/30 runs). The figure's
+whiskers are now 95% CIs of the run means (they were SDs, which made the
+other-family bars look like they overlap). The test is paired, so overlapping
+bars do not mean no difference. Split further (`reuse_by_family_pair.csv`,
+`reuse_by_task_order.csv`, Holm within each table), every family pair and task
+order keeps word adoption at p ≤ 0.018. Meaning closeness holds for dyads but
+loses significance in 11 of 19 family-pair cells (n = 10 to 20 runs) and in
+8-agent homogeneous per task order (p ≈ 0.08). Report word adoption as the
+robust measure; treat meaning closeness as supporting.
+
 The dyad rows compare with a myth from another run, which did not share the
 pair's game history; two partners who lived the same rounds could coin the
 same words independently. The 8-agent rows (comparison myth from the same run
