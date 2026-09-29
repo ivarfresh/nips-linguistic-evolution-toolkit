@@ -32,7 +32,13 @@ and [data audit](../research/mixed_future_data_audit.md).
   appendix, the strongest in the main text, no cherry-picking); plots of the
   observation that cooperation rises after an agent reads its own first myth,
   before it sees a partner's myth (not yet shown); and, if time allows,
-  frontier-model defector runs. No further exploratory analyses. Edward and
+  frontier-model defector runs. No further exploratory analyses. Ivar's own
+  notes after the meeting set the central question for the analyses as "what
+  drives the cooperation?", with the analyses before the defector runs: keep
+  the left and middle panels of the moral carry-over plot, stratify by the
+  agent's own last myth and the other agent's last myth, test which morals an
+  agent takes over from the myths it last saw into its own next myth, and
+  split everything per simulation and task order rather than pooling. Edward and
   Mario review the full paper the week before 8 October. Ivar suggested
   dropping the frontier update set for time; this was not decided.
 - **Submission target (team meeting 2026-09-22):** AAMAS, abstract 1 October
