@@ -275,6 +275,39 @@ Morals follow play more than they lead it. This fits the August null on norm
 transmission and the earlier counter-current finding. A causal test still
 needs the seeding design (plant a moral, compare with a placebo).
 
+**Split by family, setting and task order** (added 2026-09-30 after the
+29 September meeting; `moral_generous_gap.png`, `moral_generous_gap.csv`,
+appendix grids `moral_behaviour_by_label_split_{sonnet,gpt,gemini}.png`,
+`moral_behaviour_by_label_split.csv`). The pooled `moral_behaviour_by_label.png`
+(now sending and returning only) mixes families: Gemini writes half its myths
+as "be generous" and sends at the ceiling, so a pooled generous line partly
+measures Gemini. Within one family and one setting × task order, for Sonnet
+and GPT (Gemini is at the ceiling whatever its moral), we estimate the
+generous-minus-fair gap two ways: pooled (round FE, no agent controls; in mixed
+settings also the partner's family, which drives both the shown moral and the
+play) and within an agent (agent-within-run + round FE, fitted only when at least
+5 agents change label), for the agent's own latest myth and for the latest myth it
+was shown with its own myth held at "be fair". SE clustered by run with t(runs − 1)
+inference, since most cells have 5–30 runs; cells with fewer than 5 runs are left
+out. Uncorrected for multiple tests. (Revised 2026-09-30 after review: the first
+version had no partner-family control in mixed dyads, where Gemini partners both
+write "be generous" more and get sent more, and used normal-reference p-values on
+5 clusters. Sonnet 2-agent mixed game→myth, shown myth, fell from +0.21 to +0.08.)
+
+- Pooled, the gap is mostly positive: 20 of 29 own-myth cells and 21 of 27
+  shown-myth cells; 8 of 56 have p < 0.05, all positive, 6 of them Sonnet, +0.04 to
+  +0.17 (e.g. Sonnet 8-agent mixed myth→game: send +0.060 own, +0.055 shown).
+- Within an agent, 45 cells can be fitted; 1 has p < 0.05 (Sonnet, +0.06). But the
+  intervals are about as wide as the pooled ones: in only 8 of the 35 cells with a
+  positive pooled estimate does the within-agent interval exclude it.
+- Reading: agents that write or read generous myths also cooperate more. We find no
+  detectable shift within an agent in the rounds when its myth, or the myth it was
+  shown, turns generous, but most within-agent intervals also include the pooled
+  size, so these cells cannot rule out a moral steering the next move. The
+  carryover regressions above, which pool settings, are tighter and also null.
+- Dyads write "be fair" in most rounds, so dyad cells rest on few generous
+  decisions (at most 24) and have wide intervals or are left out.
+
 ## 4. Validation
 
 `validation/`. Two parts:
