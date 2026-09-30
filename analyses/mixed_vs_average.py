@@ -4,7 +4,8 @@ For each mixed group and task order: final resources per agent in the mixed
 runs minus sum_i w_i * R_i over the matching single-model groups (k/8 and
 (8-k)/8 for a population with k agents of one model; 1/2 each for a dyad).
 Reports a 95% percentile bootstrap interval (runs resampled within each group)
-and a Welch t-test on the same linear contrast (Welch-Satterthwaite df).
+and a Welch t-test on the same linear contrast (Welch-Satterthwaite df),
+Holm-corrected across all cells of the table.
 
 Inputs are the per-run tables already in the repo, so no raw JSON is read:
   docs/figures/mixed_model_dyads_20260917/decisions.csv   (last round, total / 2)
@@ -59,6 +60,18 @@ def welch_contrast(groups: list[tuple[np.ndarray, float]]) -> tuple[float, float
     return t, df, 2 * stats.t.sf(abs(t), df)
 
 
+def holm(p: np.ndarray) -> np.ndarray:
+    """Holm step-down adjusted p-values; NaNs pass through."""
+    adj = np.full(len(p), np.nan)
+    ok = ~np.isnan(p)
+    idx = np.flatnonzero(ok)[np.argsort(p[ok])]
+    running = 0.0
+    for rank, i in enumerate(idx):
+        running = max(running, min(1.0, (len(idx) - rank) * p[i]))
+        adj[i] = running
+    return adj
+
+
 def main() -> None:
     rng = np.random.default_rng(SEED)
     runs = per_run_values()
@@ -82,6 +95,7 @@ def main() -> None:
                 "welch_t": t, "welch_df": df, "welch_p": p,
             })
     out = pd.DataFrame(rows)
+    out["welch_p_holm"] = holm(out["welch_p"].to_numpy())
     OUT.mkdir(parents=True, exist_ok=True)
     out.to_csv(OUT / "mixed_vs_average.csv", index=False)
     wide = out.assign(cell=out.apply(lambda r: f"{r['diff']:+.1f} [{r.ci_lo:+.1f}, {r.ci_hi:+.1f}]", axis=1))

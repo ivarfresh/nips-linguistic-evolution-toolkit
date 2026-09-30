@@ -10,7 +10,9 @@ the two single-model pairs for a dyad). Regenerate with
 `mixed_model_populations_20260918/agent_finals.csv`; no API calls).
 
 - Interval: 95% percentile bootstrap, runs resampled within each group (20,000 draws).
-- Test: Welch t-test on the same linear contrast (Welch–Satterthwaite df).
+- Test: Welch t-test on the same linear contrast (Welch–Satterthwaite df),
+  Holm-corrected across all 27 cells (`welch_p_holm`). 13 cells have p < 0.05
+  uncorrected, 7 after Holm; the paper's bold marks use the Holm value.
   Mann–Whitney is not used: the comparison value is a weighted sum of two
   other groups, not a sample, so a two-sample rank test does not apply.
 - n = 6 runs per mixed dyad cell, 5 per population and single-model cell.
