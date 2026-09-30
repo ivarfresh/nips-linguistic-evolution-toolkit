@@ -35,7 +35,7 @@ passed back (`analyses/frontier_round1_identification.py`). Senders only.
   only 5 Opus senders sent under $5), GeminiPro 37/37 at $5 (ceiling). Stated amount and
   send rule add +0.61 held-out R² for round-1 sends [+0.25]. Fades after round 1 in both.
 - **Read myth → next send:** not estimable (ceiling) [none: −$0.00, −0.10 to 0.10].
-- **Read myth → next myth amount:** +$0.13 per $ (0.06–0.21), Holm-significant, unseen
+- **Read myth → next myth amount:** +$0.13 per $ (0.05–0.21), Holm-significant, unseen
   placebo null [+$0.07].
 - **Words copied from the read myth:** stronger everywhere; across families +6.5 pts in the
   mixed population [+1.5].

@@ -48,7 +48,6 @@ RUN_TABLES = {
     2: ROOT / "docs/figures/mixed_model_dyads_20260917/decisions.csv",
     8: ROOT / "docs/figures/mixed_model_populations_20260918/games.csv",
 }
-OUT = ROOT / "data/analysis/linguistic_20260923"  # September default; see linguistic_datasets
 ENDOWMENT = 5.0
 FAMILY_OF = {"claude-sonnet-4.5": "Sonnet", "gpt-5-nano": "GPT", "gemini-3.7-flash": "Gemini"}
 FAMILY_ORDER = ["Sonnet", "Gemini", "GPT"]  # the figure labels: Sonnet+GPT, Sonnet+Gemini, Gemini+GPT
