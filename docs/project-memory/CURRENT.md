@@ -143,6 +143,13 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
+- Myth text and cooperation (2026-09-30, no API calls): the only myth feature that
+  predicts play beyond past play is the send amount a myth names, and only for the
+  opening send in myth→game (R² +0.17, run-resampled 0.10–0.24; clear in Sonnet,
+  not in GPT). After round 1, in both task orders, neither embeddings, word counts,
+  the three-moral labels nor PR #4 rules add a forecast, for authors or readers. The
+  two moral judges' disagreement is concentrated on the fair/generous boundary. See
+  [the README](../figures/myth_text_predictiveness_20260930/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from
