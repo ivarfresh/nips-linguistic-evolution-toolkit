@@ -1,3 +1,24 @@
+### 2026-09-30 — Result: frontier runs repeat the own-myth-as-plan picture; most read-myth tests hit the ceiling
+
+**Time:** ~4 h (frontier corpus + judging, five lenses, scorecard, verification).
+
+Result: on the main frontier set (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; 106 myth runs, 4,520
+myths; $10.17 judging), round-1 senders send exactly what their own myth names 50 of 52 times
+($0.85 per $; September 44/62, $0.67): Sol 31/31, Opus 19/21, GeminiPro always $5. A read
+myth's amount carries into the reader's next myth (+$0.13 per $, Holm-significant) and the
+moral spreads within a family (+6.8 pts, future-myth placebo +0.6); nothing crosses families
+and nothing detectably reaches play, but read-myth → send is not estimable (later sends at $5
+for every family). Words copy more than in September, across families ~4×.
+
+- Same code rebuilds September byte-identically; every lens reproduced its September headline.
+- Surfaced September corrections: moral uptake +4.8 has an unreported placebo of +3.9 (p .05);
+  the "+0.04" shown-amount → send figure should be −0.00; two consistency-embedding claims
+  narrowed. Listed in the README; the September docs are not yet edited.
+- GeminiPro morals drift generous → fair at a constant $5 send, favouring a judge-reading
+  explanation of the September "Gemini among GPTs" anomaly.
+
+Details: `docs/research/frontier_myth_predictors_20260930/README.md`; figure `scorecard/scorecard.png`.
+
 ### 2026-09-30 — Result: myths act as the agent's own plan; norms do not predict cooperation
 
 **Time:** ~4 h (six parallel analysis lenses, synthesis, independent verification).
