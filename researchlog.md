@@ -9,13 +9,13 @@ chosen from three prototypes (lineage network, family flow, composition by round
 46% → 14%); `moral_lineage_network.png` shows two median runs plus the all-runs test.
 
 - Narrowed claim: the within-family hop (+5.9 points, p = 0.001) rests mainly on
-  Sonnet (+9.6, p = 0.005; GPT +3.1, p = 0.13). "Across families" is always GPT ↔
+  Sonnet (+9.6, p = 0.007; GPT +3.1, p = 0.11). "Across families" is always GPT ↔
   other, so the null means nothing detectably crosses to or from GPT.
 - No single run shows the effect (42 of 72 labels kept against 38.3 by chance).
 - Open anomaly: among GPTs, Gemini's generous share falls while GPT's sends to it
   rise to 5 and returns stay 0.32–0.50. "Morals follow play" does not explain it.
-- Wilcoxon p now computed on rounded per-run means (tie stability); cross-family
-  myth→game p 0.37 → 0.40. No conclusion changes.
+- Wilcoxon p and runs-positive counts now use rounded per-run means (tie stability);
+  cross-family myth→game p 0.37 → 0.40, 17 → 15 of 30 runs positive. No conclusion changes.
 
 Rejected: the family-flow figure (its ribbons show exposure volume, not morals) and
 a dose–response reading of the ladder (Gemini erodes most at 4 GPT, not 7).
