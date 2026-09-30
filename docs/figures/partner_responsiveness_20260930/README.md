@@ -2,77 +2,74 @@
 
 ## Answer
 
-It depends on when the myth comes.
+The myth does not make agents more responsive to each other. Its main effect is
+its own push: myth agents send more every round than their partner's behaviour
+and their own last move predict. Whether the myth also makes them *less*
+responsive is not settled. The random forced defections are too few (9 per
+cell after cleaning) to tell the task orders apart. The data that exist point to
+"about the same" when the myth comes first. There are hints of weaker reaction
+when it comes after round 1.
 
-**Myth first (myth→game): both, and they add up.** Agents still react to
-their partner's game moves about as strongly as game-only agents. On top of
-that, the myth pushes their sends up in every round, beyond what the partner's
-behaviour and their own last move predict. The push is small per round, but
-sends carry over from round to round, so it keeps the cooperation gap open
-instead of letting it fade. Agents also get a head start: they send more in
-round 1, before they have seen their partner.
+- **The push.** At the same partner history and the same own previous send,
+  myth→game agents send more each round: Sonnet +$0.14 [0.06, 0.28],
+  GPT-5.6 Sol +$0.20, GPT-5 Nano +$1.44. Game→myth: Sol +$0.29, Nano +$1.59,
+  Opus +$0.11, Sonnet +$0.10 (range includes 0). Sends carry over from round to
+  round, so the push keeps the gap open. The Sonnet myth→game gap does not
+  shrink over ten rounds. Myth→game also starts higher in round 1, before any
+  partner information.
+- **Following the partner.** Sonnet's send moves with its partner's last send
+  by about the same amount in every task order: $0.54, $0.39 and $0.48 per $1
+  (correlational). In its written reasoning the partner is cited as often with a
+  myth as without (87–96%). The myth is added on top: partner and myth together
+  drive 67–80% of decisions, the myth alone 11–20%.
+- **Hints of less reaction in game→myth.** GPT-5 Nano follows its partner in
+  myth→game ($0.40 per $1) but hardly at all in game→myth ($0.04). After a
+  forced $0, Nano cuts back in myth→game (−$1.92, beyond chance, p = 0.01) but
+  not in game→myth (+$0.41). Sonnet cuts back after a forced $0 in game-only
+  (−$0.77) and myth→game (−$1.03) but not in game→myth (+$0.24). None of the
+  Sonnet changes is beyond chance on its own.
+- **The myth's lesson is mostly reciprocity.** In Sonnet's reasoning it says
+  "respond to what the other does" about 60% of the time and "give regardless"
+  about 40%.
 
-**Myth after round 1 (game→myth): the reaction to betrayal disappears.**
-No model cuts back after a partner's forced $0 by more than chance would
-produce. GPT-5 Nano's round-to-round following of its partner is near zero
-there too (0.04 vs 0.40 in myth→game). This order fits "follows the myth, less
-the partner" better. With 13 events per cell, that is a signal, not a proof.
-
-- Reaction to a partner's betrayal survives a myth-first start. When a
-  Sonnet 4.5 partner is forced to send $0, the next send falls $0.59 in
-  game-only and $1.37 in myth→game. That is about $0.40 per $1 the partner
-  dropped in both (point estimates). Both drops are larger than chance produces
-  in runs with no real defections (±$0.33 and ±$0.47). In game→myth the drop is
-  $0.23, inside its chance range (−$0.28 to +$0.34).
-- The myth adds a push. At the same partner history and the same own previous
-  send, Sonnet sends $0.14 [0.06, 0.28] more per round in myth→game.
-  GPT-5 Nano sends about $1.5 more and GPT-5.6 Sol $0.20–0.29 more.
-- The myth's lesson is mostly reciprocity. In Sonnet's reasoning it says
-  "respond to what the other does" about 60% of the time and "give
-  regardless" about 40%. Partner and myth are cited together in 67–80% of
-  decisions, and the myth alone drives 11–20%.
-
-Gemini 3.7 Flash also fits "follows the myth instead": after a myth it
-answers a forced $0 by sending the full $5 again (13 events).
 Opus 5 and both Geminis send the full $5 in almost every myth round. At that
-ceiling, whether they still watch the partner cannot be tested.
+ceiling you cannot tell whether they still watch the partner.
 
 ## Evidence
 
 All six September/frontier models, 2 and 8 agents, game / game→myth /
-myth→game, 5 runs per cell. Built by `analyses/partner_responsiveness_extract.py`
+myth→game, 5 runs per condition. Some tables pool noise conditions
+(15 runs per cell) or the two defection arms (10). Built by `analyses/partner_responsiveness_extract.py`
 (decision table, `decisions.csv`), `analyses/partner_responsiveness.py`
 (all tables) and `analyses/partner_responsiveness_judge.py` (reasoning coding).
 Never pooled across models.
 
-**1. Chance shocks to the partner (the causal test).** In the 2026-09-09 dyads
-with random forced defection, a partner is sometimes forced to send $0. The
-schedule is keyed by replicate, round and agent, so the same forced $0s happen
-in every task order. Next send, in dollars (`defection_events.csv`, 13 forced
-events per cell, 95% replicate bootstrap):
+**1. Chance shocks to the partner.** In the 2026-09-09 dyads with random
+forced defection (25% and 50% arms, 10 runs per cell), a partner is sometimes
+forced to send $0. The schedule is keyed by replicate, round and agent, so the
+same forced $0s happen in every task order. Next send ($) after a forced $0
+versus after the partner's own choice. The comparison drops decisions whose
+partner's return two rounds earlier was also forced. The chance range comes
+from shuffling the forced-$0 labels within each run 5,000 times
+(`defection_events.csv`, `defection_placebo.csv`):
 
-| Model | Task order | Send after partner's own choice | Send after forced $0 | Change | Change per $1 the partner dropped |
-|---|---|---|---|---|---|
-| Sonnet 4.5 | game | 1.74 | 1.15 | −0.59 [−1.19, 0.12] | 0.40 |
-| Sonnet 4.5 | game→myth | 2.81 | 2.58 | −0.23 [−1.07, 0.89] | 0.10 |
-| Sonnet 4.5 | myth→game | 3.76 | 2.38 | −1.37 [−2.19, −0.71] | 0.44 |
-| GPT-5 Nano | game | 0.19 | 0.00 | already at $0 | — |
-| GPT-5 Nano | myth→game | 2.96 | 1.54 | −1.42 [−2.65, −0.64] | 0.64 |
-| Gemini 3.7 Flash | game | 2.69 | 2.31 | −0.38 [−2.40, 1.18] | 0.15 |
-| Gemini 3.7 Flash | myth→game | 4.04 | 5.00 | +0.96 [0.00, 2.32] | none (keeps giving) |
+| Model | Task order | Forced $0s | After own choice | After forced $0 | Change | Chance range | p |
+|---|---|---|---|---|---|---|---|
+| Sonnet 4.5 | game | 9 | 1.99 | 1.22 | −0.77 | −1.24 to 0.41 | 0.19 |
+| Sonnet 4.5 | game→myth | 9 | 2.98 | 3.22 | +0.24 | −0.07 to 0.79 | 0.76 |
+| Sonnet 4.5 | myth→game | 9 | 3.80 | 2.78 | −1.03 | −1.58 to 0.24 | 0.20 |
+| GPT-5 Nano | game | 9 | 0.23 | 0.00 | at $0 | — | — |
+| GPT-5 Nano | game→myth | 9 | 1.48 | 1.89 | +0.41 | −1.00 to 0.56 | 0.40 |
+| GPT-5 Nano | myth→game | 9 | 3.26 | 1.33 | −1.92 | −1.69 to 0.42 | 0.01 |
+| Gemini 3.7 Flash | game | 9 | 2.96 | 3.33 | +0.38 | −1.19 to 1.94 | 1.00 |
+| Gemini 3.7 Flash | game→myth | 9 | 3.64 | 3.89 | +0.25 | −0.53 to 1.82 | 1.00 |
+| Gemini 3.7 Flash | myth→game | 9 | 4.32 | 5.00 | +0.68 | −0.10 to 0.68 | 0.50 |
 
-Is this bigger than chance? `defection_placebo.csv` marks fake defection
-dates, using the same random schedule, in the no-defector informed-noise dyads.
-There nothing happened, and 95% of the fake "changes" fall within ±$0.33
-(Sonnet, game), ±$0.47 (Sonnet, myth→game) and ±$0.95 (Nano, myth→game). All
-three real drops are outside these ranges. The per-dollar figures (0.40 vs
-0.44) are point estimates with no interval. Read them as "similar", not "equal".
-Sonnet cuts back per dollar of betrayal about as much with or without a myth
-first. GPT-5 Nano can only react once a myth has lifted it off $0.
-Gemini Flash after a myth is the one case that fits "follows the myth, ignores
-the partner": it answers a $0 by sending everything again. In game→myth no model reacts beyond
-chance: Sonnet −0.23, Nano +0.01, Gemini Flash +0.08 (`defection_events.csv`).
-Gemini can't be placebo-checked because it sits at the ceiling.
+Only Nano in myth→game reacts beyond chance. The shuffle ignores that the 25%
+and 50% arms share events, so even these p-values are optimistic. An earlier
+version of this table compared against fake defection dates in the calmer
+no-defector runs. That understated chance; the independent review on PR #13
+caught it.
 
 The smaller shock, communication noise (at most $1 off what the partner is
 shown to do), gave no consistent answer (`responsiveness.csv`). A placebo
@@ -129,13 +126,13 @@ game only; the bootstrap is over runs:
 | Gemini 3.1 Pro / 3.7 Flash | ≈0 | ≈0 | — | — (ceiling) |
 
 This model assumes the reaction to the partner is the same in every task
-order. That holds roughly for Sonnet in myth→game (sections 1 and 2) but may
-not hold in game→myth, where the reaction to betrayal is not detectable. Read the
-game→myth column with that in mind.
+order. Section 2 supports that for Sonnet. For Nano it may not hold in
+game→myth, where it barely follows its partner.
 
 **5. What Sonnet 4.5 writes (`sonnet_rationale_judge_summary.csv`).** A Sonnet
 4.5 judge coded 2,034 game rationales (all dyad decisions with prose, 300
-per task order in 8-agent runs). The judge sees only the rationale and role.
+per task order in 8-agent runs). The 2-agent rows pool 15 no-defector runs
+with 10 random-defection runs per task order. The judge sees only the rationale and role.
 Per-run shares, mean (±std):
 
 | | game | game→myth | myth→game |
@@ -159,12 +156,12 @@ channel to the partner.
 
 ## Limits
 
-- Five runs per cell, and 13 forced-defection events per model × task order.
-  With 5 runs, replicate bootstraps are too narrow (the noise placebo fails in
-  2 of 6 cells). The defection results are judged against their own placebo.
-  The push intervals should be read as optimistic.
+- The forced-defection test has 9 clean events per cell and is judged against
+  a within-run shuffle. With 5 runs per condition, replicate bootstraps are too
+  narrow (the noise placebo fails in 2 of 6 cells), so read the push and
+  following intervals as optimistic.
 - Only Sonnet 4.5 writes reasoning prose. The other models return bare JSON,
-  so section 4 covers Sonnet only.
+  so section 5 covers Sonnet only.
 - Forced-defection runs exist only for Sonnet 4.5, GPT-5 Nano and Gemini 3.7
   Flash (informed noise). The frontier models have no chance shock large
   enough to test. Their near-constant $5 in myth rounds cannot distinguish

@@ -26,7 +26,7 @@ Reads the decision table written by partner_responsiveness_extract.py.
 
    Also: defection_events (next send after a forced $0, plain means) and
    partner_following (correlational slope of send on partner's last send),
-   defection_placebo (fake defection dates in no-defector dyads), myth_push
+   defection_placebo (within-run shuffle of the forced-$0 labels), myth_push
    (extra send per round at the same partner and own history), gap_by_round.
 
 3. What Sonnet 4.5 writes. Share of game rationales that mention the
@@ -224,8 +224,7 @@ def _boot_by_replicate(g, fn):
 
 def defection_events(dec):
     """Next send after the partner was forced to send $0, vs after a chosen send."""
-    d = dec[(dec.run_set == "random") & (dec.role == "investor") & (dec.own_prev_forced == 0)
-            & dec.sig_partner_forced.notna()]
+    d = _defection_frame(dec)
 
     def drop(g):
         a, b = g[g.sig_partner_forced == 1], g[g.sig_partner_forced == 0]
@@ -306,32 +305,39 @@ def gap_by_round(dec):
     return t.reset_index()
 
 
-def defection_placebo(dec, n_schedules=300, p=0.35):
-    """Fake forced-defection dates on no-defector informed-noise dyads.
+def _defection_frame(dec):
+    """Dyad investor decisions in the random-defection runs. Rows whose partner's
+    return two rounds earlier was forced are dropped: that is also a betrayal and
+    would contaminate the comparison group."""
+    d = dec[(dec.run_set == "random") & (dec.role == "investor") & (dec.own_prev_forced == 0)
+            & dec.sig_partner_forced.notna()].copy()
+    ret2 = d.ret2_partner_forced.map({True: 1.0, False: 0.0, "True": 1.0, "False": 0.0})
+    return d[ret2.fillna(0) == 0]
 
-    Uses the same hash as DyadicPairingGame.is_random_defection with shifted
-    seeds. Nothing happened on these dates, so the spread of 'change' is what
-    chance alone produces with five runs.
+
+def defection_placebo(dec, n_perm=5000):
+    """Chance range for defection_events, inside the same runs: shuffle which
+    decisions count as 'after a forced $0' within each run, keep the rest.
+    Ignores that the 25% and 50% arms share events, so p-values are optimistic.
     """
-    import hashlib
-    d = dec[(dec.run_set == "figure2") & (dec.noise == "noise_informed") & (dec.num_agents == 2)
-            & (dec.role == "investor") & (dec["round"] >= 2)].copy()
-    d["partner"] = d.agent.map({"Agent_1": "Agent_2", "Agent_2": "Agent_1"})
-    seeds = 202608250 + d.replicate.to_numpy()
-
-    def fake(seed, turn, agent):
-        key = f"random-defection-v1|{seed}|{int(turn)}|{agent}|investor".encode()
-        return int.from_bytes(hashlib.sha256(key).digest()[:8], "big") / 2**64 < p
-
-    res = []
-    for k in range(n_schedules):
-        d["ev"] = [fake(sd + 1000 * (k + 1), r - 1, a) for sd, r, a in zip(seeds, d["round"], d.partner)]
-        for (model, o), g in d.groupby(["model", "task_order"]):
-            if 0 < g.ev.sum() < len(g):
-                res.append((model, o, g[g.ev].send_usd.mean() - g[~g.ev].send_usd.mean()))
-    r = pd.DataFrame(res, columns=["model", "task_order", "change"])
-    return r.groupby(["model", "task_order"]).change.agg(
-        schedules="size", sd="std", lo=lambda x: x.quantile(0.025), hi=lambda x: x.quantile(0.975)).reset_index()
+    d = _defection_frame(dec)
+    rows = []
+    for (model, o), g in d.groupby(["model", "task_order"]):
+        y = g.send_usd.to_numpy(float)
+        ev = g.sig_partner_forced.to_numpy(float)
+        groups = [np.flatnonzero(g.path.to_numpy() == p) for p in g.path.unique()]
+        observed = y[ev == 1].mean() - y[ev == 0].mean()
+        sims = np.empty(n_perm)
+        for k in range(n_perm):
+            e = ev.copy()
+            for idx in groups:
+                e[idx] = RNG.permutation(ev[idx])
+            sims[k] = y[e == 1].mean() - y[e == 0].mean() if 0 < e.sum() < len(e) else np.nan
+        sims = sims[np.isfinite(sims)]
+        rows.append({"model": model, "task_order": o, "observed_change": observed,
+                     "chance_lo": np.percentile(sims, 2.5), "chance_hi": np.percentile(sims, 97.5),
+                     "p_two_sided": float((np.abs(sims) >= abs(observed) - 1e-12).mean())})
+    return pd.DataFrame(rows)
 
 
 def judge_summary():

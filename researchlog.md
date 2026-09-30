@@ -1,32 +1,29 @@
-### 2026-09-30 — Result: a myth-first start keeps reaction to the partner and adds a push
+### 2026-09-30 — Result: myths add their own push; no sign they make agents more responsive
 
-**Time:** ~4 h (extraction, causal and placebo tests, LLM coding, review).
+**Time:** ~5 h (extraction, causal and placebo tests, LLM coding, review and correction).
 
 Result: asked whether myths raise cooperation by making agents more responsive to
-each other or by making them follow the myth instead. Answer: it depends on the
-order. Myth→game keeps the reaction and adds a push. Game→myth shows no reaction to
-betrayal beyond chance. The data
-are the existing September and frontier runs: 450 runs, with no new game runs. A
-Sonnet 4.5 judge coded 2,034 rationales for $6.03.
+each other or by making them follow the myth instead. The data are the existing
+September and frontier runs: 450 runs, with no new game runs. A Sonnet 4.5 judge
+coded 2,034 rationales for $6.03.
 
-- Reaction to betrayal survives a myth-first start. After a random forced $0 from the
-  partner, Sonnet's next send falls $0.59 in game-only and $1.37 in myth→game. That
-  is about $0.40 per $1 in both. Both drops exceed a fake-date placebo (±$0.33 /
-  ±$0.47). GPT-5 Nano reacts only once a myth lifts it off $0. Gemini Flash after
-  a myth keeps sending $5. In game→myth no model reacts beyond chance (Sonnet
-  −$0.23, inside its placebo range); Nano's partner-following there is ~0.
 - The myth pushes every round. With partner history and own previous send held
-  fixed, myth→game sends are higher: Sonnet +$0.14 [0.06, 0.28], Sol
-  +$0.20–0.29, Nano +$1.4–1.6. The gap does not fade over rounds.
-- In Sonnet's reasoning the myth's lesson is about 60% conditional ("reciprocate")
-  and 40% unconditional ("give regardless"). The myth is cited together with the
-  partner, not instead of it.
-- Rejected as evidence: communication-noise slopes. The noise placebo fails in 2 of
-  6 cells because a 5-run bootstrap is too narrow.
-- Opus 5 and the Geminis sit at $5, so their reaction to the partner cannot be
-  tested.
+  fixed, myth→game sends are higher: Sonnet +$0.14 [0.06, 0.28], Sol +$0.20,
+  Nano +$1.44. Game→myth: Sol +$0.29, Nano +$1.59, Opus +$0.11. The Sonnet
+  myth→game gap does not fade over ten rounds.
+- Sonnet follows its partner about equally in all orders ($0.54 / $0.39 / $0.48
+  per $1, correlational) and cites the partner as often with a myth as without.
+  Myth lesson: about 60% "reciprocate", about 40% "give regardless".
+- Forced-defection test too small (9 clean events per cell). Only Nano myth→game
+  reacts beyond a within-run shuffle (−$1.92, p = 0.01). There are hints of weaker
+  reaction in game→myth (Nano following $0.04; no Sonnet or Nano drop after a
+  forced $0), but none is conclusive.
+- Correction before merge: the first version judged the defection drops against
+  fake dates in calmer no-defector runs. That understated chance and overclaimed
+  "reaction survives the myth". The independent review on PR #13 caught it.
+- Rejected as evidence: communication-noise slopes. Their placebo fails in 2 of 6 cells.
 
-Details: `docs/figures/partner_responsiveness_20260930/README.md`.
+Details: `docs/figures/partner_responsiveness_20260930/README.md`; PR #13.
 
 ### 2026-09-29 — Result: under a word budget, Sonnet writes maxims, not a code
 

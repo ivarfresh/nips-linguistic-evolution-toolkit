@@ -143,12 +143,13 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
-- Myth effect mechanism (2026-09-30, existing runs only): in myth→game, agents
-  react to a partner's forced defection about as much as game-only agents
-  (Sonnet ~$0.40 per $1; above a fake-date placebo). The myth adds a per-round
-  upward push at fixed history, which keeps the gap from fading. In game→myth no
-  model reacts to betrayal beyond chance (13 events per cell). Ceiling models
-  (Opus 5, Geminis) cannot be tested.
+- Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
+  per-round upward push at fixed partner and own history (Sonnet myth→game
+  +$0.14/round), which keeps the gap from fading. There is no sign that myths
+  make agents more responsive: Sonnet follows its partner about equally in all
+  task orders. Whether myths reduce responsiveness is unresolved; the
+  forced-defection test has only 9 events per cell, with hints of weaker
+  reaction in game→myth. Ceiling models (Opus 5, Geminis) cannot be tested.
   See [the partner-responsiveness README](../figures/partner_responsiveness_20260930/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the

@@ -162,6 +162,8 @@ def decision_rows(spec):
             prev = by_agent_round.get((agent, rnd - 1)) if num_agents == 2 else None
             if prev and prev[0] == "investor":
                 # Dyad trustees were investors last round: the partner's return.
+                # prev_ret_shown is the noisy return; dyad prompts show it only
+                # through the running earnings total, not as its own number.
                 p = prev[1]
                 row.update({
                     "prev_ret_actual": (p["returned"] / p["received"]) if p["received"] > 0 else None,
