@@ -414,6 +414,7 @@ SPLIT_CONDS = [(st, to) for st in SPLIT_SETTINGS for to in SPLIT_ORDERS]
 SPLIT_SOURCES = {"own_label": "own latest myth", "shown_label": "latest myth shown"}
 SPLIT_FAMILIES = [f for f in FAMILIES if not f.startswith("Gemini")]  # Gemini sends and returns at the ceiling whatever its moral
 MIN_DECISIONS = 5  # hide binned means built on fewer decisions
+MIN_VARYING = 5  # within-agent gap needs at least this many agents whose label changes
 
 
 def behaviour_by_label_split(d: pd.DataFrame) -> pd.DataFrame:
@@ -437,13 +438,18 @@ def generous_gap_models(d: pd.DataFrame) -> pd.DataFrame:
 
     source = own:   own latest myth generous vs fair.
     source = shown: shown myth generous vs fair, own latest myth held at 'be fair'.
-    estimate = between: raw within-family difference (round FE), SE clustered by run.
-    estimate = within:  agent-within-run + round FE: the same agent in rounds when its
-                        (or its shown) myth is generous versus fair."""
+    estimate = pooled: no agent controls (round FE; in mixed settings also partner-family FE,
+                       since the partner's family drives both the shown moral and the play).
+                       Mixes differences between agents with changes within one.
+    estimate = within: agent-within-run + round FE: the same agent in rounds when its
+                       (or its shown) myth is generous versus fair; fitted only when at least
+                       MIN_VARYING agents change label.
+    SE clustered by run with t(G-1) inference, since most cells have 5-30 runs."""
     import statsmodels.formula.api as smf
     d = d.assign(run_agent=d["run_id"] + "|" + d["agent"])
     rows = []
     for (fam, st, to, role), g in d.groupby(["family", "setting", "task_order", "role"]):
+        partner_fe = " + C(partner_family)" if "mixed" in st else ""
         for src in SPLIT_SOURCES:
             sub = g.dropna(subset=[src, "coop"])
             if src == "shown_label":
@@ -451,20 +457,23 @@ def generous_gap_models(d: pd.DataFrame) -> pd.DataFrame:
             sub = sub[sub[src].isin(["be generous", "be fair"])]
             sub = sub.assign(generous=(sub[src] == "be generous").astype(float))
             n_gen = int(sub["generous"].sum())
-            for est, fe in (("between", " + C(round)"), ("within", " + C(run_agent) + C(round)")):
+            varies = sub.groupby("run_agent")["generous"].transform("nunique") > 1
+            n_varying = int(sub.loc[varies, "run_agent"].nunique())
+            for est, fe in (("pooled", partner_fe + " + C(round)"), ("within", " + C(run_agent) + C(round)")):
                 rec = {"family": fam, "setting": st, "task_order": to, "role": role, "source": src,
                        "estimate": est, "n_decisions": len(sub), "n_generous": n_gen,
-                       "n_runs": sub["run_id"].nunique()}
-                if n_gen >= 5 and len(sub) - n_gen >= 5 and sub["run_id"].nunique() >= 3:
-                    if est == "within":
-                        # agents whose label never changes carry no within-agent information
-                        varies = sub.groupby("run_agent")["generous"].transform("nunique") > 1
-                        rec["n_agents_varying"] = int(sub.loc[varies, "run_agent"].nunique())
+                       "n_runs": sub["run_id"].nunique(), "n_agents_varying": n_varying}
+                enough = n_gen >= 5 and len(sub) - n_gen >= 5 and sub["run_id"].nunique() >= 5
+                if est == "within":
+                    # agents whose label never changes carry no within-agent information
+                    enough = enough and n_varying >= MIN_VARYING
+                if enough:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         try:
                             fit = smf.ols("coop ~ generous" + fe, data=sub).fit(
-                                cov_type="cluster", cov_kwds={"groups": pd.factorize(sub["run_id"])[0]})
+                                cov_type="cluster", cov_kwds={"groups": pd.factorize(sub["run_id"])[0]},
+                                use_t=True)
                             ci = fit.conf_int().loc["generous"]
                             rec.update(coef=fit.params["generous"], ci_low=ci[0], ci_high=ci[1],
                                        p=fit.pvalues["generous"])
@@ -475,13 +484,13 @@ def generous_gap_models(d: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_generous_gap(gaps: pd.DataFrame) -> None:
-    """Main figure: generous-minus-fair gap, between agents vs within an agent, per condition."""
+    """Main figure: generous-minus-fair gap, pooled vs within an agent, per condition."""
     import matplotlib.pyplot as plt
     configure_matplotlib()
     fig, axes = plt.subplots(len(SPLIT_FAMILIES), 2, figsize=(13, 10), sharex=True)
-    styles = {("own_label", "between"): ("#1b7837", "o", "own myth, between agents"),
+    styles = {("own_label", "pooled"): ("#1b7837", "o", "own myth, pooled (no agent FE)"),
               ("own_label", "within"): ("#1b7837", "D", "own myth, within agent"),
-              ("shown_label", "between"): ("#5e3c99", "o", "shown myth (own = fair), between agents"),
+              ("shown_label", "pooled"): ("#5e3c99", "o", "shown myth (own = fair), pooled (no agent FE)"),
               ("shown_label", "within"): ("#5e3c99", "D", "shown myth (own = fair), within agent")}
     offs = dict(zip(styles, (-0.3, -0.1, 0.1, 0.3)))
     for i, fam in enumerate(SPLIT_FAMILIES):
@@ -496,23 +505,24 @@ def plot_generous_gap(gaps: pd.DataFrame) -> None:
                     r = r.iloc[0]
                     ax.errorbar(r["coef"], k + offs[key], xerr=[[r["coef"] - r["ci_low"]], [r["ci_high"] - r["coef"]]],
                                 fmt=marker, color=color, ms=4, capsize=2, mfc="white" if key[1] == "within" else color,
-                                label=label if (i, j, k) == (0, 0, 7) or label not in ax.get_legend_handles_labels()[1] else None)
+                                label=label if label not in ax.get_legend_handles_labels()[1] else None)
             ax.axvline(0, color="#666666", lw=1)
             ax.set_yticks(range(len(SPLIT_CONDS)), [f"{st}, {SPLIT_ORDERS[to]}" for st, to in SPLIT_CONDS], fontsize=8)
             ax.invert_yaxis()
             ax.grid(axis="x", alpha=0.3)
             ax.set_title(f"{fam}: {what}", fontsize=10)
             if i == len(SPLIT_FAMILIES) - 1:
-                ax.set_xlabel("generous minus fair (95% CI, SE clustered by run)")
+                ax.set_xlabel("generous minus fair (95% CI; run-clustered SE, t)")
     handles, labels = [], []
     for ax in axes.flat:
         for h, l in zip(*ax.get_legend_handles_labels()):
             if l not in labels:
                 handles.append(h); labels.append(l)
     fig.legend(handles, labels, loc="lower center", ncol=2, fontsize=9, frameon=False)
-    fig.suptitle("Does a generous myth go with more cooperation? Filled: compared across agents of one family. "
-                 "Open: the same agent compared with itself.\nGemini omitted (at the ceiling whatever its moral); "
-                 "cells with < 5 generous or < 5 fair decisions omitted.", fontsize=10)
+    fig.suptitle("Does a generous myth go with more cooperation? Filled: pooled over agents of one family "
+                 "(mixed settings control the partner's family). Open: the same agent compared with itself.\n"
+                 "Gemini omitted (at the ceiling whatever its moral); cells with < 5 generous or < 5 fair decisions, "
+                 f"< 5 runs, or (within) < {MIN_VARYING} agents that change label omitted.", fontsize=10)
     fig.tight_layout(rect=(0, 0.06, 1, 0.95))
     fig.savefig(FIGS / "moral_generous_gap.png", dpi=200)
     plt.close(fig)
@@ -525,16 +535,20 @@ def plot_behaviour_by_label_split(table: pd.DataFrame, family: str) -> None:
     configure_matplotlib()
     cols = [("investor", "own_label"), ("investor", "shown_label"), ("trustee", "own_label"), ("trustee", "shown_label")]
     fig, axes = plt.subplots(len(SPLIT_CONDS), len(cols), figsize=(16, 2.0 * len(SPLIT_CONDS)), sharex=True, sharey=True)
-    t = table[(table["family"] == family) & (table["n_decisions"] >= MIN_DECISIONS)]
+    t = table[table["family"] == family]
+    bins = sorted(table["round_bin_mid"].unique())
     for i, (st, to) in enumerate(SPLIT_CONDS):
         for j, (role, src) in enumerate(cols):
             ax = axes[i, j]
             for lab in LABELS:
                 s = t[(t["setting"] == st) & (t["task_order"] == to) & (t["role"] == role)
-                      & (t["label_source"] == src) & (t["label"] == lab)].sort_values("round_bin_mid")
-                if len(s):
-                    ax.plot(s["round_bin_mid"], s["coop_mean"], color=LABEL_COLORS[lab], lw=1.8, marker="o", ms=2.5,
-                            label=f"{lab} (n={int(s['n_decisions'].sum())})")
+                      & (t["label_source"] == src) & (t["label"] == lab)].set_index("round_bin_mid")
+                shown = s[s["n_decisions"] >= MIN_DECISIONS]
+                if len(shown):
+                    # reindex to every bin so a hidden bin breaks the line instead of being bridged
+                    y = shown["coop_mean"].reindex(bins)
+                    ax.plot(bins, y, color=LABEL_COLORS[lab], lw=1.8, marker="o", ms=4 if len(shown) == 1 else 2.5,
+                            label=f"{lab} (n={int(shown['n_decisions'].sum())} shown)")
             ax.set_ylim(-0.03, 1.03)
             ax.grid(alpha=0.3)
             if ax.get_legend_handles_labels()[0]:
