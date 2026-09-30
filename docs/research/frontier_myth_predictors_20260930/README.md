@@ -58,6 +58,9 @@ passed back (`analyses/frontier_round1_identification.py`). Senders only.
 
 ## Corrections to the September write-ups surfaced here
 
+Applied 2026-09-30: item 1 in `docs/figures/linguistic_analysis_20260923/README.md`
+(PR #12), items 2–5 in `docs/research/myth_predictors_20260930/README.md` (PR #15).
+
 1. Moral uptake +4.8 (8-agent one model, myth→game) has a future-myth placebo of +3.9 (p .05)
    that was never reported; treat as suggestive (affects `docs/figures/linguistic_analysis_20260923/README.md`
    and the lineage-network figure).
