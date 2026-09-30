@@ -7,7 +7,7 @@ game, no set of moral categories extracted from it can. If the text predicts
 but the three moral labels do not, the labels are losing information.
 
 Corpus: the September informed negative-only myths (analyses/linguistic_corpus.py,
-8,520 myths) and their all-mpnet-base-v2 embeddings (analyses/linguistic_uptake.py).
+8,520 myths, 8,519 of at least 20 words) and their all-mpnet-base-v2 embeddings (analyses/linguistic_uptake.py).
 Every test is run separately per task order, never pooled:
   myth_game  round t: myth, then game t   -> the myth's next game is game t
   game_myth  round t: game t, then myth   -> the myth's next game is game t+1
@@ -43,9 +43,12 @@ ridge inside each fold: the base first, then the text features on the base's
 training residuals with their own penalty (up to 1e7, i.e. switched off), so
 an uninformative feature set scores about zero rather than below it. Folds grouped
 by run (no run in both train and test), 10 repeats with reshuffled folds.
-Reported: gain in R^2 over the base, mean (±std over repeats), and a permutation
-null that shuffles the text features among myths of the same family, round and
-composition (20 shuffles): the share of shuffles that reach the observed gain.
+Reported: gain in R^2 over the base, mean (±std over repeats), and a 95% interval
+from resampling whole runs (1,000 draws, out-of-fold predictions held fixed). A
+gain is "clear" when that interval lies above zero. A permutation p (text shuffled
+among myths of the same family, round and composition, 20 shuffles, each scored on
+the same folds as its base) is kept as a secondary check; it separates signal from
+noise poorly because stage 2 shrinks shuffled text to about zero.
 
 Outputs: docs/figures/myth_text_predictiveness_20260930/{results.csv,README.md}
 No API calls.
@@ -151,8 +154,8 @@ def demean(x: np.ndarray, groups: np.ndarray) -> np.ndarray:
     return (frame - frame.groupby(groups).transform("mean")).to_numpy()
 
 
-def cv_r2(base: np.ndarray, text: np.ndarray | None, y: np.ndarray, groups: np.ndarray, seed: int) -> float:
-    """Out-of-sample R^2 of ridge on [base, text], folds grouped by run."""
+def cv_pred(base: np.ndarray, text: np.ndarray | None, y: np.ndarray, groups: np.ndarray, seed: int) -> np.ndarray:
+    """Out-of-fold predictions of ridge on [base, text], folds grouped by run and set by `seed`."""
     uniq = np.unique(groups)
     perm = np.random.default_rng(seed).permutation(len(uniq))
     remap = dict(zip(uniq, perm))
@@ -170,7 +173,24 @@ def cv_r2(base: np.ndarray, text: np.ndarray | None, y: np.ndarray, groups: np.n
             st = StandardScaler().fit(text[tr])
             m2 = RidgeCV(alphas=TEXT_ALPHAS).fit(st.transform(text[tr]), resid)
             pred[te] += m2.predict(st.transform(text[te]))
+    return pred
+
+
+def r2(y: np.ndarray, pred: np.ndarray) -> float:
     return 1 - np.sum((y - pred) ** 2) / np.sum((y - y.mean()) ** 2)
+
+
+def run_interval(y, base_preds, full_preds, groups, n=1000, seed=0) -> tuple[float, float]:
+    """95% interval of the R^2 gain from resampling whole runs, averaged over fold shuffles.
+    Out-of-fold predictions are held fixed (no refit), so the interval is somewhat narrow."""
+    rng = np.random.default_rng(seed)
+    runs = np.unique(groups)
+    idx = {g: np.flatnonzero(groups == g) for g in runs}
+    gains = []
+    for _ in range(n):
+        s = np.concatenate([idx[g] for g in rng.choice(runs, len(runs))])
+        gains.append(np.mean([r2(y[s], f[s]) - r2(y[s], b[s]) for b, f in zip(base_preds, full_preds)]))
+    return tuple(np.quantile(gains, [0.025, 0.975]))
 
 
 def shuffle_within(n: int, strata: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -207,20 +227,26 @@ def evaluate(df: pd.DataFrame, emb: np.ndarray, tfidf, rules: np.ndarray, test: 
         y = y - pd.Series(y).groupby(agent_key).transform("mean").to_numpy()
         base = demean(base, agent_key)
     strata = (df.family + "|" + df["round"].astype(str) + "|" + df.cell).to_numpy()
-    base_r2 = np.array([cv_r2(base, None, y, groups, s) for s in range(repeats)])
+    # one base fit per fold shuffle; every text fit and every permutation is scored
+    # against the base on the SAME folds
+    base_preds = [cv_pred(base, None, y, groups, s) for s in range(max(repeats, n_perm))]
+    base_r2 = np.array([r2(y, b) for b in base_preds])
     out = []
     for name, x in feats.items():
         xw = demean(x, agent_key) if within else x
-        gains = np.array([cv_r2(base, xw, y, groups, s) for s in range(repeats)]) - base_r2
+        full_preds = [cv_pred(base, xw, y, groups, s) for s in range(repeats)]
+        gains = np.array([r2(y, f) for f in full_preds]) - base_r2[:repeats]
+        lo, hi = run_interval(y, base_preds[:repeats], full_preds, groups)
         rng = np.random.default_rng(1)
         null = []
         for k in range(n_perm):
             p = shuffle_within(len(y), strata, rng)
-            null.append(cv_r2(base, xw[p], y, groups, k) - base_r2[k % repeats])
+            null.append(r2(y, cv_pred(base, xw[p], y, groups, k)) - base_r2[k])
         null = np.array(null)
         out.append({"feature": name, "n_decisions": len(y), "n_runs": int(df.run_id.nunique()),
                     "outcome_sd": float(df.y.std()),
-                    "base_r2": float(base_r2.mean()), "gain_r2": float(gains.mean()), "gain_sd": float(gains.std()),
+                    "base_r2": float(base_r2[:repeats].mean()), "gain_r2": float(gains.mean()),
+                    "gain_sd": float(gains.std()), "gain_ci_low": float(lo), "gain_ci_high": float(hi),
                     "null_gain_mean": float(null.mean()), "null_gain_p95": float(np.quantile(null, 0.95)),
                     "p_perm": float((1 + np.sum(null >= gains.mean())) / (1 + len(null)))})
     return out
@@ -271,7 +297,7 @@ def main() -> None:
         print(f"{r['task_order']:9s} {r['decision']:6s} {r['test']:7s} {r['author_family']:6s} "
               f"within={r['within_agent']!s:5s} {r['feature']:14s} n={r['n_decisions']:5d} "
               f"base={r['base_r2']:.3f} gain={r['gain_r2']:+.3f} (±{r['gain_sd']:.3f}) "
-              f"null95={r['null_gain_p95']:+.3f} p={r['p_perm']:.2f}")
+              f"[{r['gain_ci_low']:+.3f}, {r['gain_ci_high']:+.3f}] p={r['p_perm']:.2f}")
     OUT.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(results).to_csv(OUT / "results.csv", index=False)
     print(f"-> {OUT / 'results.csv'}")

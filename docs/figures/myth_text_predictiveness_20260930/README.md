@@ -15,7 +15,8 @@ only one kind and only at the start.
 
 - **The two judges disagree mostly on one boundary.** 97% of their
   disagreements are adjacent ones, and 80% (game→myth) to 83% (myth→game) are
-  the same one: GLM says "be fair" where DeepSeek says "be generous". The myths
+  fair vs generous, mostly GLM "be fair" where DeepSeek says "be generous" (71% and
+  76% of all disagreements). The myths
   in question usually endorse both at once ("send what you can, return what is
   fair"). The three labels are forced single choices between categories that
   overlap.
@@ -26,11 +27,15 @@ only one kind and only at the start.
   0.17 to the R² of the opening send [95% run-resampled interval 0.10 to 0.24]:
   0.37 [0.02, 0.59] within Sonnet, 0.07 [−0.03, 0.16] within GPT (not clear). The
   moral label is flat: Sonnet "be generous" 3.86 (±0.98) vs "be fair" 4.08 (±0.87).
-- **Once play has started, no representation of the myth adds anything to past
-  play, in either task order.** This holds for the whole-text embedding, word
-  counts, both judges' labels and the extracted rules. It holds for the author's own
-  next decision and for the reader of a shown myth, and within agents as well as
-  across them.
+- **Once play has started, the myth adds almost nothing to past play, and nothing
+  to round-to-round change.**
+  - Within agents (does a change in an agent's myth forecast a change in its next
+    move?), no feature helps, in either task order.
+  - Across agents, only myth→game shows small gains, from PR #4's rules on the
+    author's returns: +0.015 R² for all families, +0.051 for Sonnet. Sonnet sends gain
+    +0.014. The likely reading: a stable per-agent return habit also shows up in its
+    myths.
+  - The reader of a shown myth gains nothing anywhere, and game→myth gains nothing.
 - **The whole-text representations miss the opening signal for lack of data, not
   lack of information.** Across all 4,594 myths that name an amount, the embedding
   recovers it with R² 0.46 and word counts with 0.56. With only 213 opening
@@ -56,10 +61,10 @@ analysis does not test that direction itself.
 | myth→game | 4,260 | 74% | 0.53 | 0.59 | 83% |
 
 By author family, κ is highest on Sonnet (0.65–0.69) and lowest on Gemini
-(0.29–0.32). On Gemini, every disagreement is fair vs generous. DeepSeek calls 76–80%
+(0.29–0.32). On Gemini, all but one or two disagreements are fair vs generous. DeepSeek calls 76–80%
 of Gemini myths generous and GLM calls 50–55% generous. That is a difference in where
-each judge draws the line on one axis, not noise. Neither judge says "be cautious" for
-Gemini.
+each judge draws the line on one axis, not noise. GLM never says "be cautious" for
+Gemini, and DeepSeek says it once.
 
 ## 2. Does the myth text predict the next decision?
 
@@ -83,9 +88,12 @@ count.
 
 **Scoring.** Each text feature set is added to the base with a two-stage ridge, and
 scored by out-of-sample R² with folds grouped by run. We report the gain over the base
-as mean (±std) over 10 fold shuffles. A result counts as clear when the gain beats all
-20 shuffles of the text among myths of the same family, round and composition
-(p ≤ 0.05, the smallest p 20 shuffles allow).
+as mean (±std) over 10 fold shuffles. A result counts as clear when its 95% interval
+from resampling whole runs lies above zero. That interval holds out-of-fold
+predictions fixed, so it is somewhat narrow. `results.csv` also keeps a permutation
+p, but it separates signal from noise poorly. The first version of this analysis
+used it as the criterion and scored some shuffles on mismatched folds. An independent
+review caught this; the fix changed which tests count as clear, not the gains.
 
 Across authors of all families (with family in the base), across agents:
 
@@ -103,14 +111,22 @@ Across authors of all families (with family in the base), across agents:
 | game→myth | reader | return | 1,503 | 0.22 | −0.003 (±0.002) | −0.003 (±0.002) | −0.001 (±0.001) | −0.002 (±0.001) | −0.000 (±0.000) |
 
 Within-agent versions of every row, and per-family rows, are in `results.csv`.
-Only 5 of 330 tests are clear:
-- the opening send with all PR #4 fields: all families +0.16, Sonnet +0.51, GPT +0.13
-  (in the run-resampled check, `opening_checks.md`, GPT's interval includes zero);
-- two tiny gains in myth→game authors: extracted rules on Sonnet sends, +0.014; the
-  GLM label on Gemini returns, +0.014.
+7 of 330 tests are clear (interval above zero), all in myth→game and all across agents:
 
-With 330 tests, the two tiny ones are what chance produces. Gemini sends are always 5,
-so its send tests are skipped.
+| Test | Authors | Feature | Gain in R² | 95% interval |
+|---|---|---|---:|---|
+| opening send | all | PR #4 rules | +0.163 (±0.016) | 0.079 to 0.242 |
+| opening send | Sonnet | PR #4 rules | +0.508 (±0.040) | 0.238 to 0.705 |
+| opening send | GPT | PR #4 rules | +0.131 (±0.030) | 0.017 to 0.239 |
+| author return | Sonnet | PR #4 rules | +0.051 (±0.004) | 0.024 to 0.077 |
+| author return | all | PR #4 rules | +0.015 (±0.002) | 0.004 to 0.028 |
+| author send | Sonnet | PR #4 rules | +0.014 (±0.003) | 0.004 to 0.025 |
+| author send | Sonnet | DeepSeek label | +0.005 (±0.001) | 0.001 to 0.010 |
+
+GPT's opening result is borderline. With the named amount alone its interval
+includes zero (`opening_checks.md`). No within-agent test, no reader test and no
+game→myth test is clear. The same Sonnet returns effect within agents is −0.008.
+Gemini sends are always 5, so its send tests are skipped.
 
 Round-1 myth→game sends by what the myth says (mean (±std), n):
 
@@ -147,4 +163,6 @@ named-amount-alone gains with run-resampled intervals, and the per-setting table
 - **Reader test scope.** This tests *read myth → next decision*. It does not retest the
   earlier *read myth → written moral* carryover (+5 points), so it does not contradict
   it. It controls for the reader's past play, not the reader's own myth.
+- **The run-resampled intervals are somewhat narrow.** They reuse fixed out-of-fold
+  predictions instead of refitting per draw.
 - **No human has checked either the labels or the extracted amounts.**
