@@ -51,15 +51,17 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import cached_embeddings, configure_matplotlib  # noqa: E402
-from analyses.linguistic_uptake import load_myths, null_candidates  # noqa: E402
+from analyses.linguistic_uptake import FAMILY_COLORS, load_myths, null_candidates  # noqa: E402
+from analyses import linguistic_datasets  # noqa: E402
 
-DATA = ROOT / "data/analysis/linguistic_20260923"
-FIGS = ROOT / "docs/figures/linguistic_analysis_20260923"
+_DS = linguistic_datasets.get()  # September unless LINGUISTIC_DATASET=frontier
+DATA = _DS.data
+FIGS = _DS.figs
 LABELS = ["be generous", "be fair", "be cautious"]
 # Shared across all moral figures (2026-09-30): categorical, colour-blind checked against the
 # family colours; fair darkened from #2a78d6, which was too close to Sonnet purple.
 LABEL_COLORS = {"be generous": "#D9A400", "be fair": "#0b5394", "be cautious": "#B2182B"}
-FAMILIES = ["Sonnet", "Gemini", "GPT"]
+FAMILIES = list(_DS.families)
 KEY = ["run_id", "round", "agent"]
 
 
@@ -223,7 +225,7 @@ def plot_summary_measures(per_myth: pd.DataFrame, dist: pd.DataFrame) -> None:
                     s = frame[(frame["family"] == fam) & (frame["setting"] == st)].groupby("round")[col].mean()
                     if len(s):
                         ax.plot(s.index, s.values, ls=styles[st], lw=widths[st], color=
-                                {"Sonnet": "#7570b3", "GPT": "#d95f02", "Gemini": "#1b9e77"}[fam],
+                                FAMILY_COLORS[fam],
                                 label=f"{fam}, {st}")
         else:
             for st in settings:
@@ -410,7 +412,7 @@ SPLIT_SETTINGS = ["2-agent homogeneous", "2-agent mixed", "8-agent homogeneous",
 SPLIT_ORDERS = {"game_myth": "game→myth", "myth_game": "myth→game"}
 SPLIT_CONDS = [(st, to) for st in SPLIT_SETTINGS for to in SPLIT_ORDERS]
 SPLIT_SOURCES = {"own_label": "own latest myth", "shown_label": "latest myth shown"}
-SPLIT_FAMILIES = ["Sonnet", "GPT"]  # Gemini sends and returns at the ceiling whatever its moral
+SPLIT_FAMILIES = [f for f in FAMILIES if not f.startswith("Gemini")]  # Gemini sends and returns at the ceiling whatever its moral
 MIN_DECISIONS = 5  # hide binned means built on fewer decisions
 
 

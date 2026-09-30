@@ -47,11 +47,14 @@ from scipy import sparse, stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import cached_embeddings, configure_matplotlib  # noqa: E402
+from analyses import linguistic_datasets  # noqa: E402
 
-DATA = ROOT / "data/analysis/linguistic_20260923"
-FIGS = ROOT / "docs/figures/linguistic_analysis_20260923"
-FAMILIES = ["Sonnet", "Gemini", "GPT"]
-FAMILY_COLORS = {"Sonnet": "#7570b3", "GPT": "#d95f02", "Gemini": "#1b9e77"}
+# September by default; LINGUISTIC_DATASET=frontier reads and writes the frontier corpus instead
+_DS = linguistic_datasets.get()
+DATA = _DS.data
+FIGS = _DS.figs
+FAMILIES = list(_DS.families)
+FAMILY_COLORS = dict(_DS.colors)
 MIN_WORDS = 20  # one GPT myth in the mixed dyads is an empty response
 TOKEN = re.compile(r"[a-z][a-z'-]+")
 
