@@ -199,7 +199,7 @@ def evaluate(df: pd.DataFrame, emb: np.ndarray, tfidf, rules: np.ndarray, test: 
     prefix = "shown_" if test == "reader" else ""
     feats = {"embedding": pcs,
              "tfidf": TruncatedSVD(N_SVD, random_state=0).fit_transform(tfidf[idx]),
-             "rules_pr4": rules[idx],
+             **({"rules_pr4": rules[idx]} if rules is not None else {}),
              "label_glm": label_matrix(df[prefix + "label_glm_5_2"]),
              "label_deepseek": label_matrix(df[prefix + "label_deepseek_v4_flash"])}
     agent_key = (df.run_id + "|" + df.agent).to_numpy()
@@ -239,7 +239,8 @@ def main() -> None:
     dec = pd.read_csv(DATA / "decisions.csv")
     labels = pd.read_csv(LABELS)
     tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=5, sublinear_tf=True).fit_transform(myths.text)
-    rules = rule_features(myths)
+    # PR #4's extraction is optional: skip that feature set on a checkout without it
+    rules = rule_features(myths) if RULES.exists() else None
     df = build(myths, dec, labels)
     df["decision"] = np.where(df.role == "investor", "send", "return")
 

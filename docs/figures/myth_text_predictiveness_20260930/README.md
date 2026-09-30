@@ -9,10 +9,11 @@ Every number is given per task order; the two are never pooled.
 
 ## Headline
 
-The judges are not the main problem, and the myths do carry information about
-play, but only one kind and only at the start.
+The two judges' disagreement is structured, not random, and it sits on a boundary
+where the categories overlap. The myths do carry information about play, but
+only one kind and only at the start.
 
-- **The two judges disagree on one boundary, not at random.** 97% of their
+- **The two judges disagree mostly on one boundary.** 97% of their
   disagreements are adjacent ones, and 80% (game→myth) to 83% (myth→game) are
   the same one: GLM says "be fair" where DeepSeek says "be generous". The myths
   in question usually endorse both at once ("send what you can, return what is
@@ -20,23 +21,29 @@ play, but only one kind and only at the start.
   overlap.
 - **Before any play, the amount a myth names predicts the opening send. The
   moral label does not.** Myth→game, round 1: a Sonnet agent whose myth says
-  "three of five" sends 3.00 (12 of 12 agents); one whose myth says all five sends
-  4.75 (±0.55). PR #4's extracted send amount adds 0.16 to the R² of the opening
-  send (0.51 within Sonnet, 0.13 within GPT). The moral label adds nothing, and for
-  Sonnet it points the wrong way ("be generous" 3.86 (±0.98), "be fair" 4.08 (±0.87)).
+  "three of five" sends 3.00 (12 of 12 agents, from 10 runs); one whose myth says
+  all five sends 4.75 (±0.55) (20 agents, 16 runs). The named amount alone adds
+  0.17 to the R² of the opening send [95% run-resampled interval 0.10 to 0.24]:
+  0.37 [0.02, 0.59] within Sonnet, 0.07 [−0.03, 0.16] within GPT (not clear). The
+  moral label is flat: Sonnet "be generous" 3.86 (±0.98) vs "be fair" 4.08 (±0.87).
 - **Once play has started, no representation of the myth adds anything to past
   play, in either task order.** This holds for the whole-text embedding, word
   counts, both judges' labels and the extracted rules. It holds for the author's own
   next decision and for the reader of a shown myth, and within agents as well as
   across them.
-- **The whole-text embedding is not a ceiling.** It misses the one thing that
-  does predict, the named amount, because it encodes style and topic rather than
-  numbers. "The embedding can't predict" therefore does not mean "the text can't".
+- **The whole-text representations miss the opening signal for lack of data, not
+  lack of information.** Across all 4,594 myths that name an amount, the embedding
+  recovers it with R² 0.46 and word counts with 0.56. With only 213 opening
+  senders, though, 50 to 100 dimensions are too many. A single targeted feature
+  (the amount) gets through where they cannot.
 
-What this means for the judge panel: better judges on the same three categories
-would not help. What could help is concrete, graded features (amounts, return
-shares, conditions), scored where the myth can lead play. That is round 1 in
-myth→game. After that, myths follow the game.
+What this means for the judge panel: more judges on the same three categories
+would mostly re-measure where each draws the fair/generous line. Concrete,
+graded features (amounts, return shares, conditions) are what predicts, and the
+test is sharpest where the myth can lead play: round 1 in myth→game. After that,
+the myth adds no forecast beyond the last game. That fits the earlier finding
+that morals follow the game just played (moral-carryover analysis), but this
+analysis does not test that direction itself.
 
 ## 1. Judge disagreement (GLM-5.2 vs DeepSeek V4 Flash)
 
@@ -97,7 +104,8 @@ Across authors of all families (with family in the base), across agents:
 
 Within-agent versions of every row, and per-family rows, are in `results.csv`.
 Only 5 of 330 tests are clear:
-- the opening send with extracted rules: all families +0.16, Sonnet +0.51, GPT +0.13;
+- the opening send with all PR #4 fields: all families +0.16, Sonnet +0.51, GPT +0.13
+  (in the run-resampled check, `opening_checks.md`, GPT's interval includes zero);
 - two tiny gains in myth→game authors: extracted rules on Sonnet sends, +0.014; the
   GLM label on Gemini returns, +0.014.
 
@@ -111,7 +119,20 @@ Round-1 myth→game sends by what the myth says (mean (±std), n):
 | Sonnet | 4.75 (±0.55), 20 | 3.00 (±0.00), 12 | 4.16 (±0.72), 32 | 3.86 (±0.98), 36 | 4.08 (±0.87), 36 |
 | GPT | 4.57 (±0.85), 14 | — | 3.01 (±1.16), 69 | 3.18 (±0.98), 11 | 3.21 (±1.34), 76 |
 
-Labels are GLM-5.2's. DeepSeek's labels show the same flat pattern.
+Labels are GLM-5.2's. DeepSeek's labels show the same flat pattern. The same
+tables split by setting (2/8 agents, mixed/homogeneous), with run counts, are in
+`opening_checks.md`. Sonnet shows the pattern in both 8-agent settings: "three"
+gives 3.00 in each, and "all five" gives 5.00 (homogeneous) and 4.70 (mixed). GPT
+myths naming all five send 4.67 (±0.78) in 8-agent mixed runs. GPT myths naming one
+are inconsistent: 0.50 in 8-agent homogeneous (n=2) and 3.00 in 8-agent mixed (n=4).
+This is why GPT's interval includes zero.
+
+The "all families" rows pool the four settings, with each composition cell in
+the base model. Per-setting cells are too small for the regression (as few as 5
+round-1 senders).
+
+`analyses/myth_text_opening_checks.py` → `opening_checks.md`: the probe, the
+named-amount-alone gains with run-resampled intervals, and the per-setting tables.
 
 ## Caveats
 
@@ -123,7 +144,7 @@ Labels are GLM-5.2's. DeepSeek's labels show the same flat pattern.
 - **"Adds nothing beyond past play" is not "has no effect".** A myth could shape play
   and past play together. These tests only say the text carries no extra forecast once
   the last game is known.
-- **Reader test scope.** It controls for the reader's past play but not the reader's
-  own myth. It measures the total link between what was read and what the reader does
-  next.
+- **Reader test scope.** This tests *read myth → next decision*. It does not retest the
+  earlier *read myth → written moral* carryover (+5 points), so it does not contradict
+  it. It controls for the reader's past play, not the reader's own myth.
 - **No human has checked either the labels or the extracted amounts.**
