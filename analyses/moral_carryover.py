@@ -17,7 +17,9 @@ B. Moral-summary measures (all-mpnet-base-v2 embeddings of the one-sentence
    myths as analyses/linguistic_uptake.py), label uptake (same label as the
    shown myth versus an unseen one), and distance between game partners'
    morals per round.
-C. Giving gap (|sent/5 - return proportion|) and behaviour by moral label.
+C. Giving gap (|sent/5 - return proportion|) and behaviour by moral label, pooled and
+   split by family x setting x task order x label source (own latest myth / latest myth
+   shown), and the generous-minus-fair gap between agents vs within an agent.
 D. Carryover. For each decision, OLS with SE clustered by run:
      coop_t ~ own latest moral label + label of the myth shown most recently
               + own most recent cooperation in the same role
@@ -382,13 +384,11 @@ def plot_carryover(models: pd.DataFrame) -> None:
 def plot_behaviour_by_label(d: pd.DataFrame) -> None:
     import matplotlib.pyplot as plt
     configure_matplotlib()
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.2))
-    panels = (("investor", "coop", "amount sent / 5"), ("trustee", "coop", "return proportion"),
-              ("investor", "giving_gap", "giving gap |sent/5 - return proportion|"))
-    for ax, (role, col, title) in zip(axes, panels):
-        sub = d[(d["role"] == role)].dropna(subset=["own_label", col])
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+    for ax, (role, title) in zip(axes, (("investor", "amount sent / 5"), ("trustee", "return proportion"))):
+        sub = d[(d["role"] == role)].dropna(subset=["own_label", "coop"])
         for lab in LABELS:
-            s = sub[sub["own_label"] == lab].groupby("round")[col].mean()
+            s = sub[sub["own_label"] == lab].groupby("round")["coop"].mean()
             ax.plot(s.index, s.values, color=LABEL_COLORS[lab], lw=2, marker="o", ms=3, label=f"own myth: {lab}")
         ax.set_title(title, fontsize=10)
         ax.set_xlabel("round")
@@ -397,6 +397,151 @@ def plot_behaviour_by_label(d: pd.DataFrame) -> None:
     fig.suptitle("Behaviour by the moral of the player's latest myth (all September myth runs pooled; descriptive)")
     fig.tight_layout()
     fig.savefig(FIGS / "moral_behaviour_by_label.png", dpi=200)
+    plt.close(fig)
+
+
+SPLIT_SETTINGS = ["2-agent homogeneous", "2-agent mixed", "8-agent homogeneous", "8-agent mixed"]
+SPLIT_ORDERS = {"game_myth": "game→myth", "myth_game": "myth→game"}
+SPLIT_CONDS = [(st, to) for st in SPLIT_SETTINGS for to in SPLIT_ORDERS]
+SPLIT_SOURCES = {"own_label": "own latest myth", "shown_label": "latest myth shown"}
+SPLIT_FAMILIES = ["Sonnet", "GPT"]  # Gemini sends and returns at the ceiling whatever its moral
+MIN_DECISIONS = 5  # hide binned means built on fewer decisions
+
+
+def behaviour_by_label_split(d: pd.DataFrame) -> pd.DataFrame:
+    """Mean cooperation by moral label within one family, per setting, task order, role and
+    label source, in two-round bins (1-2, 3-4, ...). Descriptive; feeds the appendix grids."""
+    d = d.assign(round_bin=((d["round"] + 1) // 2) * 2 - 0.5)
+    rows = []
+    for (fam, st, to, role), g in d.groupby(["family", "setting", "task_order", "role"]):
+        for src in SPLIT_SOURCES:
+            sub = g.dropna(subset=[src, "coop"])
+            for (lab, rb), h in sub.groupby([src, "round_bin"]):
+                rows.append({"family": fam, "setting": st, "task_order": to, "role": role, "label_source": src,
+                             "label": lab, "round_bin_mid": rb, "coop_mean": h["coop"].mean(),
+                             "coop_sd": h["coop"].std(ddof=1), "n_decisions": len(h),
+                             "n_runs": h["run_id"].nunique()})
+    return pd.DataFrame(rows)
+
+
+def generous_gap_models(d: pd.DataFrame) -> pd.DataFrame:
+    """Generous-minus-fair gap in cooperation within one family, per setting x task order x role.
+
+    source = own:   own latest myth generous vs fair.
+    source = shown: shown myth generous vs fair, own latest myth held at 'be fair'.
+    estimate = between: raw within-family difference (round FE), SE clustered by run.
+    estimate = within:  agent-within-run + round FE: the same agent in rounds when its
+                        (or its shown) myth is generous versus fair."""
+    import statsmodels.formula.api as smf
+    d = d.assign(run_agent=d["run_id"] + "|" + d["agent"])
+    rows = []
+    for (fam, st, to, role), g in d.groupby(["family", "setting", "task_order", "role"]):
+        for src in SPLIT_SOURCES:
+            sub = g.dropna(subset=[src, "coop"])
+            if src == "shown_label":
+                sub = sub[sub["own_label"] == "be fair"]
+            sub = sub[sub[src].isin(["be generous", "be fair"])]
+            sub = sub.assign(generous=(sub[src] == "be generous").astype(float))
+            n_gen = int(sub["generous"].sum())
+            for est, fe in (("between", " + C(round)"), ("within", " + C(run_agent) + C(round)")):
+                rec = {"family": fam, "setting": st, "task_order": to, "role": role, "source": src,
+                       "estimate": est, "n_decisions": len(sub), "n_generous": n_gen,
+                       "n_runs": sub["run_id"].nunique()}
+                if n_gen >= 5 and len(sub) - n_gen >= 5 and sub["run_id"].nunique() >= 3:
+                    if est == "within":
+                        # agents whose label never changes carry no within-agent information
+                        varies = sub.groupby("run_agent")["generous"].transform("nunique") > 1
+                        rec["n_agents_varying"] = int(sub.loc[varies, "run_agent"].nunique())
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        try:
+                            fit = smf.ols("coop ~ generous" + fe, data=sub).fit(
+                                cov_type="cluster", cov_kwds={"groups": pd.factorize(sub["run_id"])[0]})
+                            ci = fit.conf_int().loc["generous"]
+                            rec.update(coef=fit.params["generous"], ci_low=ci[0], ci_high=ci[1],
+                                       p=fit.pvalues["generous"])
+                        except Exception as err:  # noqa: BLE001
+                            rec["error"] = str(err)
+                rows.append(rec)
+    return pd.DataFrame(rows)
+
+
+def plot_generous_gap(gaps: pd.DataFrame) -> None:
+    """Main figure: generous-minus-fair gap, between agents vs within an agent, per condition."""
+    import matplotlib.pyplot as plt
+    configure_matplotlib()
+    fig, axes = plt.subplots(len(SPLIT_FAMILIES), 2, figsize=(13, 10), sharex=True)
+    styles = {("own_label", "between"): ("#1b7837", "o", "own myth, between agents"),
+              ("own_label", "within"): ("#1b7837", "D", "own myth, within agent"),
+              ("shown_label", "between"): ("#5e3c99", "o", "shown myth (own = fair), between agents"),
+              ("shown_label", "within"): ("#5e3c99", "D", "shown myth (own = fair), within agent")}
+    offs = dict(zip(styles, (-0.3, -0.1, 0.1, 0.3)))
+    for i, fam in enumerate(SPLIT_FAMILIES):
+        for j, (role, what) in enumerate((("investor", "amount sent / 5"), ("trustee", "return proportion"))):
+            ax = axes[i, j]
+            for k, (st, to) in enumerate(SPLIT_CONDS):
+                for key, (color, marker, label) in styles.items():
+                    r = gaps[(gaps["family"] == fam) & (gaps["setting"] == st) & (gaps["task_order"] == to)
+                             & (gaps["role"] == role) & (gaps["source"] == key[0]) & (gaps["estimate"] == key[1])]
+                    if r.empty or pd.isna(r.iloc[0].get("coef")):
+                        continue
+                    r = r.iloc[0]
+                    ax.errorbar(r["coef"], k + offs[key], xerr=[[r["coef"] - r["ci_low"]], [r["ci_high"] - r["coef"]]],
+                                fmt=marker, color=color, ms=4, capsize=2, mfc="white" if key[1] == "within" else color,
+                                label=label if (i, j, k) == (0, 0, 7) or label not in ax.get_legend_handles_labels()[1] else None)
+            ax.axvline(0, color="#666666", lw=1)
+            ax.set_yticks(range(len(SPLIT_CONDS)), [f"{st}, {SPLIT_ORDERS[to]}" for st, to in SPLIT_CONDS], fontsize=8)
+            ax.invert_yaxis()
+            ax.grid(axis="x", alpha=0.3)
+            ax.set_title(f"{fam}: {what}", fontsize=10)
+            if i == len(SPLIT_FAMILIES) - 1:
+                ax.set_xlabel("generous minus fair (95% CI, SE clustered by run)")
+    handles, labels = [], []
+    for ax in axes.flat:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            if l not in labels:
+                handles.append(h); labels.append(l)
+    fig.legend(handles, labels, loc="lower center", ncol=2, fontsize=9, frameon=False)
+    fig.suptitle("Does a generous myth go with more cooperation? Filled: compared across agents of one family. "
+                 "Open: the same agent compared with itself.\nGemini omitted (at the ceiling whatever its moral); "
+                 "cells with < 5 generous or < 5 fair decisions omitted.", fontsize=10)
+    fig.tight_layout(rect=(0, 0.06, 1, 0.95))
+    fig.savefig(FIGS / "moral_generous_gap.png", dpi=200)
+    plt.close(fig)
+
+
+def plot_behaviour_by_label_split(table: pd.DataFrame, family: str) -> None:
+    """Appendix grid for one family. Rows: setting x task order. Columns: sent by own myth,
+    sent by shown myth, return by own myth, return by shown myth."""
+    import matplotlib.pyplot as plt
+    configure_matplotlib()
+    cols = [("investor", "own_label"), ("investor", "shown_label"), ("trustee", "own_label"), ("trustee", "shown_label")]
+    fig, axes = plt.subplots(len(SPLIT_CONDS), len(cols), figsize=(16, 2.0 * len(SPLIT_CONDS)), sharex=True, sharey=True)
+    t = table[(table["family"] == family) & (table["n_decisions"] >= MIN_DECISIONS)]
+    for i, (st, to) in enumerate(SPLIT_CONDS):
+        for j, (role, src) in enumerate(cols):
+            ax = axes[i, j]
+            for lab in LABELS:
+                s = t[(t["setting"] == st) & (t["task_order"] == to) & (t["role"] == role)
+                      & (t["label_source"] == src) & (t["label"] == lab)].sort_values("round_bin_mid")
+                if len(s):
+                    ax.plot(s["round_bin_mid"], s["coop_mean"], color=LABEL_COLORS[lab], lw=1.8, marker="o", ms=2.5,
+                            label=f"{lab} (n={int(s['n_decisions'].sum())})")
+            ax.set_ylim(-0.03, 1.03)
+            ax.grid(alpha=0.3)
+            if ax.get_legend_handles_labels()[0]:
+                ax.legend(fontsize=6, loc="lower right", frameon=False)
+            if i == 0:
+                ax.set_title(("sent / 5" if role == "investor" else "return proportion")
+                             + f"\nby {SPLIT_SOURCES[src]}", fontsize=9)
+            if j == 0:
+                ax.set_ylabel(f"{st}\n{SPLIT_ORDERS[to]}", fontsize=8)
+    for ax in axes[-1]:
+        ax.set_xlabel("round (two-round bins)")
+    fig.suptitle(f"{family} agents: cooperation by myth moral, per setting and task order "
+                 f"(mean over decisions; bins with < {MIN_DECISIONS} decisions hidden; descriptive)", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    fig.savefig(FIGS / f"moral_behaviour_by_label_split_{family.lower()}.png", dpi=200)
     plt.close(fig)
 
 
@@ -429,6 +574,13 @@ def main() -> None:
     plot_label_shares(myths)
     plot_carryover(models)
     plot_behaviour_by_label(d)
+    split = behaviour_by_label_split(d)
+    split.to_csv(FIGS / "moral_behaviour_by_label_split.csv", index=False)
+    for fam in FAMILIES:
+        plot_behaviour_by_label_split(split, fam)
+    gaps = generous_gap_models(d)
+    gaps.to_csv(FIGS / "moral_generous_gap.csv", index=False)
+    plot_generous_gap(gaps)
     gap = d[d["role"] == "investor"].groupby(["setting", "own_label"])["giving_gap"].agg(["mean", "std", "count"])
     gap.reset_index().to_csv(FIGS / "moral_giving_gap_by_label.csv", index=False)
 
