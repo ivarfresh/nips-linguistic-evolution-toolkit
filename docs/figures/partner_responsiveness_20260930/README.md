@@ -2,20 +2,28 @@
 
 ## Answer
 
-Both, and they add up. Myth agents still react to their partner's game moves
-about as strongly as game-only agents. They do not tune the partner out, and
-they do not become more reactive either. On top of that, the myth pushes
-their sends up in every round, beyond what the partner's behaviour and their
-own last move predict. The push is small per round, but sends carry over
-from round to round, so it keeps the cooperation gap open instead of letting
-it fade. In myth→game there is also a head start: agents send more in round 1,
-before they have seen their partner.
+It depends on when the myth comes.
 
-- Reaction to a partner's betrayal survives the myth. When a Sonnet 4.5
-  partner is forced to send $0, the next send falls $0.59 in game-only and
-  $1.37 in myth→game. That is about $0.40 per $1 the partner dropped in both
-  (point estimates). Both drops are larger than chance produces in runs with no
-  real defections (±$0.33 and ±$0.47).
+**Myth first (myth→game): both, and they add up.** Agents still react to
+their partner's game moves about as strongly as game-only agents. On top of
+that, the myth pushes their sends up in every round, beyond what the partner's
+behaviour and their own last move predict. The push is small per round, but
+sends carry over from round to round, so it keeps the cooperation gap open
+instead of letting it fade. Agents also get a head start: they send more in
+round 1, before they have seen their partner.
+
+**Myth after round 1 (game→myth): the reaction to betrayal disappears.**
+No model cuts back after a partner's forced $0 by more than chance would
+produce. GPT-5 Nano's round-to-round following of its partner is near zero
+there too (0.04 vs 0.40 in myth→game). This order fits "follows the myth, less
+the partner" better. With 13 events per cell, that is a signal, not a proof.
+
+- Reaction to a partner's betrayal survives a myth-first start. When a
+  Sonnet 4.5 partner is forced to send $0, the next send falls $0.59 in
+  game-only and $1.37 in myth→game. That is about $0.40 per $1 the partner
+  dropped in both (point estimates). Both drops are larger than chance produces
+  in runs with no real defections (±$0.33 and ±$0.47). In game→myth the drop is
+  $0.23, inside its chance range (−$0.28 to +$0.34).
 - The myth adds a push. At the same partner history and the same own previous
   send, Sonnet sends $0.14 [0.06, 0.28] more per round in myth→game.
   GPT-5 Nano sends about $1.5 more and GPT-5.6 Sol $0.20–0.29 more.
@@ -24,8 +32,8 @@ before they have seen their partner.
   regardless" about 40%. Partner and myth are cited together in 67–80% of
   decisions, and the myth alone drives 11–20%.
 
-One exception fits "follows the myth instead": Gemini 3.7 Flash after
-myth→game answers a forced $0 by sending the full $5 again (13 events).
+Gemini 3.7 Flash also fits "follows the myth instead": after a myth it
+answers a forced $0 by sending the full $5 again (13 events).
 Opus 5 and both Geminis send the full $5 in almost every myth round. At that
 ceiling, whether they still watch the partner cannot be tested.
 
@@ -62,8 +70,9 @@ three real drops are outside these ranges. The per-dollar figures (0.40 vs
 Sonnet cuts back per dollar of betrayal about as much with or without a myth
 first. GPT-5 Nano can only react once a myth has lifted it off $0.
 Gemini Flash after a myth is the one case that fits "follows the myth, ignores
-the partner": it answers a $0 by sending everything again. Game→myth rows are
-in the CSV and are small and uncertain for every model.
+the partner": it answers a $0 by sending everything again. In game→myth no model reacts beyond
+chance: Sonnet −0.23, Nano +0.01, Gemini Flash +0.08 (`defection_events.csv`).
+Gemini can't be placebo-checked because it sits at the ceiling.
 
 The smaller shock, communication noise (at most $1 off what the partner is
 shown to do), gave no consistent answer (`responsiveness.csv`). A placebo
@@ -120,7 +129,9 @@ game only; the bootstrap is over runs:
 | Gemini 3.1 Pro / 3.7 Flash | ≈0 | ≈0 | — | — (ceiling) |
 
 This model assumes the reaction to the partner is the same in every task
-order. Sections 1 and 2 support that for Sonnet.
+order. That holds roughly for Sonnet in myth→game (sections 1 and 2) but may
+not hold in game→myth, where the reaction to betrayal is not detectable. Read the
+game→myth column with that in mind.
 
 **5. What Sonnet 4.5 writes (`sonnet_rationale_judge_summary.csv`).** A Sonnet
 4.5 judge coded 2,034 game rationales (all dyad decisions with prose, 300
