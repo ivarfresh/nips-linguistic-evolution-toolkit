@@ -17,9 +17,8 @@ variety (8 Sonnet: 48/52 fair/generous; 4 Gemini + 4 GPT: two families with dist
 styles), then the replicate with the MEDIAN per-run excess among its 5 replicates
 (homogeneous: all edges; mixed: same-family edges only).
 
-Read-only on the repo; run with the moral-split worktree as cwd:
-  uv run --with pandas --with numpy --with scipy --with matplotlib --with python-dotenv \
-      python <this script>
+Free; run after moral_carryover.py:
+  python3 analyses/moral_lineage_network.py
 """
 from __future__ import annotations
 
@@ -29,21 +28,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-WT = Path("/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-worktrees/moral-split")
-sys.path.insert(0, str(WT))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
 from analyses.linguistic_uptake import null_candidates  # noqa: E402
-from analyses.moral_carryover import DATA, FIGS, load  # noqa: E402
+from analyses.moral_carryover import DATA, FIGS, LABEL_COLORS, load  # noqa: E402
 
 configure_matplotlib()
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import FancyArrowPatch  # noqa: E402
 
-OUT = Path(__file__).resolve().parent
-# Team scheme (lead, 2026-09-30); fair darkened from #2a78d6, which failed against Sonnet purple #7570b3.
-# Validated all-pairs together with the repo family colours (#7570b3, #d95f02, #1b9e77).
-LABEL_COLORS = {"be generous": "#D9A400", "be fair": "#0b5394", "be cautious": "#B2182B"}
+OUT = FIGS
 FAMILY_MARKER = {"Sonnet": "o", "Gemini": "D", "GPT": "s"}
 INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#b9b8b3", "#e6e5e1"
 PANELS = [("8 Sonnet", "homogeneous"), ("4 Gemini + 4 GPT", "mixed")]
@@ -174,8 +170,8 @@ def draw_network(ax, m: pd.DataFrame, u: pd.DataFrame, run_id: str, kind: str, t
 
 def draw_aggregate(ax, agg: pd.DataFrame) -> None:
     rows = [("8-agent homogeneous", "same family", "Homogeneous runs"),
-            ("8-agent mixed", "same family", "Mixed runs, shown myth from own family"),
-            ("8-agent mixed", "other family", "Mixed runs, shown myth from other family")]
+            ("8-agent mixed", "same family", "Mixed runs, own family"),
+            ("8-agent mixed", "other family", "Mixed runs, other family (GPT ↔ other)")]
     for k, (setting, exposure, name) in enumerate(rows):
         a = agg[(agg["setting"] == setting) & (agg["exposure"] == exposure)].iloc[0]
         yy = len(rows) - 1 - k

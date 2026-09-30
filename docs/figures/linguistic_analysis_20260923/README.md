@@ -29,6 +29,8 @@ python3 analyses/alignment_vs_cooperation.py     # item 2
 python3 analyses/myth_moral_judge.py             # item 3 labels (paid; cached)
 python3 analyses/myth_moral_judge.py --model deepseek/deepseek-v4-flash --task label
 python3 analyses/moral_carryover.py              # item 3 analysis
+python3 analyses/moral_composition_ladder.py     # item 3 paper figure (moral mix by round)
+python3 analyses/moral_lineage_network.py        # item 3 paper figure (moral lineage network)
 python3 analyses/moral_validation.py             # item 4
 python3 analyses/linguistic_provenance.py        # provenance.json (run last)
 ```
@@ -225,7 +227,7 @@ cannot come from a shared game.
   myth→game, the child's label matches the shown myth's label +4.8 points more
   often than an unseen myth's in homogeneous runs (p = 0.005) and +5.9 points
   for same-family exposure in mixed runs (p = 0.001). Across families: +0.7
-  points (p = 0.37); in game→myth −1.0 (p = 0.79). The words cross families
+  points (p = 0.40); in game→myth −1.0 (p = 0.77). The words cross families
   (item 1); the moral stance does not.
 - **Dyads show the largest matches, including across families** (+6 to +9
   points homogeneous, +10 to +15 mixed), but both partners lived the same
@@ -300,6 +302,46 @@ run, uncorrected.
   does not steer the next move. This matches the carryover regressions above.
 - Dyads write "be fair" in most rounds, so dyad cells rest on few generous
   decisions (5 to 24) and have wide intervals.
+
+**Paper figures: how morals move through the population** (added 2026-09-30).
+Two figures, one per result. The moral colours are shared by every moral figure
+in this folder: generous gold, fair dark blue, cautious crimson.
+
+- `moral_composition_by_round_myth_game.png` (appendix twin `..._game_myth.png`,
+  data `moral_composition_by_round.csv`). Panel a: the moral mix of Gemini and
+  Sonnet myths by round, homogeneous and among 1–7 GPT agents. Among GPTs both
+  families drift from `be generous` to `be fair` (myth→game, round 1 → 10:
+  4 Gemini + 4 GPT 75% → 20%, 1 GPT + 7 Sonnet 46% → 14%; homogeneous 72% → 57%
+  and 57% → 38%). This is change, not copying, and it is not a dose–response:
+  Gemini erodes most at 4 GPT, not 7. Panel b is the clean test below.
+- `moral_lineage_network.png` / `.pdf`. Panels a–b: two single myth→game runs
+  (8 Sonnet rep 3; 4 Gemini + 4 GPT rep 4, each the median-excess replicate of
+  its five, chosen before rendering) drawn as agents × rounds; an edge joins the
+  myth an agent was shown to the one it wrote next and is coloured when the
+  label was kept. One run keeps 42 of 72 labels against 38.3 by chance, so no
+  single run shows the effect; panel c gives it over all 45 runs.
+
+The within-family hop in mixed runs rests mainly on Sonnet: Sonnet shown Sonnet
++9.6 points (p = 0.005), GPT shown GPT +3.1 (p = 0.13), Gemini shown Gemini +7.5
+(5 runs, p = 0.5). Every mixed run pairs GPT with one other family, so "other
+family" means GPT ↔ Sonnet or GPT ↔ Gemini; nothing detectably crosses to or
+from GPT. Lone-minority agents cannot be scored (no unseen same-family myth in
+the run).
+
+**Open question: Gemini among GPTs.** In 8-agent myth→game, Gemini's generous
+share falls (above) while its play is flat (send 1.0, return ≈ 0.44) and GPT
+treats it better, not worse: GPT's send to a Gemini rises from about 3 to 5 by
+round 4, and its return to a Gemini stays between 0.32 and 0.50. So "Gemini stays
+generous only while reciprocated" (item 3, "What the morals say") and "morals
+follow play" do not explain this case. One candidate: once play is at the
+ceiling, the judge reads a myth of mutual reciprocity as `be fair`. Unresolved.
+
+**p-values recomputed 2026-09-30.** `run_summary` now rounds per-run means before
+the Wilcoxon test, so runs with equal means tie exactly; float noise had
+switched scipy between its tie-corrected and exact paths across a CSV
+round-trip. Means and sds are unchanged; p moved only in the uptake tables,
+e.g. 8-agent myth→game cross-family 0.37 → 0.40 and game→myth 0.79 → 0.77.
+No conclusion changes.
 
 ## 4. Validation
 

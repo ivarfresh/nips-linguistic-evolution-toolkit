@@ -56,7 +56,9 @@ from analyses.linguistic_uptake import load_myths, null_candidates  # noqa: E402
 DATA = ROOT / "data/analysis/linguistic_20260923"
 FIGS = ROOT / "docs/figures/linguistic_analysis_20260923"
 LABELS = ["be generous", "be fair", "be cautious"]
-LABEL_COLORS = {"be generous": "#1b7837", "be fair": "#b8860b", "be cautious": "#b2182b"}
+# Shared across all moral figures (2026-09-30): categorical, colour-blind checked against the
+# family colours; fair darkened from #2a78d6, which was too close to Sonnet purple.
+LABEL_COLORS = {"be generous": "#D9A400", "be fair": "#0b5394", "be cautious": "#B2182B"}
 FAMILIES = ["Sonnet", "Gemini", "GPT"]
 KEY = ["run_id", "round", "agent"]
 
@@ -194,7 +196,9 @@ def run_summary(df: pd.DataFrame, by: list[str], metrics: list[str]) -> pd.DataF
             vals = g[m].dropna()
             rec[f"{m}_mean"], rec[f"{m}_sd"] = vals.mean(), vals.std(ddof=1)
             if m.endswith("_excess") and len(vals) >= 5 and (vals != 0).any():
-                rec[f"{m}_p"] = stats.wilcoxon(vals).pvalue
+                # Round first so runs with equal means tie exactly; float noise otherwise
+                # flips scipy between its tie-corrected and exact paths across a CSV round-trip.
+                rec[f"{m}_p"] = stats.wilcoxon(vals.round(10)).pvalue
                 rec[f"{m}_runs_positive"] = int((vals > 0).sum())
         rows.append(rec)
     return pd.DataFrame(rows)
