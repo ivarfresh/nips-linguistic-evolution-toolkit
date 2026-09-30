@@ -1,3 +1,22 @@
+### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
+
+**Time:** ~0.5 h.
+
+The frontier lenses reran every September analysis and surfaced five corrections, now
+applied to the September write-ups (the entries below are left as written):
+
+1. September 8-agent homogeneous moral uptake (+4.8) has a future-myth placebo of +3.9
+   (p 0.046): suggestive. The mixed same-family +5.9 passes (placebo +2.3). Linguistic
+   README and figure caption note (PR #12).
+2. Shown amount → send with author ≠ current partner is −0.00 (−0.10 to 0.10), not +0.04
+   (that came from the model with the future-myth term). September synthesis (PR #15).
+3. The consistency embedding rise holds only as the consistency-minus-generosity score; the
+   embedding self-copying test is generic. Keyword drift and the 72%/34% ratchet stand.
+4. Under the consistency lens's R1–R4 Holm family, two Sonnet round-1 results survive
+   (keyword consistency → later cooperation +0.095 / +0.110); still unconfirmed.
+5. The 8-agent send-score level effect sits in 2 GPT + 6 Sonnet (−0.039 per SD, Holm
+   0.050), opposite to H1.
+
 ### 2026-09-30 — Result: frontier runs repeat the own-myth-as-plan picture; most read-myth tests hit the ceiling
 
 **Time:** ~4 h (frontier corpus + judging, five lenses, scorecard, verification).
