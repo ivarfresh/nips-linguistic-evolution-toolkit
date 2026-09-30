@@ -8,6 +8,9 @@ lens folder, not the repo.
   python3 giving_judge.py --model z-ai/glm-5.2 --preflight
   python3 giving_judge.py --model z-ai/glm-5.2 --limit 100
   python3 giving_judge.py --model z-ai/glm-5.2
+  # frontier corpus: read and write its data dir, cache under the gitignored judge cache
+  python3 giving_judge.py --model z-ai/glm-5.2 --data-dir <repo>/data/analysis/linguistic_frontier_20260930 \
+      --out-dir <same> --cache-dir <repo>/data/judge_cache/moral/giving
 """
 from __future__ import annotations
 import argparse, hashlib, json, os, time
@@ -41,13 +44,13 @@ def parse(raw):
 
 
 class Judge:
-    def __init__(self, model):
+    def __init__(self, model, cache_root=None):
         from openai import OpenAI
         from dotenv import dotenv_values
         key = dotenv_values(ENV).get("OPENROUTER_API_KEY")
         self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=key)
         self.model = model
-        self.cache = HERE / "cache" / model.replace("/", "__")
+        self.cache = (cache_root or HERE / "cache") / model.replace("/", "__")
 
     def __call__(self, user, max_retries=8):
         h = hashlib.sha256(f"{self.model}|T=0|{SYSTEM}|{user}".encode()).hexdigest()
@@ -83,8 +86,11 @@ def main():
     ap.add_argument("--limit", type=int)
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--preflight", action="store_true")
+    ap.add_argument("--data-dir", type=Path, default=DATA, help="directory holding myths.csv")
+    ap.add_argument("--out-dir", type=Path, default=HERE, help="where giving_scores_<model>.csv goes")
+    ap.add_argument("--cache-dir", type=Path, default=HERE / "cache")
     a = ap.parse_args()
-    m = pd.read_csv(DATA / "myths.csv")
+    m = pd.read_csv(a.data_dir / "myths.csv")
     m = m[m.n_words >= 20]
     if a.limit:
         m = m.sample(n=a.limit, random_state=0)
@@ -94,7 +100,7 @@ def main():
     print(f"MODEL={a.model} N={len(m)} WORKERS={a.workers} EST_COST=${est * 1.5:.2f} (x1.5 margin)")
     if a.preflight:
         return
-    j = Judge(a.model)
+    j = Judge(a.model, a.cache_dir)
     res = [None] * len(prompts)
     with ThreadPoolExecutor(a.workers) as pool:
         fut = {pool.submit(j, p): i for i, p in enumerate(prompts)}
@@ -109,7 +115,7 @@ def main():
     out["cost"] = [r.get("cost") or 0 for r in res]
     out["cached"] = [bool(r.get("cached")) for r in res]
     tag = a.model.replace("/", "__") + (f"_sample{a.limit}" if a.limit else "")
-    out.to_csv(HERE / f"giving_scores_{tag}.csv", index=False)
+    out.to_csv(a.out_dir / f"giving_scores_{tag}.csv", index=False)
     print(f"parsed {out.g_send.notna().sum()}/{len(out)}; billed ${out.loc[~out.cached, 'cost'].sum():.2f}")
 
 
