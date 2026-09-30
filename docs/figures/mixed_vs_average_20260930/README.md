@@ -14,5 +14,5 @@ the two single-model pairs for a dyad). Regenerate with
   Mann–Whitney is not used: the comparison value is a weighted sum of two
   other groups, not a sample, so a two-sample rank test does not apply.
 - n = 6 runs per mixed dyad cell, 5 per population and single-model cell.
-  Percentile bootstrap intervals at this n run narrow; in four cells the
+  Percentile bootstrap intervals at this n run narrow; in six cells the
   interval excludes zero while Welch p > 0.05. Read those as weak.
