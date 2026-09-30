@@ -27,6 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -64,7 +65,12 @@ def uptake_children(m: pd.DataFrame) -> pd.DataFrame:
     u = pd.DataFrame(rows)
     u["excess"] = u["shown"] - u["unseen"]
     ref = pd.read_csv(DATA / "moral_uptake_children.csv")["same_label_excess"].dropna()
-    assert len(ref) == len(u) and np.allclose(np.sort(ref), np.sort(u["excess"])), "does not reproduce repo table"
+    full = pd.read_csv(DATA / "moral_uptake_children.csv").dropna(subset=["same_label_excess"])
+    key = ["run_id", "round", "family", "parent_family"]
+    mine = u.groupby(key)["excess"].agg(["sum", "size"])
+    theirs = full.groupby(key)["same_label_excess"].agg(["sum", "size"])
+    assert len(ref) == len(u) and mine.index.equals(theirs.index) and np.allclose(mine, theirs), \
+        "does not reproduce repo table"
     return u
 
 
@@ -97,6 +103,12 @@ def aggregate() -> pd.DataFrame:
     assert np.allclose(agg["excess"], agg["same_label_excess_mean"])
     assert np.allclose(agg["excess_sd"], agg["same_label_excess_sd"])
     assert (agg["n_runs"] == agg["n_runs_pub"]).all()
+    rounded = per_run.assign(r=per_run["same_label_excess"].round(10)).groupby(["setting", "exposure"])["r"]
+    pos = rounded.apply(lambda v: int((v > 0).sum()))
+    pv = rounded.apply(lambda v: stats.wilcoxon(v).pvalue)
+    key = list(zip(agg["setting"], agg["exposure"]))
+    assert (pos.loc[key].to_numpy() == agg["same_label_excess_runs_positive"].to_numpy()).all()
+    assert np.allclose(pv.loc[key].to_numpy(), agg["same_label_excess_p"].to_numpy())
     return agg
 
 

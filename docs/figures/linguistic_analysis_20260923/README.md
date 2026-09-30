@@ -321,17 +321,18 @@ in this folder: generous gold, fair dark blue, cautious crimson.
   label was kept. One run keeps 42 of 72 labels against 38.3 by chance, so no
   single run shows the effect; panel c gives it over all 45 runs.
 
-The within-family hop in mixed runs rests mainly on Sonnet: Sonnet shown Sonnet
-+9.6 points (p = 0.005), GPT shown GPT +3.1 (p = 0.13), Gemini shown Gemini +7.5
-(5 runs, p = 0.5). Every mixed run pairs GPT with one other family, so "other
+The within-family hop in mixed runs rests mainly on Sonnet
+(`moral_uptake_by_family.csv`, myth→game): Sonnet shown Sonnet +9.6 points
+(p = 0.007, 15 runs), GPT shown GPT +3.1 (p = 0.11, 20 runs), Gemini shown Gemini
++7.5 (5 runs, only 3 non-zero; p = 0.5). Every mixed run pairs GPT with one other family, so "other
 family" means GPT ↔ Sonnet or GPT ↔ Gemini; nothing detectably crosses to or
-from GPT. Lone-minority agents cannot be scored (no unseen same-family myth in
-the run).
+from GPT. Families with two or fewer members in a run cannot be scored (no
+unseen same-family myth), so Gemini's test uses only the 4 Gemini + 4 GPT runs.
 
 **Open question: Gemini among GPTs.** In 8-agent myth→game, Gemini's generous
-share falls (above) while its play is flat (send 1.0, return ≈ 0.44) and GPT
-treats it better, not worse: GPT's send to a Gemini rises from about 3 to 5 by
-round 4, and its return to a Gemini stays between 0.32 and 0.50. So "Gemini stays
+share falls (above) while its play is flat (it sends the maximum, 5, every round and returns ≈ 0.44) and GPT
+treats it better, not worse: GPT's send to a Gemini rises from about 3 in round 1 to 5
+by round 6 (4.8 by round 4, pooled over the three compositions), and its return to a Gemini stays between 0.32 and 0.50. So "Gemini stays
 generous only while reciprocated" (item 3, "What the morals say") and "morals
 follow play" do not explain this case. One candidate: once play is at the
 ceiling, the judge reads a myth of mutual reciprocity as `be fair`. Unresolved.
@@ -339,8 +340,9 @@ ceiling, the judge reads a myth of mutual reciprocity as `be fair`. Unresolved.
 **p-values recomputed 2026-09-30.** `run_summary` now rounds per-run means before
 the Wilcoxon test, so runs with equal means tie exactly; float noise had
 switched scipy between its tie-corrected and exact paths across a CSV
-round-trip. Means and sds are unchanged; p moved only in the uptake tables,
-e.g. 8-agent myth→game cross-family 0.37 → 0.40 and game→myth 0.79 → 0.77.
+round-trip, and counted −1e-17 run means as negative. Means and sds are unchanged;
+p and "runs > 0" moved only in the uptake tables, e.g. 8-agent myth→game
+cross-family p 0.37 → 0.40 and 17 → 15 of 30 runs positive; game→myth p 0.79 → 0.77.
 No conclusion changes.
 
 ## 4. Validation

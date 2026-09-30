@@ -195,11 +195,13 @@ def run_summary(df: pd.DataFrame, by: list[str], metrics: list[str]) -> pd.DataF
         for m in metrics:
             vals = g[m].dropna()
             rec[f"{m}_mean"], rec[f"{m}_sd"] = vals.mean(), vals.std(ddof=1)
-            if m.endswith("_excess") and len(vals) >= 5 and (vals != 0).any():
-                # Round first so runs with equal means tie exactly; float noise otherwise
-                # flips scipy between its tie-corrected and exact paths across a CSV round-trip.
-                rec[f"{m}_p"] = stats.wilcoxon(vals.round(10)).pvalue
-                rec[f"{m}_runs_positive"] = int((vals > 0).sum())
+            # Round before testing and counting so runs with equal means tie exactly and zero
+            # means are zero; float noise otherwise flips scipy between its tie-corrected and
+            # exact paths across a CSV round-trip and counts -1e-17 as a run.
+            r = vals.round(10)
+            if m.endswith("_excess") and len(r) >= 5 and (r != 0).any():
+                rec[f"{m}_p"] = stats.wilcoxon(r).pvalue
+                rec[f"{m}_runs_positive"] = int((r > 0).sum())
         rows.append(rec)
     return pd.DataFrame(rows)
 
@@ -608,6 +610,12 @@ def main() -> None:
                                                     "same family", "other family")),
                     ["setting", "exposure", "task_order"],
                     ["moral_cos_excess", "same_label_excess"]).to_csv(FIGS / "moral_uptake_by_task_order.csv", index=False)
+        # per family: which family carries the within-family hop (families with <= 2 members in a
+        # run have no unseen same-family myth, so lone and paired minorities drop out)
+        run_summary(uptake.assign(exposure=np.where(uptake["family"] == uptake["parent_family"],
+                                                    "same family", "other family")),
+                    ["setting", "exposure", "task_order", "family"],
+                    ["same_label_excess"]).to_csv(FIGS / "moral_uptake_by_family.csv", index=False)
         run_summary(dist, ["setting", "pair_type"], ["moral_distance", "same_label"]).to_csv(
             FIGS / "moral_partner_distance.csv", index=False)
         plot_summary_measures(per_myth, dist)

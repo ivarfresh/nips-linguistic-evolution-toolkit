@@ -20,6 +20,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -27,7 +28,6 @@ from analyses._shared import configure_matplotlib  # noqa: E402
 from analyses.moral_carryover import FIGS, DATA, LABELS, LABEL_COLORS, label_shares, load  # noqa: E402
 
 OUT = FIGS
-RNG = np.random.default_rng(20260930)
 N_BOOT = 5000
 
 INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#898781", "#e1e0d9"
@@ -56,7 +56,8 @@ def load_myths() -> pd.DataFrame:
 
 def boot_ci(values: np.ndarray) -> tuple[float, float]:
     values = np.asarray(values, float)
-    draws = RNG.choice(values, size=(N_BOOT, len(values)), replace=True).mean(axis=1)
+    rng = np.random.default_rng(20260930)  # fresh per call: identical CIs in both PNGs
+    draws = rng.choice(values, size=(N_BOOT, len(values)), replace=True).mean(axis=1)
     return tuple(np.percentile(draws, [2.5, 97.5]))
 
 
@@ -92,6 +93,7 @@ def uptake_rows(order: str) -> pd.DataFrame:
         r = ref[(ref["setting"] == st) & (ref["exposure"] == ex)].iloc[0]
         vals = g["same_label_excess"].dropna().to_numpy()
         assert np.isclose(vals.mean(), r["same_label_excess_mean"]) and len(vals) == r["n_runs"]
+        assert np.isclose(stats.wilcoxon(np.round(vals, 10)).pvalue, r["same_label_excess_p"])
         lo, hi = boot_ci(vals)
         rows.append({"setting": st, "exposure": ex, "n_runs": len(vals), "mean": vals.mean(),
                      "sd": vals.std(ddof=1), "ci_low": lo, "ci_high": hi, "p_wilcoxon": r["same_label_excess_p"]})
@@ -195,7 +197,7 @@ def figure_stacked(myths: pd.DataFrame, up: pd.DataFrame, order: str) -> Path:
     draw_uptake(axu, up, order)
     fig.text(0.705, 0.955, "b  Does a moral hop?", fontsize=7.6, color=INK,
              fontweight="bold", ha="left")
-    fig.text(0.705, 0.925, "Clean test (myth→game): the shown myth was\nwritten before the two agents had played.\nAgent shown a myth from its …",
+    fig.text(0.705, 0.925, "Clean test (myth→game): the shown myth was\nwritten before the two agents had played.\nEach row: whose myth the agent was shown.",
              fontsize=6.0, color=INK2, ha="left", va="top", linespacing=1.2)
     fig.text(0.705, 0.03, "Panel a shows change, not copying: morals\n"
              "also follow the game just played. In b a moral\n"
