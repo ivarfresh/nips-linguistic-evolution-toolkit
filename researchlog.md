@@ -1,3 +1,27 @@
+### 2026-09-30 — Result: moral-spread paper figures; the hop is mostly Sonnet, and a Gemini anomaly
+
+**Time:** ~2 h (three parallel design prototypes, selection, promotion, checks).
+
+Result: two paper figures for how myth morals move through 8-agent populations,
+chosen from three prototypes (lineage network, family flow, composition by round).
+`moral_composition_by_round_myth_game.png` shows the moral mix drifting from
+"be generous" to "be fair" among GPTs (4 Gemini + 4 GPT 75% → 20%; 1 GPT + 7 Sonnet
+46% → 14%); `moral_lineage_network.png` shows two median runs plus the all-runs test.
+
+- Narrowed claim: the within-family hop (+5.9 points, p = 0.001) rests mainly on
+  Sonnet (+9.6, p = 0.007; GPT +3.1, p = 0.11). "Across families" is always GPT ↔
+  other, so the null means nothing detectably crosses to or from GPT.
+- No single run shows the effect (42 of 72 labels kept against 38.3 by chance).
+- Open anomaly: among GPTs, Gemini's generous share falls while GPT's sends to it
+  rise to 5 and returns stay 0.32–0.50. "Morals follow play" does not explain it.
+- Wilcoxon p and runs-positive counts now use rounded per-run means (tie stability);
+  cross-family myth→game p 0.37 → 0.40, 17 → 15 of 30 runs positive. No conclusion changes.
+
+Rejected: the family-flow figure (its ribbons show exposure volume, not morals) and
+a dose–response reading of the ladder (Gemini erodes most at 4 GPT, not 7).
+
+Details: `docs/figures/linguistic_analysis_20260923/README.md` (item 3).
+
 ### 2026-09-29 — Result: under a word budget, Sonnet writes maxims, not a code
 
 **Time:** ~6 h (design, implementation and tests, smoke run, 20 paid runs, analysis, review).
