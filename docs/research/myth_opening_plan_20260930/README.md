@@ -34,7 +34,7 @@ are bad, or because norms in myths don't drive cooperation? And what in the myth
    prototyped in parallel; two were kept (`docs/figures/linguistic_analysis_20260923/`
    `moral_composition_by_round_*.png`, `moral_lineage_network.png`). Within a family a moral
    carries weakly from the myth an agent read into the myth it writes next; across families it
-   does not. The homogeneous +4.8-point figure later failed a placebo (section 5).
+   does not. The homogeneous +4.8-point figure later failed a placebo (+3.9, p 0.046; linguistic README).
 3. **Six parallel lenses on what in the myths predicts cooperation** (PR #15, all 156
    September myth runs, 8,519 myths): judge quality, norm alignment between partners, stated
    send amounts, the consistency drift, an open search over ~150 myth features, and the
@@ -111,7 +111,7 @@ Two earlier results fit this:
 
 After the opening, the plan's direct pull fades: the round-1 send rule predicts later sends
 only weakly over rounds 2–10 (+0.018 send fraction per rule level, p 0.023) and not over
-rounds 6–10 (+0.011, p 0.27), against about +0.14 at round 1. What keeps the level up is play
+rounds 6–10 (+0.011, p 0.27), against about +0.14 at round 1. What keeps the level up appears to be play
 itself: later myths mostly record the game just played (a $1 higher send → $0.66 higher stated
 amount in Sonnet's next myth).
 
