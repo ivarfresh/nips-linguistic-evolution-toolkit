@@ -1,3 +1,29 @@
+### 2026-09-30 — Result: myths act as the agent's own plan; norms do not predict cooperation
+
+**Time:** ~4 h (six parallel analysis lenses, synthesis, independent verification).
+
+Result: on the 156 September myth runs (8,519 myths), the only detectable myth → play link
+is an agent's own round-1 myth before play: Sonnet/GPT senders send $0.67 per $1 their myth
+states (0.55–0.79; 62 senders, 37 runs), matching it exactly 71% of the time. Within a cell
+the myth is the only differing input to the send call (verified on all 78 myth→game runs).
+It fades by rounds 6–10. Transplants (old apparatus) agree: the donor's stated amount, not
+its moral label, orders the ladder (+$0.41 per $, 8-agent).
+
+- Judges are not the bottleneck: amount measures agree (κ 0.91, r 0.89–0.997); the 3-way
+  label (κ 0.54) scores reciprocity. Sharper measures are null where the label is null.
+- H1 norm alignment: no evidence it adds beyond each player's own level (return null 10/10).
+- H2 shown amount → next send +$0.01 (−0.09 to 0.11); echoes into the next myth (+$0.07,
+  not Holm-significant).
+- H3 consistency drift real (Sonnet 5% → 86%), mostly self-copying; no detectable effect on
+  levels; stability hints fail Holm.
+- After round 1, ~150 myth features give no held-out gain over past moves.
+
+Spend $0.83 (new 0–10 giving score by two judges). Rejected: the +0.14 future-controlled
+myth→myth estimate as headline (fixed-effect artefact).
+Next: amount × slot seeding experiment, ~$39 old apparatus / ~$217 September protocol.
+
+Details: `docs/research/myth_predictors_20260930/README.md`.
+
 ### 2026-09-30 — Result: moral-spread paper figures; the hop is mostly Sonnet, and a Gemini anomaly
 
 **Time:** ~2 h (three parallel design prototypes, selection, promotion, checks).
