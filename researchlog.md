@@ -12,10 +12,11 @@ categories, or myths that carry little about play. Every number is split by task
 - Myth→game round 1 (before any play): the amount a myth names predicts the opening
   send. It adds R² 0.17 [0.10, 0.24] (run-resampled). Sonnet "three of five" sends
   3.00 (12 of 12, 10 runs). The three-moral label is flat.
-- After round 1, in both task orders, no representation of the myth adds anything
-  to past play: embedding, word counts, both labels or PR #4's rules. This holds for
-  the author and for the reader of a shown myth. 5 of 330 tests are clear, 3 of them
-  the opening.
+- After round 1, a change in an agent's myth forecasts no change in its next move, in
+  either task order. The reader of a shown myth gains nothing, and game→myth gains
+  nothing. Across agents in myth→game only, PR #4 rules add a little to returns
+  (Sonnet +0.05 R², all +0.015): a stable return habit that shows in the myth.
+  7 of 330 tests are clear (run-resampled interval above zero).
 - The embedding and word counts recover the named amount (R² 0.46 and 0.56). Their
   opening failure is sample size (213 senders), not missing information.
 
