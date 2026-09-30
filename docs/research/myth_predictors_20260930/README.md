@@ -78,6 +78,10 @@ labels. Dyads share history, so these cannot be separated from it. In 8-agent ru
 send-score alignment goes with *less* sending (−0.025), strongest in first meetings where
 neither player had read the other's myth, and driven by the investor's score exceeding the
 trustee's: a level effect, not similarity; it disappears with agent fixed effects.
+Split by population (added 2026-09-30, frontier lens rerun on this data), it sits mostly
+in 2 GPT + 6 Sonnet runs: −0.039 per SD (−0.061 to −0.017; 10 runs; Holm 0.050 within
+that stratum), surviving the non-partner placebo. Pairs whose myths disagree on how much
+to send give more, the opposite of H1.
 Round 1 (before play): 0 of 60 survive Holm. Reverse direction, wording only: in 2-agent
 game→myth, a full send makes the next two myths more alike in text (+0.076 cosine, Holm
 0.025; 1 of 60 reverse tests), not in norms.
@@ -85,7 +89,9 @@ game→myth, a full send makes the next two myths more alike in text (+0.076 cos
 **H2 — shown myths naming a higher send → more cooperation: no detectable effect on play;
 a suggestive carry-over into myths** (lenses: amount, search). 8-agent myth→game, reader's
 next send per $1 named in the shown myth: +$0.01 (−0.09 to 0.11; 45 runs); averaging the
-three shown myths in context +0.02; author ≠ current partner +0.04 (−0.09 to 0.17). The
+three shown myths in context +0.02; author ≠ current partner, controlling for the author's
+last move, −0.00 (−0.10 to 0.10; the +0.04 first reported here came from the model that
+also held the author's future myth, corrected 2026-09-30). The
 upper bound (+0.11 per $) is about 0.17× the own-myth effect ($0.67). The search lens's
 frozen candidates at the same rung: 15 of 15 null (all Holm 1.0). Into the reader's next
 myth: +$0.07 per $ (0.03–0.12; raw p 0.001, not Holm-significant over the lens's tests;
@@ -93,18 +99,25 @@ unseen-myth placebo −0.03). A future-myth-controlled version (+0.14) is inflat
 run × round fixed effect, which pushes any same-round myth negative, and is not used.
 
 **H3 — the drift toward consistency: real; no detectable effect on cooperation levels;
-stability hints unconfirmed** (lens: consistency). All three measures rise (keyword,
-judge, judge-free embedding): Sonnet 8-agent homogeneous myth→game keyword share 0.05
+stability hints unconfirmed** (lens: consistency). Keyword and judge measures rise; the
+judge-free embedding rises only as the consistency-minus-generosity difference (the
+consistency direction alone moves no more than 28% of random directions do; corrected
+2026-09-30): Sonnet 8-agent homogeneous myth→game keyword share 0.05
 (±0.07) → 0.86 (±0.14). GPT drifts too, more beside Sonnet (homogeneous 8-agent GPT 0.03 →
 0.21). Mostly self-copying (a Sonnet agent uses the word 72% of the time if its previous
-myth did, 34% if not; the prompt says to use the previous myth as inspiration), partly a
-description of steady play. Within agents, no detectable effect on send or return levels
+myth did, 34% if not; the prompt says to use the previous myth as inspiration; the
+embedding version of this self-copying test is not specific to consistency, since random
+directions self-copy as much), partly a description of steady play. Within agents, no detectable effect on send or return levels
 (CIs within ±0.03 for Sonnet and receivers; up to −0.08 to +0.03 for GPT senders).
 Unconfirmed hints, none surviving Holm over ~540 tests: Sonnet judge-coded consistency →
 smaller send changes (p 0.0002, judge measure only); keyword consistency pooled over
 families → fewer cuts after a letdown (raw p 0.001, Holm 0.13); round-1 keyword consistency →
-mean cooperation over rounds 2–10 (+0.062, raw p 0.002, Holm 0.15). Its spread fails the
-future-myth control, as in August.
+mean cooperation over rounds 2–10 (+0.062, raw p 0.002, Holm 0.15). Counted differently,
+Holm over the lens's R1–R4 rows only (305 rows; frontier lens rerun, 2026-09-30), 11
+survive, led by Sonnet: round-1 keyword consistency → mean cooperation over rounds 2–10
++0.095 (all settings) and +0.110 (8-agent mixed); the rest are underpowered cells. So the
+round-1 consistency → later cooperation hint is Sonnet-specific and depends on the test
+family; it remains unconfirmed. Its spread fails the future-myth control, as in August.
 
 ## 4. How much can myths add? (lenses: search, amount)
 
