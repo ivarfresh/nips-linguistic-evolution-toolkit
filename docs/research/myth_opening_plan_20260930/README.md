@@ -8,15 +8,16 @@ trail and the cheapest test that would settle it.*
 The myth task raises cooperation because it makes each agent write down a plan before it
 plays. The agent then follows that plan on its first move, and a generous opening sustains
 itself through ordinary reciprocity. What matters in the myth is the send amount or rule the
-agent writes into its own myth. Its moral, whether partners share norms, and the drift toward
-"consistency" show no detectable effect on play in our data.
+agent writes into its own myth. Its moral and whether partners share norms show no detectable
+effect on play in our data; the drift toward "consistency" shows none on cooperation levels,
+with one unconfirmed Sonnet hint (section 6).
 
 This is the explanation most consistent with the evidence, not a measured chain. Section 6
 says what is not shown, and section 7 gives a cheap test.
 
 ## 1. The question
 
-The myth runs cooperate more than game-only runs, and myth→game beats game→myth. We had
+Myth→game runs cooperate more than game-first runs. We had
 labelled every myth's moral ("be generous / be fair / be cautious") and plotted cooperation by
 moral. The moral barely predicted play. Ivar asked two things: is that because the LLM judges
 are bad, or because norms in myths don't drive cooperation? And what in the myths does?
@@ -25,9 +26,10 @@ are bad, or because norms in myths don't drive cooperation? And what in the myth
 
 1. **Moral by behaviour, split by family, setting and task order** (PR #11). Agents that write
    or read generous myths cooperate more on average, but we found no detectable shift within
-   an agent when its moral turns generous. Review fixed two problems before merge: the mixed
-   dyad gap partly measured the partner's family (top cell +0.21 → +0.08 with partner-family
-   fixed effects), and 5-run cells needed small-sample (t) inference.
+   an agent when its moral turns generous. Review fixed two problems before merge: in mixed
+   dyads the gap partly measured the partner's family (Sonnet 2-agent mixed game→myth, shown
+   myth: +0.21 → +0.08 once the partner's family is controlled), and 5-run cells needed
+   small-sample (t) inference.
 2. **Paper figures for how morals move through populations** (PR #12). Three designs were
    prototyped in parallel; two were kept (`docs/figures/linguistic_analysis_20260923/`
    `moral_composition_by_round_*.png`, `moral_lineage_network.png`). Within a family a moral
@@ -38,7 +40,8 @@ are bad, or because norms in myths don't drive cooperation? And what in the myth
    send amounts, the consistency drift, an open search over ~150 myth features, and the
    myth-transplant experiments. Each result is graded by how clean its evidence is (round 1
    before play; myths read from a partner versus a comparable unread myth; placebo myths; the
-   transplants). An independent verification corrected the synthesis before it was written up.
+   transplants). An independent check of the synthesis against the lens tables and raw runs
+   led to corrections before it merged.
    Spend: $0.83.
 4. **The same analyses on the frontier runs** (PR #16: Claude Opus 5, Gemini 3.1 Pro, GPT-5.6
    Sol; 106 myth runs, 4,520 myths). The code rebuilds the September data byte-identically, and
@@ -69,13 +72,14 @@ myth prompt asks how the game should be played, and the decision prompt says to 
 myths into account.
 
 **The frontier models follow their plan even more tightly:** 50 of 52 senders send exactly
-the named amount ($0.85 per $; Sol 31 of 31, Opus 19 of 21; Gemini 3.1 Pro always $5).
+the named amount ($0.85 per $; Sol 31 of 31, Opus 19 of 21; Gemini 3.1 Pro always $5). The
+Opus slope ($0.61) is suggestive only: just 5 Opus senders sent under $5.
 
 ## 4. The opening is where the task-order effect lives
 
-The first send is the only decision whose input differs by task order at the start. In
-game→myth runs the round-1 send comes before any myth, as in game-only runs. September
-round-1 sends, mean over runs (± sd):
+Round 1 is where task order first changes an agent's input: in myth→game both players have
+their own myth in context; in game→myth the round-1 send comes before any myth, as in
+game-only runs. September round-1 sends, mean over runs (± sd):
 
 | Family | game→myth (no myth yet) | myth→game (own myth first) |
 |---|---|---|
@@ -86,19 +90,24 @@ round-1 sends, mean over runs (± sd):
 Source: `data/analysis/linguistic_20260923/decisions.csv`, investors in round 1, averaged per
 run (42 / 31 / 27 runs per cell, homogeneous and mixed together).
 
-The myths name high amounts, which is why the opening is generous. In round-1 myth→game
-myths, the judge extracts "send all" for 100% of Gemini myths, 51% of Sonnet's (12% "most",
-37% "moderate") and 22% of GPT's (56% "moderate", 8% "little")
-(`myth_rules_september_z-ai__glm-5.2.csv`).
+The round-1 myths mostly name high amounts, which fits a generous opening. In round-1
+myth→game myths the judge extracts "send all" for 100% of Gemini myths, 51% of Sonnet's
+(12% "most", 37% "moderate") and 22% of GPT's, whose most common rule is "moderate" (56%;
+"little" 8%, "unspecified" 13%) (`myth_rules_september_z-ai__glm-5.2.csv`, all 426 round-1
+myth→game myths).
 
 Two earlier results fit this:
 
 - **GPT's zero-lock.** In game-only runs GPT-5 Nano opened with $0 in every run at both sizes
-  and never recovered; a myth task breaks the lock (researchlog 2026-09-10). The table above
-  shows why: with no myth, GPT opens at about $0; with its own myth first, at $3.10.
+  and never recovered; a myth task loosens the lock, fully in dyads and partly in populations
+  (zero-receipt rate 0.12 / 0.08 in dyads, 0.59 / 0.40 at 8 agents for game→myth / myth→game;
+  researchlog 2026-09-10). The opening explains the myth→game half: with its own myth first,
+  GPT opens at $3.10. It does not explain the game→myth half, where GPT also opens at about
+  $0 and escapes later, after its first myth.
 - **The "founding myth" account.** Myth-first populations open generous and reach the $5
   ceiling by about round 4; game-first populations cold-open near $3 and climb slowly
-  (`docs/architecture/findings-taskorder-myth.md`, from researchlog 2026-07-20).
+  (`docs/architecture/findings-taskorder-myth.md`; the round-4 figure is from the 2026-08-19
+  20-round washout, Sonnet on an older apparatus, n = 5 per arm, directional).
 
 After the opening, the plan's direct pull fades: the round-1 send rule predicts later sends
 only weakly over rounds 2–10 (+0.018 send fraction per rule level, p 0.023) and not over
@@ -121,14 +130,18 @@ the top and bottom cells. Caveat: old apparatus, Sonnet hosts only.
 No detectable effect on play from:
 
 - **A myth read from a partner.** Its stated amount moves the reader's next send by −$0.00
-  (−0.10 to 0.10; 45 runs), though it does carry into the reader's next myth (+$0.07 per $;
-  frontier +$0.13, Holm-significant). Myths copy words and plans from each other without that
-  reaching behaviour.
+  (−0.10 to 0.10; 45 runs). It may carry into the reader's next myth (September +$0.07 per $,
+  raw p 0.001 but not Holm-significant; frontier +$0.13, Holm-significant). Myths copy words
+  and plans from each other without that detectably reaching behaviour.
 - **Partners sharing norms** (label, moral summary, rule fields, giving score). No evidence
   alignment adds beyond each player's own level; one borderline September cell runs the
   opposite way.
-- **The consistency drift.** Real in wording (Sonnet 5% → 86% of myths), mostly agents copying
-  their own previous myth; no detectable effect on send or return levels.
+- **The consistency drift.** Real in wording (Sonnet 8-agent homogeneous myth→game: keyword in
+  5% of round-1 myths, 86% by rounds 8–10), mostly agents copying their own previous myth; no
+  detectable effect on send or return levels within agents. One unconfirmed hint depends on how
+  tests are counted: Sonnet's round-1 consistency wording goes with more cooperation over
+  rounds 2–10 (+0.095; +0.110 in 8-agent mixed). If real, it would compete with "a generous
+  opening sustains itself" as the second link.
 - **About 150 myth features together.** After round 1 they add +0.000 held-out R² beyond past
   moves; no single feature adds 0.01 R² or more.
 - **The judges are not the bottleneck.** They agree closely on amounts (send rule κ 0.91,
@@ -140,10 +153,12 @@ Not shown:
 - **The chain across task orders.** No analysis tested "own myth → better first move → higher
   cooperation over the run" directly. Section 4 shows the first link and the opening gap; the
   second link rests on earlier results.
-- **Why game→myth beats game-only.** Its first myth comes after round 1, so the opening-plan
-  account does not cover it. A later-round version (the myth as a plan for the next round) is
-  the guess, but within an agent the stated amount adds only $0.14 per $ beyond the last send
-  (−0.03 to 0.31).
+- **Game→myth versus game-only.** Game→myth does not beat game-only in general: the earlier
+  data show no advantage in either regime (`findings-taskorder-myth.md`), and in the September
+  runs it helps GPT (the zero-lock) and Sonnet dyads, not Sonnet populations or Gemini. Where
+  it helps, the opening account does not cover it, since the first myth comes after round 1.
+  A later-round version (the myth as a plan for the next round) is the guess, but within an
+  agent the stated amount adds only $0.14 per $ beyond the last send (−0.03 to 0.31).
 - **Which feature of the text.** The stated amount travels with the rest of a generous plan;
   the transplants suggest a rule-stated amount binds more than one that merely happens in a
   story, but rule wording and Sonnet authorship are confounded there.
@@ -166,15 +181,16 @@ with the run's pinned request settings, and record the send:
    shown, leaving its own myth and history untouched. Tests the partner channel that
    observation could not.
 3. **Own myth, later round** (game→myth): rewrite the amount in the myth written after round
-   r, then replay the round r+1 decision. Tests the "plan for the next round" account of
-   game→myth > game-only.
+   r, then replay the round r+1 decision. Tests the "plan for the next round" account of how
+   GPT escapes the zero-lock in game→myth runs.
 4. **Rule versus story:** the same amount as "send $X" versus "the traveller gave $X".
 
-**Size and cost.** Sonnet round-1 calls in the September runs use about 700 input and 450
-output tokens (thinking on); at $3 / $15 per million tokens (`analyses/_llm_judge.py`) that is
-about $0.009 per call, and a round-2 call with history about twice that. Forty base contexts ×
-4 amounts × 3 slots × 2 samples ≈ 960 Sonnet calls ≈ $10–15; adding GPT-5 Nano and Gemini
-3.7 Flash costs a few dollars more. Budget about $20, one tenth of the full experiment.
+**Size and cost.** Sonnet round-1 sender calls in the September runs use about 840 input and
+540 output tokens (thinking on); at $3 / $15 per million tokens (`analyses/_llm_judge.py`)
+that is about $0.011 per call, a round-2 call about $0.019, and later-round calls $0.020–0.025.
+Forty base contexts × 4 amounts × 3 slots × 2 samples ≈ 960 Sonnet calls ≈ $17; the
+rule-versus-story arm, GPT-5 Nano and Gemini 3.7 Flash add a few dollars more. Budget about
+$25, about one ninth of the full experiment.
 
 **Free companion.** Decompose the existing task-order gap: within each composition, does
 run-level cooperation still differ by task order once the round-1 send is held fixed? That
