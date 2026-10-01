@@ -69,6 +69,29 @@ def holm(ps: list[float]) -> list[float]:
     return adj
 
 
+def opening_mediation() -> pd.DataFrame:
+    """Free check on the existing September runs: does the story-first advantage in rounds 2-10
+    sends shrink once each run's round-1 send is held fixed? Composition x size fixed effects."""
+    import statsmodels.formula.api as smf
+    d = pd.read_csv(ROOT / "data/analysis/linguistic_20260923/decisions.csv")
+    inv = d[d["role"] == "investor"]
+    x = d.drop_duplicates("run_id").set_index("run_id")[["composition", "size", "mixed", "task_order"]].join(
+        [inv[inv["round"] == 1].groupby("run_id")["sent"].mean().rename("r1_send"),
+         inv[inv["round"] >= 2].groupby("run_id")["sent"].mean().rename("later_send")]).reset_index()
+    x["myth_first"] = (x["task_order"] == "myth_game").astype(float)
+    x["cell"] = x["composition"] + "|" + x["size"].astype(str)
+    rows = []
+    for name, g in (("single-model", x[~x["mixed"]]), ("mixed-model", x[x["mixed"]]), ("all", x)):
+        for spec, f in (("task order only", "later_send ~ myth_first + C(cell)"),
+                        ("+ round-1 send", "later_send ~ myth_first + r1_send + C(cell)")):
+            m = smf.ols(f, data=g).fit(cov_type="HC1")
+            lo, hi = m.conf_int().loc["myth_first"]
+            rows.append({"runs": name, "spec": spec, "gap": m.params["myth_first"], "ci_low": lo, "ci_high": hi,
+                         "r1_coef": m.params.get("r1_send", np.nan), "r1_p": m.pvalues.get("r1_send", np.nan),
+                         "n_runs": int(m.nobs)})
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     d = load()
@@ -163,6 +186,9 @@ def main() -> None:
                  "(faint lines: unedited control; dotted: send = stated amount)", fontsize=10)
     fig.tight_layout(rect=(0, 0.08, 1, 0.95))
     fig.savefig(OUT / "replay_send_by_amount.png", dpi=200)
+    med = opening_mediation()
+    med.to_csv(OUT / "opening_mediation.csv", index=False)
+    print("\nopening mediation:\n" + med.round(3).to_string(index=False))
     print(f"\nwrote {OUT}")
 
 
