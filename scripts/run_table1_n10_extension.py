@@ -181,7 +181,7 @@ def main():
     p.add_argument("--audit-only", action="store_true")
     p.add_argument("--smoke", action="store_true", help="two game-only dyads (one single-model GPT, one Gemini+GPT)")
     args = p.parse_args()
-    assert 1 <= args.workers <= 20
+    assert 1 <= args.workers <= 40
     jobs = plan()
     if args.smoke:
         jobs = [j for j in jobs if j[0] in {"negative_only_reasoning_rerun_dyad_game_gpt_n5ext",
