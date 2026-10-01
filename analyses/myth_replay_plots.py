@@ -4,6 +4,7 @@
   replay_boxes_by_amount.png   replayed send at each stated amount, per arm x model (rule edits);
                                one value per context and amount (its replays averaged)
   replay_rule_vs_story.png     Sonnet: rule sentence vs amount rewritten inside the story
+  replay_ablation_style.png    bars per condition (unedited, rule $1/2/3/5) in the slide-678 ablation style
   opening_runs.png             existing September runs, one point per run: round-1 send and mean
                                send in rounds 2-10 by task order, and round-1 vs later send
 
@@ -205,6 +206,64 @@ def opening_runs() -> Path:
     return out
 
 
+def ablation_style() -> Path:
+    """Same layout as docs/figures/slide678_rerun_20260916/ablation_run.png: one bar per condition
+    (mean, +-sd whisker), one dot per decision situation, mean (+-sd) and n printed above, dotted
+    line at the unedited baseline mean, dashed line at the $5 ceiling."""
+    import matplotlib.pyplot as plt
+    rows = [json.loads(x) for x in RAW.read_text().splitlines() if x.strip()]
+    d = pd.DataFrame(rows).drop_duplicates("key", keep="last")
+    d = d[(d["made"] == True) & d["error"].isna() & d["send"].notna()]  # noqa: E712
+    d = d[d["mode"].isin(["orig", "rule"])].copy()
+    d["cond"] = np.where(d["mode"] == "orig", "unedited", "$" + d["edited_amount"].fillna(0).astype(int).astype(str))
+    cm = d.groupby(["arm", "family", "cond", "cid"], as_index=False)["send"].mean()
+    conds = [("unedited", "Unedited myth\n(baseline)", "#8c8c8c"), ("$1", "Rule: send $1", "#c6dbef"),
+             ("$2", "Rule: send $2", "#6baed6"), ("$3", "Rule: send $3", "#2171b5"), ("$5", "Rule: send $5", "#08306b")]
+    fams = ["Sonnet", "GPT"]
+    fig, axes = plt.subplots(len(ARMS), len(fams), figsize=(13, 11), sharey=True)
+    for i, (arm, arm_name) in enumerate(ARMS):
+        for j, fam in enumerate(fams):
+            ax = axes[i, j]
+            g = cm[(cm["arm"] == arm) & (cm["family"] == fam)]
+            base = g.loc[g["cond"] == "unedited", "send"].mean()
+            for k, (c, label, color) in enumerate(conds):
+                v = g.loc[g["cond"] == c, "send"].to_numpy()
+                if not len(v):
+                    continue
+                mu, sd = v.mean(), v.std(ddof=1) if len(v) > 1 else 0.0
+                ax.bar(k, mu, width=0.62, color=color, edgecolor="black", linewidth=0.7, alpha=0.88)
+                # +-sd whisker, clipped to the $0-$5 range a send can take
+                ax.errorbar(k, mu, yerr=[[min(sd, mu)], [min(sd, 5 - mu)]], color="black", capsize=4, lw=1.2)
+                ax.scatter(k + RNG.uniform(-0.2, 0.2, len(v)), v, s=22, color="black", edgecolor="white",
+                           linewidth=0.6, zorder=3)
+                ax.text(k, 5.55, f"${mu:.2f}\n(±${sd:.2f})\nn={len(v)}", ha="center",
+                        va="bottom", fontsize=7.5)
+            ax.axhline(5, color="red", ls="--", alpha=0.55, lw=1.2)
+            ax.axhline(base, color="#7f7f7f", ls=":", alpha=0.8, lw=1.4)
+            ax.set_xticks(range(len(conds)), [c[1] for c in conds], fontsize=8)
+            ax.set_ylim(0, 6.9)
+            ax.set_yticks(range(6))
+            ax.grid(axis="y", alpha=0.35)
+            ax.set_axisbelow(True)
+            ax.set_title(f"{fam} · {arm_name}", fontsize=10)
+            if j == 0:
+                ax.set_ylabel("Replayed send ($)", fontsize=9)
+    fig.suptitle("Myth edit-and-replay ablation: a send rule in the myth sets the next send\n"
+                 "September runs · rule appended to the myth (\"whoever holds five should send X\") · same decision "
+                 "situations in every condition · one dot per situation (replays averaged)\n"
+                 "Own first and later myths: sends follow the rule; partner's myth (own reaction myth unedited): "
+                 "sends barely move. Gemini sends $5 throughout and is not shown.", fontsize=10)
+    from matplotlib.lines import Line2D
+    fig.legend(handles=[Line2D([], [], color="red", ls="--", alpha=0.55, label="Ceiling ($5)"),
+                        Line2D([], [], color="#7f7f7f", ls=":", lw=1.4, label="Unedited (baseline) mean")],
+               loc="upper center", bbox_to_anchor=(0.5, 0.935), ncol=2, fontsize=8.5, frameon=False)
+    fig.tight_layout(rect=(0, 0, 1, 0.925))
+    out = DIR / "replay_ablation_style.png"
+    fig.savefig(out, dpi=200, facecolor="white")
+    plt.close(fig)
+    return out
+
+
 def main() -> None:
     configure_matplotlib()
     for f in ("replay_slopes.png", "replay_opening_check.png"):
@@ -212,6 +271,7 @@ def main() -> None:
     print(boxes_by_amount())
     print(rule_vs_story())
     print(opening_runs())
+    print(ablation_style())
 
 
 if __name__ == "__main__":
