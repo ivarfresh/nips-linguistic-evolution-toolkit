@@ -131,6 +131,23 @@ def estimate(jobs):
     return total
 
 
+class ErroredCall(Exception):
+    """A provider call failed (e.g. a dropped connection) and was retried inside the run."""
+
+
+def quarantine(job, reason):
+    """Move a final with an errored call aside so it is resampled under the same seed,
+    as for the frontier mixed batch (2026-09-28)."""
+    _, _, _, path = job
+    stem = path.with_suffix("")
+    target = ROOT / "data/json/noise_experiments" / OUTPUT / "quarantine" / f"{stem.name}_{time.strftime('%Y%m%dT%H%M%S')}"
+    target.mkdir(parents=True, exist_ok=True)
+    for f in path.parent.glob(stem.name + ".*"):
+        f.rename(target / f.name)
+    (target / "QUARANTINE_REASON.txt").write_text(reason + "\n")
+    print(f"QUARANTINED {path.name}: {reason}", flush=True)
+
+
 def audit(job):
     name, i, c, path = job
     check_existing_final(path, c)
@@ -157,6 +174,8 @@ def audit(job):
                 continue
             u = r.get("usage") or {}
             assert u.get("request_settings") == expected, (name, agent_id)
+            if u.get("outcome") == "error":
+                raise ErroredCall(f"{agent_id} round {(e.get('metadata') or {}).get('round')}: call recorded outcome=error")
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
             calls += 1
             output = (u.get("output_tokens") or 0) + ((u.get("reasoning_tokens") or 0) if provider == "google" else 0)
@@ -190,9 +209,14 @@ def main():
     pending, receipts = [], []
     for j in jobs:
         if j[3].exists():
-            receipts.append(audit(j))
-        else:
-            pending.append(j)
+            try:
+                receipts.append(audit(j))
+                continue
+            except ErroredCall as e:
+                if not args.execute:
+                    raise
+                quarantine(j, str(e))
+        pending.append(j)
     est = estimate(pending)
     print(f"VALIDATED N={len(jobs)} SINGLE=90 MIXED_DYADS=36 MIXED_POPS=90 NO_DEFECTORS=1 NEW_SEEDS=1 "
           f"EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
@@ -233,6 +257,9 @@ def main():
                         receipt = audit(j)
                         receipts.append(receipt)
                         print(f"COMPLETE {len(receipts)}/{len(jobs)} {j[0]} index={j[1]} cost=${receipt['standard_rate_usd']:.3f}", flush=True)
+                    except ErroredCall as e:
+                        quarantine(j, str(e))
+                        failed.append(j)
                     except Exception as e:
                         print(f"FAILED {j[0]} index={j[1]} {type(e).__name__}: {e}", flush=True)
                         # Never silently resample a final that fails scientific validation.
