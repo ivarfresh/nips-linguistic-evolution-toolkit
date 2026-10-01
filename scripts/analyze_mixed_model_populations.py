@@ -228,7 +228,7 @@ def plot_boxplot_grid(agents):
                            medianprops=dict(color="#222222", linewidth=1.6),
                            whiskerprops=dict(color="#666666"), capprops=dict(color="#666666"))
                 ax.scatter(pos + np.linspace(-.1, .1, len(v)), v, s=30, c=DOT_COLORS[pos - 1], edgecolors="white", linewidths=.6, zorder=3)
-            kind = "homogeneous (Sept.)" if composition.startswith("8 ") else "mixed"
+            kind = "homogeneous" if composition.startswith("8 ") else "mixed"
             ax.set_title(f"{composition}\n{kind} · n = {n_runs}", fontsize=11, fontweight="bold", pad=8)
             ax.set_xticks([1, 2, 3], ORDER_LABELS, fontsize=8)
             ax.set_xlim(.5, 3.5)

@@ -75,6 +75,11 @@ def main():
     dec.to_csv(OUT / "dyad_decisions.csv", index=False)
     agents.to_csv(OUT / "population_agent_finals.csv", index=False)
 
+    for module, name, frame, plotter in ((dy, "dyads", dec, dy.plot_boxplot_grid), (po, "populations", agents, po.plot_boxplot_grid)):
+        module.OUTPUT = OUT / name
+        module.OUTPUT.mkdir(parents=True, exist_ok=True)
+        plotter(frame)
+
     last = dec.sort_values("round").groupby("path").tail(1)
     dyads = last.assign(v=last["total_balance"] / 2)[["path", "composition", "task_order", "v"]]
     pops = (agents.groupby(["path", "composition", "task_order"])["final_balance"].mean()
