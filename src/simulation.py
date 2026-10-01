@@ -380,6 +380,17 @@ class SimulationData:
 
         return sim_data
 
+def _myth_memory_prompt(myth_writer, agent_id, turn, force_round1):
+    """What chat memory keeps for a myth call; None keeps the prompt as sent.
+
+    Only a myth board returns a shorter memory prompt, so the board is shown once
+    per call instead of repeating in every later prompt's context.
+    """
+    if turn == 1 or force_round1 or not hasattr(myth_writer, "memory_prompt_for"):
+        return None
+    return myth_writer.memory_prompt_for(agent_id)
+
+
 def _build_stateless_myth_context(agent_id, turn, sim_data, game):
     """Myth context appended to game prompts under chat_memory_mode="stateless".
 
@@ -1037,6 +1048,7 @@ def run_simulation(
                                 myth_metadata[agent_id],
                                 myth_remember,
                                 myth_writer.validate_response,
+                                memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
                             )
                             for agent_id in active_agent_order
                         }
@@ -1071,6 +1083,7 @@ def run_simulation(
                                             myth_metadata[agent_id],
                                             myth_remember,
                                             myth_writer.validate_response,
+                                            memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
                                         )
                                         agent_myths[agent_id] = myth_response_data
                                         break
