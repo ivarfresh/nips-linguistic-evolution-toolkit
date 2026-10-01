@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import shutil
 from pathlib import Path
 import sys
 
@@ -30,6 +31,13 @@ EXT = ROOT / "data/json/noise_experiments/table1_n10_extension_20261001"
 OUT = ROOT / "docs/figures/mixed_vs_average_n10_20261001"
 NO_DEFECTOR = {2: {"noisy2_crossmodel_negative_game_r3", "noisy2_crossmodel_negative_twotask_r3"},
                8: {"noisy8_crossmodel_negative_game_r3", "noisy8_crossmodel_negative_twotask_r3"}}
+
+
+def load_module(path):
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def finals(pattern, n_agents):
@@ -65,20 +73,45 @@ def main():
     runs = load(pools["dyad"], dy.ALLOWED)
     dec = pd.DataFrame([row for paths in pools["dyad"] for p in paths for row in dy.extract(p, runs[str(p.resolve())])])
     runs = load(pools["pop"], po.ALLOWED)
-    agent_rows = []
+    game_rows, agent_rows = [], []
     for paths in pools["pop"]:
         for p in paths:
-            agent_rows += po.extract(p, runs[str(p.resolve())])[1]
-    agents = pd.DataFrame(agent_rows)
+            g, a = po.extract(p, runs[str(p.resolve())])
+            game_rows += g
+            agent_rows += a
+    games, agents = pd.DataFrame(game_rows), pd.DataFrame(agent_rows)
 
     OUT.mkdir(parents=True, exist_ok=True)
     dec.to_csv(OUT / "dyad_decisions.csv", index=False)
     agents.to_csv(OUT / "population_agent_finals.csv", index=False)
+    games.to_csv(OUT / "population_games.csv", index=False)
 
     for module, name, frame, plotter in ((dy, "dyads", dec, dy.plot_boxplot_grid), (po, "populations", agents, po.plot_boxplot_grid)):
         module.OUTPUT = OUT / name
         module.OUTPUT.mkdir(parents=True, exist_ok=True)
         plotter(frame)
+    round_means = dec.groupby(["composition", "task_order", "round"], sort=False).agg(
+        sent_mean=("sent", "mean"), return_proportion_mean=("return_proportion", "mean"),
+        zero_receipt_rate=("zero_receipt", "mean")).reset_index()
+    dy.OUTPUT = OUT / "dyads"
+    dy.plot(dec, round_means)
+    # The paper's 2-agent figure is the dyad resource boxplot under its Overleaf name.
+    shutil.copyfile(OUT / "dyads/resources_boxplots.png", OUT / "dyads/mixed-model-simulation-2-agent.png")
+    po.OUTPUT = OUT / "populations"
+    po.plot_ladder(agents)
+
+    # Provenance in the figure scripts lists finals via final_paths(); give it the n=10 pools.
+    dy.final_paths = lambda: (pools["dyad"][0] + pools["dyad"][2], pools["dyad"][1] + pools["dyad"][3])
+    po.final_paths = lambda: (pools["pop"][0] + pools["pop"][2], pools["pop"][1] + pools["pop"][3])
+    for script, sub in (("mixed_model_cooperation_per_round.py", "cooperation_per_round"),
+                        ("mixed_dyad_family_split.py", "family_split")):
+        mod = load_module(ROOT / "analyses" / script)
+        mod.DYADS, mod.POPULATIONS = OUT / "dyad_decisions.csv", OUT / "population_games.csv"
+        mod.OUTPUT = OUT / sub
+        mod.EXPECTED_DYAD_RUNS, mod.EXPECTED_POPULATION_RUNS = dec["path"].nunique(), games["path"].nunique()
+        mod.DYAD_N_NOTE = ("n = 10 runs per cell." if "per_round" in script else "n = 10 runs per group")
+        mod.POP_N_NOTE = ("n = 10 runs per panel." if "per_round" in script else "n = 10 per point")
+        mod.main()
 
     last = dec.sort_values("round").groupby("path").tail(1)
     dyads = last.assign(v=last["total_balance"] / 2)[["path", "composition", "task_order", "v"]]
@@ -88,9 +121,7 @@ def main():
     n = per_run.groupby(["composition", "task_order"]).size()
     print("runs per cell: min", n.min(), "max", n.max())
 
-    spec = importlib.util.spec_from_file_location("mixed_vs_average", args.mixed_vs_average)
-    mva = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mva)
+    mva = load_module(Path(args.mixed_vs_average))
     mva.per_run_values = lambda: per_run
     mva.OUT = OUT
     mva.main()

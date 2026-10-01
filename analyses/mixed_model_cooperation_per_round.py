@@ -38,6 +38,10 @@ from analyses._mixed_model_provenance import write_provenance  # noqa: E402
 
 DYADS = ROOT / "docs/figures/mixed_model_dyads_20260917/decisions.csv"
 POPULATIONS = ROOT / "docs/figures/mixed_model_populations_20260918/games.csv"
+# Run-count notes in the figure footers (overridden by analyses/table1_n10.py).
+DYAD_N_NOTE = "Homogeneous n = 5 runs, mixed n = 6."
+POP_N_NOTE = "n = 5 runs per panel."
+EXPECTED_DYAD_RUNS, EXPECTED_POPULATION_RUNS = 99, 135
 OUTPUT = ROOT / "docs/figures/mixed_model_cooperation_per_round_20260922"
 ENDOWMENT = 5.0
 
@@ -46,7 +50,7 @@ ORDER_LABELS = {"game": "Game only", "game_myth": "Game → Myth", "myth_game": 
 LINE_COLORS = {"game": "#777777", "game_myth": "#fc8d62", "myth_game": "#66c2a5"}
 # Same panel order as the Figure 7 boxplot grid (scripts/analyze_mixed_model_dyads.py).
 DYAD_ROWS = [
-    ("Homogeneous dyads\n(September controls)", ["Sonnet+Sonnet", "GPT+GPT", "Gemini+Gemini"]),
+    ("Homogeneous dyads\n(single-model controls)", ["Sonnet+Sonnet", "GPT+GPT", "Gemini+Gemini"]),
     ("Mixed dyads", ["Sonnet+GPT", "Sonnet+Gemini", "Gemini+GPT"]),
 ]
 # Same panel order as the Figure 8 boxplot grid (scripts/analyze_mixed_model_populations.py).
@@ -143,7 +147,7 @@ def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     dyads = pd.read_csv(DYADS)
     populations = pd.read_csv(POPULATIONS)
-    if dyads["path"].nunique() != 99 or populations["path"].nunique() != 135:
+    if dyads["path"].nunique() != EXPECTED_DYAD_RUNS or populations["path"].nunique() != EXPECTED_POPULATION_RUNS:
         raise SystemExit("Unexpected run counts in the input tables")
     runs = pd.concat([run_round_ratios(dyads, "dyad"), run_round_ratios(populations, "population")], ignore_index=True)
     stats = per_round_stats(runs)
@@ -152,13 +156,13 @@ def main() -> None:
     blank = " Return ratio is undefined in a round where nothing was received; such rounds are left out of the mean, and lines break where no run has a value."
     plot_grid(stats, "dyad", DYAD_ROWS, "send", "fig7_dyads_send_per_round",
               "How much senders trust, round by round (Figure 7 dyads)\nInformed negative-only noise · No defectors",
-              band + " Homogeneous n = 5 runs, mixed n = 6. Where lines are hidden they coincide (e.g. Gemini + Gemini: all three at 1.0).")
+              band + " " + DYAD_N_NOTE + " Where lines are hidden they coincide (e.g. Gemini + Gemini: all three at 1.0).")
     plot_grid(stats, "dyad", DYAD_ROWS, "return", "fig7_dyads_return_per_round",
               "How much receivers give back, round by round (Figure 7 dyads)\nInformed negative-only noise · No defectors",
               band + blank)
     plot_grid(stats, "population", POPULATION_ROWS, "send", "fig8_populations_send_per_round",
               "How much senders trust, round by round (Figure 8, eight-agent ladder)\nInformed negative-only noise · No defectors · all 8 agents",
-              band + " Each run's value is the mean over the round's four games. n = 5 runs per panel.")
+              band + " Each run's value is the mean over the round's four games. " + POP_N_NOTE)
     plot_grid(stats, "population", POPULATION_ROWS, "return", "fig8_populations_return_per_round",
               "How much receivers give back, round by round (Figure 8, eight-agent ladder)\nInformed negative-only noise · No defectors · all 8 agents",
               band + " Per run and round: total returned / total received over the games where something arrived." + blank)
