@@ -1,3 +1,33 @@
+### 2026-10-02 — Result: frontier defector populations: myths lift Opus 5, not Sol; the mix sits at the average of its parts
+
+**Time:** ~1.5 h engineering; batch ~1 h wall-clock (20 workers).
+
+45/45 audited finals, $106.95 (pilot of 2026-10-01 reused as replicates 0-2 of the mix).
+Eight-agent populations, September informed negative-only noise, two permanent forced-zero
+defectors (Agent_4, Agent_8; one per family in the mix). Ordinary-agent final resources,
+mean (±sd) over 5 runs:
+
+| Population | Game only | Game → Myth | Myth → Game |
+|---|---|---|---|
+| 4 Opus 5 + 4 Sol | 49.1 (±6.3) | 54.6 (±1.6) | 56.8 (±2.1) |
+| 8 Opus 5 | 48.4 (±2.3) | 56.5 (±1.6) | 57.3 (±1.2) |
+| 8 Sol | 53.4 (±5.5) | 50.5 (±5.1) | 55.9 (±2.1) |
+
+- Myth minus game, seed-paired: Opus +8.1 / +8.9 (Welch p<0.001 both); mix +5.5 (p 0.12) /
+  +7.6 (p 0.052, all five pairs positive); Sol −2.9 (p 0.41) / +2.4 (p 0.40).
+- Mix minus 0.5·Opus + 0.5·Sol: −1.8 [−7.8, +3.2], +1.1 [−1.3, +3.6], +0.2 [−1.7, +2.1] (game,
+  game→myth, myth→game; bootstrap 95%). The mid-tier "mix beats its parts with myths" pattern
+  does not appear here.
+- In game-only play all-Sol groups end higher than all-Opus groups (53.4 vs 48.4, Welch p 0.11), so
+  Sol may cope better with defectors; untested at n=5.
+- Caveats: n=5; defector losses are partly mechanical; in single-model groups both defectors
+  are of that family. Defectors sit in fixed seats (Agent_4, Agent_8) in every replicate, while the
+  September cells drew them per replicate, so who meets a defector differs from September. Gemini 3.1 Pro
+  left out (ceiling-locked). No no-defector Opus + Sol control.
+
+Launcher `scripts/run_frontier_defector_populations.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`.
+
 ### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
 
 **Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
@@ -13,9 +43,9 @@ forced-zero defectors with the September defectors25 settings (unaware, myths ci
 | Opus 5 | 50.3 (±3.8) | 59.3 (±0.3) |
 | Sol | 43.5 (±11.1) | 53.8 (±4.1) |
 
-Seed-paired myth minus game: +6.1, +6.5, +16.4 (replicates 0, 1, 2). The no-defector
+Seed-paired myth minus game: +6.1, +6.5, +16.3 (replicates 0, 1, 2). The no-defector
 2 Gemini / 3 Opus / 3 Sol population had only +2.5 (72.2 vs 74.7). Mid-tier Sonnet at the same
-defector share gave +7.6, so the frontier gap is not smaller than mid-tier's. Caveat: n=3; part of the
+defector share gave +7.6 (defectors drawn per replicate there, fixed seats here, so not like-for-like). Caveat: n=3; part of the
 lower game-only level is mechanical (a defector partner returns nothing). Launcher
 `scripts/run_frontier_defector_pilot.py`; receipt
 `data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not

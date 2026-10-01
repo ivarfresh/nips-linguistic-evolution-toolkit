@@ -78,11 +78,6 @@ def _quiet_combinations(name, config):
         return load_combinations(name, str(config))
 
 
-def _expected(arms):
-    """Agent id -> (model slug, profile) for an ordered list of arms."""
-    return {f"Agent_{i + 1}": (_BASE_MODELS[ARMS[arm][0]], PROFILES[ARMS[arm][1]]) for i, arm in enumerate(arms)}
-
-
 def _expected(comp):
     arms = [arm for arm, count in DEFECTOR_POPULATIONS[comp] for _ in range(count)]
     return {f"Agent_{i + 1}": (_BASE_MODELS[ARMS[arm][0]], PROFILES[ARMS[arm][1]]) for i, arm in enumerate(arms)}
@@ -183,7 +178,10 @@ def audit(job):
         ir, orr = RATES[provider_model]
         for e in a.get("interaction_history", []):
             r = e.get("response") or {}
-            if r.get("response_source", "llm") != "llm":
+            source = r.get("response_source", "llm")
+            if source != "llm":
+                # Only the two defectors may answer without a model call, and only with a forced zero.
+                require(source == "forced_zero" and agent_id in DEFECTOR_PILOT_IDS, path, agent_id, "non-model response", source)
                 continue
             u = r.get("usage") or {}
             require(u.get("request_settings") == expected, path, agent_id, "per-call request settings differ from the plan")
