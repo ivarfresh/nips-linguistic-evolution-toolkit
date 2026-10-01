@@ -217,8 +217,9 @@ def ablation_style() -> Path:
     d = d[d["mode"].isin(["orig", "rule"])].copy()
     d["cond"] = np.where(d["mode"] == "orig", "unedited", "$" + d["edited_amount"].fillna(0).astype(int).astype(str))
     cm = d.groupby(["arm", "family", "cond", "cid"], as_index=False)["send"].mean()
-    conds = [("unedited", "Unedited myth\n(baseline)", "#8c8c8c"), ("$1", "Rule: send $1", "#c6dbef"),
-             ("$2", "Rule: send $2", "#6baed6"), ("$3", "Rule: send $3", "#2171b5"), ("$5", "Rule: send $5", "#08306b")]
+    # colours from analyses/plot_slide678_rerun.py: grey baseline, red (least cooperative) -> green (most)
+    conds = [("unedited", "Unedited myth\n(baseline)", "#7f7f7f"), ("$1", "Rule: send $1", "#d62728"),
+             ("$2", "Rule: send $2", "#ff7f0e"), ("$3", "Rule: send $3", "#1f77b4"), ("$5", "Rule: send $5", "#2ca02c")]
     fams = ["Sonnet", "GPT"]
     fig, axes = plt.subplots(len(ARMS), len(fams), figsize=(13, 11), sharey=True)
     for i, (arm, arm_name) in enumerate(ARMS):
@@ -234,8 +235,8 @@ def ablation_style() -> Path:
                 ax.bar(k, mu, width=0.62, color=color, edgecolor="black", linewidth=0.7, alpha=0.88)
                 # +-sd whisker, clipped to the $0-$5 range a send can take
                 ax.errorbar(k, mu, yerr=[[min(sd, mu)], [min(sd, 5 - mu)]], color="black", capsize=4, lw=1.2)
-                ax.scatter(k + RNG.uniform(-0.2, 0.2, len(v)), v, s=22, color="black", edgecolor="white",
-                           linewidth=0.6, zorder=3)
+                ax.scatter(k + RNG.uniform(-0.12, 0.12, len(v)), v, s=26, color="black", edgecolor="white",
+                           linewidth=0.8, zorder=3)
                 ax.text(k, 5.55, f"${mu:.2f}\n(±${sd:.2f})\nn={len(v)}", ha="center",
                         va="bottom", fontsize=7.5)
             ax.axhline(5, color="red", ls="--", alpha=0.55, lw=1.2)
