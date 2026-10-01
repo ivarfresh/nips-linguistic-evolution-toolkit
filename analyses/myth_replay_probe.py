@@ -153,7 +153,8 @@ def append(path: Path, rec: dict) -> None:
 def done_keys(path: Path) -> set:
     if not path.exists():
         return set()
-    return {json.loads(line)["key"] for line in path.read_text().splitlines() if line.strip()}
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return {r["key"] for r in rows if not r.get("error")}  # errored calls are retried on resume
 
 
 # ----------------------------------------------------------------------------- editor
@@ -258,6 +259,7 @@ def run_jobs(jobs, path: Path, make_messages, workers: int) -> None:
         for k, rec in enumerate(ex.map(one, todo), 1):
             append(path, rec)
             spent += rec.get("cost_est", 0.0)
+            _spent[0] = spent
             if k % 20 == 0 or k == len(todo):
                 print(f"  {k}/{len(todo)} done, est ${spent:.2f} this session", flush=True)
 
@@ -656,9 +658,132 @@ def summary4() -> None:
     print("\nmixed-run share of replays:", round(m["mixed"].mean(), 2))
 
 
+# ----------------------------------------------------------------------------- main run
+
+MAIN_CONTEXTS = 40
+SAMPLES = {"Sonnet": 2, "GPT": 4, "Gemini": 1}
+CAP_USD = 45.0
+_edit_memo: dict = {}
+_spent = [0.0]
+
+
+def arm_a_contexts(runs, fam: str) -> list[dict]:
+    """Arm A: myth->game round-1 senders (own myth just written), single and mixed runs."""
+    import pandas as pd
+    rules = pd.read_csv(ROOT / "data/analysis/linguistic_20260923/myth_rules_september_z-ai__glm-5.2.csv")
+    amt = {(row.run_id, row.agent, row.round): row.send_amount for row in rules.itertuples()}
+    out = []
+    for r in runs:
+        if r["task_order"] != "myth_game":
+            continue
+        run_id = Path(r["path"]).stem
+        for agent, a in r["data"]["agents"].items():
+            plan = r["plans"][agent]
+            if family_of(plan["model"]) != fam:
+                continue
+            for x in a["interaction_history"]:
+                m = x.get("metadata") or {}
+                if m.get("task") == "game" and m.get("role") == "investor" and m.get("round") == 1:
+                    i = locate_own(x["messages_sent"])
+                    if i is None:
+                        continue
+                    st = amt.get((run_id, agent, 1))
+                    out.append({"run": r["path"], "family": fam, "round": 1, "size": r["size"], "mixed": r["mixed"],
+                                "plan": plan, "agent": agent, "messages": x["messages_sent"], "slot": i, "arm": "A",
+                                "temperature": x.get("temperature", "default"),
+                                "original": (x.get("response") or {}).get("content", ""),
+                                "stated": None if st is None or st != st else st})
+    return out
+
+
+def pick_spread(pool: list[dict], n: int, rng) -> list[dict]:
+    """Round-robin over runs so contexts spread across runs; several per run only when needed."""
+    by_run = {}
+    for c in pool:
+        by_run.setdefault(c["run"], []).append(c)
+    for v in by_run.values():
+        rng.shuffle(v)
+    runs = list(by_run)
+    rng.shuffle(runs)
+    out = []
+    while len(out) < n and any(by_run.values()):
+        for k in runs:
+            if by_run[k] and len(out) < n:
+                out.append(by_run[k].pop())
+    return out
+
+
+def plan_main(runs) -> list[dict]:
+    jobs = []
+    for i, fam in enumerate(("Sonnet", "GPT", "Gemini")):
+        for arm in ("A", "B", "C"):
+            pool = arm_a_contexts(runs, fam) if arm == "A" else arm_contexts(runs, fam, arm)
+            ctxs = pick_spread(pool, MAIN_CONTEXTS, random.Random(SEED + 100 + 10 * i + "ABC".index(arm)))
+            for c in ctxs:
+                versions = [("orig", None)] + [("rule", a) for a in AMOUNTS3]
+                if fam == "Sonnet" and c["stated"] is not None:
+                    versions += [("natural", a) for a in AMOUNTS3]
+                cid = f"{c['run']}|{c['agent']}|r{c['round']}|main{arm}"
+                for mode, a in versions:
+                    for smp in range(SAMPLES[fam]):
+                        jobs.append({**c, "mode": mode, "amount": a, "sample": smp, "cid": cid,
+                                     "key": f"{cid}|{mode}{a if a is not None else ''}|s{smp}"})
+    return jobs
+
+
+def edited_version(j) -> dict:
+    """Make (once per context x mode x amount) the edited myth and its judge reading."""
+    mk = (j["cid"], j["mode"], j["amount"])
+    with _lock:
+        if mk in _edit_memo:
+            return _edit_memo[mk]
+    pre, myth, suf = split_slot(j)
+    rec = {"edited_myth": myth, "editor_cost": 0.0, "made": True, "check": "original", "judged_amount": None}
+    if j["mode"] == "rule":
+        rec["edited_myth"] = myth.rstrip() + RULE.format(w=WORD[j["amount"]])
+    elif j["mode"] == "natural":
+        new, cost = editor_v2(myth, j["amount"])
+        rec.update(edited_myth=new, editor_cost=cost)
+        if new.strip() == "NO_AMOUNT":
+            rec.update(made=False, check="no_amount")
+        else:
+            frac = changed_fraction(myth, new)
+            added = [w for w in ("$", "out of five", "out of 5") if w in new and w not in myth]
+            if frac > 0.15 or added:
+                rec.update(made=False, check="too_much_changed")
+    if rec["made"] and j["mode"] != "orig":
+        got, jc = judged_amount(rec["edited_myth"])
+        rec.update(judged_amount=got, editor_cost=rec["editor_cost"] + jc,
+                   check="reads_intended" if got is not None and abs(got - j["amount"]) < 0.01 else f"reads:{got}")
+    rec["unchanged_same_amount"] = j["mode"] == "natural" and rec["edited_myth"] == myth
+    with _lock:
+        _edit_memo.setdefault(mk, rec)
+        return _edit_memo[mk]
+
+
+def make_main(j):
+    if _spent[0] > CAP_USD:
+        raise SystemExit(f"cost cap ${CAP_USD} reached")
+    v = edited_version(j)
+    base = {"cid": j["cid"], "family": j["family"], "run": j["run"], "agent": j["agent"], "round": j["round"],
+            "size": j["size"], "arm": j["arm"], "mixed": j["mixed"], "mode": j["mode"], "sample": j["sample"],
+            "edited_amount": None if j["amount"] is None else float(j["amount"]), "stated_before": j["stated"],
+            **{k: v[k] for k in ("made", "check", "judged_amount", "unchanged_same_amount")},
+            "editor_cost": v["editor_cost"] if j["sample"] == 0 else 0.0}
+    if not v["made"]:
+        return None, base
+    pre, myth, suf = split_slot(j)
+    msgs = [dict(m) for m in j["messages"]]
+    msgs[j["slot"]] = {**msgs[j["slot"]], "content": pre + v["edited_myth"] + suf}
+    diff = [k for k, (a, b) in enumerate(zip(j["messages"], msgs)) if a["content"] != b["content"]]
+    same = v["edited_myth"] == myth
+    assert diff == ([] if same else [j["slot"]]), (j["key"], diff)
+    return msgs, base
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", choices=["noise", "refusal", "pilot2", "pilot3", "pilot4"])
+    ap.add_argument("--stage", choices=["noise", "refusal", "pilot2", "pilot3", "pilot4", "main"])
     ap.add_argument("--preflight", action="store_true")
     ap.add_argument("--summary", action="store_true")
     ap.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
@@ -669,6 +794,24 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     if args.summary:
         return {"pilot2": summary2, "pilot3": summary3, "pilot4": summary4}.get(args.stage, summary)()
+    if args.stage == "main":
+        runs = load_all_runs(args.data_root)
+        jobs = plan_main(runs)
+        tok = {("Sonnet", 1): (870, 530), ("Sonnet", 2): (1960, 860), ("Sonnet", 3): (2800, 800),
+               ("GPT", 1): (640, 3980), ("GPT", 2): (1330, 6320), ("GPT", 3): (1900, 5600),
+               ("Gemini", 1): (760, 11), ("Gemini", 2): (1510, 13), ("Gemini", 3): (2200, 12)}
+        est = sum(call_cost(j["family"], dict(zip(("input_tokens", "output_tokens"), tok[(j["family"], j["round"])]))) for j in jobs)
+        n_edit = len({(j["cid"], j["mode"], j["amount"]) for j in jobs if j["mode"] != "orig"})
+        n_nat = len({(j["cid"], j["amount"]) for j in jobs if j["mode"] == "natural"})
+        est += n_edit * 0.0008 + n_nat * 0.0012
+        ctx = {(f, a): len({j["cid"] for j in jobs if j["family"] == f and j["arm"] == a}) for f in ("Sonnet", "GPT", "Gemini") for a in "ABC"}
+        fams = {f: sum(j["family"] == f for j in jobs) for f in ("Sonnet", "GPT", "Gemini")}
+        print("contexts per family x arm:", ctx)
+        print(f"MODEL=sonnet-4.5,gpt-5-nano,gemini-3.7-flash(+{EDITOR_MODEL} editor+judge) N={len(jobs)} {fams} "
+              f"WORKERS={args.workers} EST_COST=${est:.2f} CAP=${CAP_USD}")
+        if args.preflight:
+            return None
+        return run_jobs(jobs, OUT / "main.jsonl", make_main, args.workers)
     if args.stage == "pilot4":
         runs = load_all_runs(args.data_root)
         jobs, counts = plan_pilot4(runs)
