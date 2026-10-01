@@ -6,7 +6,7 @@ Board pilot (branch `feature/myth-board-20261002`), $22.76, 3/3 audited finals. 
 4 Sol mix with Agent_4/Agent_8 forced-zero defectors, myth → game; from round 2 every agent read
 every myth written so far (anonymous, persistent) instead of its last partner's. Ordinary-agent
 resources 55.4 / 58.3 / 55.2 against 56.0 / 58.8 / 54.8 for the seed-matched partner-myth runs
-(−0.6, −0.5, +0.4). Within-round myth similarity (TF-IDF cosine) 0.31–0.40 with and without the
+(−0.6, −0.5, +0.5). Within-round myth similarity (TF-IDF cosine) 0.31–0.40 with and without the
 board: no convergence. Reason: with partner myths ordinary agents already send $4.81 of $5 to each
 other, so there is no room. The remaining 7 board runs stopped on exhausted OpenAI credits and are
 paused (Ivar, 2026-10-02).

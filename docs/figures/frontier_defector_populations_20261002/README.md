@@ -2,9 +2,9 @@
 
 **Headline.** With two defectors in the group, myths raise cooperation among frontier
 agents again: by about 8–9 points in all-Opus groups and by 5–8 in the Opus + Sol mix.
-They do not reliably help all-Sol groups. The mix ends exactly at the average of its two
-single-model groups, so the mid-tier result that mixed groups beat their parts does not
-carry over. Myths also make agents easier to exploit: they roughly double what agents
+They do not reliably help all-Sol groups. The mix ends close to the average of its two
+single-model groups (within 2 points; every interval includes zero), so the mid-tier result
+that mixed groups beat their parts does not appear here. Myths also make agents easier to exploit: they roughly double what agents
 send to a defector.
 
 ## Why this run
@@ -53,9 +53,11 @@ game):
 
 | Group | Game → Myth | Myth → Game |
 |---|---|---|
-| 4 Opus 5 + 4 Sol | +5.5, 5 of 5 pairs up, Welch p 0.12 | +7.6, 5 of 5 up, p 0.052 |
-| 8 Opus 5 | +8.1, 5 of 5 up, p < 0.001 | +8.9, 5 of 5 up, p < 0.001 |
-| 8 Sol | −2.9, 2 of 5 up, p 0.41 | +2.4, 3 of 5 up, p 0.39 |
+| 4 Opus 5 + 4 Sol | +5.5, 5 of 5 pairs up, Welch p 0.12 (paired 0.085) | +7.6, 5 of 5 up, p 0.052 (paired 0.026) |
+| 8 Opus 5 | +8.1, 5 of 5 up, p < 0.001 (paired 0.002) | +8.9, 5 of 5 up, p < 0.001 (paired 0.001) |
+| 8 Sol | −2.9, 2 of 5 up, p 0.41 (paired 0.54) | +2.4, 3 of 5 up, p 0.39 (paired 0.31) |
+
+Welch p as in the paper's Table 1; paired t-test p in brackets, since the runs are seed-paired.
 
 **The mix equals its parts** (`mix_vs_parts.csv`; mix minus ½ · 8 Opus + ½ · 8 Sol,
 bootstrap 95% interval): game −1.8 [−7.8, +3.2]; game → myth +1.1 [−1.4, +3.6];
@@ -79,7 +81,8 @@ up to 17 points more than their parts with myths (paper Table 1).
 Agents with myths keep sending to a partner who never returns anything, about twice as
 much as without myths, in every group. With myths, ordinary agents also send almost the
 full $5 to each other (4.8–4.9 in Opus groups and the mix under myth → game). The
-remaining distance to 75 is the defectors' doing, not the ordinary agents'.
+remaining distance to 75 comes from the defectors: they return nothing, and ordinary
+agents keep sending them $1.0–1.9 per decision.
 
 ## Myth board pilot (same mix, 2026-10-02)
 
@@ -89,12 +92,12 @@ myth. Three myth → game runs, $22.76, matched by seed to the runs above:
 
 | Replicate | Partner's myth | Shared board |
 |---|---|---|
-| 0 | 56.0 | 55.4 |
-| 1 | 58.8 | 58.3 |
-| 2 | 54.8 | 55.2 |
+| 0 | 56.00 | 55.42 |
+| 1 | 58.83 | 58.33 |
+| 2 | 54.75 | 55.25 |
 
 No difference, and no sign that myths converged (word-overlap similarity within a round
-stays at 0.31–0.40 with and without the board). With partner myths, ordinary agents
+stays at 0.31–0.40 with and without the board; a quick TF-IDF check, script not committed). With partner myths, ordinary agents
 already send $4.81 of $5 to each other, so the board has no room to act. The remaining
 seven board runs were not run (paused 2026-10-02).
 
@@ -119,19 +122,21 @@ seven board runs were not run (paused 2026-10-02).
 > Sol. Myths then raise them again: by 8–9 points in Opus groups (all ten seed-paired
 > runs higher, Welch p < 0.001) and by 5.5–7.6 in the mix, though not reliably in Sol
 > groups. Unlike the mid-tier groups, the mix earns no more than the average of its
-> parts (−1.8 to +1.1 across task orders). The mid-tier composition effects rest on a
-> model that withholds, and frontier models from these providers do not.
+> parts (−1.8 to +1.1 across task orders, all intervals including zero). None of these
+> frontier models withholds as GPT-5 Nano does (Sol only partly collapses, in 2 of 10
+> game-only runs), which may be why composition matters less; we did not test this
+> directly.
 
 **Section 5.1, after "withdrawing their own generosity":**
 
 > Myths make this weakness worse. In frontier groups with scripted defectors, agents
 > with myths sent a defector about twice as much as agents without them ($1.0–1.9 against
-> $0.6–0.9 per decision), while sending $4.7–4.9 of $5 to each other under myth → game. The
+> $0.6–0.9 per decision), while sending $4.6–4.9 of $5 to each other under myth → game. The
 > channel that raised cooperation also made agents easier to exploit.
 
 **Supplementary material, frontier models:**
 
 > A shared board on which every agent read every earlier myth, rather than only its last
 > partner's, did not change cooperation in three seed-paired runs of the defector mix
-> (−0.6, −0.5, +0.4) and did not make myths more alike. Ordinary agents there already
+> (−0.6, −0.5, +0.5) and did not make myths more alike. Ordinary agents there already
 > sent $4.8 of $5 to each other, so the board had no room to act.
