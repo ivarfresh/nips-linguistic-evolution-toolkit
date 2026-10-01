@@ -1,3 +1,25 @@
+### 2026-10-01 — Result: Table 1 (mixed vs average of parts) re-run at n = 10
+
+**Time:** ~8 h wall-clock (two network outages, one relaunch at 20 workers).
+
+Result: 216 extension runs, audit 216/216, $179.25 at standard rates (Claude $135.40,
+OpenAI $21.09, Google $22.76; work lost to outages and quarantines not included).
+Replicates 5–9 for the September single-model groups and the 8-agent ladder, 6–9 for
+the mixed dyads; every input except the replicate id is identical to the original set.
+At n = 10, 16 of 27 cells have Welch p < 0.05 (11 after Holm), against 13 / 7 at n = 5–6.
+Main moves: Sonnet + GPT game-only drops to −8.7 (now significant); 1 Gemini + 7 GPT
+game→myth falls from +9.6 to +4.4 (no longer significant); 1 GPT + 7 Sonnet game→myth
+and 4 GPT + 4 Sonnet game→myth lose significance; 4 Gemini + 4 GPT game-only and
+4 GPT + 4 Sonnet myth→game gain it.
+
+Caveats: 8 mixed game→myth dyads with Gemini were quarantined (Gemini HTTP 503 /
+timeout before an in-run retry succeeded) and resampled under the same seed; one 8-agent
+Sonnet run was rerun after a role-key error. 40 workers caused local DNS failures;
+20 is the safe ceiling on this connection.
+
+Details: `docs/figures/mixed_vs_average_n10_20261001/README.md`,
+`scripts/run_table1_n10_extension.py`.
+
 ### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
 
 **Time:** ~0.5 h.
