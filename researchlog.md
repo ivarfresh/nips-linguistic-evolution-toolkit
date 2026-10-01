@@ -1,3 +1,26 @@
+### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
+
+**Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
+
+Pilot, n=3 per cell, $11.45 (6/6 audited finals). 4 Opus 5 + 4 GPT-5.6 Sol, balanced rotating
+pairs, September informed negative-only noise; Agent_4 (Opus) and Agent_8 (Sol) are permanent
+forced-zero defectors with the September defectors25 settings (unaware, myths circulate). Gemini
+3.1 Pro left out because it is ceiling-locked. Scored on the six ordinary agents.
+
+| Cell | Game only | Myth → Game |
+|---|---|---|
+| All ordinary agents | 46.9 (±7.4) | 56.5 (±2.1) |
+| Opus 5 | 50.3 (±3.8) | 59.3 (±0.3) |
+| Sol | 43.5 (±11.1) | 53.8 (±4.1) |
+
+Seed-paired myth minus game: +6.1, +6.5, +16.4 (replicates 0, 1, 2). The no-defector
+2 Gemini / 3 Opus / 3 Sol population had only +2.5 (72.2 vs 74.7). Mid-tier Sonnet at the same
+defector share gave +7.6, so the frontier gap is not smaller than mid-tier's. Caveat: n=3; part of the
+lower game-only level is mechanical (a defector partner returns nothing). Launcher
+`scripts/run_frontier_defector_pilot.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not
+yet approved.
+
 ### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
 
 **Time:** ~0.5 h.
