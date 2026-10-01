@@ -15,6 +15,19 @@ with one unconfirmed Sonnet hint (section 6).
 This is the explanation most consistent with the evidence, not a measured chain. Section 6
 says what is not shown, and section 7 gives a cheap test.
 
+## Update 2026-10-01: the replay probe
+
+The cheap test in section 7 ran (PR #19, `docs/research/myth_replay_probe_20261001/README.md`).
+Adding one rule sentence to an agent's own myth, *"whoever holds five should send X"*, moves its
+next send $0.93 per $1 in its first myth and $0.68 in a myth written after round 1 (Sonnet and
+GPT; Gemini sends $5 regardless). So the first link holds causally, for an explicitly stated rule;
+amounts told inside the story move sends less. Two claims below change:
+
+- **A read myth is not inert.** The same rule in a partner's myth moves the reader's send $0.23
+  per $1, a lower bound (section 6 said no detectable effect).
+- **The opening explains at most part of the task-order gap.** Holding the round-1 send fixed
+  shrinks the story-first advantage in single-model populations but not in mixed or pooled runs.
+
 ## 1. The question
 
 Myth→game runs cooperate more than game-first runs. We had
