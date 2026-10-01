@@ -53,6 +53,9 @@ def build_condition(game, myth_writer, runtime_metadata, simulation, replicate_i
     pressure = getattr(myth_writer, "pressure", None)
     if pressure is not None:
         protocol["myth"]["pressure"] = pressure
+    board = getattr(myth_writer, "board", None)
+    if board is not None:
+        protocol["myth"]["board"] = board
     pool = getattr(game, "_shuffled_myth_pool", None)
     protocol["game"]["shuffled_myth_pool_sha256"] = digest(pool) if pool is not None else None
     condition = {

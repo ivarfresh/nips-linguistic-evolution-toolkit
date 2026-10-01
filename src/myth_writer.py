@@ -2,6 +2,7 @@
 # MYTH WRITING
 # ============================================================================
 
+import random
 import re
 
 from src.shared_context import build_previous_round_shared_context
@@ -137,14 +138,67 @@ class InvalidCouncilResponseError(ValueError):
     """Raised when a council message is empty."""
 
 
+# ``persistent``: from round 2 every agent reads every myth any agent has written
+# in all earlier rounds (the shared board), without author names, instead of only
+# its previous partner's myth. Inspired by the 2026 Hugging Face incident board.
+VALID_MYTH_BOARDS = {"persistent"}
+MYTH_BOARD_MEMORY_NOTE = "[The shared myth board was shown here: {count} myths from rounds 1-{last_round}.]"
+
+
+def validate_myth_board(board):
+    if board is not None and board not in VALID_MYTH_BOARDS:
+        raise ValueError(f"myth_board must be one of {sorted(VALID_MYTH_BOARDS)} or absent; got {board!r}")
+    return board
+
+
 class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
-    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None):
+    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
         self.pressure = validate_myth_pressure(pressure) if pressure is not None else None
+        self.board = validate_myth_board(board)
+        if self.board and (later_rounds_template is None or "{myth_board}" not in later_rounds_template):
+            raise ValueError("myth_board requires a later-rounds template with a {myth_board} placeholder")
+        # agent id -> the prompt to keep in chat memory for this round's myth call
+        # (the board itself is shown once, not carried forward in every later prompt).
+        self._memory_prompts = {}
+
+    def memory_prompt_for(self, agent_id):
+        """Chat-memory version of the agent's latest myth prompt, or None to remember it as sent."""
+        return self._memory_prompts.get(agent_id)
+
+    def _board_items(self, sim_data, turn):
+        """(round, author, myth) for every myth written before ``turn``.
+
+        Within a round the order is a fixed shuffle keyed by the round only, so
+        every reader sees the same board and positions carry no author labels.
+        The shuffle is the same in every run, so a given position always holds
+        the same agent id (e.g. a defector's myth leads round 1 in the frontier
+        board runs); kept fixed so all board runs stay comparable.
+        """
+        items = []
+        for entry in sim_data.conversation_history:
+            source_round = entry.get("round")
+            myths = entry.get("myths") or {}
+            if source_round is None or source_round >= turn or not myths:
+                continue
+            authors = sorted(author for author, myth in myths.items() if myth)
+            random.Random(f"myth-board-v1|{source_round}").shuffle(authors)
+            items.extend((source_round, author, myths[author]) for author in authors)
+        return items
+
+    @staticmethod
+    def _format_board(items):
+        blocks = []
+        for source_round in sorted({r for r, _, _ in items}):
+            in_round = [myth for r, _, myth in items if r == source_round]
+            blocks.append("\n\n".join(
+                f"Round {source_round}, myth {i}:\n{myth}" for i, myth in enumerate(in_round, 1)
+            ))
+        return "\n\n".join(blocks)
 
     @property
     def council_exchanges(self):
@@ -261,6 +315,12 @@ class MythWriter:
         if not other_agent_myth:
             raise ValueError(f"OTHER AGENT MYTH ERROR: No previous myth found for {agent_id} (other agent) in round {turn - 1}. Cannot generate later round prompt.")
 
+        board_items = []
+        if self.board:
+            if substitution_applied:
+                raise ValueError("myth_board does not support defector_myth_policy standard_substitute")
+            board_items = self._board_items(sim_data, turn)
+
         self._record_myth_exposure(
             sim_data=sim_data,
             turn=turn,
@@ -269,11 +329,12 @@ class MythWriter:
             original_author_id=original_author_id,
             presented_author_id=presented_author_id,
             substitution_applied=substitution_applied,
+            board_items=board_items if self.board else None,
         )
 
         game_behavior_summary = self._get_game_behavior_summary(agent_id, turn, sim_data)
 
-        return self.later_rounds_template.format(
+        fields = dict(
             myth_topic=self.myth_topic,
             last_myth=last_myth,
             other_agent_myth=other_agent_myth,
@@ -284,7 +345,14 @@ class MythWriter:
             word_budget=self.word_budget(turn),
             delivery_note=self._delivery_note(agent_id, previous_entry),
             council_block=self._council_block(agent_id, previous_entry),
+        )
+        if not self.board:
+            return self.later_rounds_template.format(**fields).lstrip()
+        self._memory_prompts[agent_id] = self.later_rounds_template.format(
+            **fields,
+            myth_board=MYTH_BOARD_MEMORY_NOTE.format(count=len(board_items), last_round=turn - 1),
         ).lstrip()
+        return self.later_rounds_template.format(**fields, myth_board=self._format_board(board_items)).lstrip()
 
     def _delivery_note(self, agent_id, previous_entry):
         """Tell the writer how much of its previous myth reached the other agent."""
@@ -396,6 +464,7 @@ class MythWriter:
         original_author_id,
         presented_author_id,
         substitution_applied,
+        board_items=None,
     ):
         metadata = getattr(sim_data, "run_metadata", {}) or {}
         game_data = getattr(sim_data, "game_data", {}) or {}
@@ -423,6 +492,11 @@ class MythWriter:
             ),
             "substitution_applied": bool(substitution_applied),
         }
+        if board_items is not None:
+            # The partner's myth is on the board; the record keeps that pairing
+            # and lists every board item in the order shown.
+            record["board"] = "persistent"
+            record["board_items"] = [[source_round, author] for source_round, author, _ in board_items]
         for entry in sim_data.conversation_history:
             if entry.get("round") == turn:
                 entry.setdefault("myth_exposures", {})[agent_id] = record
