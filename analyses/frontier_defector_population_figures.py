@@ -157,6 +157,7 @@ def main():
     return_runs = per_round.run_round_ratios(ordinary_return, "population")
     runs = send_runs.drop(columns="return_ratio").merge(
         return_runs[["path", "round", "return_ratio"]], on=["path", "round"], validate="one_to_one")
+    assert len(runs) == len(send_runs) == 450, "every run and round must survive the merge"
     stats = per_round.per_round_stats(runs)
     per_round.OUTPUT = OUTPUT
     rows = [("Opus 5 / Sol\n2 forced defectors", [c for c, _ in COMPOSITIONS.values()])]
