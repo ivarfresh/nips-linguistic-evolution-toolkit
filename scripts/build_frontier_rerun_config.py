@@ -87,20 +87,43 @@ MAIN_MIXED_DYADS = {  # set-name suffix -> (Agent_1 arm, Agent_2 arm, replicate 
     "opus5_gemini": ("opus5", "gemini31pro", [0, 2, 4]), "gemini_opus5": ("gemini31pro", "opus5", [1, 3, 5]),
     "gemini_sol": ("gemini31pro", "sol_high", [0, 2, 4]), "sol_gemini": ("sol_high", "gemini31pro", [1, 3, 5]),
 }
-# Frontier defector pilot (2026-10-01, Ivar): can permanent defectors open room below the
-# ceiling for a myth effect? Main-frontier Opus 5 + GPT-5.6 Sol only (Gemini 3.1 Pro is
-# ceiling-locked), Agent_1-4 Opus 5, Agent_5-8 Sol. Two permanent forced-zero defectors (25%,
-# the September defectors25 settings), split one per family so neither family carries them.
-DEFECTOR_PILOT_POPULATION = [("opus5", 4), ("sol_high", 4)]
+# Frontier defector runs (2026-10-01, Ivar): can permanent defectors open room below the
+# ceiling for a myth effect, and does the mixed-vs-parts comparison of Table 1 hold for frontier
+# models? Main-frontier Opus 5 and GPT-5.6 Sol (Gemini 3.1 Pro is ceiling-locked) in a 4 + 4 mix
+# and in single-model populations. Agent_4 and Agent_8 are permanent forced-zero defectors (25%,
+# the September defectors25 settings); in the mix that is one defector per family.
+DEFECTOR_POPULATIONS = {
+    "opus4_sol4_d2": [("opus5", 4), ("sol_high", 4)],
+    "opus8_d2": [("opus5", 8)],
+    "sol8_d2": [("sol_high", 8)],
+}
 DEFECTOR_PILOT_NAME = "opus4_sol4_d2"
+DEFECTOR_PILOT_POPULATION = DEFECTOR_POPULATIONS[DEFECTOR_PILOT_NAME]
 DEFECTOR_PILOT_IDS = ["Agent_4", "Agent_8"]
-# shape -> (September set to copy, September defectors25 block, pilot block name)
+# shape -> (September set to copy, September defectors25 block, frontier block with explicit ids)
 DEFECTOR_PILOT_SHAPES = {
     "population_game": ("negative_only_reasoning_rerun_population_game_claude_n5", "noisy8_crossmodel_negative_defectors25_game_r3",
                         "frontier_noisy8_negative_defectors25_split_game_r3"),
+    "population_game_myth": ("negative_only_reasoning_rerun_population_game_myth_claude_n5", "noisy8_crossmodel_negative_defectors25_twotask_r3",
+                             "frontier_noisy8_negative_defectors25_split_twotask_r3"),
     "population_myth_game": ("negative_only_reasoning_rerun_population_myth_game_claude_n5", "noisy8_crossmodel_negative_defectors25_twotask_r3",
                              "frontier_noisy8_negative_defectors25_split_twotask_r3"),
 }
+# The 2026-10-01 pilot ran replicates 0-2 of the mix in game and myth_game; the n=5 sets add the rest.
+DEFECTOR_PILOT_REPLICATES = {"population_game": [0, 1, 2], "population_myth_game": [0, 1, 2]}
+DEFECTOR_REPLICATES = [0, 1, 2, 3, 4]
+
+
+def defector_sets():
+    """(set name, composition, shape, replicate ids) for every frontier defector set."""
+    out = []
+    for shape in DEFECTOR_PILOT_SHAPES:
+        if shape in DEFECTOR_PILOT_REPLICATES:
+            out.append((f"frontier_defector_pilot_{shape}_{DEFECTOR_PILOT_NAME}_n3", DEFECTOR_PILOT_NAME, shape, DEFECTOR_PILOT_REPLICATES[shape]))
+        for comp in DEFECTOR_POPULATIONS:
+            done = DEFECTOR_PILOT_REPLICATES.get(shape, []) if comp == DEFECTOR_PILOT_NAME else []
+            out.append((f"frontier_defector_{shape}_{comp}_n5", comp, shape, [r for r in DEFECTOR_REPLICATES if r not in done]))
+    return out
 # shape -> (September set to copy, the single no-defector game-params block to keep)
 SHAPES = {
     "dyad_game": ("negative_only_reasoning_rerun_dyad_game_claude_n5", "noisy2_crossmodel_negative_game_r3"),
@@ -155,23 +178,29 @@ def build():
                 block["llm_settings_by_model"] = {ARMS[a][0]: copy.deepcopy(PROFILES[ARMS[a][1]]) for a in (first, second)}
                 sets[f"frontier_main_mixed_{shape}_{pair}_n3"] = block
     for shape, (sept_set, sept_params, pilot_params) in DEFECTOR_PILOT_SHAPES.items():
-        base = src["experiment_sets"][sept_set]
-        assert sept_params in base["game_params_list"], (shape, sept_params)
+        assert sept_params in src["experiment_sets"][sept_set]["game_params_list"], (shape, sept_params)
         cfg["game_params"][pilot_params] = {**copy.deepcopy(src["game_params"][sept_params]), "defector_agent_ids": list(DEFECTOR_PILOT_IDS)}
-        block = copy.deepcopy(base)
-        del block["models"], block["llm_settings"]
-        block["agent_models"] = [ARMS[arm][0] for arm, count in DEFECTOR_PILOT_POPULATION for _ in range(count)]
+    for name, comp, shape, replicate_ids in defector_sets():
+        sept_set, _, pilot_params = DEFECTOR_PILOT_SHAPES[shape]
+        block = copy.deepcopy(src["experiment_sets"][sept_set])
+        arms = DEFECTOR_POPULATIONS[comp]
+        if len(arms) == 1:  # single-model population: the ordinary single-model set form
+            block["models"] = [ARMS[arms[0][0]][0]]
+            block["llm_settings"] = copy.deepcopy(PROFILES[ARMS[arms[0][0]][1]])
+        else:
+            del block["models"], block["llm_settings"]
+            block["agent_models"] = [ARMS[arm][0] for arm, count in arms for _ in range(count)]
+            block["llm_settings_by_model"] = {ARMS[arm][0]: copy.deepcopy(PROFILES[ARMS[arm][1]]) for arm, _ in arms}
         block["game_params_list"] = [pilot_params]
-        block["replicate_ids"] = [0, 1, 2]
-        block["llm_settings_by_model"] = {ARMS[arm][0]: copy.deepcopy(PROFILES[ARMS[arm][1]]) for arm, _ in DEFECTOR_PILOT_POPULATION}
-        sets[f"frontier_defector_pilot_{shape}_{DEFECTOR_PILOT_NAME}_n3"] = block
+        block["replicate_ids"] = replicate_ids
+        sets[name] = block
     cfg["experiment_sets"] = sets
     return cfg
 
 
 def main():
     cfg = build()
-    header = "# Frozen frontier rerun (2026-09-18): September no-defector protocol on Claude Opus 5,\n# Gemini 3.1 Pro Preview, GPT-5.6 Sol (effort high and none), from 2026-09-23 Claude Opus 5.5 and, from\n# 2026-09-28, GPT-6 Sol (effort high) plus the Gemini 3.1 Pro / GPT-6 Sol / Opus 5.5 mixed populations and the main-frontier (Opus 5, Gemini 3.1 Pro,\n# GPT-5.6 Sol) mixed dyads and populations, and from 2026-10-01 the Opus 5 + Sol defector pilot. Generated by\n# scripts/build_frontier_rerun_config.py; do not edit by hand.\n"
+    header = "# Frozen frontier rerun (2026-09-18): September no-defector protocol on Claude Opus 5,\n# Gemini 3.1 Pro Preview, GPT-5.6 Sol (effort high and none), from 2026-09-23 Claude Opus 5.5 and, from\n# 2026-09-28, GPT-6 Sol (effort high) plus the Gemini 3.1 Pro / GPT-6 Sol / Opus 5.5 mixed populations and the main-frontier (Opus 5, Gemini 3.1 Pro,\n# GPT-5.6 Sol) mixed dyads and populations, and from 2026-10-01 the Opus 5 / Sol defector populations. Generated by\n# scripts/build_frontier_rerun_config.py; do not edit by hand.\n"
     TARGET.write_text(header + yaml.safe_dump(cfg, sort_keys=False, width=1000, allow_unicode=True))
     print(f"wrote {TARGET.relative_to(ROOT)}: {len(cfg['experiment_sets'])} sets, {len(cfg['game_params'])} game-param blocks")
 

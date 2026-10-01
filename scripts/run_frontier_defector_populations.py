@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Frontier defector pilot (2026-10-01); dry-run by default.
+"""Frontier defector populations (2026-10-01/02); dry-run by default.
 
 Question: do permanent defectors open room below the ceiling, so the myth effect
 can show in a main-frontier mixed population? Without defectors the 2 Gemini /
 3 Opus / 3 Sol population ended at 72.2 in game only and 74.7 with myth -> game.
 
-Design: 8 agents, balanced rotating pairs, Agent_1-4 Claude Opus 5 and Agent_5-8
-GPT-5.6 Sol (effort high), each at its D011 request profile; no Gemini (it is
-ceiling-locked). Two permanent forced-zero defectors, Agent_4 (Opus) and Agent_8
-(Sol): they always send and return $0 without a model call, still write myths,
-and do not know they are defectors (the September defectors25 settings).
-Task orders game and myth_game, replicates 0-2: 6 runs.
+Design: 8 agents, balanced rotating pairs, Claude Opus 5 and GPT-5.6 Sol (effort
+high), each at its D011 request profile; no Gemini (it is ceiling-locked).
+Compositions: 4 Opus (Agent_1-4) + 4 Sol (Agent_5-8), 8 Opus, and 8 Sol, so the
+mix can be compared with its parts as in the paper's Table 1. Two permanent
+forced-zero defectors, Agent_4 and Agent_8 (one per family in the mix): they
+always send and return $0 without a model call, still write myths, and do not know
+they are defectors (the September defectors25 settings). Task orders game,
+game_myth and myth_game, replicates 0-4: 45 runs. Stage ``pilot`` is the
+2026-10-01 pilot (mix, game and myth_game, replicates 0-2), reused by ``all``.
 
 The plan step proves, before any paid call, that every non-model input equals the
 September ``negative_only_reasoning_rerun_population_*`` defectors25 cell except
@@ -34,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.run_noisy_missing import load_combinations, expected_output_path, check_existing_final, run_missing_job  # noqa: E402
 from scripts.rerun_negative_only_crossmodel import TRUNCATION_REASONS  # noqa: E402
-from scripts.build_frontier_rerun_config import ARMS, PROFILES, DEFECTOR_PILOT_POPULATION, DEFECTOR_PILOT_NAME, DEFECTOR_PILOT_IDS  # noqa: E402
+from scripts.build_frontier_rerun_config import ARMS, PROFILES, DEFECTOR_POPULATIONS, DEFECTOR_PILOT_NAME, DEFECTOR_PILOT_IDS, defector_sets  # noqa: E402
 from experiments.run_noisy_batch import build_noisy_protocol  # noqa: E402
 from src.llm_settings import is_mixed_plan  # noqa: E402
 from src.utils import is_exhausted_quota  # noqa: E402
@@ -43,15 +46,14 @@ import yaml  # noqa: E402
 CONFIG = ROOT / "config/frontier_rerun_20260918.yaml"
 SEPTEMBER = ROOT / "config/experiments_noisy.yaml"
 OUTPUT = "frontier_defector_pilot_20261001"
-SHAPES = ("game", "myth_game")
-REPLICATES = [0, 1, 2]
+SHAPES = ("game", "game_myth", "myth_game")
 _BASE_MODELS = yaml.safe_load(CONFIG.read_text())["base_models"]
 # USD per MTok by provider model, as priced in the 2026-09-18 frontier receipts (verified then).
 RATES = {"claude-opus-5": (5.0, 25.0), "gpt-5.6-sol": (4.0, 20.0)}
 # Mean standard-rate cost per agent in the homogeneous 2026-09-18 8-agent frontier runs. An upper
 # bound here: defectors make no game calls.
-PER_AGENT_USD = {"claude-opus-5": {"game": 0.081, "myth_game": 0.501},
-                 "gpt-5.6-sol": {"game": 0.061, "myth_game": 0.435}}
+PER_AGENT_USD = {"claude-opus-5": {"game": 0.081, "game_myth": 0.478, "myth_game": 0.501},
+                 "gpt-5.6-sol": {"game": 0.061, "game_myth": 0.434, "myth_game": 0.435}}
 # Inputs that legitimately differ from the homogeneous September defectors25 cell.
 MODEL_ONLY_KEYS = {"model", "agent_models", "llm_request", "replicate_id"}
 PILOT_ONLY_KEYS = {"game_params_name", "defector_agent_ids"}
@@ -81,36 +83,51 @@ def _expected(arms):
     return {f"Agent_{i + 1}": (_BASE_MODELS[ARMS[arm][0]], PROFILES[ARMS[arm][1]]) for i, arm in enumerate(arms)}
 
 
-def _expected():
-    arms = [arm for arm, count in DEFECTOR_PILOT_POPULATION for _ in range(count)]
+def _expected(comp):
+    arms = [arm for arm, count in DEFECTOR_POPULATIONS[comp] for _ in range(count)]
     return {f"Agent_{i + 1}": (_BASE_MODELS[ARMS[arm][0]], PROFILES[ARMS[arm][1]]) for i, arm in enumerate(arms)}
+
+
+def _agent_plans(request):
+    """Agent id -> per-agent request; a single-model plan applies to all eight agents."""
+    if is_mixed_plan(request):
+        return request["agents"]
+    return {f"Agent_{i}": request for i in range(1, 9)}
 
 
 def plan():
     jobs = []
-    expected = _expected()
-    require(len(expected) == 8 and {expected[a][0] for a in DEFECTOR_PILOT_IDS} == {expected["Agent_1"][0], expected["Agent_8"][0]},
-            "one defector per family")
-    for shape in SHAPES:
-        suffix = "defectors25_game_r3" if shape == "game" else "defectors25_twotask_r3"
-        reference = [c for c in _quiet_combinations(f"negative_only_reasoning_rerun_population_{shape}_claude_n5", SEPTEMBER)
-                     if c["game_params_name"].endswith(suffix) and c["replicate_id"] == 0]
-        require(len(reference) == 1, shape)
-        reference_inputs = _comparable(reference[0]["comparison_inputs"])
-        name = f"frontier_defector_pilot_population_{shape}_{DEFECTOR_PILOT_NAME}_n3"
+    references = {}
+    mix = _expected(DEFECTOR_PILOT_NAME)
+    require({mix[a][0] for a in DEFECTOR_PILOT_IDS} == {mix["Agent_1"][0], mix["Agent_8"][0]}, "one defector per family in the mix")
+    for name, comp, set_shape, replicate_ids in defector_sets():
+        shape = set_shape.removeprefix("population_")
+        expected = _expected(comp)
+        require(len(expected) == 8, name, "8 agents")
+        if shape not in references:
+            suffix = "defectors25_game_r3" if shape == "game" else "defectors25_twotask_r3"
+            reference = [c for c in _quiet_combinations(f"negative_only_reasoning_rerun_population_{shape}_claude_n5", SEPTEMBER)
+                         if c["game_params_name"].endswith(suffix) and c["replicate_id"] == 0]
+            require(len(reference) == 1, shape)
+            references[shape] = _comparable(reference[0]["comparison_inputs"])
+        reference_inputs = references[shape]
         combos = _quiet_combinations(name, CONFIG)
-        require([c["replicate_id"] for c in combos] == REPLICATES, name, [c["replicate_id"] for c in combos])
+        require([c["replicate_id"] for c in combos] == replicate_ids, name, [c["replicate_id"] for c in combos])
         for i, c in enumerate(combos):
-            require(c["agent_models"] == {a: m for a, (m, _) in expected.items()}, name, c["agent_models"])
+            if comp == DEFECTOR_PILOT_NAME:
+                require(c["agent_models"] == {a: m for a, (m, _) in expected.items()}, name, c["agent_models"])
+            else:
+                require(not c.get("agent_models") and {m for m, _ in expected.values()} == {c["model"]}, name, "single model", c["model"])
             params = c["game_params"]
             require(params["num_agents"] == 8 and params["pairing_mode"] == "balanced", name, "population pairing")
             require(params["noise_config"]["inform_agents"] is True, name, "inform_agents")
             require(params["show_agent_names"] is False and params["history_policy"] == "self_and_coplayer"
                     and params["coplayer_history_window"] == 3, name, "population history/identity settings")
             request = c["request_plan"].as_dict()
-            require(is_mixed_plan(request) and request["model"] == c["model"], name, "mixed request plan")
+            require(request["model"] == c["model"] and is_mixed_plan(request) == (comp == DEFECTOR_PILOT_NAME), name, "request plan")
+            agents = _agent_plans(request)
             for agent_id, (model, profile) in expected.items():
-                agent_request = request["agents"][agent_id]
+                agent_request = agents[agent_id]
                 require(agent_request["model"] == model, name, agent_id, "model")
                 require(agent_request["provider"] == profile["provider"], name, agent_id, "provider")
                 require(agent_request["policy"] == profile, name, agent_id, agent_request["policy"])
@@ -127,17 +144,19 @@ def plan():
             require(game.defector_action_policy == "forced_zero" and game.defector_myth_policy == "normal"
                     and game.defector_role_visible_to_self is False, name, "defector policies")
             require(game.random_defection_probability == 0 and not game.punishment_enabled, name, "random defection/punishment")
-            jobs.append({"name": name, "index": i, "combo": c, "size": 8, "shape": shape,
+            jobs.append({"name": name, "index": i, "combo": c, "size": 8, "shape": shape, "comp": comp,
                          "path": expected_output_path(c, name, i, OUTPUT)})
-    require(len(jobs) == 6 and len({str(j["path"]) for j in jobs}) == 6, f"expected 6 unique jobs, found {len(jobs)}")
-    jobs.sort(key=lambda j: (0 if "myth" in j["shape"] else 1, j["combo"]["replicate_id"]))
+    keys = {(j["comp"], j["shape"], j["combo"]["replicate_id"]) for j in jobs}
+    require(len(jobs) == 45 and len(keys) == 45 and len({str(j["path"]) for j in jobs}) == 45, f"expected 45 unique jobs, found {len(jobs)}")
+    jobs.sort(key=lambda j: (0 if "myth" in j["shape"] else 1, j["combo"]["replicate_id"], j["name"]))
     return jobs
 
 
 def estimate(jobs):
     total = {m: 0.0 for m in RATES}
     for j in jobs:
-        for agent_request in j["combo"]["request_plan"].as_dict()["agents"].values():
+        request = j["combo"]["request_plan"].as_dict()
+        for agent_request in _agent_plans(request).values():
             total[agent_request["provider_model"]] += PER_AGENT_USD[agent_request["provider_model"]][j["shape"]]
     return total
 
@@ -150,14 +169,15 @@ def audit(job):
     request = c["request_plan"].as_dict()
     require(m["defector_count"] == 2 and m["defector_agent_ids"] == DEFECTOR_PILOT_IDS and m["random_defection_probability"] == 0, path, "defectors")
     require(not m["code_dirty"], path, "produced from a dirty checkout")
-    require(m["llm_request"] == request and m["llm_provider"] == "mixed", path, "request plan")
-    require(m["agent_models"] == c["agent_models"], path, "agent models")
+    require(m["llm_request"] == request and m["llm_provider"] == ("mixed" if is_mixed_plan(request) else request["provider"]), path, "request plan")
+    plans = _agent_plans(request)
+    require(m.get("agent_models") == c.get("agent_models"), path, "agent models")
     require(m["noise_config"] == c["game_params"]["noise_config"], path, "noise config")
-    require(set(d["agents"]) == set(request["agents"]), path, "agent ids")
+    require(set(d["agents"]) == set(plans), path, "agent ids")
     calls = 0
     cost = {model: 0.0 for model in RATES}
     for agent_id, a in d["agents"].items():
-        expected = request["agents"][agent_id]
+        expected = plans[agent_id]
         require(a["model"] == expected["model"], path, agent_id, a["model"])
         provider_model = expected["provider_model"]
         ir, orr = RATES[provider_model]
@@ -185,9 +205,9 @@ def audit(job):
     ordinary = [a for a in d["agents"] if a not in DEFECTOR_PILOT_IDS]
     by_family = {}
     for a in ordinary:
-        by_family.setdefault(request["agents"][a]["provider_model"], []).append(final["balances"][a])
-    return {"path": str(path.relative_to(ROOT)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "set": name,
-            "num_agents": job["size"], "agent_models": c["agent_models"], "task_order": job["shape"],
+        by_family.setdefault(plans[a]["provider_model"], []).append(final["balances"][a])
+    return {"path": str(path.relative_to(ROOT)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "set": name, "composition": job["comp"],
+            "num_agents": job["size"], "agent_models": c.get("agent_models") or c["model"], "task_order": job["shape"],
             "replicate_id": c["replicate_id"], "calls": calls, "standard_rate_usd_by_model": cost,
             "standard_rate_usd": sum(cost.values()),
             "ordinary_mean_final": sum(final["balances"][a] for a in ordinary) / len(ordinary),
@@ -195,7 +215,8 @@ def audit(job):
 
 
 STAGES = {
-    "smoke": lambda j: j["shape"] == "game" and j["combo"]["replicate_id"] == 0,
+    "pilot": lambda j: j["name"].startswith("frontier_defector_pilot_"),
+    "smoke": lambda j: j["comp"] != DEFECTOR_PILOT_NAME and j["shape"] == "game" and j["combo"]["replicate_id"] == 0,
     "all": lambda j: True,
 }
 
@@ -276,11 +297,13 @@ def main():
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({"stage": args.stage, "runs": len(receipts), "standard_rate_usd": sum(r["standard_rate_usd"] for r in receipts),
                                   "standard_rate_usd_by_model": by_model, "finals": receipts}, indent=2) + "\n")
-    for shape in SHAPES:
-        rows = [r for r in receipts if r["task_order"] == shape]
-        if rows:
-            values = [r["ordinary_mean_final"] for r in rows]
-            print(f"RESULT {shape}: ordinary-agent mean final {sum(values) / len(values):.1f} over {len(rows)} runs {[round(v, 1) for v in values]}", flush=True)
+    for comp in DEFECTOR_POPULATIONS:
+        for shape in SHAPES:
+            rows = sorted((r for r in receipts if r["composition"] == comp and r["task_order"] == shape), key=lambda r: r["replicate_id"])
+            if rows:
+                values = [r["ordinary_mean_final"] for r in rows]
+                print(f"RESULT {comp} {shape}: ordinary-agent mean final {sum(values) / len(values):.1f} over {len(rows)} runs "
+                      f"{[round(v, 1) for v in values]}", flush=True)
     print(f"AUDIT PASSED {len(receipts)}/{len(selected)}; cost=${sum(by_model.values()):.2f} {by_model}; receipt={target}", flush=True)
 
 
