@@ -126,6 +126,6 @@ main run). Billed amounts appear in the grant budget tool.
 `analyses/myth_replay_probe.py` (pilots and main run), `analyses/myth_replay_analysis.py`
 (this analysis). Here: `slopes.csv`, `verdicts.csv`, `rule_vs_natural.csv`,
 `robustness_8agent_and_weighting.csv`, `mean_send_by_amount.csv`, `manipulation_check.csv`,
-`unedited_control.csv`, `opening_mediation.csv`, `replay_send_by_amount.png`, `replay_slopes.png`, `replay_opening_check.png` (`analyses/myth_replay_plots.py`). Raw replays
+`unedited_control.csv`, `opening_mediation.csv`, `replay_send_by_amount.png`, `replay_boxes_by_amount.png`, `replay_rule_vs_story.png`, `opening_runs.png` (`analyses/myth_replay_plots.py`). Raw replays
 (gitignored): `data/analysis/myth_replay_probe_20261001/`. The edited text of natural edits in
 the completed main run was not stored; rows written by a resumed run store it.
