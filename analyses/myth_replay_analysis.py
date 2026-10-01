@@ -92,6 +92,20 @@ def opening_mediation() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def robustness(edited: pd.DataFrame) -> pd.DataFrame:
+    """Primary rule-edit slopes (Sonnet+GPT) on 8-agent contexts only (B has only 8-agent
+    contexts) and with each context x amount version weighted equally (GPT has 4 samples per
+    version, Sonnet 2)."""
+    ed = edited[(edited["mode"] == "rule") & edited["family"].isin(["Sonnet", "GPT"])]
+    rows = []
+    for arm, g in ed[ed["size"] == 8].groupby("arm"):
+        rows.append({"check": "8-agent contexts only", "arm": arm, **slope(g)})
+    for arm, g in ed.groupby("arm"):
+        gg = g.groupby(["cid", "run", "edited_amount"], as_index=False)["send"].mean()
+        rows.append({"check": "version means, equal weight", "arm": arm, **slope(gg)})
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     d = load()
@@ -186,6 +200,9 @@ def main() -> None:
                  "(faint lines: unedited control; dotted: send = stated amount)", fontsize=10)
     fig.tight_layout(rect=(0, 0.08, 1, 0.95))
     fig.savefig(OUT / "replay_send_by_amount.png", dpi=200)
+    rob = robustness(edited)
+    rob.to_csv(OUT / "robustness_8agent_and_weighting.csv", index=False)
+    print("\nrobustness:\n" + rob.round(3).to_string(index=False))
     med = opening_mediation()
     med.to_csv(OUT / "opening_mediation.csv", index=False)
     print("\nopening mediation:\n" + med.round(3).to_string(index=False))

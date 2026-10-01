@@ -769,6 +769,8 @@ def make_main(j):
             "size": j["size"], "arm": j["arm"], "mixed": j["mixed"], "mode": j["mode"], "sample": j["sample"],
             "edited_amount": None if j["amount"] is None else float(j["amount"]), "stated_before": j["stated"],
             **{k: v[k] for k in ("made", "check", "judged_amount", "unchanged_same_amount")},
+            # natural edits are stored so they can be audited; rule edits are a fixed sentence
+            "edited_myth": v["edited_myth"] if j["mode"] == "natural" else None,
             "editor_cost": v["editor_cost"] if j["sample"] == 0 else 0.0}
     if not v["made"]:
         return None, base
