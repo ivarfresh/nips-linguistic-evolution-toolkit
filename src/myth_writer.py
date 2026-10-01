@@ -173,9 +173,11 @@ class MythWriter:
     def _board_items(self, sim_data, turn):
         """(round, author, myth) for every myth written before ``turn``.
 
-        Within a round the order is a fixed shuffle keyed by the round only, so an
-        author's position does not reveal its identity and every reader sees the
-        same board.
+        Within a round the order is a fixed shuffle keyed by the round only, so
+        every reader sees the same board and positions carry no author labels.
+        The shuffle is the same in every run, so a given position always holds
+        the same agent id (e.g. a defector's myth leads round 1 in the frontier
+        board runs); kept fixed so all board runs stay comparable.
         """
         items = []
         for entry in sim_data.conversation_history:

@@ -94,6 +94,13 @@ class BoardTests(unittest.TestCase):
         # Without a board the full prompt is remembered, as before.
         self.assertTrue(any(m["content"] in later for m in sim.agents["Agent_1"].messages))
 
+    def test_board_rejected_in_myth_only_memory(self):
+        with patch("src.simulation.create_llm_client", return_value=object()), \
+                self.assertRaisesRegex(ValueError, "myth_only"), contextlib.redirect_stdout(io.StringIO()):
+            run_simulation(game=build_game(), model="mock/model", temperature=0, num_turns=2, num_agents=4,
+                           memory_capacity=6, agent_biases="", myth_writer=build_writer(), task_order=["myth"],
+                           chat_memory_mode="myth_only")
+
     def test_invalid_configuration_is_rejected(self):
         with self.assertRaises(ValueError):
             validate_myth_board("broadcast")

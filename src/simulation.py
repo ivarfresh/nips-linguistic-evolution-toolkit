@@ -477,6 +477,9 @@ def run_simulation(
             f"{sorted(GAME_RESPONSE_RETRY_POLICIES)!r}."
         )
 
+    if getattr(myth_writer, "board", None) and chat_memory_mode == "myth_only":
+        # myth_only always uses the round-1 prompt, so the board would never be shown.
+        raise ValueError("myth_board is not supported with chat_memory_mode='myth_only'")
     if request_plan is not None and monitor_config and monitor_config.get("enabled"):
         raise LLMSettingsError("Guarded strategy-monitor runs need a separately pinned monitor; use the explicit legacy path until supported")
     protected = {"llm_request", "llm_provider", "provider_model", "experiment_condition", "condition_sha256"}
