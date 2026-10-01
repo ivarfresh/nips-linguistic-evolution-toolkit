@@ -1,3 +1,20 @@
+### 2026-10-02 — Result: a shared myth board changes nothing in the frontier defector mix; myths make agents easier to exploit
+
+**Time:** ~2 h engineering and analysis; board batch ~20 min.
+
+Board pilot (branch `feature/myth-board-20261002`), $22.76, 3/3 audited finals. Same 4 Opus 5 +
+4 Sol mix with Agent_4/Agent_8 forced-zero defectors, myth → game; from round 2 every agent read
+every myth written so far (anonymous, persistent) instead of its last partner's. Ordinary-agent
+resources 55.4 / 58.3 / 55.2 against 56.0 / 58.8 / 54.8 for the seed-matched partner-myth runs
+(−0.6, −0.5, +0.4). Within-round myth similarity (TF-IDF cosine) 0.31–0.40 with and without the
+board: no convergence. Reason: with partner myths ordinary agents already send $4.81 of $5 to each
+other, so there is no room. The remaining 7 board runs stopped on exhausted OpenAI credits and are
+paused (Ivar, 2026-10-02).
+
+Exploitability (no new runs, from the 45 defector finals): with myths, ordinary agents send a
+defector $1.0–1.9 per decision against $0.6–0.9 without, in every group and task order. Write-up,
+figure and draft paper text: `docs/figures/frontier_defector_populations_20261002/README.md`.
+
 ### 2026-10-02 — Result: frontier defector populations: myths lift Opus 5, not Sol; the mix sits at the average of its parts
 
 **Time:** ~1.5 h engineering; batch ~1 h wall-clock (20 workers).
