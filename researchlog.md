@@ -1,3 +1,74 @@
+### 2026-10-02 — Result: saboteur myths lower a frontier group's cooperation only slightly, with or without a shared board (pilot)
+
+**Time:** ~1.5 h engineering; batch ~25 min.
+
+Pilot, 6/6 audited finals, $33.12. The 4 Opus 5 + 4 Sol defector mix (Agent_4/Agent_8 moves forced to
+$0), myth → game, but the two defectors' myth prompts start with a private instruction to persuade the
+others to send less (`myth_saboteur`); ordinary agents see only the myths. Each run is seed-matched to the
+same run with normal defector myths. A one-round probe (one round, myth only, ~$0.40, not saved)
+first showed both models comply without refusing; in the runs the saboteurs kept writing anti-trust
+myths through round 10 (e.g. Agent_4, round 10, partner run: the law "rewarded *sending* … and asked
+for no proof at all of *returning*").
+
+| Channel | Normal defector myths | Saboteur myths | Difference per replicate |
+|---|---|---|---|
+| Partner myth | 56.00 / 58.83 / 54.75 | 55.83 / 58.17 / 53.33 | −0.2 / −0.7 / −1.4 |
+| Shared board | 55.42 / 58.33 / 55.25 | 55.58 / 57.00 / 55.25 | +0.2 / −1.3 / 0.0 |
+
+Sabotage lowered ordinary agents' final resources slightly and fairly consistently: down in 4 of 6
+replicates, flat in 1, up in 1, by at most 1.4. Their mean send to each other fell slightly (4.83 → 4.65
+partner, 4.79 → 4.71 board) and to the defectors more (1.50 → 1.20, 1.48 → 1.33; only 27 sends per
+cell). The board did not amplify the saboteurs. Caveat: n=3 per cell; the effect is small next to the
+room sabotage had to lower cooperation.
+Branch `run/saboteur-pilot-20261002`, launcher `scripts/run_frontier_saboteur_pilot.py`.
+
+### 2026-10-02 — Result: a shared myth board changes nothing in the frontier defector mix; myths make agents easier to exploit
+
+**Time:** ~2 h engineering and analysis; board batch ~20 min.
+
+Board pilot (branch `feature/myth-board-20261002`), $22.76, 3/3 audited finals. Same 4 Opus 5 +
+4 Sol mix with Agent_4/Agent_8 forced-zero defectors, myth → game; from round 2 every agent read
+every myth written so far (anonymous, persistent) instead of its last partner's. Ordinary-agent
+resources 55.4 / 58.3 / 55.2 against 56.0 / 58.8 / 54.8 for the seed-matched partner-myth runs
+(−0.6, −0.5, +0.5). Within-round myth similarity (TF-IDF cosine) 0.31–0.40 with and without the
+board: no convergence. Reason: with partner myths ordinary agents already send $4.81 of $5 to each
+other, so there is no room. The remaining 7 board runs stopped on exhausted OpenAI credits and are
+paused (Ivar, 2026-10-02).
+
+Exploitability (no new runs, from the 45 defector finals): with myths, ordinary agents send a
+defector $1.0–1.9 per decision against $0.6–0.9 without, in every group and task order. Write-up,
+figure and draft paper text: `docs/figures/frontier_defector_populations_20261002/README.md`.
+
+### 2026-10-02 — Result: frontier defector populations: myths lift Opus 5, not Sol; the mix sits at the average of its parts
+
+**Time:** ~1.5 h engineering; batch ~1 h wall-clock (20 workers).
+
+45/45 audited finals, $106.95 (pilot of 2026-10-01 reused as replicates 0-2 of the mix).
+Eight-agent populations, September informed negative-only noise, two permanent forced-zero
+defectors (Agent_4, Agent_8; one per family in the mix). Ordinary-agent final resources,
+mean (±sd) over 5 runs:
+
+| Population | Game only | Game → Myth | Myth → Game |
+|---|---|---|---|
+| 4 Opus 5 + 4 Sol | 49.1 (±6.3) | 54.6 (±1.6) | 56.8 (±2.1) |
+| 8 Opus 5 | 48.4 (±2.3) | 56.5 (±1.6) | 57.3 (±1.2) |
+| 8 Sol | 53.4 (±5.5) | 50.5 (±5.1) | 55.9 (±2.1) |
+
+- Myth minus game, seed-paired: Opus +8.1 / +8.9 (Welch p<0.001 both); mix +5.5 (p 0.12) /
+  +7.6 (p 0.052, all five pairs positive); Sol −2.9 (p 0.41) / +2.4 (p 0.40).
+- Mix minus 0.5·Opus + 0.5·Sol: −1.8 [−7.8, +3.2], +1.1 [−1.3, +3.6], +0.2 [−1.7, +2.1] (game,
+  game→myth, myth→game; bootstrap 95%). The mid-tier "mix beats its parts with myths" pattern
+  does not appear here.
+- In game-only play all-Sol groups end higher than all-Opus groups (53.4 vs 48.4, Welch p 0.11), so
+  Sol may cope better with defectors; untested at n=5.
+- Caveats: n=5; defector losses are partly mechanical; in single-model groups both defectors
+  are of that family. Defectors sit in fixed seats (Agent_4, Agent_8) in every replicate, while the
+  September cells drew them per replicate, so who meets a defector differs from September. Gemini 3.1 Pro
+  left out (ceiling-locked). No no-defector Opus + Sol control.
+
+Launcher `scripts/run_frontier_defector_populations.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`.
+
 ### 2026-10-01 — Result: a send rule in an agent's own myth sets its next send
 
 **Time:** ~6 h (design, four pilots, main replay run stopped at 29%, analysis).
@@ -19,6 +90,29 @@ whatever its myth says. An amount told inside the story moves Sonnet less ($0.57
   results showed A and C far past threshold. Rejected: running the remaining GPT-heavy 71% (hours, ~$27) for narrower intervals.
 
 Details: `docs/research/myth_replay_probe_20261001/README.md`.
+
+### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
+
+**Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
+
+Pilot, n=3 per cell, $11.45 (6/6 audited finals). 4 Opus 5 + 4 GPT-5.6 Sol, balanced rotating
+pairs, September informed negative-only noise; Agent_4 (Opus) and Agent_8 (Sol) are permanent
+forced-zero defectors with the September defectors25 settings (unaware, myths circulate). Gemini
+3.1 Pro left out because it is ceiling-locked. Scored on the six ordinary agents.
+
+| Cell | Game only | Myth → Game |
+|---|---|---|
+| All ordinary agents | 46.9 (±7.4) | 56.5 (±2.1) |
+| Opus 5 | 50.3 (±3.8) | 59.3 (±0.3) |
+| Sol | 43.5 (±11.1) | 53.8 (±4.1) |
+
+Seed-paired myth minus game: +6.1, +6.5, +16.3 (replicates 0, 1, 2). The no-defector
+2 Gemini / 3 Opus / 3 Sol population had only +2.5 (72.2 vs 74.7). Mid-tier Sonnet at the same
+defector share gave +7.6 (defectors drawn per replicate there, fixed seats here, so not like-for-like). Caveat: n=3; part of the
+lower game-only level is mechanical (a defector partner returns nothing). Launcher
+`scripts/run_frontier_defector_pilot.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not
+yet approved.
 
 ### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
 
