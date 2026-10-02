@@ -136,8 +136,10 @@ def plot_grid(stats: pd.DataFrame, setting: str, rows, metric: str, filename: st
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=10)
     fig.suptitle(title, fontsize=14, fontweight="bold")
     fig.supylabel(ylabel, fontsize=12, x=0.004)
-    fig.text(0.5, 0.035, note, ha="center", fontsize=8.8, color="#444444")
-    fig.tight_layout(rect=(0.02, 0.07, 1, 0.93), h_pad=1.8, w_pad=1.2)
+    # A one-row grid is short, so its legend and note need more of the figure height.
+    note_y, bottom = (0.035, 0.07) if len(rows) > 1 else (0.085, 0.16)
+    fig.text(0.5, note_y, note, ha="center", fontsize=8.8, color="#444444")
+    fig.tight_layout(rect=(0.02, bottom, 1, 0.93), h_pad=1.8, w_pad=1.2)
     fig.savefig(OUTPUT / f"{filename}.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
