@@ -70,7 +70,8 @@ yet checked against the human coding pass, and the counts have no test.
 **3. Single-model runs stay apart.** On the map, Gemini moves furthest, away
 from the others; Sonnet moves a little towards the centre and GPT barely
 moves. In 768-d the map understates Sonnet: in 8-agent Myth → Game its
-round-1 to round-10 shift is as large as Gemini's. The round-10 background
+round-1 to round-10 shift is larger than Gemini's (centroid cosine 0.77
+against 0.82; GPT 0.94). The round-10 background
 has one basin per family. Family silhouette at round 10
 stays at 0.33–0.41.
 
