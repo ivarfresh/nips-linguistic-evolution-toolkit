@@ -188,6 +188,12 @@ and [data audit](../research/mixed_future_data_audit.md).
   across agents in myth→game, PR #4 rules add a little to returns (Sonnet +0.05 R²). The
   two moral judges' disagreement is concentrated on the fair/generous boundary. See
   [the README](../figures/myth_text_predictiveness_20260930/README.md).
+- Self-anchoring instruction (2026-10-02, replay of 70 Sonnet myth calls, $5.84):
+  deleting "Use the myth you wrote in the previous round as inspiration, but adapt
+  it in your own way" leaves self-copying unchanged (32%) and slightly lowers
+  borrowing from the shown partner myth (−2.0 pts over the unseen-myth baseline,
+  −3.5 to −0.5, 20 runs). Self-anchoring comes from the own myth in chat memory,
+  not the instruction. See [the README](../research/self_anchor_replay_20261002/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from
