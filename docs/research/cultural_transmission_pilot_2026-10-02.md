@@ -22,9 +22,10 @@ and that nothing is passed on beyond the reader:
 - The frontier board and saboteur pilots (2026-10-02) found nothing, but the frontier
   models already send about $4.81 of $5 to each other, so there was no room to move.
 
-Two features of the current design work against spread: the later-round prompt
-tells agents to "use your previous myth as inspiration" (self-copying is the
-strongest effect we have measured), and each myth reaches only one partner.
+The main feature of the current design that works against spread is that each myth
+reaches only one partner. (Self-copying is the strongest effect we have measured, but it
+comes from the own myth in chat memory, not the "use your previous myth as inspiration"
+instruction; see the self-anchor replay.)
 
 ## Design
 
@@ -35,8 +36,10 @@ strongest effect we have measured), and each myth reaches only one partner.
   and costs more ($4.01 vs $3.41 per 8-agent myth → game run).
 - **Shared board on:** every agent reads every earlier myth (`myth_board:
   persistent`, already on main).
-- **Self-anchoring line removed:** the board prompt drops "Use the myth you wrote in
-  the previous round as inspiration, but adapt it in your own way."
+- **Prompt wording kept as in September.** Removing "Use the myth you wrote in the previous
+  round as inspiration, but adapt it in your own way" was planned, but the 2026-10-02 replay
+  showed it does not reduce self-copying and slightly lowers borrowing from other myths
+  (−2.0 pts, `docs/research/self_anchor_replay_20261002/README.md`), so the line stays.
 - **Plant:** Agent_1's round-1 myth is fixed text, not generated: a real September
   Sonnet round-1 myth plus one named rule sentence that Sonnet rarely follows on its
   own (draft: "the Rule of Two Stones: send two of five"). Check the base rate of
@@ -85,7 +88,6 @@ suggestive at n=3.
 
 ## Left for later (only if spread is established)
 
-Which lever matters (board vs partner channel, with vs without the self-anchoring
-line), selection (stories of successful agents retold more), a newcomer who must
+Which lever matters (board vs partner channel), selection (stories of successful agents retold more), a newcomer who must
 learn from myths alone as a design element, Park-style memory retrieval, and an
 Opus arm.
