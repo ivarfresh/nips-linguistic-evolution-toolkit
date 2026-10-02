@@ -154,17 +154,32 @@ def validate_myth_board(board):
 class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
-    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None):
+    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None,
+                 saboteur=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
         self.pressure = validate_myth_pressure(pressure) if pressure is not None else None
         self.board = validate_myth_board(board)
+        # Private instruction prepended to the defectors' myth prompts only (2026-10-02
+        # saboteur pilot). Ordinary agents never see it; they see the resulting myths.
+        if saboteur is not None and (not isinstance(saboteur, str) or not saboteur.strip()):
+            raise ValueError("myth_saboteur must be a non-empty instruction")
+        self.saboteur = saboteur.strip() if saboteur else None
         if self.board and (later_rounds_template is None or "{myth_board}" not in later_rounds_template):
             raise ValueError("myth_board requires a later-rounds template with a {myth_board} placeholder")
         # agent id -> the prompt to keep in chat memory for this round's myth call
         # (the board itself is shown once, not carried forward in every later prompt).
         self._memory_prompts = {}
+
+    def _with_saboteur(self, agent_id, sim_data, prompt):
+        """Prepend the private saboteur instruction for defector agents."""
+        if not self.saboteur:
+            return prompt
+        defectors = set((getattr(sim_data, "game_data", {}) or {}).get("defector_agent_ids") or [])
+        if not defectors:
+            raise ValueError("myth_saboteur needs defector agents, but the run has none")
+        return f"{self.saboteur}\n\n{prompt}" if agent_id in defectors else prompt
 
     def memory_prompt_for(self, agent_id):
         """Chat-memory version of the agent's latest myth prompt, or None to remember it as sent."""
@@ -221,12 +236,12 @@ class MythWriter:
         shared_context_block = build_previous_round_shared_context(
             agent_id, sim_data, turn
         )
-        return self.round1_template.format(
+        return self._with_saboteur(agent_id, sim_data, self.round1_template.format(
             myth_topic=self.myth_topic,
             shared_context_block=shared_context_block,
             topic_instruction=self._get_topic_instruction(),
             word_budget=self.word_budget(turn),
-        )
+        ))
 
     def _get_topic_instruction(self):
         """Render the myth topic without making the default "anything" literal."""
@@ -347,12 +362,14 @@ class MythWriter:
             council_block=self._council_block(agent_id, previous_entry),
         )
         if not self.board:
-            return self.later_rounds_template.format(**fields).lstrip()
-        self._memory_prompts[agent_id] = self.later_rounds_template.format(
+            return self._with_saboteur(agent_id, sim_data, self.later_rounds_template.format(**fields).lstrip())
+        self._memory_prompts[agent_id] = self._with_saboteur(agent_id, sim_data, self.later_rounds_template.format(
             **fields,
             myth_board=MYTH_BOARD_MEMORY_NOTE.format(count=len(board_items), last_round=turn - 1),
-        ).lstrip()
-        return self.later_rounds_template.format(**fields, myth_board=self._format_board(board_items)).lstrip()
+        ).lstrip())
+        return self._with_saboteur(
+            agent_id, sim_data, self.later_rounds_template.format(**fields, myth_board=self._format_board(board_items)).lstrip()
+        )
 
     def _delivery_note(self, agent_id, previous_entry):
         """Tell the writer how much of its previous myth reached the other agent."""
