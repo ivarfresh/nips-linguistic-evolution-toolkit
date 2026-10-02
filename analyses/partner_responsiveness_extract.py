@@ -36,7 +36,6 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "docs" / "figures" / "partner_responsiveness_20260930"
 ENDOWMENT = 5.0
 MULTIPLIER = 3.0
-FRONTIER_TMP_PREFIX = "/private/tmp/nlet-frontier-20260918/"
 
 
 def raw_noise_draw(noise_seed, turn, dyad_id, action_type, noise_range=1.0):
@@ -83,7 +82,8 @@ def run_specs():
             continue  # the September reference runs are listed alongside
         specs.append({
             "run_set": "frontier",
-            "path": run["path"].replace(FRONTIER_TMP_PREFIX, ""),
+            # The manifest records the absolute path of the worktree that built it.
+            "path": "data/json/" + run["path"].split("data/json/", 1)[1],
             "noise": "noise_informed",
             "treatment": "control",
             "replicate": None,

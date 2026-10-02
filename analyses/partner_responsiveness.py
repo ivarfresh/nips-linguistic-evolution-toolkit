@@ -35,9 +35,17 @@ Reads the decision table written by partner_responsiveness_extract.py.
 Usage (from repo root):
   python analyses/partner_responsiveness_extract.py
   python analyses/partner_responsiveness.py
+
+The second step also writes provenance.json for the folder: the 450 run
+finals listed by the extract script's manifests, with the allowed differences
+of the frontier rerun plus the noise-regime factor of Figure 2. decisions.csv
+is a local intermediate (gitignored) and is not listed as an output.
 """
 
+import hashlib
+import json
 import re
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -48,6 +56,12 @@ OUT_DIR = ROOT / "docs" / "figures" / "partner_responsiveness_20260930"
 ORDERS = ["game", "game_myth", "myth_game"]
 N_BOOT = 2000
 RNG = np.random.default_rng(20260930)
+INTERMEDIATES = {"decisions.csv"}
+SOURCE_MANIFESTS = [
+    "docs/figures/figure2_noise_comparison_20260916/provenance.json",
+    "docs/figures/negative_only_crossmodel_reasoning_rerun_20260909/provenance.json",
+    "docs/figures/frontier_rerun_20260918/provenance.json",
+]
 
 
 def load():
@@ -385,6 +399,40 @@ def main():
         names.append("sonnet_rationale_judge_summary.csv")
     for name in names:
         print(f"-> {(OUT_DIR / name).relative_to(ROOT)}")
+    write_provenance()
+
+
+def write_provenance():
+    """Record the run finals behind decisions.csv and hash every tracked output."""
+    sys.path.insert(0, str(ROOT))
+    from analyses.partner_responsiveness_extract import run_specs
+    from scripts.analyze_frontier_rerun import ALLOWED as FRONTIER_ALLOWED
+    from src.experiment_condition import output_provenance
+
+    paths = [spec["path"] for spec in run_specs()]
+    if len(paths) != len(set(paths)):
+        raise SystemExit("duplicate run in the partner-responsiveness run list")
+    used = set(pd.read_csv(OUT_DIR / "decisions.csv", usecols=["path"]).path)
+    if used != set(paths):
+        raise SystemExit(f"decisions.csv and the run list disagree: {len(used ^ set(paths))} paths differ")
+    # Each final must be the file its source manifest hashed.
+    recorded = {}
+    for manifest in SOURCE_MANIFESTS:
+        for run in json.loads((ROOT / manifest).read_text())["runs"]:
+            recorded["data/json/" + run["path"].split("data/json/", 1)[1]] = run["sha256"]
+    for path in paths:
+        if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != recorded.get(path):
+            raise SystemExit(f"{path}: not the final its source manifest recorded")
+    allowed = {
+        **FRONTIER_ALLOWED,
+        "protocol.game.noise_config": "Noise regime (none, uninformed, informed) is a design factor of the "
+                                      "Figure 2 runs; the analysis pools over it within model and population size.",
+    }
+    outputs = sorted(p for p in OUT_DIR.rglob("*") if p.is_file() and p.name != "provenance.json"
+                     and p.name not in INTERMEDIATES and not p.name.startswith("."))
+    document = output_provenance([(ROOT / p).resolve() for p in paths], outputs, allowed, output_root=OUT_DIR)
+    (OUT_DIR / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"provenance: {len(paths)} runs, {len(outputs)} outputs -> {(OUT_DIR / 'provenance.json').relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
