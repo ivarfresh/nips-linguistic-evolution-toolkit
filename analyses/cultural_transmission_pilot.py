@@ -127,7 +127,7 @@ def analyze():
     path = OUT / "newcomers.jsonl"
     if path.exists():
         nc = pd.DataFrame([json.loads(x) for x in path.read_text().splitlines() if x.strip()])
-        nc["exact2"] = nc["send"] == 2.0
+        nc["exact2"] = (nc["send"] == 2.0).where(nc["send"].notna())  # share among parsed replies
         g = nc.groupby(["arm", "replicate_id", "board_round"]).agg(n=("send", "size"), parsed=("send", "count"),
                                                              exact2=("exact2", "mean"), mean_send=("send", "mean"),
                                                              board_has_marker=("board_has_marker", "first"))

@@ -73,6 +73,10 @@ class PlantTests(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 build_writer(plant=bad)
 
+    def test_plant_for_unknown_agent_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "not one of the run's 4 agents"):
+            run_sim(build_writer(plant={"agent": "Agent_9", "text": PLANT["text"]}))
+
     def test_condition_records_plant_only_when_configured(self):
         game = build_game()
         self.assertEqual(build_condition(game, build_writer(), {}, {})["protocol"]["myth"]["plant"], PLANT)

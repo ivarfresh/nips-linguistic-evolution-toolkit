@@ -480,6 +480,9 @@ def run_simulation(
     if getattr(myth_writer, "board", None) and chat_memory_mode == "myth_only":
         # myth_only always uses the round-1 prompt, so the board would never be shown.
         raise ValueError("myth_board is not supported with chat_memory_mode='myth_only'")
+    plant = getattr(myth_writer, "plant", None)
+    if plant and plant["agent"] not in {f"Agent_{i+1}" for i in range(num_agents)}:
+        raise ValueError(f"myth_plant agent {plant['agent']!r} is not one of the run's {num_agents} agents")
     if request_plan is not None and monitor_config and monitor_config.get("enabled"):
         raise LLMSettingsError("Guarded strategy-monitor runs need a separately pinned monitor; use the explicit legacy path until supported")
     protected = {"llm_request", "llm_provider", "provider_model", "experiment_condition", "condition_sha256"}
