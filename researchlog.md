@@ -1,3 +1,17 @@
+### 2026-10-02 — Result: strategy clauses sometimes travel
+
+**Time:** not tracked separately.
+
+Result: bounded existing-data audit of 48 complete trajectories (480 myths,
+45 unique runs), fixed by identifiers before reading. All sampled own texts
+and 432 actual exposures verified; 44 selected changes machine-coded, not a
+census. T34/T40 show near-verbatim uptake of specific peer clauses absent from
+earlier own texts and selected unseen comparisons. Rules also revert or disappear.
+Behavioral enactment and a causal explanation of cooperation remain unresolved.
+Independent bounded review passed; human validation is pending, with a
+12-trajectory packet prepared. No new experiment, paid API batch, or runtime
+change. Report: `docs/research/strategy_clause_audit_20261002/README.md`; decision D013.
+
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
 
 **Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
