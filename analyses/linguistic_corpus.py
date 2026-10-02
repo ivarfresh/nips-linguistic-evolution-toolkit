@@ -53,11 +53,12 @@ FAMILY_OF = {"claude-sonnet-4.5": "Sonnet", "gpt-5-nano": "GPT", "gemini-3.7-fla
 FAMILY_ORDER = ["Sonnet", "Gemini", "GPT"]  # the figure labels: Sonnet+GPT, Sonnet+Gemini, Gemini+GPT
 
 
+SEPTEMBER_DESIGN = {"september", "september_n10"}  # same models, families and labels
 FRONTIER_EXPECTED = {(2, False): 30, (8, False): 30, (2, True): 36, (8, True): 10}  # myth-bearing runs
 
 
 def family(model: str) -> str:
-    if DS.name != "september":
+    if DS.name not in SEPTEMBER_DESIGN:
         return DS.family(model)
     for key, fam in FAMILY_OF.items():
         if key in model:
@@ -75,7 +76,7 @@ def agent_families(run: dict) -> dict[str, str]:
 
 def composition_label(families: dict[str, str]) -> str:
     counts = pd.Series(list(families.values())).value_counts()
-    if DS.name != "september":  # deterministic order for tied counts (2/3/3); September kept as built
+    if DS.name not in SEPTEMBER_DESIGN:  # deterministic order for tied counts (2/3/3); September kept as built
         order = list(DS.families)
         if len(counts) == 1:
             return f"{len(families)} {counts.index[0]}" if len(families) > 2 else f"{counts.index[0]}+{counts.index[0]}"
@@ -90,7 +91,7 @@ def composition_label(families: dict[str, str]) -> str:
 
 
 def run_list(size: int, data_root: Path) -> list[dict]:
-    table = pd.read_csv(RUN_TABLES[size])
+    table = pd.read_csv((DS.run_tables or RUN_TABLES)[size])
     runs = table.drop_duplicates("path")[["path", "task_order", "replicate_id"]]
     runs = runs[runs["task_order"] != "game"]  # game-only runs have no myths
     return [
@@ -178,7 +179,7 @@ def main() -> None:
         raise SystemExit("refusing to write a non-September corpus into the September data directory")
     print(f"dataset {DS.name} -> {out}")
     myths, decisions = load(args.data_root)
-    if DS.name != "september":
+    if DS.name not in SEPTEMBER_DESIGN:
         check_frontier(myths, decisions)
     out.mkdir(parents=True, exist_ok=True)
     myths.to_csv(out / "myths.csv", index=False)

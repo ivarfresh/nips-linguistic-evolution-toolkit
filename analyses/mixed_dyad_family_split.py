@@ -41,6 +41,10 @@ from analyses._mixed_model_provenance import write_provenance  # noqa: E402
 
 DYADS = ROOT / "docs/figures/mixed_model_dyads_20260917/decisions.csv"
 POPULATIONS = ROOT / "docs/figures/mixed_model_populations_20260918/games.csv"
+# Run-count notes in the figure footers (overridden by analyses/table1_n10.py).
+DYAD_N_NOTE = "n = 6 mixed runs; 5 homogeneous runs"
+POP_N_NOTE = "n = 5 per point"
+EXPECTED_DYAD_RUNS, EXPECTED_POPULATION_RUNS = 99, 135
 OUTPUT = ROOT / "docs/figures/mixed_model_family_split_20260922"
 
 TASK_ORDERS = ["game", "game_myth", "myth_game"]
@@ -147,8 +151,7 @@ def plot_dyad_split(run_means: pd.DataFrame) -> None:
     fig.suptitle("What each model does inside a mixed dyad, next to what it does among its own kind\n"
                  "Fixed dyads · Informed negative-only noise · No defectors · 10 rounds",
                  fontsize=14, fontweight="bold")
-    fig.text(0.5, 0.045, "Boxes and dots: per-run means over the family's own decisions (n = 6 mixed runs; "
-             "5 homogeneous runs). Return proportion is undefined when nothing arrived; such runs are dropped for that family.",
+    fig.text(0.5, 0.045, "Boxes and dots: per-run means over the family's own decisions (" + DYAD_N_NOTE + "). Return proportion is undefined when nothing arrived; such runs are dropped for that family.",
              ha="center", fontsize=8.5, color="#444444")
     fig.tight_layout(rect=(0, 0.07, 1, 0.955))
     fig.savefig(OUTPUT / "2-agent-mixed-model-simulation-split.png", dpi=200, bbox_inches="tight")
@@ -281,8 +284,8 @@ def plot_population_split(run_means: pd.DataFrame, metric: str) -> None:
              "return": "Return proportion, by family, along the eight-agent contagion ladder"}[metric]
     fig.suptitle(f"{title}\nRotating 8-agent populations · Informed negative-only noise · No defectors · 10 rounds",
                  fontsize=13.5, fontweight="bold")
-    fig.text(0.5, 0.04, "Line = mean over runs of each family's per-run mean; small dots = runs (n = 5 per point). "
-             "0 and 8 on the x-axis are the homogeneous September populations of the majority and minority family.",
+    fig.text(0.5, 0.04, "Line = mean over runs of each family's per-run mean; small dots = runs (" + POP_N_NOTE + "). "
+             "0 and 8 on the x-axis are the homogeneous single-model populations of the majority and minority family.",
              ha="center", fontsize=8.5, color="#444444")
     fig.tight_layout(rect=(0, 0.07, 1, 0.95))
     name = "mixed-model-simulation-8-agent-split.png" if metric == "sent" else f"population_family_split_{metric}.png"
@@ -330,10 +333,10 @@ def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     decisions = pd.read_csv(DYADS)
     games = pd.read_csv(POPULATIONS)
-    if decisions["path"].nunique() != 99:
-        raise SystemExit(f"Expected 99 dyad runs in {DYADS}, found {decisions['path'].nunique()}")
-    if games["path"].nunique() != 135:
-        raise SystemExit(f"Expected 135 population runs in {POPULATIONS}, found {games['path'].nunique()}")
+    if decisions["path"].nunique() != EXPECTED_DYAD_RUNS:
+        raise SystemExit(f"Expected {EXPECTED_DYAD_RUNS} dyad runs in {DYADS}, found {decisions['path'].nunique()}")
+    if games["path"].nunique() != EXPECTED_POPULATION_RUNS:
+        raise SystemExit(f"Expected {EXPECTED_POPULATION_RUNS} population runs in {POPULATIONS}, found {games['path'].nunique()}")
 
     dyad_runs = dyad_run_means(decisions)
     population_runs = population_run_means(games)

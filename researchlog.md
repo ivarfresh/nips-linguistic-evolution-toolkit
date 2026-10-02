@@ -84,6 +84,28 @@ mean (±sd) over 5 runs:
 Launcher `scripts/run_frontier_defector_populations.py`; receipt
 `data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`.
 
+### 2026-10-01 — Result: Table 1 (mixed vs average of parts) re-run at n = 10
+
+**Time:** ~8 h wall-clock (two network outages, one relaunch at 20 workers).
+
+Result: 216 extension runs, audit 216/216, $179.25 at standard rates (Claude $135.40,
+OpenAI $21.09, Google $22.76; work lost to outages and quarantines not included).
+Replicates 5–9 for the September single-model groups and the 8-agent ladder, 6–9 for
+the mixed dyads; every input except the replicate id is identical to the original set.
+At n = 10, 16 of 27 cells have Welch p < 0.05 (11 after Holm), against 13 / 7 at n = 5–6.
+Main moves: Sonnet + GPT game-only drops to −8.7 (now significant); 1 Gemini + 7 GPT
+game→myth falls from +9.6 to +4.4 (no longer significant); 1 GPT + 7 Sonnet game→myth
+and 4 GPT + 4 Sonnet game→myth lose significance; 4 Gemini + 4 GPT game-only and
+4 GPT + 4 Sonnet myth→game gain it.
+
+Caveats: 8 mixed game→myth dyads with Gemini were quarantined (Gemini HTTP 503 /
+timeout before an in-run retry succeeded) and resampled under the same seed; one 8-agent
+Sonnet run was rerun after a role-key error. 40 workers caused local DNS failures;
+20 is the safe ceiling on this connection.
+
+Details: `docs/figures/mixed_vs_average_n10_20261001/README.md`,
+`scripts/run_table1_n10_extension.py`.
+
 ### 2026-10-01 — Result: a send rule in an agent's own myth sets its next send
 
 **Time:** ~6 h (design, four pilots, main replay run stopped at 29%, analysis).
@@ -105,6 +127,7 @@ whatever its myth says. An amount told inside the story moves Sonnet less ($0.57
   results showed A and C far past threshold. Rejected: running the remaining GPT-heavy 71% (hours, ~$27) for narrower intervals.
 
 Details: `docs/research/myth_replay_probe_20261001/README.md`.
+
 
 ### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
 
