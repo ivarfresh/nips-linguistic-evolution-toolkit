@@ -1,3 +1,36 @@
+### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
+
+**Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
+
+An independent review rebuilt all 216 board prompts (plant delivered exactly) and re-derived
+the numbers from raw finals. It narrows the entry below:
+- the send count is 0 of 96 after the board appeared, not 0 of 105 (9 were round-1 sends);
+- the newcomer test has 30 round-10 decisions from 3 fixed boards, not 60 independent tests;
+- "no other agent repeated the rule" holds only for the exact words: paraphrased "send two"
+  echoes exist (run 0: Agent_7 round 2, Agent_8 round 3), not yet coded;
+- Agent_1 kept naming the rule until round 4–7, recast as an opening move, rather than dropping it.
+It also flags a design limit: the board is swapped for a one-line note before game decisions, so
+read myths reach play only through the agent's own rewritten myth. The newcomer drop (−$0.72
+±0.24, sign test p = 0.25) is unregistered and needs the control arm. Fixed an analysis bug that
+would pool planted and control arms. Review:
+`docs/research/cultural_transmission_pilot_20261002/ASTRA_REVIEW.md`.
+
+### 2026-10-02 — Result: a rule planted in one agent's myth does not spread, even on a shared board
+
+**Time:** ~3 h (build, three runs, newcomer test, analysis).
+
+Result: planted arm, n=3, 3/3 audited finals, $17.13 + $1.29 newcomer test. September Sonnet 4.5
+8-agent myth→game with a shared myth board; Agent_1's round-1 myth was a real September myth
+plus "And so the elders taught the Velmar Rule: whoever holds five should send two of the five."
+Every agent's myth prompt held the rule in rounds 2–10. No other agent named it (0 of 189 myths)
+or sent $2 (0 of 105 sends; Sonnet's September minimum is $2.50). Newcomers shown the other 7
+agents' round-1 or round-10 myths sent $2 0 of 60 times. Pre-registered retelling rule: not
+established in any run. Agent_1 sent $2 in round 1, then $3–4, and dropped the rule from its
+myths by round 4–7. Newcomers sent less after round-10 than round-1 boards ($4.27 → $3.55,
+not pre-registered; no control to separate the plant from ordinary drift). Caveats: no control
+arm; the seed story praises generosity; a $2 rule costs payoff. Details:
+`docs/research/cultural_transmission_pilot_20261002/README.md`; branch
+`run/cultural-transmission-pilot-20261002`.
 ### 2026-10-02 — Result: the "use your previous myth as inspiration" line does not hold back borrowing
 
 **Time:** ~1.5 h (design, replay, analysis).

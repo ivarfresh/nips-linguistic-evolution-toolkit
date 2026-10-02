@@ -480,6 +480,9 @@ def run_simulation(
     if getattr(myth_writer, "board", None) and chat_memory_mode == "myth_only":
         # myth_only always uses the round-1 prompt, so the board would never be shown.
         raise ValueError("myth_board is not supported with chat_memory_mode='myth_only'")
+    plant = getattr(myth_writer, "plant", None)
+    if plant and plant["agent"] not in {f"Agent_{i+1}" for i in range(num_agents)}:
+        raise ValueError(f"myth_plant agent {plant['agent']!r} is not one of the run's {num_agents} agents")
     if request_plan is not None and monitor_config and monitor_config.get("enabled"):
         raise LLMSettingsError("Guarded strategy-monitor runs need a separately pinned monitor; use the explicit legacy path until supported")
     protected = {"llm_request", "llm_provider", "provider_model", "experiment_condition", "condition_sha256"}
@@ -1044,14 +1047,25 @@ def run_simulation(
                         # own myths); stateless: nothing is remembered — the
                         # later-rounds template carries last_myth explicitly.
                         myth_remember = chat_memory_mode not in ("myth_only", "stateless")
+                        planted = getattr(myth_writer, "planted_myth", lambda *_: None)
                         futures = {
-                            agent_id: executor.submit(
-                                sim_data.agents[agent_id].respond,
-                                prompts[agent_id],
-                                myth_metadata[agent_id],
-                                myth_remember,
-                                myth_writer.validate_response,
-                                memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
+                            agent_id: (
+                                executor.submit(
+                                    sim_data.agents[agent_id].scripted_response,
+                                    prompts[agent_id],
+                                    {"content": planted(agent_id, turn), "response_source": "planted"},
+                                    transcript_metadata=myth_metadata[agent_id],
+                                    remember=myth_remember,
+                                )
+                                if planted(agent_id, turn) is not None
+                                else executor.submit(
+                                    sim_data.agents[agent_id].respond,
+                                    prompts[agent_id],
+                                    myth_metadata[agent_id],
+                                    myth_remember,
+                                    myth_writer.validate_response,
+                                    memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
+                                )
                             )
                             for agent_id in active_agent_order
                         }
