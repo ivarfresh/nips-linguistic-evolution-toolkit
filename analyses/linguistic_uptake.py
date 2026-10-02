@@ -167,8 +167,34 @@ def run_level_summary(children: pd.DataFrame, by: list[str]) -> pd.DataFrame:
             vals = g[m].dropna()
             rec[f"{m}_p"] = stats.wilcoxon(vals).pvalue if len(vals) >= 5 and (vals != 0).any() else np.nan
             rec[f"{m}_runs_positive"] = int((vals > 0).sum())
+            half = stats.t.ppf(0.975, len(vals) - 1) * vals.std(ddof=1) / np.sqrt(len(vals)) if len(vals) > 1 else np.nan
+            rec[f"{m}_ci_lo"], rec[f"{m}_ci_hi"] = vals.mean() - half, vals.mean() + half
+        for m in ["adopt_parent", "adopt_null", "cos_parent", "cos_null"]:
+            rec[f"{m}_ci"] = stats.t.ppf(0.975, len(g) - 1) * g[m].std(ddof=1) / np.sqrt(len(g)) if len(g) > 1 else np.nan
         rows.append(rec)
-    return pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
+    # Holm correction across the rows of this table, separately for each metric.
+    for m in ["adopt_excess", "cos_excess"]:
+        out[f"{m}_p_holm"] = holm(out[f"{m}_p"].to_numpy())
+    return out
+
+
+def holm(p: np.ndarray) -> np.ndarray:
+    """Holm step-down adjusted p-values; NaNs pass through."""
+    adj = np.full(len(p), np.nan)
+    ok = ~np.isnan(p)
+    idx = np.flatnonzero(ok)[np.argsort(p[ok])]
+    running = 0.0
+    for rank, i in enumerate(idx):
+        running = max(running, min(1.0, (len(idx) - rank) * p[i]))
+        adj[i] = running
+    return adj
+
+
+def stars(p: float) -> str:
+    if np.isnan(p):
+        return "n/a"
+    return "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "n.s."
 
 
 # --------------------------------------------------------------------------- 3
@@ -334,7 +360,11 @@ def plot_excess(summary: pd.DataFrame) -> None:
             r = r.iloc[0]
             for dx, part, color in ((-0.18, "parent", "#444444"), (0.18, "null", "#bbbbbb")):
                 ax.bar(x + dx, r[f"{metric}_{part}_mean"] * scale, width=0.34, color=color,
-                       yerr=r[f"{metric}_{part}_sd"] * scale, capsize=3, error_kw=dict(lw=1, ecolor="#666666"))
+                       yerr=r[f"{metric}_{part}_ci"] * scale, capsize=3, error_kw=dict(lw=1, ecolor="#666666"))
+            top = max(r[f"{metric}_parent_mean"] + r[f"{metric}_parent_ci"],
+                      r[f"{metric}_null_mean"] + r[f"{metric}_null_ci"]) * scale
+            ax.annotate(f"{stars(r[f'{metric}_excess_p_holm'])}\n{int(r[f'{metric}_excess_runs_positive'])}/{int(r['n_runs'])}",
+                        (x, top), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=7)
         ax.set_xticks(range(len(order)), labels, fontsize=8)
         ax.set_title(title)
         ax.grid(axis="y", alpha=0.3)
@@ -346,7 +376,10 @@ def plot_excess(summary: pd.DataFrame) -> None:
                    loc="lower right", fontsize=8)
     lo = min(summary["cos_null_mean"].min(), summary["cos_parent_mean"].min())
     axes[1].set_ylim(max(0, lo - 0.1), 1)
-    fig.suptitle("Agents reuse the language of the myth they were shown (bars: mean over runs, whiskers: sd)")
+    axes[0].set_ylim(0, axes[0].get_ylim()[1] * 1.12)
+    fig.suptitle("Agents reuse the language of the myth they were shown (bars: mean over runs, whiskers: 95% CI)\n"
+                 "Above each pair: paired Wilcoxon over runs, shown minus unseen, Holm-corrected across the five "
+                 "settings (* p<.05, ** p<.01, *** p<.001); runs where shown > unseen", fontsize=9)
     fig.tight_layout()
     fig.savefig(FIGS / "language_reuse_shown_vs_unseen.png", dpi=200)
     plt.close(fig)
@@ -418,13 +451,32 @@ def plot_style(drift: pd.DataFrame, accuracy: float) -> None:
 
 # --------------------------------------------------------------------------- main
 
+def write_reuse(children: pd.DataFrame) -> None:
+    main_summary = run_level_summary(children, ["size", "exposure"])
+    by_order = run_level_summary(children, ["size", "exposure", "task_order"])
+    by_family = run_level_summary(children, ["size", "exposure", "family", "parent_family"])
+    main_summary.to_csv(FIGS / "reuse_summary.csv", index=False)
+    by_order.to_csv(FIGS / "reuse_by_task_order.csv", index=False)
+    by_family.to_csv(FIGS / "reuse_by_family_pair.csv", index=False)
+    plot_excess(main_summary)
+    show = ["size", "exposure", "n_runs", "adopt_parent_mean", "adopt_null_mean", "adopt_excess_mean",
+            "adopt_excess_p_holm", "adopt_excess_runs_positive", "cos_excess_mean", "cos_excess_p_holm",
+            "cos_excess_runs_positive"]
+    print(main_summary[show].round(4).to_string(index=False))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--perms", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=20260923)
+    ap.add_argument("--replot", action="store_true",
+                    help="rebuild the reuse tables and figure from the saved uptake_children.csv; skip the rest")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     FIGS.mkdir(parents=True, exist_ok=True)
+    if args.replot:
+        write_reuse(pd.read_csv(DATA / "uptake_children.csv"))
+        return
 
     myths = load_myths()
     print(f"{len(myths)} myths, {int((~myths['valid']).sum())} excluded as empty")
@@ -436,16 +488,7 @@ def main() -> None:
 
     children = child_table(myths, words, hist, emb, cands)
     children.to_csv(DATA / "uptake_children.csv", index=False)
-    main_summary = run_level_summary(children, ["size", "exposure"])
-    by_order = run_level_summary(children, ["size", "exposure", "task_order"])
-    by_family = run_level_summary(children, ["size", "exposure", "family", "parent_family"])
-    main_summary.to_csv(FIGS / "reuse_summary.csv", index=False)
-    by_order.to_csv(FIGS / "reuse_by_task_order.csv", index=False)
-    by_family.to_csv(FIGS / "reuse_by_family_pair.csv", index=False)
-    plot_excess(main_summary)
-    show = ["size", "exposure", "n_runs", "adopt_parent_mean", "adopt_null_mean", "adopt_excess_mean",
-            "adopt_excess_sd", "adopt_excess_p", "cos_excess_mean", "cos_excess_sd", "cos_excess_p"]
-    print(main_summary[show].round(4).to_string(index=False))
+    write_reuse(children)
 
     X, vocab = marker_matrix(myths)
     H = history_matrix(myths, X)
