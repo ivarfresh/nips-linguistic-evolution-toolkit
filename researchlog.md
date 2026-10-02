@@ -69,6 +69,28 @@ mean (±sd) over 5 runs:
 Launcher `scripts/run_frontier_defector_populations.py`; receipt
 `data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`.
 
+### 2026-10-01 — Result: a send rule in an agent's own myth sets its next send
+
+**Time:** ~6 h (design, four pilots, main replay run stopped at 29%, analysis).
+
+Result: replaying logged September decisions with only the stated amount in a myth edited
+(a fixed rule sentence, $1/$2/$3/$5), the next send moves $0.93 per $1 in the agent's own
+first myth (95% CI 0.88–0.99) and $0.68 (0.55–0.80) in its own later myth, Sonnet and GPT
+pooled; a partner's myth the agent read moves it $0.23 (0.12–0.34). Gemini 3.7 Flash sends $5
+whatever its myth says. An amount told inside the story moves Sonnet less ($0.57, $0.24).
+
+- Design: 40 contexts per model x arm from the 156 no-defector myth runs, intent to treat,
+  context fixed effects, run-clustered t CIs, Holm over arms; decision rules fixed in advance.
+  Verdicts: own first myth confirmed, own later myth confirmed, read myth inconclusive (real but
+  small, and a lower bound: the agent's own reaction myth stays unedited in that arm).
+- Free check: holding the round-1 send fixed shrinks the story-first advantage in single-model
+  populations (untested, overlapping intervals) but not in mixed or pooled runs.
+- Pilots ($6.75) replaced a free-form editor with a fixed rule sentence and gated nothing on the
+  judge (selection bias); main run stopped at 1,359 of 4,720 replays ($8.99) after interim
+  results showed A and C far past threshold. Rejected: running the remaining GPT-heavy 71% (hours, ~$27) for narrower intervals.
+
+Details: `docs/research/myth_replay_probe_20261001/README.md`.
+
 ### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
 
 **Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
