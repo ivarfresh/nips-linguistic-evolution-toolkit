@@ -1,7 +1,9 @@
 # Cultural transmission pilot (plan, 2026-10-02)
 
-Status: **planned, not built or run.** Open choices: n per arm (3 or 5) and the
-exact rule (send rule vs return rule).
+Status: **built; planted arm running first at n=3, control later** (Ivar, 2026-10-02).
+Rule: the Velmar Rule, "whoever holds five should send two of the five". Decision rules and the
+newcomer protocol are in `docs/research/cultural_transmission_pilot_20261002/PREREGISTRATION.md`
+(branch `run/cultural-transmission-pilot-20261002`).
 
 ## Question
 
@@ -42,10 +44,14 @@ instruction; see the self-anchor replay.)
   (−2.0 pts, `docs/research/self_anchor_replay_20261002/README.md`), so the line stays.
 - **Plant:** Agent_1's round-1 myth is fixed text, not generated: a real September
   Sonnet round-1 myth plus one named rule sentence that Sonnet rarely follows on its
-  own (draft: "the Rule of Two Stones: send two of five"). Check the base rate of
-  $2 sends in September Sonnet before fixing the rule.
-- **Control:** the same myth with a neutral sentence of the same length instead of
-  the rule.
+  own: "And so the elders taught the Velmar Rule: whoever holds five should send two of
+  the five." Sonnet never sent $2 in the September 8-agent runs (lowest $2.50), and
+  "Velmar" / "two of five" appear in 0 of 800 September myths ("stone" appears in 129, so
+  the earlier "Two Stones" draft was dropped).
+- **Control:** the same myth with a named teaching of the same form and no amount
+  ("the Velmar Song: whoever comes to the spring should sing while they pour"). Runs after
+  the planted arm; without it, the newcomer test compares round-1 and round-10 boards
+  within each run.
 - **New code:** let one agent's round-1 myth be fixed text (`scripted_response` in
   `src/agents.py` already records non-generated responses).
 
