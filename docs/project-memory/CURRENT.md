@@ -1,6 +1,6 @@
 # Current research state
 
-Last verified: 2026-09-29.
+Last verified: 2026-09-30.
 
 ## Research question
 
@@ -172,6 +172,14 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
+- Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
+  per-round upward push at fixed partner and own history (Sonnet myth→game
+  +$0.14/round), which keeps the gap from fading. There is no sign that myths
+  make agents more responsive: Sonnet follows its partner about equally in all
+  task orders. Whether myths reduce responsiveness is unresolved; the
+  forced-defection test has only 9 events per cell, with hints of weaker
+  reaction in game→myth. Ceiling models (Opus 5, Geminis) cannot be tested.
+  See [the partner-responsiveness README](../figures/partner_responsiveness_20260930/README.md).
 - Myth text and cooperation (2026-09-30, no API calls): the only myth feature that
   predicts play beyond past play is the send amount a myth names, and only for the
   opening send in myth→game (R² +0.17, run-resampled 0.10–0.24; clear in Sonnet,

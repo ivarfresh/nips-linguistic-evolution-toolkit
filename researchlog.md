@@ -151,6 +151,33 @@ lower game-only level is mechanical (a defector partner returns nothing). Launch
 `data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not
 yet approved.
 
+### 2026-09-30 — Result: myths add their own push; no sign they make agents more responsive
+
+**Time:** ~5 h (extraction, causal and placebo tests, LLM coding, review and correction).
+
+Result: asked whether myths raise cooperation by making agents more responsive to
+each other or by making them follow the myth instead. The data are the existing
+September and frontier runs: 450 runs, with no new game runs. A Sonnet 4.5 judge
+coded 2,034 rationales for $6.03.
+
+- The myth pushes every round. With partner history and own previous send held
+  fixed, myth→game sends are higher: Sonnet +$0.14 [0.06, 0.28], Sol +$0.20,
+  Nano +$1.44. Game→myth: Sol +$0.29, Nano +$1.59, Opus +$0.11. The Sonnet
+  myth→game gap does not fade over ten rounds.
+- Sonnet follows its partner about equally in all orders ($0.54 / $0.39 / $0.48
+  per $1, correlational) and cites the partner as often with a myth as without.
+  Myth lesson: about 60% "reciprocate", about 40% "give regardless".
+- Forced-defection test too small (9 clean events per cell). Only Nano myth→game
+  reacts beyond a within-run shuffle (−$1.92, p = 0.01). There are hints of weaker
+  reaction in game→myth (Nano following $0.04; no Sonnet or Nano drop after a
+  forced $0), but none is conclusive.
+- Correction before merge: the first version judged the defection drops against
+  fake dates in calmer no-defector runs. That understated chance and overclaimed
+  "reaction survives the myth". The independent review on PR #13 caught it.
+- Rejected as evidence: communication-noise slopes. Their placebo fails in 2 of 6 cells.
+
+Details: `docs/figures/partner_responsiveness_20260930/README.md`; PR #13.
+
 ### 2026-09-30 — Result: moral labels miss the one myth signal that predicts play
 
 **Time:** ~3 h (two free diagnostics, review, robustness checks). No API calls.
