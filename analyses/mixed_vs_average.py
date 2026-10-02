@@ -54,7 +54,7 @@ def welch_contrast(groups: list[tuple[np.ndarray, float]]) -> tuple[float, float
     terms = [c ** 2 * g.var(ddof=1) / len(g) for g, c in groups]
     se2 = sum(terms)
     if se2 == 0:
-        return est, np.nan, np.nan
+        return np.nan, np.nan, np.nan
     df = se2 ** 2 / sum(t ** 2 / (len(g) - 1) for t, (g, _) in zip(terms, groups) if t > 0)
     t = est / np.sqrt(se2)
     return t, df, 2 * stats.t.sf(abs(t), df)

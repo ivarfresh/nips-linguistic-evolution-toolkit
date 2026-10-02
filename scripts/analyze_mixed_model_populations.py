@@ -34,6 +34,7 @@ from src.experiment_condition import condition_agent_models, condition_from_run,
 
 MIXED_ROOT = ROOT / "data/json/noise_experiments/mixed_model_populations_20260918"
 SEPTEMBER_ROOT = ROOT / "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909"
+LADDER_N_NOTE = "mean ± sd over 5 runs"  # overridden by analyses/table1_n10.py
 OUTPUT = ROOT / "docs/figures/mixed_model_populations_20260918"
 FAMILY = {"anthropic/claude-sonnet-4.5": "Sonnet", "openai/gpt-5-nano": "GPT", "google/gemini-3.7-flash": "Gemini"}
 TASK_ORDERS = ("game", "game_myth", "myth_game")
@@ -203,7 +204,7 @@ def plot_ladder(agents):
                 ax.set_xlabel(f"number of {minority} agents", fontsize=10)
             ax.legend(fontsize=8, loc="lower right")
     fig.suptitle("Contagion ladder: per-agent resources after 10 rounds by number of minority agents\n"
-                 "8-agent rotating populations · informed negative-only noise · mean ± sd over 5 runs", fontsize=13, fontweight="bold")
+                 "8-agent rotating populations · informed negative-only noise · " + LADDER_N_NOTE, fontsize=13, fontweight="bold")
     fig.tight_layout(rect=(0, 0, 1, .93))
     for ext in ("png", "svg", "pdf"):
         fig.savefig(OUTPUT / f"ladder.{ext}", dpi=200, bbox_inches="tight")

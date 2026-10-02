@@ -228,7 +228,8 @@ def main():
     elif not args.execute:
         return
     if args.execute and pending:
-        assert not subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip(), "Clean checkout required"
+        if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip():
+            raise SystemExit("Clean checkout required")
         os.environ["HF_DATASET_AUTO_UPLOAD"] = "0"
         os.environ["TRUST_BATCH_QUIET"] = "1"
         logdir = str(ROOT / "data/json/noise_experiments" / OUTPUT / "worker_logs")
@@ -262,8 +263,11 @@ def main():
                         failed.append(j)
                     except Exception as e:
                         print(f"FAILED {j[0]} index={j[1]} {type(e).__name__}: {e}", flush=True)
-                        # Never silently resample a final that fails scientific validation.
+                        # Never silently resample a final that fails scientific validation; stop
+                        # the queued runs first so the pool does not keep launching paid jobs.
                         if j[3].exists():
+                            for queued in futures:
+                                queued.cancel()
                             raise
                         failed.append(j)
             if quota_exhausted:
