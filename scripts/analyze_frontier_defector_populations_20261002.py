@@ -25,6 +25,8 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
+from src.experiment_condition import output_provenance  # noqa: E402
+from scripts.analyze_frontier_update_20260928 import ALLOWED, POOL_REASON, audited  # noqa: E402
 
 RECEIPT = ROOT / "data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json"
 OUTPUT = ROOT / "docs/figures/frontier_defector_populations_20261002"
@@ -113,6 +115,22 @@ def plot(df):
     plt.close(fig)
 
 
+def write_provenance():
+    """provenance.json over every file in OUTPUT (scripts/check_safeguards.py requires it).
+
+    Run finals come from the audited receipt and are re-hashed against it. Shared with
+    analyses/frontier_defector_population_figures.py, which writes into the same folder.
+    """
+    finals = [p.resolve() for p in audited(ROOT, [RECEIPT])]
+    receipt = {f["sha256"]: f for f in json.loads(RECEIPT.read_text())["finals"]}
+    mixed = {(ROOT / f["path"]).resolve() for f in receipt.values() if f["composition"] == "opus4_sol4_d2"}
+    outputs = sorted(p for p in OUTPUT.iterdir() if p.is_file() and p.name != "provenance.json" and not p.name.startswith("."))
+    document = output_provenance(finals, outputs, ALLOWED, output_root=OUTPUT,
+                                 pools={"homogeneous": [p for p in finals if p not in mixed], "mixed": [p for p in finals if p in mixed]},
+                                 pool_reason=POOL_REASON)
+    (OUTPUT / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+
 def main():
     df = load()
     OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -122,6 +140,7 @@ def main():
     parts.to_csv(OUTPUT / "mix_vs_parts.csv", index=False)
     sends.to_csv(OUTPUT / "sends.csv", index=False)
     plot(df)
+    write_provenance()
     for pop, label in POPULATIONS.items():
         print(label, *(fmt(df[(df.population == pop) & (df.task_order == o)].resources) for o in TASK_ORDERS), sep=" | ")
     print(effects.to_string(index=False), parts.to_string(index=False), sends.to_string(index=False), sep="\n\n")
