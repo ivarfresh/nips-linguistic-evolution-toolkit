@@ -188,6 +188,12 @@ and [data audit](../research/mixed_future_data_audit.md).
   across agents in myth→game, PR #4 rules add a little to returns (Sonnet +0.05 R²). The
   two moral judges' disagreement is concentrated on the fair/generous boundary. See
   [the README](../figures/myth_text_predictiveness_20260930/README.md).
+- Cultural transmission pilot (2026-10-02, planted arm, n=3, $18.42): a named send rule
+  ("the Velmar Rule: send two of five") planted in one Sonnet agent's round-1 myth and read
+  by all 8 agents on a shared board for nine rounds never spread: 0 of 189 other myths name it,
+  0 of 105 other sends are $2, newcomers reading later myths send $2 0 of 60 times, and the
+  planted agent drops it by round 4–7. No control arm yet. See
+  [the README](../research/cultural_transmission_pilot_20261002/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from
