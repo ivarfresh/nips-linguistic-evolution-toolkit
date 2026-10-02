@@ -68,8 +68,10 @@ place on the map. GPT and Gemini barely change. These are judge labels, not
 yet checked against the human coding pass, and the counts have no test.
 
 **3. Single-model runs stay apart.** On the map, Gemini moves furthest, away
-from the others (in 768-d Sonnet moves about as much in some cells). Sonnet moves a little towards the centre and GPT barely moves. The
-round-10 background has one basin per family. Family silhouette at round 10
+from the others; Sonnet moves a little towards the centre and GPT barely
+moves. In 768-d the map understates Sonnet: in 8-agent Myth → Game its
+round-1 to round-10 shift is as large as Gemini's. The round-10 background
+has one basin per family. Family silhouette at round 10
 stays at 0.33–0.41.
 
 **4. Mixed partners pull together.** In mixed runs, family silhouette falls
@@ -93,10 +95,10 @@ baseline). By round 10 they are 0.04–0.11 closer in all six cells, most for
 Sonnet+Gemini, and 32 of 36 runs are above the baseline (`n_runs_closer`).
 This is expected from the design: from round 2 every agent's myth prompt
 contains its partner's last myth (`{other_agent_myth}` in
-`config/experiments.yaml`). The map shows how far that pull goes. The baseline also rises in most cells, so later myths are more
-alike in general; that is why the comparison holds round fixed. In 8-agent populations
-each agent reads a different partner each round, and the map shows a weaker
-pull. This table is not computed for them.
+`config/experiments.yaml`). The map shows how far that pull goes. The
+baseline also rises in most cells, so later myths are more alike in general;
+that is why the comparison holds round fixed. In 8-agent populations each
+agent reads a different partner each round, and the map shows a weaker pull. This table is not computed for them.
 
 ## Caveats
 
