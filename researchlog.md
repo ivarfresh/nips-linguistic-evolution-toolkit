@@ -1,3 +1,20 @@
+### 2026-10-02 — Result: a rule planted in one agent's myth does not spread, even on a shared board
+
+**Time:** ~3 h (build, three runs, newcomer test, analysis).
+
+Result: planted arm, n=3, 3/3 audited finals, $17.13 + $1.29 newcomer test. September Sonnet 4.5
+8-agent myth→game with a shared myth board; Agent_1's round-1 myth was a real September myth
+plus "And so the elders taught the Velmar Rule: whoever holds five should send two of the five."
+Every agent's myth prompt held the rule in rounds 2–10. No other agent named it (0 of 189 myths)
+or sent $2 (0 of 105 sends; Sonnet's September minimum is $2.50). Newcomers shown the other 7
+agents' round-1 or round-10 myths sent $2 0 of 60 times. Pre-registered retelling rule: not
+established in any run. Agent_1 sent $2 in round 1, then $3–4, and dropped the rule from its
+myths by round 4–7. Newcomers sent less after round-10 than round-1 boards ($4.27 → $3.55,
+not pre-registered; no control to separate the plant from ordinary drift). Caveats: no control
+arm; the seed story praises generosity; a $2 rule costs payoff. Details:
+`docs/research/cultural_transmission_pilot_20261002/README.md`; branch
+`run/cultural-transmission-pilot-20261002`.
+
 ### 2026-10-02 — Result: myths start in family-specific regions; mixed partners pull together, families stay apart
 
 **Time:** ~2 h analysis; no API calls.
