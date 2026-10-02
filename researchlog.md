@@ -151,6 +151,32 @@ lower game-only level is mechanical (a defector partner returns nothing). Launch
 `data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not
 yet approved.
 
+### 2026-09-30 — Result: moral labels miss the one myth signal that predicts play
+
+**Time:** ~3 h (two free diagnostics, review, robustness checks). No API calls.
+
+Result: before re-judging the September myths with a larger judge panel, we checked
+whether the weak moral-carryover result comes from bad judges, the wrong three
+categories, or myths that carry little about play. Every number is split by task order.
+
+- GLM-5.2 and DeepSeek V4 Flash disagree on one boundary. 97% of disagreements are
+  adjacent, and 80% (game→myth) or 83% (myth→game) are fair vs generous. The disputed
+  myths usually endorse both at once. Gemini κ is 0.29–0.32, all on that line.
+- Myth→game round 1 (before any play): the amount a myth names predicts the opening
+  send. It adds R² 0.17 [0.10, 0.24] (run-resampled). Sonnet "three of five" sends
+  3.00 (12 of 12, 10 runs). The three-moral label is flat.
+- After round 1, a change in an agent's myth forecasts no change in its next move, in
+  either task order. The reader of a shown myth gains nothing, and game→myth gains
+  nothing. Across agents in myth→game only, PR #4 rules add a little to returns
+  (Sonnet +0.05 R², all +0.015): a stable return habit that shows in the myth.
+  7 of 330 tests are clear (run-resampled interval above zero).
+- The embedding and word counts recover the named amount (R² 0.46 and 0.56). Their
+  opening failure is sample size (213 senders), not missing information.
+
+Implication for the proposed 5-judge panel: re-judging the same three categories
+would mostly re-measure the fair/generous cut-point. Graded concrete features are
+what predict. Details: `docs/figures/myth_text_predictiveness_20260930/README.md`.
+
 ### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
 
 **Time:** ~0.5 h.
