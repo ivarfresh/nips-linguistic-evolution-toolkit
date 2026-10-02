@@ -1,5 +1,16 @@
 # Docs changelog
 
+## 2026-09-23
+- findings-taskorder-myth.md textual-evolution section updated from researchlog 2026-09-23 (cross-family word transmission, within-family moral spread, no moral carryover into play) — scoped compile
+
+## 2026-09-17
+- findings-taskorder-myth.md updated from researchlog 2026-09-10, 2026-09-14, 2026-09-16, 2026-09-17 (cross-model September series, GPT zero-lock, noise-strength bridge, mixed-model dyads) — compile
+- findings-cooperation-transplant.md updated from researchlog 2026-09-16, 2026-09-17 (slide-678 ladder replicates at 8 agents and in dyads; Phase-1 dyad null superseded) — compile
+- experiment-protocol.md updated from researchlog 2026-09-08, 2026-09-09, 2026-09-10, 2026-09-15, 2026-09-16, 2026-09-17 (september8 profiles, per-agent plans, mixed-model design, noise regimes, frozen launchers, resume validator, resample disclosure, project memory) — compile
+- design-constraints.md updated from researchlog 2026-09-10, 2026-09-16, 2026-09-17 (floor saturation, noise strength, mixed composition) — compile
+- research-positioning.md updated from researchlog 2026-09-14, 2026-09-16 (post-review direction) — compile
+- _index.md pointers refreshed — compile
+
 ## 2026-09-08
 - Added the raw-record API reassessment, hashed evidence and reproducible extraction helpers; separated recorded settings from defaults, missing fields and reasoning signatures.
 - Corrected provider/reasoning and format-effect interpretations in design constraints, experiment protocol, defector/task-order findings and verified facts; linked the merged PR19 safeguards without adopting a new scientific regime.

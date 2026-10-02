@@ -1,7 +1,7 @@
 ---
 title: Design constraints — what breaks ablations in this framework
 status: current
-updated: 2026-09-08
+updated: 2026-09-17
 owner: ivar
 ---
 
@@ -68,6 +68,20 @@ Per-round cooperation ratios (send fraction, return ratio) are the informative
 view; cumulative balance mostly reports when the ceiling was reached.
 _(from researchlog 2026-09-01)_
 
+**The floor saturates too.** GPT-5 Nano at high reasoning opens game-only play
+with `send 0` and never recovers, at 2 and 8 agents alike, and the lock is not
+broken by a cooperative Sonnet partner (28 of 30 mixed game-only sends were
+zero). Game-only GPT cells therefore carry no return-behavior information and
+a cross-model comparison of returns in that condition is Claude versus Gemini
+only. Any task or partner that supplies a cooperative signal before the first
+decision (a myth round) releases the lock. _(from researchlog 2026-09-10,
+2026-09-17)_
+
+**Noise strength scales the visible myth effect.** Claude's game-only versus
+myth-first gap was +20.0 (medians) under informed `U(-2, 0)` noise and +3.5
+under `U(-1, 0)` in matched dyads; Gemini stayed at the ceiling in both. Treat
+range-1 results as conservative and never pool ranges. _(from researchlog 2026-09-16)_
+
 ## 4. Silent-zero and duplication bugs corrupt whole result families
 
 Two bug classes each invalidated a published-internally claim before being
@@ -130,6 +144,13 @@ instructions and own-myth repetition; JSON-only also changed retries. These are
 exploratory multi-factor comparisons, not isolated prose or memory effects.
 No universal two-sentence output standard or low-reasoning regime was selected
 by the safeguards restart. _(from researchlog 2026-09-08)_
+
+**Mixed populations are a composition condition, not a partner-name
+manipulation.** Model identity is pinned per agent and never revealed in
+prompts; naming a partner "GPT" would be a separate manipulation. Sonnet's
+observed sending level tracks its partner's (Gemini raises it, GPT lowers it)
+while its return proportion barely moves, so a mixed-dyad result describes the
+pair, not either model alone. _(from researchlog 2026-09-17)_
 
 ## 7. Co-occurrence is not transmission
 

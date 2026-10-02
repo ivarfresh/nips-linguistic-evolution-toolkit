@@ -1,7 +1,7 @@
 ---
 title: Research positioning — novelty claims and planned arms
 status: current
-updated: 2026-07-02
+updated: 2026-09-17
 owner: ivar
 ---
 
@@ -39,6 +39,22 @@ literature report: `docs/lit_review_eval_awareness_stego.md`; per-paper notes:
 
 Five load-bearing citations: Motwani 2024 (2402.07510) · Baker 2025 (2503.11926)
 · Cloud 2025 (2507.14805) · Needham 2025 (2505.23836) · Mathew 2024 (2410.03768).
+
+## Direction after the 2026-09-14 review
+
+A census of 35,852 local JSON paths across 132 experiment families found
+6,078 distinct final-shaped hashes, which are not independent validated
+replicates; the 405 plotted observations were reproduced from 270 latest
+finals. The review ranks the next work as: causal content/reflection controls,
+archive inheritance through agent replacement, exploitation and recovery,
+held-out game transfer, and mixed-model coordination. A generic 270-run
+mixed-model sweep was deprioritized as descriptive coverage before mechanism.
+Because all-agent resources algebraically cancel returns, follow-ups preserve
+resources while measuring reciprocity and exploitation separately. These are
+recommendations, not an approved programme; the mixed-model dyad stage ran
+after Ivar narrowed it to heterogeneous pairs (see
+[experiment-protocol.md](experiment-protocol.md)). _(from researchlog 2026-09-14,
+2026-09-16)_
 
 ## Arms in flight (2026-07-02)
 

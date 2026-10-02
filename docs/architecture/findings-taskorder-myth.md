@@ -1,7 +1,7 @@
 ---
 title: Findings — task order, myths, and the cultural ratchet
 status: current
-updated: 2026-09-08
+updated: 2026-09-23
 owner: ivar
 ---
 
@@ -37,6 +37,72 @@ triplets to proof of a direct/non-thinking regime. The
 this caveat does not by itself invalidate within-condition observations.
 _(from researchlog 2026-09-08)_
 
+## Cross-model September series: the myth effect is model-dependent
+
+The pinned-profile negative-only rerun (270 runs: Claude Sonnet 4.5, GPT-5 Nano,
+Gemini 3.7 Flash × 2/8 agents × three task orders × no/25%/50% forced
+defection × 5 replicates; September 8 profiles, no truncations) and its 180-run
+no-defector extension (no noise and uninformed negative-only noise added to the
+90 informed controls) are the current cross-model dataset. Read them per model:
+
+- **GPT-5 Nano locks at zero in game-only play.** At high reasoning it opens
+  round 1 with `send 0` in every game-only run (5/5 at both 2 and 8 agents)
+  and the population never recovers: zero-receipt rate 1.00 for all ten
+  rounds. The zeros are genuine model output (1.7–3k reasoning tokens, bare
+  JSON), not parsing defaults. With a myth task in the sequence GPT does send
+  (zero-receipt 0.12 / 0.08 in dyads, 0.59 / 0.40 at 8 agents for game→myth /
+  myth→game), so myth exchange supplies the cooperative signal the game-only
+  start lacks, consistent with the founding-myth account. GPT's return
+  proportion on positive receipts is 0.31–0.33 against Claude 0.41–0.50 and
+  Gemini 0.45–0.47. Game-only GPT cells therefore contribute no return data.
+  Not verified: whether the round-1 zero is specific to the high-reasoning
+  profile; the 2026-09-08 cost replay of archived prompts with cooperative
+  history got non-zero sends at the same profile. _(from researchlog 2026-09-10)_
+- **Claude and GPT gain from myth-first; Gemini is already saturated.** The
+  September 14 census reproduced all 405 plotted observations from the 270
+  finals: substantial no-defector myth-first gains for GPT and Claude, a
+  ceiling-locked Gemini baseline, and shrinking or uncertain differences under
+  forced defection. _(from researchlog 2026-09-14)_ The extension's 180 finals
+  passed the request-profile and completion audit; two Claude population
+  myth-first runs were resampled after a `return` key appeared in a sender
+  response, a selection to disclose in any analysis. _(from researchlog 2026-09-16)_
+- **Noise strength modulates Claude's myth effect.** Under informed `U(-2, 0)`
+  noise, Claude's game-only versus myth-first difference of medians was +20.0
+  against +3.5 in the matched `U(-1, 0)` controls (five paired blocks, all
+  positive); Gemini stayed at the $75 ceiling in every run. The paired
+  range-2-minus-range-1 effect was 9.58 (±17.05), so n=5 is consistent with a
+  noise-strength explanation without establishing it. _(from researchlog 2026-09-16)_
+
+## Mixed-model dyads: Sonnet follows its partner; GPT's lock survives a cooperative partner
+
+Sonnet 4.5 paired with GPT-5 Nano or with Gemini 3.7 Flash in fixed dyads,
+everything else equal to the September informed-noise controls (six replicates
+per cell, first sender alternating by family). Total resources after ten
+rounds (max 150), mean (±sd), with the September homogeneous dyads for scale:
+
+| Composition | game | game→myth | myth→game |
+|---|---:|---:|---:|
+| Sonnet + GPT | 64.0 (±14.3) | 116.9 (±26.7) | 120.2 (±18.1) |
+| GPT + GPT | 50.0 (±0.0) | 107.4 (±20.9) | 119.3 (±23.6) |
+| Sonnet + Sonnet | 100.8 (±8.0) | 111.2 (±9.3) | 115.6 (±16.4) |
+| Sonnet + Gemini | 140.2 (±6.2) | 146.0 (±1.3) | 148.4 (±1.4) |
+| Gemini + Gemini | 150.0 (±0.0) | 150.0 (±0.0) | 150.0 (±0.0) |
+
+- Sonnet's sending level is set by its partner: game-only sends of $2.5 to
+  another Sonnet, $4.1 to Gemini, $1.1 to GPT, while its return proportion
+  stays at 0.38–0.46.
+- GPT's zero-lock is not broken by a cooperative partner: $0 in 28 of 30
+  game-only sends and 0.03 returned of what Sonnet sent; Sonnet starts at $3
+  and gives up by round 5–8. A myth task lifts the mixed dyad to 117–120, the
+  same range as both homogeneous dyads, and GPT returns slightly more to
+  Sonnet (0.40, 0.38) than to another GPT (0.31, 0.33).
+- Sonnet+Gemini sits near the ceiling in every task order, so the myth effect
+  there is at most a few dollars.
+
+Descriptive at n=6 per mixed cell; one format-failure resample and four
+interrupted-run resamples are disclosed in the results README. The eight-agent
+mixed stage is not yet run. _(from researchlog 2026-09-17)_
+
 ## Mechanism: the cultural ratchet cuts both ways
 
 - **Founding myths seed the opening.** Myth-first populations open generous and
@@ -65,7 +131,7 @@ _(from researchlog 2026-09-08)_
   fidelity knob on the culture→behavior link, with the decision side
   uninstructed. _(from researchlog 2026-07-23)_
 
-## Textual-evolution evidence (visible inheritance, not yet causal)
+## Textual-evolution evidence (lexical transmission yes, behavioural effect not shown)
 
 Deterministic no-LLM analyses over the 60 corrected runs:
 
@@ -89,9 +155,26 @@ Deterministic no-LLM analyses over the 60 corrected runs:
   candidates remain (sustainable_equilibrium, proportional_reciprocity).
   _(from researchlog 2026-08-28)_
 
-Genealogy and meme counts establish visible textual inheritance only, and the
-null analysis shows that inheritance is not evidence of transmission; the
-seeding/transplant intervention with actions held fixed is the causal test.
+- **Across model families, words do transmit; morals do not steer play.** In
+  the September homogeneous and mixed runs (156 runs, 8,519 myths), agents
+  adopt new words from the myth they were shown 1.3–2.5x the rate from an
+  unseen comparable myth. Mixed runs break the shared-model confound: a
+  partner-family signature word is adopted more when the shown myth used it,
+  beating a permutation null in all 10 family × size cells, and an outnumbered
+  GPT drifts toward Sonnet's style (0.26 as 1 of 8, 0.04 as 4 of 8). Moral
+  stances (Arabella Sinclair's 3-label rubric) move toward the shown myth
+  within a family in populations, where the shown myth predates any shared
+  game; dyad matches are confounded by the partners' shared history. Myth alignment does not predict cooperation, and with
+  agent-within-run fixed effects neither an agent's own moral nor the shown
+  myth's moral predicts its next move; the reverse link (generous sending →
+  generous next myth) survives within agents only in mixed populations. See `docs/figures/linguistic_analysis_20260923/README.md`.
+  _(from researchlog 2026-09-23)_
+
+Genealogy and meme counts establish visible textual inheritance only. Within a
+single model family inheritance is not evidence of transmission; across
+families, lexical transmission is established, but no transmitted content has
+been shown to change behaviour. The seeding/transplant intervention with
+actions held fixed remains the causal test for norms.
 
 ## Return behavior: the send/return gap is a denominator artifact
 

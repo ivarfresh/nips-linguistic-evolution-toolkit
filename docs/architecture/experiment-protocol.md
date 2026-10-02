@@ -1,7 +1,7 @@
 ---
 title: Experiment protocol — memory regime, noise, QA, and data infrastructure
 status: current
-updated: 2026-09-08
+updated: 2026-09-17
 owner: ivar
 ---
 
@@ -41,6 +41,15 @@ keeps send and return fractions climbing past round 10–15 before they
 stabilize; negative-only noise gives flatter curves and a weaker visible
 effect. Do not compare cooperation curves across the two regimes without
 saying which one a run used. _(from researchlog 2026-09-01)_
+
+The September cross-model dataset uses informed negative-only `U(-1, 0)`
+noise on both sent and returned amounts (the 90 "informed controls" plus the
+forced-defection cells). The figure-2 extension adds the same cells under no
+noise and under uninformed negative-only noise (180 runs), so the no-defector
+comparison now spans three noise regimes at the same profiles. A targeted
+`U(-2, 0)` dyad bridge (Claude, Gemini; game-only and myth-first; five paired
+replicates) links the historical range-2 results to the corrected pipeline;
+its effect on Claude was larger than at range 1. _(from researchlog 2026-09-16)_
 
 **Dyad transfer-noise fix (load-bearing):** communicated-send noise is
 generated only for the receiver, *after* the sender's actual transfer exists;
@@ -100,6 +109,42 @@ self-context and retry policy, so it does not justify making that format a
 standard. Future native-setting robustness and format/memory interventions
 remain separate scientific decisions. _(from researchlog 2026-09-08)_
 
+**Current pinned cross-model profiles ("september8").** Measured in the
+2026-09-08 cost replay and used for every cross-model run since: Claude Sonnet
+4.5 with thinking enabled (budget 8192), temperature omitted, output cap 64000;
+GPT-5 Nano reasoning effort high, temperature omitted, cap 128000; Gemini 3.7
+Flash thinking level high, temperature 0.8, cap 65536. Anchors live in
+`llm_profiles` in `config/experiments_noisy.yaml`. These are deliberately
+model-specific settings, not equivalent amounts of computation; enabling an
+8192 thinking budget did not make Claude consume it (~500 tokens per game
+call). The 270-run rerun cost $167.97 against the pilot's $177.94 projection;
+GPT-5 Nano two-task sets were the wall-clock critical path (~3 h each).
+_(from researchlog 2026-09-08, 2026-09-10)_
+
+**Mixed populations pin one plan per agent.** A mixed-model experiment set
+declares `agent_models` (one `base_models` key per agent, in Agent_1.. order)
+and `llm_settings_by_model` instead of `models` and `llm_settings`. Each agent
+gets its own client, model and native request plan; the run-level plan records
+`provider: mixed` with the per-agent plans under `agents`, and the condition
+validator checks every call's recorded settings against its own agent's plan.
+Homogeneous runs are unchanged. The first use is the 36-run mixed dyad stage
+(`scripts/run_mixed_model_dyads.py`); mixed and homogeneous pools are validated
+separately in analysis because a mixed run has no run-level policy block.
+_(from researchlog 2026-09-17)_
+
+## Mixed-model experiment (D010)
+
+Scope: heterogeneous model families in one population, both fixed dyads and
+eight-agent populations; compositions Sonnet/GPT and Sonnet/Gemini; task orders
+game, game→myth, myth→game; no homogeneous arms and no forced defectors; game
+pairings cross-family only. The dyad stage is frozen and complete: six
+replicates per cell, Sonnet as Agent_1 (round-1 sender) in replicates 0/2/4
+and the other family in 1/3/5, everything else equal to the September
+informed-noise dyad controls. The eight-agent stage (4+4, five replicates,
+cross-family-only rotating pairing) waits for a decision after the dyad
+results; its pairing mode is not implemented. _(from researchlog 2026-09-16,
+2026-09-17)_
+
 ## QA: audits with negative controls
 
 - `scripts/audit_v2_protocol.py` — per-cell joint audit: exactly one accepted
@@ -113,6 +158,37 @@ remain separate scientific decisions. _(from researchlog 2026-09-08)_
   post-batch QA. Validate audits with planted corruptions: the first version
   was blind to drops at the old edge of the window. Audits need negative
   controls too. _(from researchlog 2026-07-23)_
+- **Frozen-plan launchers** are the pattern for paid batches: dry-run by
+  default, a plan step that validates every job against the configuration and
+  its reference cells before any call, one preflight line (`MODEL= N= WORKERS=
+  EST_COST=`), `--execute` that requires a clean checkout, per-final audits of
+  request settings and completion, a hashed completion receipt with
+  standard-rate cost, and resumption that recognises existing finals without
+  repeating calls. Provider credit exhaustion cancels queued jobs instead of
+  retrying. _(from researchlog 2026-09-16, 2026-09-17)_
+- **Resume validation skips every non-LLM event.** Forced-zero defector
+  decisions and deduction notices carry no request settings; the condition
+  check now exempts any `response_source != "llm"` while a missing source still
+  defaults to `llm` and is checked. Before the fix a resume rejected every
+  forced-defector final. _(from researchlog 2026-09-09)_
+- **Replay through original commits** verifies a rerun's inputs without paid
+  calls: feeding new responses through the historical code reproduced all
+  1,000 per-agent request message arrays of the GPT-5.5 gate rerun exactly.
+  _(from researchlog 2026-09-09)_
+- **Disclose resamples.** Under the pinned repeat-once retry policy, Sonnet
+  occasionally answers a sender prompt with a `return` key or with prose
+  instead of JSON; such runs fail and are resampled, and every analysis over
+  those cells must say so. _(from researchlog 2026-09-10, 2026-09-16, 2026-09-17)_
+
+## Project memory
+
+`docs/project-memory/` (README, CURRENT.md, WORKFLOW.md, `decisions/DNNN-*.md`)
+is the repository source of truth for current research state and individual
+design decisions. Agents read it at session start and update it when a durable
+decision, semantic change, invalidating bug, completed result or primary source
+appears; `scripts/validate_project_memory.py` checks the index and links. The
+research log stays append-only and keeps the short auditable trail; decision
+detail lives in the records. _(from researchlog 2026-09-15)_
 
 ## Data infrastructure
 
