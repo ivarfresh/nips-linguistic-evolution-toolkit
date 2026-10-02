@@ -1,9 +1,10 @@
 # Cultural transmission pilot (plan, 2026-10-02)
 
-Status: **built; planted arm running first at n=3, control later** (Ivar, 2026-10-02).
-Rule: the Velmar Rule, "whoever holds five should send two of the five". Decision rules and the
-newcomer protocol are in `docs/research/cultural_transmission_pilot_20261002/PREREGISTRATION.md`
-(branch `run/cultural-transmission-pilot-20261002`).
+Status: **planted arm run (n=3, $18.42): the rule did not spread by the registered tests; control
+arm built but not run.** Rule: the Velmar Rule, "whoever holds five should send two of the five".
+Decision rules, results and the independent review are in
+`docs/research/cultural_transmission_pilot_20261002/` (`PREREGISTRATION.md`, `README.md`,
+`ASTRA_REVIEW.md`). This file is the plan as written before the run.
 
 ## Question
 
@@ -25,9 +26,9 @@ and that nothing is passed on beyond the reader:
   models already send about $4.81 of $5 to each other, so there was no room to move.
 
 The main feature of the current design that works against spread is that each myth
-reaches only one partner. (Self-copying is the strongest effect we have measured, but it
-comes from the own myth in chat memory, not the "use your previous myth as inspiration"
-instruction; see the self-anchor replay.)
+reaches only one partner. (Self-copying is the strongest effect we have measured, but the
+"use your previous myth as inspiration" instruction does not cause it; the own myth in chat
+memory is the likelier source, untested. See the self-anchor replay.)
 
 ## Design
 
@@ -36,8 +37,9 @@ instruction; see the self-anchor replay.)
   `negative_only_reasoning_rerun_population_myth_game_claude_n5`, `config/experiments_noisy.yaml:5326`). Sonnet opens at
   about $3–4, so it has room to move either way; Opus 5 sits near the $5 ceiling
   and costs more ($4.01 vs $3.41 per 8-agent myth → game run).
-- **Shared board on:** every agent reads every earlier myth (`myth_board:
-  persistent`, already on main).
+- **Shared board on:** every agent reads every earlier myth while writing its myth
+  (`myth_board: persistent`, already on main). After the myth call the board is replaced in
+  chat memory by a one-line note, so agents do not see it when they decide a send.
 - **Prompt wording kept as in September.** Removing "Use the myth you wrote in the previous
   round as inspiration, but adapt it in your own way" was planned, but the 2026-10-02 replay
   showed it does not reduce self-copying and slightly lowers borrowing from other myths
