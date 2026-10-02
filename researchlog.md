@@ -1,3 +1,20 @@
+### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
+
+**Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
+
+An independent review rebuilt all 216 board prompts (plant delivered exactly) and re-derived
+the numbers from raw finals. It narrows the entry below:
+- the send count is 0 of 96 after the board appeared, not 0 of 105 (9 were round-1 sends);
+- the newcomer test has 30 round-10 decisions from 3 fixed boards, not 60 independent tests;
+- "no other agent repeated the rule" holds only for the exact words: paraphrased "send two"
+  echoes exist (run 0: Agent_7 round 2, Agent_8 round 3), not yet coded;
+- Agent_1 kept naming the rule until round 4–7, recast as an opening move, rather than dropping it.
+It also flags a design limit: the board is swapped for a one-line note before game decisions, so
+read myths reach play only through the agent's own rewritten myth. The newcomer drop (−$0.72
+±0.24, sign test p = 0.25) is unregistered and needs the control arm. Fixed an analysis bug that
+would pool planted and control arms. Review:
+`docs/research/cultural_transmission_pilot_20261002/ASTRA_REVIEW.md`.
+
 ### 2026-10-02 — Result: a rule planted in one agent's myth does not spread, even on a shared board
 
 **Time:** ~3 h (build, three runs, newcomer test, analysis).
