@@ -192,8 +192,8 @@ and [data audit](../research/mixed_future_data_audit.md).
   deleting "Use the myth you wrote in the previous round as inspiration, but adapt
   it in your own way" leaves self-copying unchanged (32%) and slightly lowers
   borrowing from the shown partner myth (−2.0 pts over the unseen-myth baseline,
-  −3.5 to −0.5, 20 runs). Self-anchoring comes from the own myth in chat memory,
-  not the instruction. See [the README](../research/self_anchor_replay_20261002/README.md).
+  −3.5 to −0.5, 20 runs). Self-anchoring is not caused by the instruction; the own myth in chat
+  memory is the likelier source (not tested: the replay never removed it). See [the README](../research/self_anchor_replay_20261002/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from

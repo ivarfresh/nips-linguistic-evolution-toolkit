@@ -8,8 +8,8 @@ self-copying unchanged (32.4% vs 32.1%) and slightly lowers borrowing from the s
 partner myth: 8.7 → 6.7 pts over an unseen-myth baseline, difference −2.0 (−3.5 to −0.5,
 run-clustered, 20 runs; lower in 16 of 20). Logged myths and with-line replays agree, so
 the replays reproduce the original behaviour. Pre-committed rule ("holds back borrowing"
-only if the difference is above 0): no. Self-anchoring comes from the own myth in chat
-memory, not the instruction. Consequence: the cultural transmission pilot keeps the
+only if the difference is above 0): no. Self-anchoring is not caused by the instruction; the own myth in chat
+memory is the likelier source (inferred, not tested). Consequence: the cultural transmission pilot keeps the
 September wording. Details: `docs/research/self_anchor_replay_20261002/README.md`.
 
 ### 2026-10-02 — Result: myths start in family-specific regions; mixed partners pull together, families stay apart

@@ -49,7 +49,8 @@ above 0), the answer is no. The difference is negative and its interval excludes
 ## What it means
 
 - **The self-copying is not caused by the instruction.** Deleting it leaves self-copying at
-  32%. The agent's own last myth is in its chat memory, and that is what it keeps.
+  32%. The likelier source is the agent's own last myth in its chat memory, but this replay
+  never removed it, so that is an inference, not a measurement.
 - **"Adapt it in your own way" may invite mixing.** Without the line, the prompt reduces to
   "write your own myth" plus the game directive, and Sonnet takes a little less from the
   partner. This reading is a guess; the data only show the direction.
