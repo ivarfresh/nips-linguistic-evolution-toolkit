@@ -1,7 +1,7 @@
 ---
 title: Findings — what myth transplants do to cooperation
 status: current
-updated: 2026-08-25
+updated: 2026-10-02
 owner: ivar
 ---
 
@@ -29,6 +29,42 @@ S-end+ has *fewer* cooperation words and shorter, chunkier sentences than S-star
 ("send five, return seven and a half"). Within-pool, a seed's `cooperative_pct`
 predicts its outcome (r=+0.952 in S-end−); across pools it doesn't.
 _(from researchlog 2026-06-23, 2026-06-30)_
+
+## The ladder replicates under pinned settings, at 8 agents and in one dyad
+
+The slide-678 transplant (seven donor contexts, repeated identical myth-only
+injection, ten game-only rounds, historical negative-$5 communication noise,
+no history blocks) was rerun in September under the pinned Sonnet 4.5 profile,
+five replicates per cell. Joint resources after ten rounds:
+
+| Donor context | 8 agents (ceiling $600) | Fixed dyad (ceiling $150) |
+|---|---:|---:|
+| Late Sonnet myth | 600.0 (±0.0) | 140.2 (±13.9) |
+| Late Gemini myth | 573.8 (±49.0) | 112.0 (±6.6) |
+| Early Sonnet myth | 540.0 (±37.5) | 110.8 (±10.1) |
+| Late GPT myth | 455.4 (±32.1) | 100.4 (±8.5) |
+| Filler text | 440.2 (±7.1) | 91.4 (±3.8) |
+| No inherited text | 424.6 (±2.1) | 90.0 (±4.7) |
+| Low-cooperation myth | 384.0 (±87.1) | 83.9 (±21.2) |
+
+The qualitative ladder reappears at both scales: late Sonnet reaches the
+ceiling, filler and late GPT stay near baseline, and the low-cooperation myth
+falls below it. This is not an exact reproduction of unrecorded historical
+request settings, it is descriptive at n=5 with donor and run variation
+combined, and it does not separate narrative form from actionable content.
+Linguistic analysis precedes any content-removal intervention. The dyad result
+shows the old Phase-1 "content does nothing in dyads" null does not hold under
+the current repeated-seed/no-history apparatus, without identifying which
+protocol difference reversed it. _(from researchlog 2026-09-16, 2026-09-17)_
+
+**What orders the ladder is the amount the donor myth names.** A rule
+extraction over the 60 slide-678 donor texts shows that the donor's stated
+send amount, not its moral label, orders the outcomes: within a donor type,
+named amounts move Sonnet hosts by +$0.41 per $1 at 8 agents. This matches
+the endogenous-myth result that an agent's own myth works as a plan for its
+opening send (see [findings-taskorder-myth.md](findings-taskorder-myth.md)).
+An amount × tone transplant and an advice-text control are still open.
+_(from researchlog 2026-09-28, 2026-09-30)_
 
 ## The channel is semantic — survives an alien grammar
 
@@ -79,6 +115,10 @@ _(from researchlog 2026-07-03)_
 - **Phase 2's "round-1 parables beat round-10 myths" (H4) was a regime artifact**
   — the seed scrolled out and the history-block carried cooperation. Under the
   clean myth-only regime the ordering reverses decisively. _(2026-06-23 supersedes 2026-06-19)_
+- **The Phase-1 dyad content null is not a general dyad result.** Under the
+  current repeated-seed, no-history apparatus the seven-context ladder persists
+  in a fixed dyad (late Sonnet 140 vs no text 90 of 150). _(2026-09-17
+  supersedes the Phase-1 dyad null)_
 - **Task-order moderation from Phase 2 does not carry into the Phase 3+ regime**
   — under Option A statelessness, task orders are the same condition (see
   [design-constraints.md](design-constraints.md)).

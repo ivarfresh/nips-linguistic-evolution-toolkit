@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Inspector</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e2e1dc;
+  --accent: #2f5fd0; --sys: #efe9ff; --user: #e9f1ff; --asst: #eaf6ec; --warn: #fff4e0;
+  --chip: #f0efea; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #9a9993; --line: #33332f;
+    --accent: #7ea2ff; --sys: #2a2540; --user: #1f2b40; --asst: #1f3326; --warn: #3a2f17; --chip: #2a2a27;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #9a9993; --line: #33332f;
+  --accent: #7ea2ff; --sys: #2a2540; --user: #1f2b40; --asst: #1f3326; --warn: #3a2f17; --chip: #2a2a27;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, sans-serif; }
+header { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 16px; margin: 0 8px 0 0; }
+#file { display: none; }
+button, select, input[type=search] { font: inherit; color: var(--text); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+#runinfo { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; flex: 1 1 300px; }
+#picker { padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; position: sticky; top: 53px; z-index: 1; }
+#picker select { max-width: 100%; }
+#runsel { min-width: 260px; flex: 1 1 260px; }
+main { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 58px); }
+nav { border-right: 1px solid var(--line); padding: 10px; background: var(--panel); }
+nav .agent { display: block; width: 100%; text-align: left; margin-bottom: 6px; }
+nav .agent.active { outline: 2px solid var(--accent); }
+nav .agent small { display: block; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+#content { padding: 14px 16px; min-width: 0; }
+#drop { border: 2px dashed var(--line); border-radius: 10px; padding: 48px 16px; text-align: center; color: var(--muted); }
+#drop.over { border-color: var(--accent); color: var(--text); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; }
+.card > summary { padding: 9px 12px; cursor: pointer; list-style: none; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card > summary::-webkit-details-marker { display: none; }
+.card .body { padding: 0 12px 12px; }
+.tag { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--chip); color: var(--muted); }
+.tag.game { background: var(--user); color: var(--text); }
+.tag.myth { background: var(--asst); color: var(--text); }
+.tag.err { background: var(--warn); color: var(--text); }
+.preview { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 200px; min-width: 0; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 12px 0 6px; }
+pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.5 var(--mono); padding: 9px 10px; border-radius: 6px; border: 1px solid var(--line); }
+.msg { margin-bottom: 6px; }
+.msg .role { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+.system pre { background: var(--sys); } .user pre { background: var(--user); } .assistant pre { background: var(--asst); }
+.usage { font: 12px var(--mono); color: var(--muted); }
+mark { background: #ffe066; color: #000; }
+@media (max-width: 720px) { main { grid-template-columns: 1fr; } nav { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Prompt Inspector</h1>
+  <button class="primary" id="pick">Open run JSON…</button>
+  <input type="file" id="file" accept=".json,application/json">
+  <span id="runinfo">Open a final run file (the .json without .results / .checkpoint). Nothing leaves your browser.</span>
+  <button id="theme" title="Toggle theme">◐</button>
+</header>
+<div id="picker" hidden>
+  <select id="g"></select>
+  <select id="b"></select>
+  <select id="m"></select>
+  <select id="to"></select>
+  <select id="c"></select>
+  <select id="runsel"></select>
+  <button id="prev" title="Previous run">‹</button><button id="next" title="Next run">›</button>
+  <span id="pcount" class="tag"></span>
+</div>
+<main>
+  <nav id="agents"></nav>
+  <section id="content">
+    <div id="drop">Drop a run <code>.json</code> here, or use “Open run JSON…”.<br><br>
+      Shows, per agent and per call: the new prompt, the <b>full message list sent to the API</b>
+      (<code>messages_sent</code>: system prompt + remembered turns + new prompt), the response, reasoning and token usage.</div>
+    <div id="view" hidden>
+      <div class="filters">
+        <select id="task"><option value="">All tasks</option><option value="game">Game</option><option value="myth">Myth</option></select>
+        <select id="round"><option value="">All rounds</option></select>
+        <input type="search" id="q" placeholder="Search prompts and responses">
+        <button id="expand">Expand all</button>
+        <button id="collapse">Collapse all</button>
+        <span id="count" class="tag"></span>
+      </div>
+      <details class="card" id="syscard"><summary><b>System prompt</b><span class="preview" id="syspreview"></span></summary><div class="body"><pre id="sys"></pre></div></details>
+      <div id="calls"></div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+let run = null, agentId = null;
+
+const root = document.documentElement;
+try { const t = localStorage.getItem("pi-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+$("#theme").onclick = () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("pi-theme", root.dataset.theme); } catch (e) {}
+};
+
+$("#pick").onclick = () => $("#file").click();
+$("#file").onchange = e => e.target.files[0] && load(e.target.files[0]);
+const drop = $("#drop");
+["dragover", "dragenter"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+document.addEventListener("drop", e => e.dataTransfer.files[0] && load(e.dataTransfer.files[0]));
+
+function load(file) {
+  file.text().then(t => {
+    let obj; try { obj = JSON.parse(t); } catch (err) { alertBox("Not valid JSON: " + err.message); return; }
+    loadData(obj, file.name);
+  });
+}
+
+// ---- run picker (when served by tools/prompt_inspector_server.py) ----
+let index = [];
+const F = [["g", "group", "All groups"], ["b", "batch", "All batches"], ["m", "models", "All models"],
+           ["to", "task_order", "All task orders"], ["c", "condition", "All conditions"]];
+fetch("api/index").then(r => r.ok ? r.json() : Promise.reject()).then(list => {
+  index = list; $("#picker").hidden = false;
+  drop.innerHTML = `${list.length} runs found. Pick one above.`;
+  F.forEach(([id]) => $("#" + id).onchange = () => refill(id));
+  $("#runsel").onchange = () => openRun($("#runsel").value);
+  $("#prev").onclick = () => step(-1); $("#next").onclick = () => step(1);
+  refill(null);
+}).catch(() => {});
+
+function refill(changed) {
+  let rows = index;
+  let reached = changed === null;
+  F.forEach(([id, key, all]) => {
+    const sel = $("#" + id);
+    if (reached) {
+      const keep = sel.value;
+      const vals = [...new Set(rows.map(r => r[key]))].sort();
+      sel.innerHTML = `<option value="">${all}</option>` + vals.map(v => `<option>${esc(v)}</option>`).join("");
+      if (vals.includes(keep)) sel.value = keep;
+    }
+    if (sel.value) rows = rows.filter(r => r[key] === sel.value);
+    if (id === changed) reached = true;
+  });
+  const cur = $("#runsel").value;
+  $("#runsel").innerHTML = rows.map(r => `<option value="${r.id}">${esc(r.set)} · rep ${r.replicate ?? "?"}</option>`).join("");
+  $("#pcount").textContent = `${rows.length} runs`;
+  if (rows.some(r => String(r.id) === cur)) $("#runsel").value = cur;
+  else if (rows.length) openRun(rows[0].id);
+}
+function step(d) {
+  const s = $("#runsel"); const i = s.selectedIndex + d;
+  if (i >= 0 && i < s.options.length) { s.selectedIndex = i; openRun(s.value); }
+}
+function openRun(id) {
+  const meta = index.find(r => String(r.id) === String(id)); if (!meta) return;
+  $("#runsel").value = String(id);
+  $("#runinfo").textContent = "Loading…";
+  fetch("api/run?id=" + id).then(r => r.json()).then(obj => loadData(obj, `${meta.batch} · ${meta.file}`));
+}
+
+function loadData(obj, name) {
+    run = obj;
+    if (!run.agents) { alertBox("This file has no agent histories. Open the final .json, not .results.json."); return; }
+    const m = run.run_metadata || {};
+    const keepAgent = agentId;
+    $("#runinfo").textContent = `${name} · ${Object.keys(run.agents).length} agents · task order ${(run.task_order || []).join(" → ")}` +
+      (m.replicate_id != null ? ` · replicate ${m.replicate_id}` : "");
+    const ids = Object.keys(run.agents).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    $("#agents").innerHTML = "";
+    ids.forEach(id => {
+      const a = run.agents[id], b = document.createElement("button");
+      b.className = "agent"; b.dataset.id = id;
+      b.innerHTML = `<b>${esc(id)}</b> <small>${esc(a.display_name && a.display_name !== id ? a.display_name + " · " : "")}${esc(a.model || "")} · ${(a.interaction_history || []).length} calls</small>`;
+      b.onclick = () => select(id);
+      $("#agents").appendChild(b);
+    });
+    const rounds = new Set();
+    ids.forEach(id => (run.agents[id].interaction_history || []).forEach(h => h.metadata && h.metadata.round != null && rounds.add(h.metadata.round)));
+    $("#round").innerHTML = '<option value="">All rounds</option>' + [...rounds].sort((a, b) => a - b).map(r => `<option>${r}</option>`).join("");
+    drop.hidden = true; $("#view").hidden = false;
+    select(ids.includes(keepAgent) ? keepAgent : ids[0]);
+}
+function alertBox(msg) { drop.hidden = false; $("#view").hidden = true; drop.innerHTML = esc(msg); }
+
+function select(id) {
+  agentId = id;
+  document.querySelectorAll("nav .agent").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+  const sp = run.agents[id].system_prompt || "";
+  $("#sys").innerHTML = hl(sp); $("#syspreview").textContent = sp.slice(0, 120);
+  render();
+}
+
+["#task", "#round"].forEach(s => $(s).onchange = render);
+$("#q").oninput = debounce(render, 200);
+$("#expand").onclick = () => document.querySelectorAll("#calls details").forEach(d => d.open = true);
+$("#collapse").onclick = () => document.querySelectorAll("#calls details").forEach(d => d.open = false);
+
+function render() {
+  const task = $("#task").value, round = $("#round").value, q = $("#q").value.toLowerCase();
+  const hist = run.agents[agentId].interaction_history || [];
+  const out = [];
+  hist.forEach((h, i) => {
+    const md = h.metadata || {}, r = h.response || {};
+    if (task && md.task !== task) return;
+    if (round && String(md.round) !== round) return;
+    const msgs = h.messages_sent || [];
+    const hay = [h.prompt, r.content, r.reasoning, ...msgs.map(m => m.content)].join("\n").toLowerCase();
+    if (q && !hay.includes(q)) return;
+    out.push(card(h, i, md, r, msgs));
+  });
+  $("#calls").innerHTML = out.join("") || '<p class="tag">No calls match.</p>';
+  $("#count").textContent = `${out.length} of ${hist.length} calls`;
+}
+
+function card(h, i, md, r, msgs) {
+  const role = md.role_label || md.role || "";
+  const opp = md.opponent_id ? ` vs ${md.opponent_id}` : "";
+  const src = r.response_source && r.response_source !== "llm" ? `<span class="tag err">${esc(r.response_source)}</span>` : "";
+  const u = r.usage || {};
+  const usage = ["input_tokens", "output_tokens", "reasoning_tokens", "finish_reason", "outcome"]
+    .filter(k => u[k] != null).map(k => `${k}=${u[k]}`).join(" · ");
+  const reasoning = r.reasoning ? (typeof r.reasoning === "string" ? r.reasoning : JSON.stringify(r.reasoning, null, 2)) : "";
+  return `<details class="card">
+    <summary><span class="tag">#${h.interaction_index ?? i}</span>
+      <span class="tag ${esc(md.task || "")}">${esc(md.task || "?")}</span>
+      <b>Round ${esc(md.round ?? "?")}</b> <span>${esc(role)}${esc(opp)}</span> ${src}
+      <span class="preview">${esc((r.content || "").replace(/\s+/g, " ").slice(0, 140))}</span></summary>
+    <div class="body">
+      <h3>New prompt for this call</h3><pre>${hl(h.prompt || "")}</pre>
+      <details><summary><h3 style="display:inline">Full context sent to the API · ${msgs.length} messages</h3></summary>
+        ${msgs.map(m => `<div class="msg ${esc(m.role)}"><div class="role">${esc(m.role)}</div><pre>${hl(typeof m.content === "string" ? m.content : JSON.stringify(m.content, null, 2))}</pre></div>`).join("")}
+      </details>
+      ${reasoning ? `<h3>Reasoning / thinking</h3><pre>${hl(reasoning)}</pre>` : ""}
+      <h3>Response</h3><pre>${hl(r.content == null ? "(no content)" : r.content)}</pre>
+      ${usage ? `<h3>Usage</h3><div class="usage">${esc(usage)}</div>` : ""}
+    </div></details>`;
+}
+
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function hl(s) {
+  const q = $("#q").value; const e = esc(s);
+  if (!q) return e;
+  const re = new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  return e.replace(re, m => `<mark>${m}</mark>`);
+}
+function debounce(f, ms) { let t; return () => { clearTimeout(t); t = setTimeout(f, ms); }; }
+</script>
+</body>
+</html>
