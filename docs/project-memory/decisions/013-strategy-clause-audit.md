@@ -1,0 +1,46 @@
+# D013 — Bounded strategy-clause audit
+
+- Recorded / last verified: 2026-10-02 / 2026-10-02
+- Decision status: agreed
+- Scope: 48 complete trajectories from original September and main-frontier corpora; excludes extensions, frontier-update models and pilots.
+- Decision authority: Ivar's explicit instruction in the current Codex task, 2026-10-02: "oke great, do the analysis now please", following the staged existing-data proposal preserved in the audit plan.
+- Implementation status: sampled completed finals; exploratory machine coding completed, human validation pending.
+
+## Decision and rationale
+
+**Explicit:** inspect existing complete trajectories for evolving conditional or
+paraphrased rules, rather than launching a changed experimental design. The
+[frozen plan](../../research/strategy_clause_audit_20261002/PLAN.md) limits the
+work to a feasibility audit and makes human validation a gate before scaling.
+This is a narrow user-authorized exception to the earlier meeting's no-further-
+exploration scope; it does not authorize new simulations or alter paper claims.
+
+## Evidence
+
+- User instruction: current task, 2026-10-02; exact wording preserved above and in the plan. The plan/report are assistant-authored records, not an external team decision.
+- Completed final-state manifest: [paths and SHA256 hashes](../../research/strategy_clause_audit_20261002/manifest.json), 48 trajectories from 45 unique runs.
+- Implementation: [stdlib audit script](../../../analyses/strategy_clause_audit.py); no experimental runtime or source-data changes.
+- Result: [report](../../research/strategy_clause_audit_20261002/README.md), [validation](../../research/strategy_clause_audit_20261002/validation.json), and [bounded independent review](../../research/strategy_clause_audit_20261002/REVIEW.md).
+
+All 480 sampled myths and 432 actual exposures were checked against final-state
+data and accepted saved prompts. The 44 selected events are not a census.
+T34 and T40 provide candidate peer-to-peer clause uptake; T40 retains a
+compensation clause for two further myths, then omits it. The audit does not
+establish behavioral enactment, multi-hop transmission, or a mechanism for the
+cooperation effect. No pooled behavioral test was justified by the selected
+eligibility checks. Machine labels and counts await human validation.
+
+## Chronology and supersession
+
+2026-10-02: user authorized this bounded analysis; outcome-independent sample
+fixed before reading; disjoint machine readings and selected independent
+checks completed. This narrows a blanket no-rule-transmission interpretation
+but does not supersede earlier registered nulls or causal evidence boundaries.
+
+## Unresolved / next evidence
+
+Human validation of extraction and highlighted examples; separate blinded
+source-attribution checks if pursued; behavioral identification with clearly
+observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)
+is prepared but not human-coded. No scaling or new experiment is authorized by
+this record.

@@ -1,6 +1,6 @@
 # Current research state
 
-Last verified: 2026-09-30.
+Last updated: 2026-10-02 (strategy-clause audit; earlier entries retain their dated scope).
 
 ## Research question
 
@@ -172,6 +172,15 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
+- Strategy-clause audit (2026-10-02, user-authorized bounded exploration):
+  48 complete trajectories / 480 myths from 45 original September and main-frontier
+  runs. Machine readings find candidate peer uptake of specific conditional
+  advice, including compensation for an already-cheated partner, and both
+  additions and dropped clauses. This is not proof of behavioral transmission
+  or the mechanism behind increased cooperation. The 44 selected events are
+  not a census; human validation remains pending. No new simulations or paid
+  judge batch. See [D013](decisions/013-strategy-clause-audit.md) and
+  [the report](../research/strategy_clause_audit_20261002/README.md).
 - Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
   per-round upward push at fixed partner and own history (Sonnet myth→game
   +$0.14/round), which keeps the gap from fading. There is no sign that myths
