@@ -39,9 +39,10 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
+from analyses import linguistic_datasets  # noqa: E402
 
-DATA = ROOT / "data/analysis/linguistic_20260923"
-FIGS = ROOT / "docs/figures/linguistic_analysis_20260923"
+DATA = linguistic_datasets.get().data  # September unless LINGUISTIC_DATASET=frontier
+FIGS = linguistic_datasets.get().figs
 OUTCOMES = {"sent_frac": "amount sent / 5", "return_proportion": "return proportion",
             "giving_gap": "giving gap |sent/5 - return proportion|"}
 MIN_WORDS = 20
