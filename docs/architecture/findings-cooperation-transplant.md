@@ -1,7 +1,7 @@
 ---
 title: Findings — what myth transplants do to cooperation
 status: current
-updated: 2026-09-17
+updated: 2026-10-02
 owner: ivar
 ---
 
@@ -56,6 +56,15 @@ Linguistic analysis precedes any content-removal intervention. The dyad result
 shows the old Phase-1 "content does nothing in dyads" null does not hold under
 the current repeated-seed/no-history apparatus, without identifying which
 protocol difference reversed it. _(from researchlog 2026-09-16, 2026-09-17)_
+
+**What orders the ladder is the amount the donor myth names.** A rule
+extraction over the 60 slide-678 donor texts shows that the donor's stated
+send amount, not its moral label, orders the outcomes: within a donor type,
+named amounts move Sonnet hosts by +$0.41 per $1 at 8 agents. This matches
+the endogenous-myth result that an agent's own myth works as a plan for its
+opening send (see [findings-taskorder-myth.md](findings-taskorder-myth.md)).
+An amount × tone transplant and an advice-text control are still open.
+_(from researchlog 2026-09-28, 2026-09-30)_
 
 ## The channel is semantic — survives an alien grammar
 

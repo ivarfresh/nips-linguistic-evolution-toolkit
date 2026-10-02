@@ -1,7 +1,7 @@
 ---
 title: Research positioning — novelty claims and planned arms
 status: current
-updated: 2026-09-17
+updated: 2026-10-02
 owner: ivar
 ---
 
@@ -55,6 +55,29 @@ recommendations, not an approved programme; the mixed-model dyad stage ran
 after Ivar narrowed it to heterogeneous pairs (see
 [experiment-protocol.md](experiment-protocol.md)). _(from researchlog 2026-09-14,
 2026-09-16)_
+
+Since then the mixed-model work has run in full (dyads, the eight-agent
+ladder, frontier mixes, Table 1 at n=10), and the causal content question has
+an answer for the agent's own myth (editing its named amount moves the next
+send almost one for one) but not yet for a read myth: the first planted-rule
+pilot found no spread and has no control arm. See
+[findings-taskorder-myth.md](findings-taskorder-myth.md).
+_(from researchlog 2026-10-01, 2026-10-02)_
+
+## Prior work on the frontier gap and on language emergence
+
+- **Why frontier models cooperate more.** Affonso 2026 (arXiv:2604.18596),
+  Li & Shirado (EMNLP 2025) and CoopEval (ICML 2026), checked on arXiv, agree
+  with our decomposition: provider post-training and model tier predict
+  cooperation, reasoning is mostly a headwind (Claude the exception), and fixed
+  partners unlock it. Our own data show the Opus 5 gap is opening prior,
+  escalation and forgiveness, not thinking volume.
+  _(from researchlog 2026-09-18)_
+- **GlossoGen (arXiv 2609.01491)** names a cost on talking plus a channel to
+  agree conventions as the conditions for language emergence. Our word-budget
+  pilot applied both to Sonnet 4.5 myths and got English maxims, not a code;
+  a fair test needs a real cost for going over budget or information that has
+  to be passed on. _(from researchlog 2026-09-29)_
 
 ## Arms in flight (2026-07-02)
 

@@ -1,13 +1,14 @@
 ---
 title: Findings — hidden defectors and costly punishment
 status: current
-updated: 2026-09-08
+updated: 2026-10-02
 owner: aron
 ---
 
 # Findings: mechanical defectors and the deduction institution
 
-The defector/punishment thread (2026-08-12 → 2026-08-23): hidden mechanical
+The defector/punishment thread (2026-08-12 → 2026-08-23, frontier defector
+populations 2026-10-01 → 2026-10-02): hidden mechanical
 defectors (`defector_action_policy: forced_zero` — scripted zero sends/returns,
 no LLM game calls, myths still LLM-written, treatment label hidden) crossed
 with an optional sender-side costly deduction stage (2 points, 1:3
@@ -100,6 +101,55 @@ instructions/self-context and retries. It does not establish that prose explains
 the cross-model gap or the effect of adding defectors. See the
 [reassessment and descriptive table](../api-audit-reassessment-2026-09-08.md)
 before citing either comparison. _(from researchlog 2026-09-08)_
+
+## Frontier defector populations: myths lift Opus 5, not Sol
+
+Eight-agent populations on the September informed negative-only protocol,
+with two permanent forced-zero defectors in fixed seats (Agent_4, Agent_8;
+one per family in the mix), unaware and still writing myths. Gemini 3.1 Pro is
+left out because it is ceiling-locked. Ordinary-agent final resources, mean
+(±sd) over 5 runs (45/45 audited finals):
+
+| Population | Game only | Game → Myth | Myth → Game |
+|---|---:|---:|---:|
+| 4 Opus 5 + 4 GPT-5.6 Sol | 49.1 (±6.3) | 54.6 (±1.6) | 56.8 (±2.1) |
+| 8 Opus 5 | 48.4 (±2.3) | 56.5 (±1.6) | 57.3 (±1.2) |
+| 8 Sol | 53.4 (±5.5) | 50.5 (±5.1) | 55.9 (±2.1) |
+
+- Myths help Opus 5 clearly (seed-paired myth minus game +8.1 / +8.9 for
+  game→myth / myth→game, Welch p < 0.001 both), the mix less surely (+5.5,
+  p 0.12; +7.6, p 0.052, all five pairs positive) and Sol not at all (−2.9,
+  p 0.41; +2.4, p 0.40).
+- The mix sits at the average of its parts in every task order (mix minus the
+  Opus/Sol average −1.8 [−7.8, +3.2], +1.1 [−1.3, +3.6], +0.2 [−1.7, +2.1]).
+  The mid-tier pattern of mixes beating their parts with myths does not appear.
+- In game-only play all-Sol groups end above all-Opus groups (53.4 against
+  48.4, Welch p 0.11), so Sol may cope better with defectors; untested at n=5.
+- **Myths make agents easier to exploit.** Across the 45 finals, ordinary
+  agents send a defector $1.0–1.9 per decision with myths against $0.6–0.9
+  without, in every group and task order.
+- **A shared myth board changes nothing here** (pilot, n=3): when every agent
+  reads every myth written so far instead of its last partner's, ordinary
+  resources move by −0.6, −0.5 and +0.5 against seed-matched partner-myth
+  runs, and within-round myth similarity stays at 0.31–0.40. With partner myths
+  ordinary agents already send $4.81 of $5 to each other, so there is no room.
+  The remaining 7 board runs are paused.
+- **Saboteur myths barely move cooperation** (pilot, n=3 per channel): when
+  the two defectors are privately told to persuade others to send less, and
+  keep writing anti-trust myths through round 10, ordinary resources fall in 4
+  of 6 seed-matched replicates, by at most 1.4. Ordinary agents send each other
+  slightly less (4.83 → 4.65 partner myth, 4.79 → 4.71 board) and the
+  defectors more clearly less (1.50 → 1.20, 1.48 → 1.33; only 27 sends per
+  cell). The board does not amplify the saboteurs.
+
+Caveats: n=3–5; defector losses are partly mechanical; in single-model groups
+both defectors are of that family; fixed seats differ from the September
+cells, which drew defectors per replicate, so the mid-tier comparison is not
+like-for-like. There is no no-defector Opus + Sol control. Write-up and draft
+paper text: `docs/figures/frontier_defector_populations_20261002/README.md`;
+launchers `scripts/run_frontier_defector_populations.py`,
+`scripts/run_frontier_saboteur_pilot.py`.
+_(from researchlog 2026-10-01, 2026-10-02)_
 
 ## Standing design gates
 

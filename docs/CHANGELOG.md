@@ -1,5 +1,14 @@
 # Docs changelog
 
+## 2026-10-02
+- findings-taskorder-myth.md updated from researchlog 2026-09-18, 2026-09-22, 2026-09-23, 2026-09-28, 2026-09-29, 2026-09-30, 2026-10-01, 2026-10-02 (frontier rerun and sending gap, mixed-model adaptation and ladder, Table 1 n=10, own myth as plan, word vs moral transmission with corrections, myth map, planted-rule and word-budget pilots, superseded timing and Opus 5.5 claims) — compile
+- findings-defectors-punishment.md updated from researchlog 2026-10-01, 2026-10-02 (frontier defector populations, myth board and saboteur pilots, exploitability) — compile
+- findings-cooperation-transplant.md updated from researchlog 2026-09-28, 2026-09-30 (donor's named amount orders the ladder) — compile
+- design-constraints.md updated from researchlog 2026-09-18, 2026-09-22, 2026-09-23, 2026-09-28, 2026-09-30, 2026-10-01, 2026-10-02 (conditional Gemini full send, frontier ceilings, resources = 25 + 10 × send, own-turn traces, thinking regime changes with model, future-myth placebo and seeding-design limits) — compile
+- experiment-protocol.md updated from researchlog 2026-09-18, 2026-09-28, 2026-09-29, 2026-10-01, 2026-10-02 (main frontier profiles, mixed-model stages, Table 1 extension, pilot mechanics, quarantine and worker ceiling) — compile
+- research-positioning.md updated from researchlog 2026-09-18, 2026-09-29, 2026-10-01, 2026-10-02 (frontier-gap literature, GlossoGen, direction update) — compile
+- _index.md descriptions refreshed — compile
+
 ## 2026-09-23
 - findings-taskorder-myth.md textual-evolution section updated from researchlog 2026-09-23 (cross-family word transmission, within-family moral spread, no moral carryover into play) — scoped compile
 

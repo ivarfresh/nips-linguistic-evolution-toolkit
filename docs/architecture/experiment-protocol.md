@@ -1,7 +1,7 @@
 ---
 title: Experiment protocol — memory regime, noise, QA, and data infrastructure
 status: current
-updated: 2026-09-17
+updated: 2026-10-02
 owner: ivar
 ---
 
@@ -121,6 +121,16 @@ call). The 270-run rerun cost $167.97 against the pilot's $177.94 projection;
 GPT-5 Nano two-task sets were the wall-clock critical path (~3 h each).
 _(from researchlog 2026-09-08, 2026-09-10)_
 
+**Main frontier profiles (D011).** The main frontier simulation is the
+2026-09-18 set on the unchanged September protocol with reasoning on: Opus 5
+with adaptive thinking at effort high (temperature omitted, cap 64000), Gemini
+3.1 Pro at thinking level high (temperature 0.8, cap 65536) and GPT-5.6 Sol at
+reasoning effort high (temperature omitted, cap 128000). Opus 5 rejects
+`budget_tokens`, so its thinking regime differs from Sonnet 4.5's. Frontier
+mixed groups and frontier defector populations use these three models. Opus
+5.5 and GPT-6 Sol (both effort high) form a separate "frontier update set",
+kept as a newer-model check only. _(from researchlog 2026-09-18, 2026-09-28)_
+
 **Mixed populations pin one plan per agent.** A mixed-model experiment set
 declares `agent_models` (one `base_models` key per agent, in Agent_1.. order)
 and `llm_settings_by_model` instead of `models` and `llm_settings`. Each agent
@@ -134,16 +144,51 @@ _(from researchlog 2026-09-17)_
 
 ## Mixed-model experiment (D010)
 
-Scope: heterogeneous model families in one population, both fixed dyads and
-eight-agent populations; compositions Sonnet/GPT and Sonnet/Gemini; task orders
-game, game→myth, myth→game; no homogeneous arms and no forced defectors; game
-pairings cross-family only. The dyad stage is frozen and complete: six
-replicates per cell, Sonnet as Agent_1 (round-1 sender) in replicates 0/2/4
-and the other family in 1/3/5, everything else equal to the September
-informed-noise dyad controls. The eight-agent stage (4+4, five replicates,
-cross-family-only rotating pairing) waits for a decision after the dyad
-results; its pairing mode is not implemented. _(from researchlog 2026-09-16,
-2026-09-17)_
+Heterogeneous model families in one game, with no forced defectors and model
+names never shown; everything else equals the September informed-noise
+controls. Three stages have run:
+
+- **Dyads:** Sonnet + GPT, Sonnet + Gemini 3.7 Flash and Gemini + GPT-5 Nano,
+  three task orders, first sender alternating by family across replicates
+  (54 runs at six replicates; Table 1 later extended to ten).
+- **Eight-agent contagion ladder** (approved in place of the 4+4
+  cross-family-only design): 1/2/4 Gemini among GPT and 1/2/4 GPT among
+  Sonnet, on the unchanged September population protocol (balanced rotation,
+  hidden names, co-player history 3), three task orders, five replicates,
+  90 runs. No cross-family pairing mode was built.
+- **Frontier mixes:** Opus 5 + Sol, Opus 5 + Gemini 3.1 Pro and Gemini + Sol
+  dyads (54 runs) and a 2 Gemini + 3 Opus 5 + 3 Sol population (15 runs).
+
+**Table 1 n=10 extension.** Replicates 5–9 (6–9 for the mixed dyads) were
+added with every input except the replicate id identical to the original
+sets (216 runs), so mixed-versus-average-of-parts contrasts sit at n=10.
+_(from researchlog 2026-09-17, 2026-09-18, 2026-09-28, 2026-10-01)_
+
+## Pilot mechanics for transmission and defector tests
+
+- **Frontier defector populations:** two permanent forced-zero defectors in
+  fixed seats (Agent_4 and Agent_8; one per family in a mix), with the
+  September 25%-defector settings (unaware, myths still circulate). The
+  September cells drew defector seats per replicate, so who meets a defector
+  differs between the two series.
+- **Shared myth board:** from round 2 every agent reads every myth written so
+  far (anonymous, persistent) instead of its last partner's. Before game
+  decisions the board is replaced by a one-line note (`myth_board: persistent`,
+  `src/myth_writer.py`; launcher `scripts/run_frontier_myth_board.py`).
+- **Saboteur myths (`myth_saboteur`):** the defectors' myth prompts start with
+  a private instruction to persuade the others to send less; ordinary agents
+  see only the myths. Each run is seed-matched to a normal-myth run
+  (`scripts/run_frontier_saboteur_pilot.py`).
+- **Planted rule:** one agent's round-1 myth is a real September myth plus a
+  fixed rule sentence, delivered through the board; fresh newcomers are then
+  shown round-1 or round-10 boards (`myth_plant`, `scripts/run_cultural_transmission_pilot.py`).
+- **Word budget and council (D012):** the partner receives only the first N
+  words of each myth, optionally with a council between rounds.
+- **Myth replay probes:** logged September calls are replayed with one
+  element edited (a rule sentence's amount, or one prompt line). In the
+  self-anchor replay the unedited replays matched the logged myths, which
+  checks that the replay reproduces the original behaviour.
+_(from researchlog 2026-09-29, 2026-10-01, 2026-10-02)_
 
 ## QA: audits with negative controls
 
@@ -166,6 +211,12 @@ results; its pairing mode is not implemented. _(from researchlog 2026-09-16,
   standard-rate cost, and resumption that recognises existing finals without
   repeating calls. Provider credit exhaustion cancels queued jobs instead of
   retrying. _(from researchlog 2026-09-16, 2026-09-17)_
+- **Quarantine transient provider drops and resample under the same seed.**
+  Runs hit by a dropped connection or an HTTP 503/timeout (seen with Gemini)
+  are moved to a `quarantine/` folder, excluded from analysis and rerun with
+  the same seed; the count is disclosed. With 40 workers local DNS failed;
+  20 workers is the safe ceiling on the current connection.
+  _(from researchlog 2026-09-18, 2026-09-28, 2026-10-01)_
 - **Resume validation skips every non-LLM event.** Forced-zero defector
   decisions and deduction notices carry no request settings; the condition
   check now exempts any `response_source != "llm"` while a missing source still
