@@ -1,3 +1,157 @@
+### 2026-10-02 — Result: myths start in family-specific regions; mixed partners pull together, families stay apart
+
+**Time:** ~2 h analysis; no API calls.
+
+Myth map for to-do item 8 (`analyses/myth_convergence_map.py`): 2-D PCA of the mpnet embeddings
+of the 156 September myth runs (8,519 myths; PC1 16%, PC2 7% of variance), numbers in 768-d.
+Round-1 myths cluster by family (silhouette 0.30–0.41 in every cell). Morals follow family:
+GPT opens "be fair" (139/182 myth-first), Gemini "be generous" (73/97); one round of play first
+cuts Sonnet's generous openings 73 → 43 (judge labels, untested). Single-model runs stay apart
+(round-10 silhouette 0.33–0.41). In mixed dyads, partners' myths end 0.04–0.11 cosine closer
+than different-family myths from other runs of the same pairing and round, in all 6 cells; at
+round 1 there is no gap. Caveat: closer language does not predict cooperation (linguistic analysis);
+the 8-agent partner table is not computed. Write-up and figures:
+`docs/figures/myth_convergence_map_20261002/README.md`.
+
+### 2026-10-02 — Result: saboteur myths lower a frontier group's cooperation only slightly, with or without a shared board (pilot)
+
+**Time:** ~1.5 h engineering; batch ~25 min.
+
+Pilot, 6/6 audited finals, $33.12. The 4 Opus 5 + 4 Sol defector mix (Agent_4/Agent_8 moves forced to
+$0), myth → game, but the two defectors' myth prompts start with a private instruction to persuade the
+others to send less (`myth_saboteur`); ordinary agents see only the myths. Each run is seed-matched to the
+same run with normal defector myths. A one-round probe (one round, myth only, ~$0.40, not saved)
+first showed both models comply without refusing; in the runs the saboteurs kept writing anti-trust
+myths through round 10 (e.g. Agent_4, round 10, partner run: the law "rewarded *sending* … and asked
+for no proof at all of *returning*").
+
+| Channel | Normal defector myths | Saboteur myths | Difference per replicate |
+|---|---|---|---|
+| Partner myth | 56.00 / 58.83 / 54.75 | 55.83 / 58.17 / 53.33 | −0.2 / −0.7 / −1.4 |
+| Shared board | 55.42 / 58.33 / 55.25 | 55.58 / 57.00 / 55.25 | +0.2 / −1.3 / 0.0 |
+
+Sabotage lowered ordinary agents' final resources slightly and fairly consistently: down in 4 of 6
+replicates, flat in 1, up in 1, by at most 1.4. Their mean send to each other fell slightly (4.83 → 4.65
+partner, 4.79 → 4.71 board) and to the defectors more (1.50 → 1.20, 1.48 → 1.33; only 27 sends per
+cell). The board did not amplify the saboteurs. Caveat: n=3 per cell; the effect is small next to the
+room sabotage had to lower cooperation.
+Branch `run/saboteur-pilot-20261002`, launcher `scripts/run_frontier_saboteur_pilot.py`.
+
+### 2026-10-02 — Result: a shared myth board changes nothing in the frontier defector mix; myths make agents easier to exploit
+
+**Time:** ~2 h engineering and analysis; board batch ~20 min.
+
+Board pilot (branch `feature/myth-board-20261002`), $22.76, 3/3 audited finals. Same 4 Opus 5 +
+4 Sol mix with Agent_4/Agent_8 forced-zero defectors, myth → game; from round 2 every agent read
+every myth written so far (anonymous, persistent) instead of its last partner's. Ordinary-agent
+resources 55.4 / 58.3 / 55.2 against 56.0 / 58.8 / 54.8 for the seed-matched partner-myth runs
+(−0.6, −0.5, +0.5). Within-round myth similarity (TF-IDF cosine) 0.31–0.40 with and without the
+board: no convergence. Reason: with partner myths ordinary agents already send $4.81 of $5 to each
+other, so there is no room. The remaining 7 board runs stopped on exhausted OpenAI credits and are
+paused (Ivar, 2026-10-02).
+
+Exploitability (no new runs, from the 45 defector finals): with myths, ordinary agents send a
+defector $1.0–1.9 per decision against $0.6–0.9 without, in every group and task order. Write-up,
+figure and draft paper text: `docs/figures/frontier_defector_populations_20261002/README.md`.
+
+### 2026-10-02 — Result: frontier defector populations: myths lift Opus 5, not Sol; the mix sits at the average of its parts
+
+**Time:** ~1.5 h engineering; batch ~1 h wall-clock (20 workers).
+
+45/45 audited finals, $106.95 (pilot of 2026-10-01 reused as replicates 0-2 of the mix).
+Eight-agent populations, September informed negative-only noise, two permanent forced-zero
+defectors (Agent_4, Agent_8; one per family in the mix). Ordinary-agent final resources,
+mean (±sd) over 5 runs:
+
+| Population | Game only | Game → Myth | Myth → Game |
+|---|---|---|---|
+| 4 Opus 5 + 4 Sol | 49.1 (±6.3) | 54.6 (±1.6) | 56.8 (±2.1) |
+| 8 Opus 5 | 48.4 (±2.3) | 56.5 (±1.6) | 57.3 (±1.2) |
+| 8 Sol | 53.4 (±5.5) | 50.5 (±5.1) | 55.9 (±2.1) |
+
+- Myth minus game, seed-paired: Opus +8.1 / +8.9 (Welch p<0.001 both); mix +5.5 (p 0.12) /
+  +7.6 (p 0.052, all five pairs positive); Sol −2.9 (p 0.41) / +2.4 (p 0.40).
+- Mix minus 0.5·Opus + 0.5·Sol: −1.8 [−7.8, +3.2], +1.1 [−1.3, +3.6], +0.2 [−1.7, +2.1] (game,
+  game→myth, myth→game; bootstrap 95%). The mid-tier "mix beats its parts with myths" pattern
+  does not appear here.
+- In game-only play all-Sol groups end higher than all-Opus groups (53.4 vs 48.4, Welch p 0.11), so
+  Sol may cope better with defectors; untested at n=5.
+- Caveats: n=5; defector losses are partly mechanical; in single-model groups both defectors
+  are of that family. Defectors sit in fixed seats (Agent_4, Agent_8) in every replicate, while the
+  September cells drew them per replicate, so who meets a defector differs from September. Gemini 3.1 Pro
+  left out (ceiling-locked). No no-defector Opus + Sol control.
+
+Launcher `scripts/run_frontier_defector_populations.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`.
+
+### 2026-10-01 — Result: Table 1 (mixed vs average of parts) re-run at n = 10
+
+**Time:** ~8 h wall-clock (two network outages, one relaunch at 20 workers).
+
+Result: 216 extension runs, audit 216/216, $179.25 at standard rates (Claude $135.40,
+OpenAI $21.09, Google $22.76; work lost to outages and quarantines not included).
+Replicates 5–9 for the September single-model groups and the 8-agent ladder, 6–9 for
+the mixed dyads; every input except the replicate id is identical to the original set.
+At n = 10, 16 of 27 cells have Welch p < 0.05 (11 after Holm), against 13 / 7 at n = 5–6.
+Main moves: Sonnet + GPT game-only drops to −8.7 (now significant); 1 Gemini + 7 GPT
+game→myth falls from +9.6 to +4.4 (no longer significant); 1 GPT + 7 Sonnet game→myth
+and 4 GPT + 4 Sonnet game→myth lose significance; 4 Gemini + 4 GPT game-only and
+4 GPT + 4 Sonnet myth→game gain it.
+
+Caveats: 8 mixed game→myth dyads with Gemini were quarantined (Gemini HTTP 503 /
+timeout before an in-run retry succeeded) and resampled under the same seed; one 8-agent
+Sonnet run was rerun after a role-key error. 40 workers caused local DNS failures;
+20 is the safe ceiling on this connection.
+
+Details: `docs/figures/mixed_vs_average_n10_20261001/README.md`,
+`scripts/run_table1_n10_extension.py`.
+
+### 2026-10-01 — Result: a send rule in an agent's own myth sets its next send
+
+**Time:** ~6 h (design, four pilots, main replay run stopped at 29%, analysis).
+
+Result: replaying logged September decisions with only the stated amount in a myth edited
+(a fixed rule sentence, $1/$2/$3/$5), the next send moves $0.93 per $1 in the agent's own
+first myth (95% CI 0.88–0.99) and $0.68 (0.55–0.80) in its own later myth, Sonnet and GPT
+pooled; a partner's myth the agent read moves it $0.23 (0.12–0.34). Gemini 3.7 Flash sends $5
+whatever its myth says. An amount told inside the story moves Sonnet less ($0.57, $0.24).
+
+- Design: 40 contexts per model x arm from the 156 no-defector myth runs, intent to treat,
+  context fixed effects, run-clustered t CIs, Holm over arms; decision rules fixed in advance.
+  Verdicts: own first myth confirmed, own later myth confirmed, read myth inconclusive (real but
+  small, and a lower bound: the agent's own reaction myth stays unedited in that arm).
+- Free check: holding the round-1 send fixed shrinks the story-first advantage in single-model
+  populations (untested, overlapping intervals) but not in mixed or pooled runs.
+- Pilots ($6.75) replaced a free-form editor with a fixed rule sentence and gated nothing on the
+  judge (selection bias); main run stopped at 1,359 of 4,720 replays ($8.99) after interim
+  results showed A and C far past threshold. Rejected: running the remaining GPT-heavy 71% (hours, ~$27) for narrower intervals.
+
+Details: `docs/research/myth_replay_probe_20261001/README.md`.
+
+
+### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
+
+**Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
+
+Pilot, n=3 per cell, $11.45 (6/6 audited finals). 4 Opus 5 + 4 GPT-5.6 Sol, balanced rotating
+pairs, September informed negative-only noise; Agent_4 (Opus) and Agent_8 (Sol) are permanent
+forced-zero defectors with the September defectors25 settings (unaware, myths circulate). Gemini
+3.1 Pro left out because it is ceiling-locked. Scored on the six ordinary agents.
+
+| Cell | Game only | Myth → Game |
+|---|---|---|
+| All ordinary agents | 46.9 (±7.4) | 56.5 (±2.1) |
+| Opus 5 | 50.3 (±3.8) | 59.3 (±0.3) |
+| Sol | 43.5 (±11.1) | 53.8 (±4.1) |
+
+Seed-paired myth minus game: +6.1, +6.5, +16.3 (replicates 0, 1, 2). The no-defector
+2 Gemini / 3 Opus / 3 Sol population had only +2.5 (72.2 vs 74.7). Mid-tier Sonnet at the same
+defector share gave +7.6 (defectors drawn per replicate there, fixed seats here, so not like-for-like). Caveat: n=3; part of the
+lower game-only level is mechanical (a defector partner returns nothing). Launcher
+`scripts/run_frontier_defector_pilot.py`; receipt
+`data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json`. Full run not
+yet approved.
+
 ### 2026-09-30 — Result: moral labels miss the one myth signal that predicts play
 
 **Time:** ~3 h (two free diagnostics, review, robustness checks). No API calls.
@@ -23,6 +177,96 @@ categories, or myths that carry little about play. Every number is split by task
 Implication for the proposed 5-judge panel: re-judging the same three categories
 would mostly re-measure the fair/generous cut-point. Graded concrete features are
 what predict. Details: `docs/figures/myth_text_predictiveness_20260930/README.md`.
+
+### 2026-09-30 — Correction: five September claims narrowed after the frontier rerun
+
+**Time:** ~0.5 h.
+
+The frontier lenses reran every September analysis and surfaced five corrections, now
+applied to the September write-ups (the entries below are left as written):
+
+1. September 8-agent homogeneous moral uptake (+4.8) has a future-myth placebo of +3.9
+   (p 0.046): suggestive. The mixed same-family +5.9 passes (placebo +2.3). Linguistic
+   README and figure caption note (PR #12).
+2. Shown amount → send with author ≠ current partner is −0.00 (−0.10 to 0.10), not +0.04
+   (that came from the model with the future-myth term). September synthesis (PR #15).
+3. The consistency embedding rise holds only as the consistency-minus-generosity score; the
+   embedding self-copying test is generic. Keyword drift and the 72%/34% ratchet stand.
+4. Under the consistency lens's R1–R4 Holm family, two Sonnet round-1 results survive
+   (keyword consistency → later cooperation +0.095 / +0.110); still unconfirmed.
+5. The 8-agent send-score level effect sits in 2 GPT + 6 Sonnet (−0.039 per SD, Holm
+   0.050), opposite to H1.
+
+### 2026-09-30 — Result: frontier runs repeat the own-myth-as-plan picture; most read-myth tests hit the ceiling
+
+**Time:** ~4 h (frontier corpus + judging, five lenses, scorecard, verification).
+
+Result: on the main frontier set (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; 106 myth runs, 4,520
+myths; $10.17 judging), round-1 senders send exactly what their own myth names 50 of 52 times
+($0.85 per $; September 44/62, $0.67): Sol 31/31, Opus 19/21, GeminiPro always $5. A read
+myth's amount carries into the reader's next myth (+$0.13 per $, Holm-significant) and the
+moral spreads within a family (+6.8 pts, future-myth placebo +0.6); nothing crosses families
+and nothing detectably reaches play, but read-myth → send is not estimable (later sends at $5
+for every family). Words copy more than in September, across families ~4×.
+
+- Same code rebuilds September byte-identically; every lens reproduced its September headline.
+- Surfaced September corrections: moral uptake +4.8 has an unreported placebo of +3.9 (p .05);
+  the "+0.04" shown-amount → send figure should be −0.00; two consistency-embedding claims
+  narrowed. Listed in the README; the September docs are not yet edited.
+- GeminiPro morals drift generous → fair at a constant $5 send, favouring a judge-reading
+  explanation of the September "Gemini among GPTs" anomaly.
+
+Details: `docs/research/frontier_myth_predictors_20260930/README.md`; figure `scorecard/scorecard.png`.
+
+### 2026-09-30 — Result: myths act as the agent's own plan; norms do not predict cooperation
+
+**Time:** ~4 h (six parallel analysis lenses, synthesis, independent verification).
+
+Result: on the 156 September myth runs (8,519 myths), the only detectable myth → play link
+is an agent's own round-1 myth before play: Sonnet/GPT senders send $0.67 per $1 their myth
+states (0.55–0.79; 62 senders, 37 runs), matching it exactly 71% of the time. Within a cell
+the myth is the only differing input to the send call (verified on all 78 myth→game runs).
+It fades by rounds 6–10. Transplants (old apparatus) agree: the donor's stated amount, not
+its moral label, orders the ladder (+$0.41 per $, 8-agent).
+
+- Judges are not the bottleneck: amount measures agree (κ 0.91, r 0.89–0.997); the 3-way
+  label (κ 0.54) scores reciprocity. Sharper measures are null where the label is null.
+- H1 norm alignment: no evidence it adds beyond each player's own level (return null 10/10).
+- H2 shown amount → next send +$0.01 (−0.09 to 0.11); echoes into the next myth (+$0.07,
+  not Holm-significant).
+- H3 consistency drift real (Sonnet 5% → 86%), mostly self-copying; no detectable effect on
+  levels; stability hints fail Holm.
+- After round 1, ~150 myth features give no held-out gain over past moves.
+
+Spend $0.83 (new 0–10 giving score by two judges). Rejected: the +0.14 future-controlled
+myth→myth estimate as headline (fixed-effect artefact).
+Next: amount × slot seeding experiment, ~$39 old apparatus / ~$217 September protocol.
+
+Details: `docs/research/myth_predictors_20260930/README.md`.
+
+### 2026-09-30 — Result: moral-spread paper figures; the hop is mostly Sonnet, and a Gemini anomaly
+
+**Time:** ~2 h (three parallel design prototypes, selection, promotion, checks).
+
+Result: two paper figures for how myth morals move through 8-agent populations,
+chosen from three prototypes (lineage network, family flow, composition by round).
+`moral_composition_by_round_myth_game.png` shows the moral mix drifting from
+"be generous" to "be fair" among GPTs (4 Gemini + 4 GPT 75% → 20%; 1 GPT + 7 Sonnet
+46% → 14%); `moral_lineage_network.png` shows two median runs plus the all-runs test.
+
+- Narrowed claim: the within-family hop (+5.9 points, p = 0.001) rests mainly on
+  Sonnet (+9.6, p = 0.007; GPT +3.1, p = 0.11). "Across families" is always GPT ↔
+  other, so the null means nothing detectably crosses to or from GPT.
+- No single run shows the effect (42 of 72 labels kept against 38.3 by chance).
+- Open anomaly: among GPTs, Gemini's generous share falls while GPT's sends to it
+  rise to 5 and returns stay 0.32–0.50. "Morals follow play" does not explain it.
+- Wilcoxon p and runs-positive counts now use rounded per-run means (tie stability);
+  cross-family myth→game p 0.37 → 0.40, 17 → 15 of 30 runs positive. No conclusion changes.
+
+Rejected: the family-flow figure (its ribbons show exposure volume, not morals) and
+a dose–response reading of the ladder (Gemini erodes most at 4 GPT, not 7).
+
+Details: `docs/figures/linguistic_analysis_20260923/README.md` (item 3).
 
 ### 2026-09-29 — Result: under a word budget, Sonnet writes maxims, not a code
 
