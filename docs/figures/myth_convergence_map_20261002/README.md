@@ -47,9 +47,9 @@ Inputs are the gitignored tables in `data/analysis/linguistic_20260923/`
 
 ## What we see
 
-**1. Families start in different places.** Round-1 myths form three separate
-clusters. Family silhouette at round 1 (`family_separation.csv`; 0 = no
-grouping, 1 = perfect) is 0.30–0.41 across the eight size × mixing ×
+**1. Families start in different places.** Round-1 myths form three distinct
+but overlapping clusters. Family silhouette at round 1 (`family_separation.csv`;
+0 = no grouping, 1 = perfect) is 0.30–0.41 across the eight size × mixing ×
 task-order cells.
 
 **2. Morals line up with family.** Round-1 moral labels
@@ -67,8 +67,8 @@ play moves Sonnet's moral (generous 73 → 43, cautious 0 → 11) but not its
 place on the map. GPT and Gemini barely change. These are judge labels, not
 yet checked against the human coding pass, and the counts have no test.
 
-**3. Single-model runs stay apart.** Gemini moves furthest, away from the
-others. Sonnet moves a little towards the centre and GPT barely moves. The
+**3. Single-model runs stay apart.** On the map, Gemini moves furthest, away
+from the others (in 768-d Sonnet moves about as much in some cells). Sonnet moves a little towards the centre and GPT barely moves. The
 round-10 background has one basin per family. Family silhouette at round 10
 stays at 0.33–0.41.
 
@@ -88,17 +88,21 @@ per cell):
 | Gemini+GPT | Game → Myth | 0.61 / 0.62 | 0.73 / 0.67 |
 | Gemini+GPT | Myth → Game | 0.62 / 0.60 | 0.75 / 0.71 |
 
-At round 1, partners are no closer than strangers. By round 10 they are
-0.04–0.11 closer than the other-run baseline in all six cells, most for
-Sonnet+Gemini. The baseline also rises in most cells, so later myths are more
+At round 1, partners are no closer than strangers (17 of 36 runs above the
+baseline). By round 10 they are 0.04–0.11 closer in all six cells, most for
+Sonnet+Gemini, and 32 of 36 runs are above the baseline (`n_runs_closer`).
+This is expected from the design: from round 2 every agent's myth prompt
+contains its partner's last myth (`{other_agent_myth}` in
+`config/experiments.yaml`). The map shows how far that pull goes. The baseline also rises in most cells, so later myths are more
 alike in general; that is why the comparison holds round fixed. In 8-agent populations
 each agent reads a different partner each round, and the map shows a weaker
 pull. This table is not computed for them.
 
 ## Caveats
 
-- The 2-D map flatters the clustering (silhouette is higher on the map than
-  in 768-d), so cite the 768-d numbers.
+- The 2-D map flatters the clustering (round-1 silhouette 0.45–0.64 on the
+  map against 0.30–0.41 in 768-d; `silhouette_map_2d`), so cite the 768-d
+  numbers.
 - Family lines in mixed panels average over pairings: Sonnet's dyad line
   pools its runs with GPT and with Gemini. The table gives each pairing.
 - Moving closer in language is not cooperating more. The linguistic analysis

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Write provenance.json for docs/figures/linguistic_analysis_20260923/.
+"""Write provenance.json for docs/figures/linguistic_analysis_20260923/ (or another folder built
+from the same 156 myth runs, e.g. myth_convergence_map.py passes its own).
 
 scripts/check_safeguards.py requires every docs/figures/ folder to carry a
 provenance.json whose outputs map equals the folder's tracked files (including

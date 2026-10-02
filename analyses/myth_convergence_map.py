@@ -13,7 +13,7 @@ Figures (one PCA for all of them, so positions are comparable):
   trajectories_<n>agent.png    family-average path over rounds 1-10, single-model
                                vs mixed runs, one column per task order
 Tables:
-  family_separation.csv        silhouette of family labels (cosine, 768-d) by cell and round
+  family_separation.csv        silhouette of family labels by cell and round (768-d cosine; 2-D map)
   partner_convergence.csv      mixed dyads: cross-family similarity within a run vs
                                between runs of the same pairing, task order and round
   round1_morals.csv            judge moral label counts for round-1 myths
@@ -25,7 +25,7 @@ myth_moral_judge.py): <data>/myths.csv, <data>/embeddings_mpnet.npy,
 <data>/moral_labels_z-ai__glm-5.2.csv.
 
     python analyses/myth_convergence_map.py
-    python analyses/myth_convergence_map.py --dataset frontier --out <dir>
+    python analyses/myth_convergence_map.py --dataset frontier   # -> <frontier data>/myth_map
 """
 from __future__ import annotations
 
@@ -54,7 +54,9 @@ MORALS = {"be generous": "#e6ab02", "be fair": "#666666", "be cautious": "#e7298
 TASK_ORDERS = {"myth_game": "Myth → Game", "game_myth": "Game → Myth"}
 ROUND1_NOTE = {"myth_game": "written before any game is played",
                "game_myth": "written after the first round of the game"}
+ROUNDS = tuple(range(1, 11))
 MARK_ROUNDS = (1, 5, 10)
+SEPTEMBER_OUT = ROOT / "docs/figures/myth_convergence_map_20261002"
 MIN_WORDS = 20  # as in linguistic_uptake
 
 
@@ -68,7 +70,9 @@ def load(ds) -> tuple[pd.DataFrame, np.ndarray]:
     emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
     labels = pd.read_csv(ds.data / f"moral_labels_{JUDGE}.csv")[["run_id", "agent", "round", "label"]]
     merged = myths.merge(labels, on=["run_id", "agent", "round"], how="left", validate="one_to_one")
-    assert len(merged) == len(myths)
+    assert len(merged) == len(myths) and merged.label.notna().all(), "every myth needs a moral label"
+    cells = merged.groupby(["size", "mixed", "task_order", "family"])["round"].apply(frozenset)  # one panel line each
+    assert (cells == frozenset(ROUNDS)).all(), f"every family path needs myths in rounds {ROUNDS[0]}-{ROUNDS[-1]}"
     return merged, emb
 
 
@@ -137,8 +141,8 @@ def plot_trajectories(myths, m: Map, ds, size: int, out: Path) -> None:
                 ax.set_title("no runs")
                 continue
             # background: where this panel's round-10 myths end up
-            ax.contourf(m.gx, m.gy, m.density(cell[cell["round"] == 10], bw=0.25), levels=12, cmap="Blues", alpha=0.85)
-            rounds = np.arange(1, cell["round"].max() + 1)
+            ax.contourf(m.gx, m.gy, m.density(cell[cell["round"] == ROUNDS[-1]], bw=0.25), levels=12, cmap="Blues", alpha=0.85)
+            rounds = np.array(ROUNDS)
             t = np.linspace(rounds[0], rounds[-1], 120)
             for fam in ds.families:
                 f = cell[cell.family == fam]
@@ -171,12 +175,14 @@ def plot_trajectories(myths, m: Map, ds, size: int, out: Path) -> None:
 
 
 def family_separation(myths, emb) -> pd.DataFrame:
+    """Family silhouette in 768-d (cite this) and on the 2-D map (shows how much the map flatters it)."""
     rows = []
     for (size, mixed, task_order), cell in myths.groupby(["size", "mixed", "task_order"]):
         for r in MARK_ROUNDS:
             sel = cell[cell["round"] == r]
             rows.append(dict(size=size, mixed=mixed, task_order=task_order, round=r, n_myths=len(sel),
-                             silhouette_cosine=silhouette_score(emb[sel.index], sel.family, metric="cosine")))
+                             silhouette_cosine=silhouette_score(emb[sel.index], sel.family, metric="cosine"),
+                             silhouette_map_2d=silhouette_score(sel[["x", "y"]], sel.family)))
     return pd.DataFrame(rows)
 
 
@@ -190,8 +196,11 @@ def partner_convergence(myths, emb) -> pd.DataFrame:
         run = sel.run_id.to_numpy(dtype=object)
         cross = fam[:, None] != fam[None, :]
         same_run = run[:, None] == run[None, :]
+        # per run: its partners' similarity minus its myths' similarity to other runs' other-family myths
+        per_run = [sim[cross & same_run & (run[:, None] == rid)].mean() - sim[cross & ~same_run & (run[:, None] == rid)].mean()
+                   for rid in np.unique(run)]
         rows.append(dict(composition=composition, task_order=task_order, round=r,
-                         n_runs=sel.run_id.nunique(),
+                         n_runs=len(per_run), n_runs_closer=int(np.sum(np.array(per_run) > 0)),
                          same_run=sim[cross & same_run].mean(), other_run=sim[cross & ~same_run].mean()))
     out = pd.DataFrame(rows)
     out["difference"] = out.same_run - out.other_run
@@ -201,9 +210,11 @@ def partner_convergence(myths, emb) -> pd.DataFrame:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dataset", choices=sorted(linguistic_datasets.DATASETS), default=None)
-    ap.add_argument("--out", type=Path, default=ROOT / "docs/figures/myth_convergence_map_20261002")
+    ap.add_argument("--out", type=Path, help="default: the September figure folder, or <dataset data>/myth_map")
     args = ap.parse_args()
     ds = linguistic_datasets.get(args.dataset)
+    if args.out is None:  # never let another corpus overwrite the September figures
+        args.out = SEPTEMBER_OUT if ds.name == "september" else ds.data / "myth_map"
     args.out.mkdir(parents=True, exist_ok=True)
 
     myths, emb = load(ds)
@@ -219,7 +230,7 @@ def main() -> None:
     (r1.groupby(["task_order", "family"]).label.value_counts().unstack(fill_value=0)
        .to_csv(args.out / "round1_morals.csv"))
     print(f"wrote {args.out} ({m.xlabel}, {m.ylabel})")
-    if ds.name == "september":  # the same 156 myth runs as the linguistic analysis; run after README edits too
+    if args.out == SEPTEMBER_OUT:  # the same 156 myth runs as the linguistic analysis; run after README edits too
         from analyses import linguistic_provenance
         linguistic_provenance.main(args.out)
 
