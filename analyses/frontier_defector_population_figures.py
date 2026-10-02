@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
 import analyses.mixed_model_cooperation_per_round as per_round  # noqa: E402
+from scripts.analyze_frontier_defector_populations_20261002 import write_provenance  # noqa: E402
 
 RECEIPT = ROOT / "data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json"
 OUTPUT = ROOT / "docs/figures/frontier_defector_populations_20261002"
@@ -168,6 +169,7 @@ def main():
     per_round.plot_grid(stats, "population", rows, "return", "fig8_populations_return_per_round",
                         "How much ordinary receivers give back, round by round\nFrontier populations · Informed negative-only noise · 2 forced defectors",
                         band + " Per run and round: total returned / total received where something arrived.")
+    write_provenance()
     print(f"wrote 5 figures and games.csv to {OUTPUT.relative_to(ROOT)}")
 
 
