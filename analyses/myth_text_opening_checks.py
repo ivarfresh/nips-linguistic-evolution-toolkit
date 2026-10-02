@@ -35,7 +35,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from myth_text_predictiveness import DATA, KEY, LABELS, OUT, RULES, rule_features  # noqa: E402
+from myth_text_predictiveness import DATA, KEY, LABELS, OUT, RULES, rule_features, write_provenance  # noqa: E402
 
 ALPHAS = np.logspace(-2, 7, 19)
 
@@ -124,6 +124,7 @@ def main() -> None:
         lines += [f"### {title}", "", wide.reset_index().to_markdown(index=False), ""]
     (OUT / "opening_checks.md").write_text("\n".join(lines))
     print("\n".join(lines))
+    write_provenance()
 
 
 if __name__ == "__main__":

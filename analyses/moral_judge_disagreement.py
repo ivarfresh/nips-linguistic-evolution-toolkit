@@ -18,12 +18,15 @@ No API calls.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import cohen_kappa_score
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from myth_text_predictiveness import write_provenance  # noqa: E402
 LABELS = ROOT / "docs/figures/linguistic_analysis_20260923/moral_labels.csv"
 OUT = ROOT / "docs/figures/myth_text_predictiveness_20260930"
 A, B = "label_glm_5_2", "label_deepseek_v4_flash"
@@ -59,6 +62,7 @@ def main() -> None:
     conf.to_csv(OUT / "judge_confusion_by_task_order.csv", index=False)
     for t, d in m.groupby("task_order"):
         print(f"\n{t}\n{pd.crosstab(d[A], d[B], margins=True)}")
+    write_provenance()
 
 
 if __name__ == "__main__":

@@ -53,7 +53,13 @@ noise poorly because stage 2 shrinks shuffled text to about zero.
 Outputs: docs/figures/myth_text_predictiveness_20260930/{results.csv,README.md}
 No API calls.
 
+Every input table here (myths, decisions, embeddings, moral labels, PR #4 rules) comes
+from the 156 September myth runs, so the folder's provenance.json records those run
+finals (analyses/linguistic_provenance.py). Each script that writes into the folder
+rewrites it at the end; after editing README.md by hand, refresh it with --provenance-only.
+
   python3 analyses/myth_text_predictiveness.py
+  python3 analyses/myth_text_predictiveness.py --provenance-only
 """
 from __future__ import annotations
 
@@ -252,12 +258,27 @@ def evaluate(df: pd.DataFrame, emb: np.ndarray, tfidf, rules: np.ndarray, test: 
     return out
 
 
+def write_provenance() -> None:
+    """Record the 156 September myth runs behind every table this folder is built from."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from analyses import linguistic_provenance
+    if linguistic_provenance.DS.name != "september":
+        raise SystemExit("myth_text_predictiveness reads the September corpus; unset LINGUISTIC_DATASET")
+    linguistic_provenance.main(OUT)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--repeats", type=int, default=10)
     ap.add_argument("--perm", type=int, default=20)
     ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--provenance-only", action="store_true",
+                    help="only rewrite provenance.json (e.g. after a README edit)")
     args = ap.parse_args()
+    if args.provenance_only:
+        write_provenance()
+        return
     myths = pd.read_csv(DATA / "myths.csv")
     myths["text"] = myths.text.fillna("")
     emb = np.load(DATA / "embeddings_mpnet.npy")
@@ -301,6 +322,7 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(results).to_csv(OUT / "results.csv", index=False)
     print(f"-> {OUT / 'results.csv'}")
+    write_provenance()
 
 
 if __name__ == "__main__":
