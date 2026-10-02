@@ -60,7 +60,7 @@ FIGS = _DS.figs
 LABELS = ["be generous", "be fair", "be cautious"]
 # Shared across all moral figures (2026-09-30): categorical, colour-blind checked against the
 # family colours; fair darkened from #2a78d6, which was too close to Sonnet purple.
-LABEL_COLORS = {"be generous": "#D9A400", "be fair": "#0b5394", "be cautious": "#B2182B"}
+LABEL_COLORS = {"be generous": "#1a9850", "be fair": "#D9A400", "be cautious": "#B2182B"}
 FAMILIES = list(_DS.families)
 KEY = ["run_id", "round", "agent"]
 

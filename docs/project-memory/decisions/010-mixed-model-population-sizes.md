@@ -157,6 +157,20 @@ game-only dyads with Sol the outcome tracks the round-1 sender (partner first 74
 Sol first, opening $2.50–3, 56.2 ±5.1; first sender and seed block not separated), with no
 such difference in the two-task orders; myth → game puts every mixed pair at 74.3–75.0. See [the results README](../../figures/frontier_main_mixed_20260928/README.md).
 
+**2026-10-01 — Table 1 extended to n = 10 (Ivar: "run this", after a cost check; executed).**
+216 runs add replicates 5–9 to the September single-model dyad and 8-agent controls
+(no-defector condition only) and the contagion ladder, and 6–9 to the mixed dyads, so every
+cell of `tab:mixed-vs-average` has 10 runs. Each `*ext` set equals its original except the
+replicate id (plan-time check; seeds continue the original sequence); launcher
+`scripts/run_table1_n10_extension.py`; audit 216/216, $179.25 at standard rates. Eight mixed
+game→myth dyads were quarantined for a Gemini HTTP 503/timeout before an in-run retry and
+resampled under the same seed; one 8-agent Sonnet run was rerun after a role-key error.
+**Result:** 16 of 27 cells differ from the composition-weighted mean of their parts at
+uncorrected Welch p < 0.05 (11 after Holm), against 13 / 7 at n = 5–6; the direction of every
+claim is unchanged (game-only mixes with GPT below their parts, mixes with a myth channel
+above). Word adoption and moral carryover reproduce at n = 10 (`september_n10` dataset). See
+[the n = 10 README](../../figures/mixed_vs_average_n10_20261001/README.md).
+
 ## Unresolved / next evidence
 
 Which family's myth text moved which agent in the mixed myth conditions is
