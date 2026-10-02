@@ -23,6 +23,7 @@ OpenRouter's billed cost per call is recorded (usage.include).
   python3 analyses/myth_moral_judge.py --task label --task summary
   python3 analyses/myth_moral_judge.py --model deepseek/deepseek-v4-flash --task label   # second judge
   python3 analyses/myth_moral_judge.py --arabella-check       # re-label her 200 June myths
+  python3 analyses/myth_moral_judge.py --dataset frontier       # the frontier corpus (analyses/linguistic_datasets.py)
 """
 from __future__ import annotations
 
@@ -37,8 +38,13 @@ from pathlib import Path
 
 import pandas as pd
 
+try:
+    from analyses import linguistic_datasets
+except ImportError:  # run as a script from analyses/
+    import linguistic_datasets
+
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/analysis/linguistic_20260923"
+DATA = linguistic_datasets.get().data  # September unless LINGUISTIC_DATASET / --dataset says otherwise
 RUBRICS = ROOT / "arabella_analyses/data/rubrics"
 CACHE = ROOT / "data/judge_cache/moral"
 PROMPTS = {"label": RUBRICS / "3moral_rubric.txt", "summary": RUBRICS / "moral_summary.txt"}
@@ -170,10 +176,14 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--limit", type=int, help="first N myths only (smoke test)")
     ap.add_argument("--preflight", action="store_true", help="print the cost line and exit")
+    ap.add_argument("--dataset", choices=sorted(linguistic_datasets.DATASETS), help="myth corpus (default: september)")
     ap.add_argument("--arabella-check", action="store_true",
                     help="re-label the 200 June myths she labelled, to confirm the setup reproduces hers")
     args = ap.parse_args()
     tasks = args.task or ["label", "summary"]
+    global DATA
+    DATA = linguistic_datasets.get(args.dataset).data
+    print(f"data: {DATA}")
 
     if args.arabella_check:
         src = pd.read_csv(ROOT / "arabella_analyses/data/tables/myths_gameplay_with_judgements_GLM-5.2.csv")

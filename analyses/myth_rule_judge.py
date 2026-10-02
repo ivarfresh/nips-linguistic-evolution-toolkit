@@ -22,6 +22,7 @@ OpenRouter, temperature 0, reasoning off, cached by exact prompt).
   python3 analyses/myth_rule_judge.py                       # full run, both corpora
   python3 analyses/myth_rule_judge.py --model deepseek/deepseek-v4-flash --sample 1000   # second judge
   python3 analyses/myth_rule_judge.py --amount-check        # second pass: is the named amount endorsed or only narrated?
+  python3 analyses/myth_rule_judge.py --dataset frontier    # frontier corpus instead of September (no donors)
 
 The second pass exists because the first rubric's send_amount also picks up amounts a
 character merely sends in the story (review of PR #4). It re-reads every myth and donor
@@ -36,6 +37,7 @@ from pathlib import Path
 
 import pandas as pd
 
+import linguistic_datasets
 from myth_moral_judge import DATA, MIN_WORDS, PRICES, ROOT, Judge
 
 RUBRIC = ROOT / "analyses/rubrics/myth_rule_rubric.txt"
@@ -101,7 +103,7 @@ def parse_amount(raw: str) -> tuple[str | None, str]:
 
 def amount_check(judge: Judge, name: str, tag: str, frame: pd.DataFrame, workers: int) -> None:
     rules = pd.read_csv(DATA / f"myth_rules_{name}_{tag}.csv")
-    key = ["run_id", "round", "agent"] if name == "september" else ["size", "seed_type", "rep"]
+    key = ["size", "seed_type", "rep"] if name == "donors" else ["run_id", "round", "agent"]
     df = rules.merge(frame, on=key)
     df = df[df["send_amount"].notna()].reset_index(drop=True)
     prompts = [render_amount(t, a) for t, a in zip(df["text"], df["send_amount"])]
@@ -169,11 +171,21 @@ def main() -> None:
     ap.add_argument("--sample", type=int, help="random sample of N September myths (pilot); skips donors")
     ap.add_argument("--preflight", action="store_true")
     ap.add_argument("--amount-check", action="store_true", help="second pass on myths with a named amount")
+    ap.add_argument("--dataset", choices=sorted(linguistic_datasets.DATASETS), help="myth corpus (default: september)")
     args = ap.parse_args()
+    global DATA
+    ds = linguistic_datasets.get(args.dataset)
+    DATA = ds.data
+    print(f"data: {DATA}")
+
+    def base_corpora() -> dict[str, pd.DataFrame]:
+        if ds.name == "september":
+            return {"september": september(), "donors": donors()}
+        return {ds.name: september()}  # same filter and columns; the transplant donors are September-only
 
     if args.amount_check:
         tag = args.model.replace("/", "__")
-        corpora = {"september": september(), "donors": donors()}
+        corpora = base_corpora()
         pin, pout = PRICES[args.model]
         n = 3000
         est = (n * 700 / 1e6 * pin + n * 15 / 1e6 * pout) * 1.5
@@ -185,11 +197,9 @@ def main() -> None:
             amount_check(judge, name, tag, frame, args.workers)
         return
 
-    corpora = {"september": september()}
+    corpora = base_corpora()
     if args.sample:
-        corpora["september"] = corpora["september"].sample(args.sample, random_state=0)
-    else:
-        corpora["donors"] = donors()
+        corpora = {ds.name: corpora[ds.name].sample(args.sample, random_state=0)}
     tag = args.model.replace("/", "__") + (f"_sample{args.sample}" if args.sample else "")
 
     pin, pout = PRICES[args.model]

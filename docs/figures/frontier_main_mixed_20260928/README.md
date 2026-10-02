@@ -44,7 +44,8 @@ Analysis: `scripts/analyze_frontier_main_mixed_20260928.py`.
 
 ## Dyads (Figure 7 style)
 
-`frontier_mixed_dyads_resources_boxplots.png`. The table gives mean final resources per
+`frontier_mixed_dyads_resources_boxplots.png` shows the three mixed pairings (homogeneous
+dyads: `docs/figures/frontier_rerun_20260918/`). The table gives mean final resources per
 agent, as the mean (±sd over runs) of each run's mean.
 
 | Pair | Game only | Game → Myth | Myth → Game |
@@ -97,7 +98,8 @@ Mean send per family, mean (±sd over runs) (`family_summary.csv`):
 
 ## Populations (Figure 8 style)
 
-`frontier_mixed_populations_resources_boxplots.png`:
+`frontier_mixed_populations_resources_boxplots.png` shows the mixed population only; the
+homogeneous rows below come from the 2026-09-18 runs:
 
 | Population | Game only | Game → Myth | Myth → Game |
 |---|---|---|---|

@@ -229,6 +229,44 @@ def _interaction_metadata(
     return metadata
 
 
+def _run_council(turn, pairings, roles_by_agent, sim_data, myth_writer, task_index):
+    """Myth-pressure council after round `turn`: partners take turns talking.
+
+    Calls are transient (remember=False), so the council never displaces game
+    history from chat memory; each agent receives the transcript through its
+    next myth prompt. The round's investor speaks first, so the opener
+    alternates in fixed dyads. An empty message is retried once, then fails.
+    """
+    def converse(pairing):
+        first = pairing.get("investor") or pairing["agents"][0]
+        second = next(agent_id for agent_id in pairing["agents"] if agent_id != first)
+        messages = []
+        for exchange in range(myth_writer.council_exchanges):
+            for move, speaker in enumerate((first, second)):
+                listener = second if speaker == first else first
+                prompt = myth_writer.get_council_prompt(speaker, listener, turn, sim_data, messages)
+                metadata = _interaction_metadata(
+                    turn, "council", speaker, roles_by_agent, pairings, task_index,
+                    2 * exchange + move,
+                    getattr(sim_data.agents[speaker], "population_role", "standard"),
+                )
+                for attempt in range(2):
+                    try:
+                        response = sim_data.agents[speaker].respond(
+                            prompt, metadata, False, myth_writer.validate_council_response,
+                        )
+                        break
+                    except Exception as error:
+                        if attempt == 1:
+                            raise
+                        print(f"⚠️  Council message failed for {speaker}: {type(error).__name__}: {error}. Retrying (1/1)...")
+                messages.append({"agent": speaker, "content": response["content"].strip()})
+        return pairing.get("dyad_id"), {"agents": [first, second], "first_speaker": first, "messages": messages}
+
+    with ThreadPoolExecutor(max_workers=max(1, len(pairings))) as executor:
+        return dict(executor.map(converse, pairings))
+
+
 class SimulationData:
     """Centralized state management for multi-agent conversations"""
 
@@ -342,6 +380,17 @@ class SimulationData:
 
         return sim_data
 
+def _myth_memory_prompt(myth_writer, agent_id, turn, force_round1):
+    """What chat memory keeps for a myth call; None keeps the prompt as sent.
+
+    Only a myth board returns a shorter memory prompt, so the board is shown once
+    per call instead of repeating in every later prompt's context.
+    """
+    if turn == 1 or force_round1 or not hasattr(myth_writer, "memory_prompt_for"):
+        return None
+    return myth_writer.memory_prompt_for(agent_id)
+
+
 def _build_stateless_myth_context(agent_id, turn, sim_data, game):
     """Myth context appended to game prompts under chat_memory_mode="stateless".
 
@@ -428,6 +477,9 @@ def run_simulation(
             f"{sorted(GAME_RESPONSE_RETRY_POLICIES)!r}."
         )
 
+    if getattr(myth_writer, "board", None) and chat_memory_mode == "myth_only":
+        # myth_only always uses the round-1 prompt, so the board would never be shown.
+        raise ValueError("myth_board is not supported with chat_memory_mode='myth_only'")
     if request_plan is not None and monitor_config and monitor_config.get("enabled"):
         raise LLMSettingsError("Guarded strategy-monitor runs need a separately pinned monitor; use the explicit legacy path until supported")
     protected = {"llm_request", "llm_provider", "provider_model", "experiment_condition", "condition_sha256"}
@@ -999,6 +1051,7 @@ def run_simulation(
                                 myth_metadata[agent_id],
                                 myth_remember,
                                 myth_writer.validate_response,
+                                memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
                             )
                             for agent_id in active_agent_order
                         }
@@ -1033,6 +1086,7 @@ def run_simulation(
                                             myth_metadata[agent_id],
                                             myth_remember,
                                             myth_writer.validate_response,
+                                            memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
                                         )
                                         agent_myths[agent_id] = myth_response_data
                                         break
@@ -1118,6 +1172,16 @@ def run_simulation(
                     print(f"\n{agent_id} ({current_role}):")
                     print(myth)
                     print("-" * 40)
+
+            # Myth-pressure council between rounds (no council after the last round).
+            if "myth" in task_order and getattr(myth_writer, "council_exchanges", 0) and turn < num_turns:
+                print("\n--- MYTH COUNCIL ---")
+                round_entry["council"] = _run_council(
+                    turn, pairings, roles_by_agent, sim_data, myth_writer, len(task_order),
+                )
+                for dyad_id, council in round_entry["council"].items():
+                    for message in council["messages"]:
+                        print(f"[{dyad_id}] {message['agent']}: {message['content']}")
 
             # Hybrid saving after successful round
             if results_path:

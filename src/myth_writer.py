@@ -2,6 +2,7 @@
 # MYTH WRITING
 # ============================================================================
 
+import random
 import re
 
 from src.shared_context import build_previous_round_shared_context
@@ -75,13 +76,155 @@ def validate_myth_response(content):
         )
 
 
+_MYTH_LABEL = re.compile(r"^\s*\**\s*Myth\s*:\s*\**\s*", re.IGNORECASE)
+_WORD = re.compile(r"\S+")
+
+
+def validate_myth_pressure(pressure):
+    """Check a myth-pressure block (word budget, delivery note, optional council).
+
+    The budget caps how many words of a myth the other agent receives; the
+    writer is told how much got through, and an optional council lets paired
+    agents talk between rounds about how they write their myths.
+    """
+    if not isinstance(pressure, dict):
+        raise ValueError("myth_pressure must be a mapping")
+    schedule = pressure.get("word_budget_schedule")
+    if (
+        not isinstance(schedule, list)
+        or not schedule
+        or not all(isinstance(n, int) and not isinstance(n, bool) and n > 0 for n in schedule)
+    ):
+        raise ValueError("myth_pressure.word_budget_schedule must be a non-empty list of positive integers")
+    exchanges = pressure.get("council_exchanges", 0)
+    if not isinstance(exchanges, int) or isinstance(exchanges, bool) or exchanges < 0:
+        raise ValueError("myth_pressure.council_exchanges must be a non-negative integer")
+    required = ["delivery_note_template"]
+    if exchanges:
+        required += ["council_prompt_template", "council_block_template"]
+    for key in required:
+        if not isinstance(pressure.get(key), str) or not pressure[key].strip():
+            raise ValueError(f"myth_pressure.{key} must be a non-empty prompt template")
+    unknown = set(pressure) - {
+        "word_budget_schedule", "council_exchanges", "delivery_note_template",
+        "council_prompt_template", "council_block_template",
+    }
+    if unknown:
+        raise ValueError(f"Unknown myth_pressure keys: {sorted(unknown)}")
+    return {
+        "word_budget_schedule": list(schedule),
+        "council_exchanges": exchanges,
+        "delivery_note_template": pressure["delivery_note_template"],
+        "council_prompt_template": pressure.get("council_prompt_template") if exchanges else None,
+        "council_block_template": pressure.get("council_block_template") if exchanges else None,
+    }
+
+
+def deliver_myth(content, budget):
+    """Cut a myth to its first `budget` words, keeping the 'Myth:' label and spacing.
+
+    Returns (delivered_text, written_words, delivered_words). The label does not
+    count toward the budget.
+    """
+    match = _MYTH_LABEL.match(content)
+    label, body = (content[: match.end()], content[match.end():]) if match else ("", content)
+    words = list(_WORD.finditer(body))
+    if len(words) <= budget:
+        return content, len(words), len(words)
+    return label + body[: words[budget - 1].end()], len(words), budget
+
+
+class InvalidCouncilResponseError(ValueError):
+    """Raised when a council message is empty."""
+
+
+# ``persistent``: from round 2 every agent reads every myth any agent has written
+# in all earlier rounds (the shared board), without author names, instead of only
+# its previous partner's myth. Inspired by the 2026 Hugging Face incident board.
+VALID_MYTH_BOARDS = {"persistent"}
+MYTH_BOARD_MEMORY_NOTE = "[The shared myth board was shown here: {count} myths from rounds 1-{last_round}.]"
+
+
+def validate_myth_board(board):
+    if board is not None and board not in VALID_MYTH_BOARDS:
+        raise ValueError(f"myth_board must be one of {sorted(VALID_MYTH_BOARDS)} or absent; got {board!r}")
+    return board
+
+
 class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
-    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None):
+    def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None,
+                 saboteur=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
+        self.pressure = validate_myth_pressure(pressure) if pressure is not None else None
+        self.board = validate_myth_board(board)
+        # Private instruction prepended to the defectors' myth prompts only (2026-10-02
+        # saboteur pilot). Ordinary agents never see it; they see the resulting myths.
+        if saboteur is not None and (not isinstance(saboteur, str) or not saboteur.strip()):
+            raise ValueError("myth_saboteur must be a non-empty instruction")
+        self.saboteur = saboteur.strip() if saboteur else None
+        if self.board and (later_rounds_template is None or "{myth_board}" not in later_rounds_template):
+            raise ValueError("myth_board requires a later-rounds template with a {myth_board} placeholder")
+        # agent id -> the prompt to keep in chat memory for this round's myth call
+        # (the board itself is shown once, not carried forward in every later prompt).
+        self._memory_prompts = {}
+
+    def _with_saboteur(self, agent_id, sim_data, prompt):
+        """Prepend the private saboteur instruction for defector agents."""
+        if not self.saboteur:
+            return prompt
+        defectors = set((getattr(sim_data, "game_data", {}) or {}).get("defector_agent_ids") or [])
+        if not defectors:
+            raise ValueError("myth_saboteur needs defector agents, but the run has none")
+        return f"{self.saboteur}\n\n{prompt}" if agent_id in defectors else prompt
+
+    def memory_prompt_for(self, agent_id):
+        """Chat-memory version of the agent's latest myth prompt, or None to remember it as sent."""
+        return self._memory_prompts.get(agent_id)
+
+    def _board_items(self, sim_data, turn):
+        """(round, author, myth) for every myth written before ``turn``.
+
+        Within a round the order is a fixed shuffle keyed by the round only, so
+        every reader sees the same board and positions carry no author labels.
+        The shuffle is the same in every run, so a given position always holds
+        the same agent id (e.g. a defector's myth leads round 1 in the frontier
+        board runs); kept fixed so all board runs stay comparable.
+        """
+        items = []
+        for entry in sim_data.conversation_history:
+            source_round = entry.get("round")
+            myths = entry.get("myths") or {}
+            if source_round is None or source_round >= turn or not myths:
+                continue
+            authors = sorted(author for author, myth in myths.items() if myth)
+            random.Random(f"myth-board-v1|{source_round}").shuffle(authors)
+            items.extend((source_round, author, myths[author]) for author in authors)
+        return items
+
+    @staticmethod
+    def _format_board(items):
+        blocks = []
+        for source_round in sorted({r for r, _, _ in items}):
+            in_round = [myth for r, _, myth in items if r == source_round]
+            blocks.append("\n\n".join(
+                f"Round {source_round}, myth {i}:\n{myth}" for i, myth in enumerate(in_round, 1)
+            ))
+        return "\n\n".join(blocks)
+
+    @property
+    def council_exchanges(self):
+        return self.pressure["council_exchanges"] if self.pressure else 0
+
+    def word_budget(self, turn):
+        """Words of this round's myth the other agent will see (None = no budget)."""
+        if not self.pressure:
+            return None
+        schedule = self.pressure["word_budget_schedule"]
+        return schedule[min(turn, len(schedule)) - 1]
     
     def get_myth_prompt_round_1(self, agent_id, turn, sim_data):
         """Generate prompt for myth writing"""
@@ -93,11 +236,12 @@ class MythWriter:
         shared_context_block = build_previous_round_shared_context(
             agent_id, sim_data, turn
         )
-        return self.round1_template.format(
+        return self._with_saboteur(agent_id, sim_data, self.round1_template.format(
             myth_topic=self.myth_topic,
             shared_context_block=shared_context_block,
             topic_instruction=self._get_topic_instruction(),
-        )
+            word_budget=self.word_budget(turn),
+        ))
 
     def _get_topic_instruction(self):
         """Render the myth topic without making the default "anything" literal."""
@@ -186,6 +330,12 @@ class MythWriter:
         if not other_agent_myth:
             raise ValueError(f"OTHER AGENT MYTH ERROR: No previous myth found for {agent_id} (other agent) in round {turn - 1}. Cannot generate later round prompt.")
 
+        board_items = []
+        if self.board:
+            if substitution_applied:
+                raise ValueError("myth_board does not support defector_myth_policy standard_substitute")
+            board_items = self._board_items(sim_data, turn)
+
         self._record_myth_exposure(
             sim_data=sim_data,
             turn=turn,
@@ -194,11 +344,12 @@ class MythWriter:
             original_author_id=original_author_id,
             presented_author_id=presented_author_id,
             substitution_applied=substitution_applied,
+            board_items=board_items if self.board else None,
         )
 
         game_behavior_summary = self._get_game_behavior_summary(agent_id, turn, sim_data)
 
-        return self.later_rounds_template.format(
+        fields = dict(
             myth_topic=self.myth_topic,
             last_myth=last_myth,
             other_agent_myth=other_agent_myth,
@@ -206,7 +357,61 @@ class MythWriter:
                 agent_id, sim_data, turn
             ),
             game_behavior_summary=game_behavior_summary,
-        ).lstrip()
+            word_budget=self.word_budget(turn),
+            delivery_note=self._delivery_note(agent_id, previous_entry),
+            council_block=self._council_block(agent_id, previous_entry),
+        )
+        if not self.board:
+            return self._with_saboteur(agent_id, sim_data, self.later_rounds_template.format(**fields).lstrip())
+        self._memory_prompts[agent_id] = self._with_saboteur(agent_id, sim_data, self.later_rounds_template.format(
+            **fields,
+            myth_board=MYTH_BOARD_MEMORY_NOTE.format(count=len(board_items), last_round=turn - 1),
+        ).lstrip())
+        return self._with_saboteur(
+            agent_id, sim_data, self.later_rounds_template.format(**fields, myth_board=self._format_board(board_items)).lstrip()
+        )
+
+    def _delivery_note(self, agent_id, previous_entry):
+        """Tell the writer how much of its previous myth reached the other agent."""
+        if not self.pressure or previous_entry is None:
+            return ""
+        record = (previous_entry.get("myth_delivery") or {}).get(agent_id)
+        if not record:
+            return ""
+        return self.pressure["delivery_note_template"].format(**record)
+
+    @staticmethod
+    def _council_transcript(agent_id, messages):
+        return "\n".join(
+            f"{'You' if message['agent'] == agent_id else 'The other agent'}: {message['content']}"
+            for message in messages
+        )
+
+    def _council_block(self, agent_id, previous_entry):
+        if not self.council_exchanges or previous_entry is None:
+            return ""
+        for council in (previous_entry.get("council") or {}).values():
+            if agent_id in council["agents"]:
+                return self.pressure["council_block_template"].format(
+                    transcript=self._council_transcript(agent_id, council["messages"])
+                )
+        return ""
+
+    def get_council_prompt(self, agent_id, partner_id, turn, sim_data, messages):
+        """Prompt for one council message after round `turn`, before round `turn + 1`."""
+        entry = next(e for e in sim_data.conversation_history if e["round"] == turn)
+        myths = entry.get("myths") or {}
+        return self.pressure["council_prompt_template"].format(
+            own_myth=myths.get(agent_id, ""),
+            other_agent_myth=myths.get(partner_id, ""),
+            next_word_budget=self.word_budget(turn + 1),
+            transcript=self._council_transcript(agent_id, messages),
+        )
+
+    @staticmethod
+    def validate_council_response(content):
+        if not isinstance(content, str) or not content.strip():
+            raise InvalidCouncilResponseError("Council message is empty.")
 
     def _apply_defector_myth_policy(
         self,
@@ -276,6 +481,7 @@ class MythWriter:
         original_author_id,
         presented_author_id,
         substitution_applied,
+        board_items=None,
     ):
         metadata = getattr(sim_data, "run_metadata", {}) or {}
         game_data = getattr(sim_data, "game_data", {}) or {}
@@ -303,6 +509,11 @@ class MythWriter:
             ),
             "substitution_applied": bool(substitution_applied),
         }
+        if board_items is not None:
+            # The partner's myth is on the board; the record keeps that pairing
+            # and lists every board item in the order shown.
+            record["board"] = "persistent"
+            record["board_items"] = [[source_round, author] for source_round, author, _ in board_items]
         for entry in sim_data.conversation_history:
             if entry.get("round") == turn:
                 entry.setdefault("myth_exposures", {})[agent_id] = record
@@ -469,7 +680,24 @@ class MythWriter:
             validate_myth_response(content)
             myths_content[agent_id] = content
 
+        delivery = {}
+        budget = self.word_budget(turn)
+        if budget is not None:
+            # Other agents only ever see the delivered text; the full response
+            # stays in myth_responses and in the writer's own chat memory.
+            for agent_id, content in list(myths_content.items()):
+                delivered, written, kept = deliver_myth(content, budget)
+                myths_content[agent_id] = delivered
+                delivery[agent_id] = {
+                    "word_budget": budget,
+                    "written_words": written,
+                    "delivered_words": kept,
+                    "truncated": kept < written,
+                }
+
         for entry in sim_data.conversation_history:
             if entry["round"] == turn:
                 entry["myths"] = myths_content
+                if delivery:
+                    entry["myth_delivery"] = delivery
                 break

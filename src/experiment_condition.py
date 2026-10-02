@@ -48,6 +48,17 @@ def build_condition(game, myth_writer, runtime_metadata, simulation, replicate_i
         "game_retry": {"policy": simulation.get("game_response_retry_policy", "repeat_same_prompt_once"), "attempts": 2},
         "myth_retry": {"policy": "task_boundary_v1", "retries": 2},
     }
+    # Recorded only when configured, so conditions of runs without myth
+    # pressure (every run before 2026-09-28) keep their exact shape and hash.
+    pressure = getattr(myth_writer, "pressure", None)
+    if pressure is not None:
+        protocol["myth"]["pressure"] = pressure
+    board = getattr(myth_writer, "board", None)
+    if board is not None:
+        protocol["myth"]["board"] = board
+    saboteur = getattr(myth_writer, "saboteur", None)
+    if saboteur is not None:
+        protocol["myth"]["saboteur"] = saboteur
     pool = getattr(game, "_shuffled_myth_pool", None)
     protocol["game"]["shuffled_myth_pool_sha256"] = digest(pool) if pool is not None else None
     condition = {
