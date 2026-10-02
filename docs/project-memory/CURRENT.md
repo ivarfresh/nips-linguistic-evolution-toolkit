@@ -1,6 +1,6 @@
 # Current research state
 
-Last verified: 2026-09-28.
+Last verified: 2026-09-29.
 
 ## Research question
 
@@ -21,6 +21,26 @@ and [data audit](../research/mixed_future_data_audit.md).
   invented code. Resources 57–61 in every arm (n=5 each). Stage 2 does not proceed on this
   design. See [the results](../figures/myth_pressure_pilot_20260928/README.md) and
   [D012](decisions/012-myth-pressure-pilot.md).
+- **Paper scope (team meeting 2026-09-29):** Aron has drafted every section
+  except the results and submits the abstract by 1 October (checking whether it
+  can be edited afterwards). Agreed: the results section follows one narrative
+  (one noise setting, weaker models before frontier models, one set of
+  linguistic analyses); other plots and ablations go to the appendix. Edward
+  scoped Ivar's remaining work to: significance tests on the word-adoption
+  plots; send and return over rounds split by myth moral, for the agent's own
+  myth and the myths it was shown, per experiment type (all splits to the
+  appendix, the strongest in the main text, no cherry-picking); plots of the
+  observation that cooperation rises after an agent reads its own first myth,
+  before it sees a partner's myth (not yet shown); and, if time allows,
+  frontier-model defector runs. No further exploratory analyses. Ivar's own
+  notes after the meeting set the central question for the analyses as "what
+  drives the cooperation?", with the analyses before the defector runs: keep
+  the left and middle panels of the moral carry-over plot, stratify by the
+  agent's own last myth and the other agent's last myth, test which morals an
+  agent takes over from the myths it last saw into its own next myth, and
+  split everything per simulation and task order rather than pooling. Edward and
+  Mario review the full paper the week before 8 October. Ivar suggested
+  dropping the frontier update set for time; this was not decided.
 - **Submission target (team meeting 2026-09-22):** AAMAS, abstract 1 October
   2026, full paper 8 October 2026. The mixed-model dyad and eight-agent figures
   lead the paper; frontier results, cooperation round traces and a linguistic
