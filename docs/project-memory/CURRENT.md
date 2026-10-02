@@ -180,6 +180,14 @@ and [data audit](../research/mixed_future_data_audit.md).
   forced-defection test has only 9 events per cell, with hints of weaker
   reaction in game→myth. Ceiling models (Opus 5, Geminis) cannot be tested.
   See [the partner-responsiveness README](../figures/partner_responsiveness_20260930/README.md).
+- Myth text and cooperation (2026-09-30, no API calls): the only myth feature that
+  predicts play beyond past play is the send amount a myth names, and only for the
+  opening send in myth→game (R² +0.17, run-resampled 0.10–0.24; clear in Sonnet,
+  borderline in GPT). After round 1 no feature forecasts an agent's round-to-round
+  change, in either task order, and a shown myth forecasts nothing for its reader;
+  across agents in myth→game, PR #4 rules add a little to returns (Sonnet +0.05 R²). The
+  two moral judges' disagreement is concentrated on the fair/generous boundary. See
+  [the README](../figures/myth_text_predictiveness_20260930/README.md).
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from
