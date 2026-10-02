@@ -73,9 +73,8 @@ copying from the source; only measure 3 shows retelling.
 
 About $6 per run = $3.41 (Sonnet 8-agent myth → game,
 `data/json/noise_experiments/table1_n10_extension_20261001/completion_receipt.json`)
-plus about $2.60 of board input (8 agents × ~108k extra input tokens, assuming
-Sonnet input at $3 per million tokens — not yet verified against the repo's rate
-table). The smoke run measures the real cost. Grant left on 2026-10-02: €661.25
+plus about $2.60 of board input (8 agents × ~108k extra input tokens at Sonnet's
+$3 per million input tokens, `analyses/myth_replay_probe.py` `PRICE`). The smoke run measures the real cost. Grant left on 2026-10-02: €661.25
 (`scripts/grant_budget.py`; OpenRouter after 2026-10-01 not yet counted).
 
 ## What n=3 can show
