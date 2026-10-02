@@ -224,8 +224,9 @@ def snapshot_openrouter():
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--plan-usd", type=float, help="estimated cost of a planned run, in USD")
-    ap.add_argument("--plan-eur", type=float, help="estimated cost of a planned run, in EUR")
+    plan_group = ap.add_mutually_exclusive_group()
+    plan_group.add_argument("--plan-usd", type=float, help="estimated cost of a planned run, in USD")
+    plan_group.add_argument("--plan-eur", type=float, help="estimated cost of a planned run, in EUR")
     ap.add_argument("--snapshot-openrouter", action="store_true",
                     help="record current OpenRouter lifetime usage to start live tracking")
     ap.add_argument("--detail", action="store_true", help="show spend per API key")
@@ -248,6 +249,11 @@ def main():
         if note:
             notes.append(f"{name}: {note}")
         per_provider[name] = tally
+    missing = [n for n in notes if "ADMIN_KEY not in Keychain" in n]
+    if missing:
+        # A provider without its admin key would count as EUR 0 and overstate what is left.
+        raise SystemExit("Cannot compute the budget; missing admin key(s):\n  " + "\n  ".join(missing))
+    incomplete = [n for n in notes if n.startswith("OpenRouter")]
 
     rates, latest = usd_to_eur_rates(start, date.today())
 
@@ -275,7 +281,8 @@ def main():
     print(f"  {'-' * 70}")
     print(f"  {'Spent':<58} €{spent:>9,.2f}")
     print(f"  {'Grant received':<58} €{grant:>9,.2f}")
-    print(f"  {'Left':<58} €{left:>9,.2f}   ({spent / grant:.0%} used)")
+    flag = "   ** INCOMPLETE: OpenRouter spend after the fixed months is not counted (see NOTE) **" if incomplete else ""
+    print(f"  {'Left':<58} €{left:>9,.2f}   ({spent / grant:.0%} used){flag}")
     print(f"\n  Not counted (other projects' keys): €{excluded_eur:,.2f}")
 
     if args.plan_usd is not None or args.plan_eur is not None:
@@ -283,7 +290,7 @@ def main():
         after = left - plan
         print(f"\n  Planned run: €{plan:,.2f}"
               + (f" (${args.plan_usd:,.2f} at {latest:.4f} EUR/USD)" if args.plan_usd is not None else ""))
-        print(f"  Left after the run: €{after:,.2f}" + ("   ** OVER BUDGET **" if after < 0 else ""))
+        print(f"  Left after the run: €{after:,.2f}" + ("   ** OVER BUDGET **" if after < 0 else "") + ("   (at most; see NOTE)" if incomplete else ""))
 
     if args.detail:
         print("\n  Spend per key (USD, all months):")
