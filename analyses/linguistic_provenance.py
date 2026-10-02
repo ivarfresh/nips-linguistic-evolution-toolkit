@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Write provenance.json for docs/figures/linguistic_analysis_20260923/ (or the n=10 folder).
+"""Write provenance.json for docs/figures/linguistic_analysis_20260923/ (or another folder built
+from the same 156 myth runs, e.g. myth_convergence_map.py passes its own; or, with
+LINGUISTIC_DATASET=september_n10, the n=10 folder).
 
 scripts/check_safeguards.py requires every docs/figures/ folder to carry a
 provenance.json whose outputs map equals the folder's tracked files (including
@@ -33,7 +35,7 @@ DS = linguistic_datasets.get()  # September unless LINGUISTIC_DATASET=september_
 OUTPUT = DS.figs
 
 
-def main() -> None:
+def main(output: Path = OUTPUT) -> None:
     used = {spec["path"] for size in (2, 8) for spec in run_list(size, ROOT)}
     if DS.name == "september_n10":
         # The n=10 tables list the original runs plus the 2026-10-01 extension.
@@ -55,12 +57,12 @@ def main() -> None:
     # record where the finals really live (a worktree may reach them through a symlink)
     mixed, september = [p.resolve() for p in mixed], [p.resolve() for p in september]
     allowed = {**dyads.ALLOWED, **populations.ALLOWED}
-    outputs = sorted(p for p in OUTPUT.rglob("*")
+    outputs = sorted(p for p in output.rglob("*")
                      if p.is_file() and p.name != "provenance.json" and not p.name.startswith("."))
-    document = output_provenance(mixed + september, outputs, allowed, output_root=OUTPUT,
+    document = output_provenance(mixed + september, outputs, allowed, output_root=output,
                                  pools={"mixed": mixed, "september": september}, pool_reason=POOL_REASON)
-    (OUTPUT / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
-    print(f"provenance: {len(mixed + september)} runs, {len(outputs)} outputs -> {OUTPUT / 'provenance.json'}")
+    (output / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"provenance: {len(mixed + september)} runs, {len(outputs)} outputs -> {output / 'provenance.json'}")
 
 
 if __name__ == "__main__":

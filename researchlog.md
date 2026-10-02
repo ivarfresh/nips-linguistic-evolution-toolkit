@@ -1,3 +1,18 @@
+### 2026-10-02 — Result: myths start in family-specific regions; mixed partners pull together, families stay apart
+
+**Time:** ~2 h analysis; no API calls.
+
+Myth map for to-do item 8 (`analyses/myth_convergence_map.py`): 2-D PCA of the mpnet embeddings
+of the 156 September myth runs (8,519 myths; PC1 16%, PC2 7% of variance), numbers in 768-d.
+Round-1 myths cluster by family (silhouette 0.30–0.41 in every cell). Morals follow family:
+GPT opens "be fair" (139/182 myth-first), Gemini "be generous" (73/97); one round of play first
+cuts Sonnet's generous openings 73 → 43 (judge labels, untested). Single-model runs stay apart
+(round-10 silhouette 0.33–0.41). In mixed dyads, partners' myths end 0.04–0.11 cosine closer
+than different-family myths from other runs of the same pairing and round, in all 6 cells; at
+round 1 there is no gap. Caveat: closer language does not predict cooperation (linguistic analysis);
+the 8-agent partner table is not computed. Write-up and figures:
+`docs/figures/myth_convergence_map_20261002/README.md`.
+
 ### 2026-10-02 — Result: saboteur myths lower a frontier group's cooperation only slightly, with or without a shared board (pilot)
 
 **Time:** ~1.5 h engineering; batch ~25 min.
@@ -90,6 +105,29 @@ Sonnet run was rerun after a role-key error. 40 workers caused local DNS failure
 
 Details: `docs/figures/mixed_vs_average_n10_20261001/README.md`,
 `scripts/run_table1_n10_extension.py`.
+
+### 2026-10-01 — Result: a send rule in an agent's own myth sets its next send
+
+**Time:** ~6 h (design, four pilots, main replay run stopped at 29%, analysis).
+
+Result: replaying logged September decisions with only the stated amount in a myth edited
+(a fixed rule sentence, $1/$2/$3/$5), the next send moves $0.93 per $1 in the agent's own
+first myth (95% CI 0.88–0.99) and $0.68 (0.55–0.80) in its own later myth, Sonnet and GPT
+pooled; a partner's myth the agent read moves it $0.23 (0.12–0.34). Gemini 3.7 Flash sends $5
+whatever its myth says. An amount told inside the story moves Sonnet less ($0.57, $0.24).
+
+- Design: 40 contexts per model x arm from the 156 no-defector myth runs, intent to treat,
+  context fixed effects, run-clustered t CIs, Holm over arms; decision rules fixed in advance.
+  Verdicts: own first myth confirmed, own later myth confirmed, read myth inconclusive (real but
+  small, and a lower bound: the agent's own reaction myth stays unedited in that arm).
+- Free check: holding the round-1 send fixed shrinks the story-first advantage in single-model
+  populations (untested, overlapping intervals) but not in mixed or pooled runs.
+- Pilots ($6.75) replaced a free-form editor with a fixed rule sentence and gated nothing on the
+  judge (selection bias); main run stopped at 1,359 of 4,720 replays ($8.99) after interim
+  results showed A and C far past threshold. Rejected: running the remaining GPT-heavy 71% (hours, ~$27) for narrower intervals.
+
+Details: `docs/research/myth_replay_probe_20261001/README.md`.
+
 
 ### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
 
