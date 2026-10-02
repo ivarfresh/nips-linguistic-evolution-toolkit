@@ -1,3 +1,18 @@
+### 2026-10-02 — Result: myths start in family-specific regions; mixed partners pull together, families stay apart
+
+**Time:** ~2 h analysis; no API calls.
+
+Myth map for to-do item 8 (`analyses/myth_convergence_map.py`): 2-D PCA of the mpnet embeddings
+of the 156 September myth runs (8,519 myths; PC1 16%, PC2 7% of variance), numbers in 768-d.
+Round-1 myths cluster by family (silhouette 0.30–0.41 in every cell). Morals follow family:
+GPT opens "be fair" (139/182 myth-first), Gemini "be generous" (73/97); one round of play first
+cuts Sonnet's generous openings 73 → 43 (judge labels, untested). Single-model runs stay apart
+(round-10 silhouette 0.33–0.41). In mixed dyads, partners' myths end 0.04–0.11 cosine closer
+than different-family myths from other runs of the same pairing and round, in all 6 cells; at
+round 1 there is no gap. Caveat: closer language does not predict cooperation (linguistic analysis);
+the 8-agent partner table is not computed. Write-up and figures:
+`docs/figures/myth_convergence_map_20261002/README.md`.
+
 ### 2026-10-02 — Result: saboteur myths lower a frontier group's cooperation only slightly, with or without a shared board (pilot)
 
 **Time:** ~1.5 h engineering; batch ~25 min.
