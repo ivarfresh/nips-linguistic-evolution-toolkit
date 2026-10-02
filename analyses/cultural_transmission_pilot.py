@@ -84,7 +84,8 @@ def newcomers(workers):
     def work(j):
         res = replay(j["ctx"], j["messages"])
         rec = {k: j[k] for k in ("key", "run", "arm", "replicate_id", "board_round", "board_has_marker")}
-        rec.update(send=res["send"], text=res["text"], error=res["error"], cost=call_cost("Sonnet", res["usage"] or {}))
+        rec.update(send=res["send"], text=res["text"], error=res["error"], finish_reason=res.get("finish_reason"),
+                   usage=res["usage"], messages=j["messages"], cost=call_cost("Sonnet", res["usage"] or {}))
         append(path, rec)
         return rec
 
@@ -108,33 +109,35 @@ def analyze():
                 inv, tru = dy["investor"], dy["trustee"]
                 send_rows.append({"run": rec["replicate_id"], "arm": rec["arm"], "round": e["round"], "investor": inv,
                                   "planted_agent": inv == PLANT_AGENT, "send": dy["sent_decision"],
-                                  "exact2": dy["sent_decision"] == 2.0, "had_send_from_plant": inv in got_from_plant})
+                                  "exact2": dy["sent_decision"] == 2.0, "had_send_from_plant": inv in got_from_plant,
+                                  "after_board": e["round"] >= 2})
             got_from_plant |= {dy["trustee"] for dy in e["dyads"] if dy["investor"] == PLANT_AGENT}
     myths, sends = pd.DataFrame(myth_rows), pd.DataFrame(send_rows)
     others = myths[~myths["planted_agent"]]
-    text = others.groupby(["run", "round"])[["marker", "velmar"]].mean().unstack("run")
+    text = others.groupby(["arm", "run", "round"])[["marker", "velmar"]].mean().unstack(["arm", "run"])
     text.to_csv(FIGS / "marker_share_by_round.csv")
-    play = sends.groupby(["planted_agent", "had_send_from_plant", "run"]).agg(
+    play = sends.groupby(["arm", "planted_agent", "after_board", "had_send_from_plant", "run"]).agg(
         n=("exact2", "size"), exact2=("exact2", "sum"), mean_send=("send", "mean")).reset_index()
     play.to_csv(FIGS / "exact2_sends.csv", index=False)
     pd.set_option("display.width", 200)
     print("Share of non-Agent_1 myths with a marker, by round (columns: run):")
     print(text["marker"].round(2).to_string())
-    print("\nAgent_1 sends by round:", sends[sends.planted_agent].groupby(["run", "round"])["send"].first().unstack("round").to_string())
+    print("\nAgent_1 sends by round:", sends[sends.planted_agent].groupby(["arm", "run", "round"])["send"].first().unstack("round").to_string())
     print("\nExact-$2 sends:\n", play.to_string(index=False))
     path = OUT / "newcomers.jsonl"
     if path.exists():
         nc = pd.DataFrame([json.loads(x) for x in path.read_text().splitlines() if x.strip()])
         nc["exact2"] = nc["send"] == 2.0
-        g = nc.groupby(["replicate_id", "board_round"]).agg(n=("send", "size"), parsed=("send", "count"),
+        g = nc.groupby(["arm", "replicate_id", "board_round"]).agg(n=("send", "size"), parsed=("send", "count"),
                                                              exact2=("exact2", "mean"), mean_send=("send", "mean"),
                                                              board_has_marker=("board_has_marker", "first"))
         g.to_csv(FIGS / "newcomers.csv")
         print("\nNewcomers:\n", g.round(3).to_string())
         diff = g["exact2"].unstack("board_round")
-        passed = int(((diff[10] - diff[1]) >= 0.20).sum())
-        print(f"\nRetelling rule: R10 - R1 exact-$2 share >= 20 pts in {passed} of {len(diff)} runs "
-              f"-> {'ESTABLISHED' if passed >= 2 else 'not established'}")
+        for arm, d in diff.groupby(level="arm"):
+            passed = int(((d[10] - d[1]) >= 0.20).sum())
+            print(f"\nRetelling rule ({arm}): R10 - R1 exact-$2 share >= 20 pts in {passed} of {len(d)} runs "
+                  f"-> {'ESTABLISHED' if passed >= 2 else 'not established'}")
 
 
 def main():
