@@ -56,7 +56,7 @@ def load(pools, allowed):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--mixed-vs-average", default=str(ROOT.parent / "nips-worktrees/mixed-vs-average/analyses/mixed_vs_average.py"),
+    ap.add_argument("--mixed-vs-average", default=str(ROOT / "analyses/mixed_vs_average.py"),
                     help="path to analyses/mixed_vs_average.py (PR #10)")
     args = ap.parse_args()
 
