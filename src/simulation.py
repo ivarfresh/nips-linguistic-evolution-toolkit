@@ -1044,14 +1044,25 @@ def run_simulation(
                         # own myths); stateless: nothing is remembered — the
                         # later-rounds template carries last_myth explicitly.
                         myth_remember = chat_memory_mode not in ("myth_only", "stateless")
+                        planted = getattr(myth_writer, "planted_myth", lambda *_: None)
                         futures = {
-                            agent_id: executor.submit(
-                                sim_data.agents[agent_id].respond,
-                                prompts[agent_id],
-                                myth_metadata[agent_id],
-                                myth_remember,
-                                myth_writer.validate_response,
-                                memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
+                            agent_id: (
+                                executor.submit(
+                                    sim_data.agents[agent_id].scripted_response,
+                                    prompts[agent_id],
+                                    {"content": planted(agent_id, turn), "response_source": "planted"},
+                                    transcript_metadata=myth_metadata[agent_id],
+                                    remember=myth_remember,
+                                )
+                                if planted(agent_id, turn) is not None
+                                else executor.submit(
+                                    sim_data.agents[agent_id].respond,
+                                    prompts[agent_id],
+                                    myth_metadata[agent_id],
+                                    myth_remember,
+                                    myth_writer.validate_response,
+                                    memory_prompt=_myth_memory_prompt(myth_writer, agent_id, turn, force_round1),
+                                )
                             )
                             for agent_id in active_agent_order
                         }

@@ -145,6 +145,15 @@ VALID_MYTH_BOARDS = {"persistent"}
 MYTH_BOARD_MEMORY_NOTE = "[The shared myth board was shown here: {count} myths from rounds 1-{last_round}.]"
 
 
+def validate_myth_plant(plant):
+    if plant is None:
+        return None
+    if not isinstance(plant, dict) or set(plant) != {"agent", "text"} or not str(plant["text"]).strip():
+        raise ValueError(f"myth_plant must be {{'agent': ..., 'text': ...}} with non-empty text; got {plant!r}")
+    validate_myth_response(plant["text"])
+    return {"agent": str(plant["agent"]), "text": str(plant["text"])}
+
+
 def validate_myth_board(board):
     if board is not None and board not in VALID_MYTH_BOARDS:
         raise ValueError(f"myth_board must be one of {sorted(VALID_MYTH_BOARDS)} or absent; got {board!r}")
@@ -155,7 +164,7 @@ class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
     def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None,
-                 saboteur=None):
+                 saboteur=None, plant=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
@@ -166,6 +175,9 @@ class MythWriter:
         if saboteur is not None and (not isinstance(saboteur, str) or not saboteur.strip()):
             raise ValueError("myth_saboteur must be a non-empty instruction")
         self.saboteur = saboteur.strip() if saboteur else None
+        # Fixed round-1 myth for one agent (2026-10-02 cultural transmission pilot): that
+        # agent's first myth is recorded as written, without an LLM call.
+        self.plant = validate_myth_plant(plant)
         if self.board and (later_rounds_template is None or "{myth_board}" not in later_rounds_template):
             raise ValueError("myth_board requires a later-rounds template with a {myth_board} placeholder")
         # agent id -> the prompt to keep in chat memory for this round's myth call
@@ -180,6 +192,12 @@ class MythWriter:
         if not defectors:
             raise ValueError("myth_saboteur needs defector agents, but the run has none")
         return f"{self.saboteur}\n\n{prompt}" if agent_id in defectors else prompt
+
+    def planted_myth(self, agent_id, turn):
+        """The fixed myth text for this agent and round, or None to call the model."""
+        if self.plant and turn == 1 and agent_id == self.plant["agent"]:
+            return self.plant["text"]
+        return None
 
     def memory_prompt_for(self, agent_id):
         """Chat-memory version of the agent's latest myth prompt, or None to remember it as sent."""
