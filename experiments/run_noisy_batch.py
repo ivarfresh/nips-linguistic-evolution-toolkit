@@ -347,6 +347,12 @@ class NoisyExperimentConfig:
                 myth_pressure = self._get_myth_pressure(game_params) if "myth" in order else None
                 if myth_pressure is not None:
                     combo["myth_pressure"] = myth_pressure
+                # Absent for every run before 2026-10-02, so their combos are unchanged.
+                if "myth" in order and game_params.get("myth_board") is not None:
+                    combo["myth_board"] = game_params["myth_board"]
+                # Template name -> instruction text; absent for every run before 2026-10-02.
+                if "myth" in order and game_params.get("myth_saboteur") is not None:
+                    combo["myth_saboteur"] = self._get_prompt_template(game_params["myth_saboteur"])
                 if provider_settings:
                     combo["provider_settings"] = provider_settings.copy()
                 if mixed_agent_models:
@@ -510,6 +516,8 @@ def build_noisy_protocol(combo, index):
         round1_template=combo['myth_writing_default'],
         later_rounds_template=combo['myth_writing_later_rounds'],
         pressure=combo.get("myth_pressure"),
+        board=combo.get("myth_board"),
+        saboteur=combo.get("myth_saboteur"),
     )
 
     return game, myth_writer

@@ -238,10 +238,11 @@ def plot_boxplot_grid(decisions):
     # Six unique pairings, each drawn once (2026-09-22 meeting): the homogeneous
     # controls on one row, the three mixed pairings on the other.
     rows = [
-        ("Homogeneous dyads\n(September controls)", ["Sonnet+Sonnet", "GPT+GPT", "Gemini+Gemini"]),
+        ("Homogeneous dyads\n(single-model controls)", ["Sonnet+Sonnet", "GPT+GPT", "Gemini+Gemini"]),
         ("Mixed dyads", ["Sonnet+GPT", "Sonnet+Gemini", "Gemini+GPT"]),
     ]
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.2), sharey=True, squeeze=False)
+    box_n = {}
     for (partner, compositions), axrow in zip(rows, axes):
         for ax, composition in zip(axrow, compositions):
             counts = []
@@ -260,11 +261,13 @@ def plot_boxplot_grid(decisions):
             ax.grid(axis="y", alpha=.22)
             ax.spines[["top", "right"]].set_visible(False)
             kind = "mixed" if "+" in composition and composition.split("+")[0] != composition.split("+")[1] else "homogeneous"
+            box_n.setdefault(kind, set()).update(counts)
             ax.set_title(f"{composition.replace('+', ' + ')}\n{kind} · n = {counts[0]} per box", fontsize=12, fontweight="bold", pad=8)
         axrow[0].set_ylabel(partner, fontsize=12, fontweight="bold", labelpad=14)
     fig.suptitle("Final cumulative resources\nHomogeneous vs mixed-model dyads · Informed negative-only noise · No defectors · Round 10",
                  fontsize=15, fontweight="bold")
-    fig.text(.5, .012, "Each dot = one run (n = 5 per homogeneous box, September controls; 6 per mixed box)\n"
+    show = lambda kind: "/".join(str(n) for n in sorted(box_n.get(kind, ())))
+    fig.text(.5, .012, f"Each dot = one run (n = {show('homogeneous')} per homogeneous box; {show('mixed')} per mixed box)\n"
              "Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
              ha="center", fontsize=9, color="#444444")
     fig.supylabel("Cumulative resources per agent", fontsize=12, x=.006)

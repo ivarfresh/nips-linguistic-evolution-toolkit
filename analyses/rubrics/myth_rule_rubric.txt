@@ -1,0 +1,62 @@
+# Myth Rule Extraction Rubric
+
+## Task
+
+You are an LLM judge. You will receive a myth written by a player of a repeated trust game. Extract the behavioural rules the myth ENDORSES for future play, as a JSON object with the fields below.
+
+## Game context
+
+In each round:
+
+* The sender receives $5 and chooses an amount (0 to 5) to send to the receiver.
+* The amount sent is multiplied by three.
+* The receiver chooses how much of the tripled amount to return.
+* Players alternate roles over ten rounds. The amounts players see may be distorted by communication noise.
+
+Myths describe these actions metaphorically (seeds, coins, light, rivers, spirits). "Five coins/seeds/sparks" usually stands for the $5 the sender holds.
+
+## General principle
+
+Extract the rule the myth presents as wise, desirable, successful or worth following. Do NOT extract:
+
+* the $5 endowment itself ("the giver carried five seeds") — that is the setting, not a rule;
+* a single action a character takes, unless the myth presents it as the right way to act;
+* actions the myth criticises or shows failing.
+
+If the myth does not endorse a rule for a field, use "unspecified" (or null for numbers). Do not guess.
+
+## Fields
+
+1. `send_rule` — how much the myth says a sender should send:
+   * "all": give everything / the full five / give fully, without holding back
+   * "most": give generously but not necessarily all (roughly 3.5 to 4.9 of 5)
+   * "moderate": a measured, balanced or middling amount; "within one's means"; "not a flood" (roughly 2 to 3.5 of 5)
+   * "little": a small amount, a token (roughly 0.5 to 2 of 5)
+   * "none": send nothing / keep everything
+   * "unspecified"
+2. `send_amount` — the specific amount out of 5 the myth endorses sending, if it names or clearly implies one (e.g. "all five sparks" -> 5, "two of the five" -> 2); otherwise null.
+3. `test_first` — true if the myth endorses starting small or testing trust before giving more; otherwise false.
+4. `return_rule` — how much the myth says a receiver should return, relative to what the receiver GOT (the tripled amount):
+   * "more_than_half": return most of it, more than half
+   * "half": return about half / split it evenly / share equally
+   * "at_least_sent": return at least what the sender gave (so the sender does not lose), but less than half
+   * "little": return only a small part
+   * "match_partner": return in proportion to, or mirroring, how generous the sender was
+   * "unspecified"
+5. `after_letdown` — what the myth says to do when a partner sends or returns less than hoped (a betrayal, a shortfall, a thin return):
+   * "keep_trusting": keep giving / forgive / give another chance / assume it was noise or misfortune
+   * "reduce": give less next time, but keep playing
+   * "withdraw": stop giving / send nothing to that partner
+   * "unspecified"
+6. `consistency` — true if the myth explicitly praises being consistent, steady, predictable or unwavering in one's giving/returning; otherwise false.
+7. `noise_mentioned` — true if the myth refers to distortion, uncertainty, mishearing, fog, static or unreliable signals about what was sent or returned; otherwise false.
+
+## Output format
+
+Return only this JSON object:
+
+{"send_rule": "...", "send_amount": <number or null>, "test_first": <true|false>, "return_rule": "...", "after_letdown": "...", "consistency": <true|false>, "noise_mentioned": <true|false>}
+
+## Myth
+
+{text}
