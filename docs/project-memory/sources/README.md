@@ -36,8 +36,8 @@ personal discussion. Stable source locators:
   message `2026-09-02T14:18:54.458Z`.
 - September 22 notes and transcript: session `996eaa9b-33c4-439b-971a-f7188797095d`,
   first user message of 2026-09-22.
-- September 29 notes and transcript: Claude session of 2026-09-29, first user
-  message of that session.
+- September 29 notes and transcript: session `df89a808-beaa-4c0d-83ec-9c0c2ea55318`,
+  first user message of 2026-09-29.
 
 For portable repository evidence, prefer the linked Google Docs or add only
 the relevant attributed excerpt with its timestamp. Do not silently promote a
