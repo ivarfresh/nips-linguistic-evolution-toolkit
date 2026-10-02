@@ -128,7 +128,6 @@ whatever its myth says. An amount told inside the story moves Sonnet less ($0.57
 
 Details: `docs/research/myth_replay_probe_20261001/README.md`.
 
-
 ### 2026-10-01 — Result: two defectors open a myth gap in a frontier Opus 5 + Sol population (pilot)
 
 **Time:** ~1 h engineering; batch ~15 min wall-clock (6 workers).
@@ -271,6 +270,25 @@ consequence for going over budget, or information that has to be transmitted.
 
 Details: `docs/figures/myth_pressure_pilot_20260928/README.md`;
 `docs/research/myth_pressure_pilot_2026-09-28.md`; D012; PR #5.
+
+### 2026-09-28 — Result: a myth mainly shapes the opening send; no extracted rule explains the rest
+
+**Time:** ~3.5 h (task-order decomposition, rubrics and pilot, judge runs, analysis, review fixes).
+
+Result: GLM-5.2 extracted play rules from all 8,519 September myths and the 60 slide-678 donor
+texts ($1.67); a second pass labelled each named amount endorsed vs only narrated ($0.36);
+DeepSeek checked 1,000 myths ($0.05; send rule κ 0.76, letdown κ 0.38). Write-up:
+`docs/figures/myth_rules_20260928/README.md`.
+- Myth prompts ask "how the game should be played"; myth-condition game prompts add "take any
+  myths into account" (game-only lacks it). The line alone does not break GPT's zero-lock.
+- Before any play, agents open closer to the amount their own myth names: +$0.35–0.47 per $
+  counting only endorsed amounts (+$0.54–0.59 counting any). 74% of GPT's named amounts are
+  narration, so "story rehearses the move" fits as well as "rule followed".
+- Transplant: named amounts move Sonnet hosts within donor type (8-agent +$0.41 per $).
+- No extracted rule explains GPT's round-2 lift or why myth runs stop repeating $0;
+  later myths follow play (reverse +0.07).
+Open: advice-text control; myth task without the instruction line; amount × tone transplant.
+
 
 ### 2026-09-28 — Result: main-frontier mixed dyads and population lift GPT-5.6 Sol
 

@@ -41,6 +41,15 @@ and [data audit](../research/mixed_future_data_audit.md).
   next move; generous games are followed by generous myths. The human
   validation of the moral labels is not yet done. See
   [the results README](../figures/linguistic_analysis_20260923/README.md).
+- **Myth play rules (2026-09-28, judge-extracted, $2.08):** myth prompts ask
+  "how the game should be played" and myth-condition game prompts add "take
+  any myths into account" (absent in game-only). Before any play, agents open
+  closer to the amount their own myth names (+$0.35–0.47 per $ counting only
+  endorsed amounts), but 74% of GPT's named amounts are narration, so rule
+  following and story rehearsal are not separated. Transplanted amounts move
+  Sonnet hosts. No extracted rule explains GPT's round-2 lift or why myth runs
+  stop repeating $0. See
+  [the results README](../figures/myth_rules_20260928/README.md).
 - **Main frontier set (decided 2026-09-28, Ivar):** the 2026-09-18 Opus 5 / Gemini 3.1 Pro /
   GPT-5.6 Sol runs are the main frontier model simulation (the set Ed referred to); this
   supersedes the 2026-09-24 switch to Opus 5.5. Main-frontier mixed dyads (Opus 5/Sol,
