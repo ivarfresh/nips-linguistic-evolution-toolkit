@@ -376,7 +376,7 @@ corrected runs; the rest use the September and frontier myth corpora.
   be passed on.
 
 Genealogy and meme counts establish visible textual inheritance only. Across
-families, lexical transmission is established. For play, the causal evidence
+families, lexical transmission is strongly supported (observational, not causal-grade). For play, the causal evidence
 is about the agent's **own** myth: editing the amount in it moves the next send
 almost one for one. A read myth's amount moves the reader's send by at most a
 small amount in replay ($0.23 per $1) and not detectably in the observational

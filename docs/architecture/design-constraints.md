@@ -62,7 +62,7 @@ conditional, not unconditional: against GPT-5 Nano in game-only dyads, Gemini
 3.7 Flash stops after one unreciprocated $5 send in five of six runs.
 _(from researchlog 2026-09-18, 2026-09-22)_
 
-**Frontier models hit the ceiling too.** Gemini 3.1 Pro is at $75 in every
+**Frontier models hit the ceiling too.** Gemini 3.1 Pro is at or near the $75 ceiling (73.8–75.0) in every
 no-defector cell and GPT-6 Sol sends $5 in 732 of 750 decisions, so neither
 can show a task-order or composition effect. Ceiling also blocks
 mechanism tests: on the frontier set, later sends are $5 for every family, so
