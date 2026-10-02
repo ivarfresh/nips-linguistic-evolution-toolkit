@@ -14,6 +14,7 @@ underlying transcript or authored comment.
 | 2026-09-07 | [Saved Ed-meeting note](</Users/ivar/agent-memory/facts/LLM evolution — Edward Hughes meeting 2026-09-07.md>) | Assistant summary of a user-provided transcript | Model-specific profiles and limits on invalidating historical work |
 | 2026-09-14 | [Google Doc transcript](https://docs.google.com/document/d/16j8WmWvdEb8Jv3ji36j79xK_fTtg7SryZlc4-481bVM/edit) | Computer-generated/editable transcript | Headline-figure priority and later publication discussion |
 | 2026-09-22 | [Legacy Claude summary](</Users/ivar/.claude/projects/-Users-ivar-Desktop-Research-AI-projects-LLM-evolution-nips-linguistic-evolution-toolkit/memory/project_meeting_2026_09_22.md>) | User-supplied notes and computer-generated transcript (header dated Sep 21) summarized by an assistant | AAMAS target (abstract 1 Oct, paper 8 Oct), mixed-model figures lead, Figure 7 duplication fix, per-model split plot, linguistic/norm analysis priority, frontier mixed-model runs proposed |
+| 2026-09-29 | [Legacy Claude summary](</Users/ivar/.claude/projects/-Users-ivar-Desktop-Research-AI-projects-LLM-evolution-nips-linguistic-evolution-toolkit/memory/project_meeting_2026_09_29.md>) | User-supplied notes and computer-generated transcript summarized by an assistant | Results section streamlined to one narrative with supplementary plots in the appendix; Ivar scoped to significance tests on word adoption, send/return split by myth moral (own vs shown), own-myth vs partner-myth cooperation plots, frontier defector runs; no further exploration |
 
 The [design reference](../../experiment_design_reference.md) quotes authored
 slide comments directly and links transcript timestamps for decisions already
@@ -35,6 +36,8 @@ personal discussion. Stable source locators:
   message `2026-09-02T14:18:54.458Z`.
 - September 22 notes and transcript: session `996eaa9b-33c4-439b-971a-f7188797095d`,
   first user message of 2026-09-22.
+- September 29 notes and transcript: session `df89a808-beaa-4c0d-83ec-9c0c2ea55318`,
+  first user message of 2026-09-29.
 
 For portable repository evidence, prefer the linked Google Docs or add only
 the relevant attributed excerpt with its timestamp. Do not silently promote a

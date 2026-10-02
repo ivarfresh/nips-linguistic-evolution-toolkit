@@ -93,6 +93,12 @@ is a recorded protocol difference, not a pure model swap (see D004).
   the Opus 5.5 / GPT-6 Sol runs above (with the 2/3/3 Opus 5.5 / GPT-6 Sol mixed
   population of D010) become the frontier update set, reported as a newer-model check
   (`docs/figures/frontier_update_20260928/`). Main-frontier mixed runs: see D010.
+- 2026-09-29 (team meeting transcript, ~00:06:45 and ~00:43:30): Ivar suggested
+  excluding the frontier update set from the paper for time, noting it would be
+  "a bit of cherry picking"; no one decided it. Edward: "If you get time, I think
+  it could be cool to do the frontier model defector results as well" — the
+  missing frontier cells with defectors are in scope for the paper, after the
+  linguistic analyses. Not yet launched.
 - Does not supersede D004 (September profiles remain the September regime) or D010.
 
 On 2026-09-18 (corrected 2026-09-22 after review on PR #30) the frontier gap

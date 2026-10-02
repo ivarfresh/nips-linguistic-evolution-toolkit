@@ -1,0 +1,73 @@
+# Cooperative AI Foundation (CAIF) compute grant: budget tracking.
+# Read by scripts/grant_budget.py. Amounts received are from the bank
+# statements (no account details are stored here).
+
+currency: EUR
+count_from: "2026-01-01"   # Ivar, 2026-10-01: all 2026 project spend counts
+
+grants:
+  - date: "2026-04-30"
+    amount_eur: 1148.83     # first CAIF small grant (GBP 1000, paid in EUR)
+  - date: "2026-09-21"
+    amount_eur: 1750.00     # second CAIF small grant, Sept 2026 agreement
+
+# Spend is attributed per API key. Keys are matched by ID, not name (several
+# keys share a name). Any key in neither list is reported as UNCLASSIFIED and
+# still counted against the grant, so the remaining budget is never overstated.
+anthropic:
+  project_keys:
+    apikey_01XXFycXe8y4ZKrmusMWEhwc: llm-evo-nips-linguistic-toolkit
+    apikey_017wHYqcy9xXhRu51fV7qoVe: new_llm_evo_openrouter (OpenRouter BYOK)
+    apikey_01DcmzTX1SjZawaP7uuZx3iY: openrouter (OpenRouter BYOK, Jan 2026)
+    apikey_013G5BG3bY9th3hP36kK5rRf: bloom-data-llm-evo
+    apikey_014jzu92LDGHYKkqS621tdJJ: Deepeval_Bloom_LLM_evolution
+    apikey_011EvQDuysAANd2ZCYvXYnCd: LLM_evolution (2025-09)
+    apikey_01JpUeK7RuxPLmhCfpKMG6si: LLM_evolution (2025-08)
+    apikey_01UWY6aDi2NyUYj2sUuTJk1x: LLM_evolution (2025-08)
+  other_keys:
+    apikey_01GojRdGSdfpx9aZwf6nehY2: claude_code_key_ivarfrisch_yevx (Claude Code)
+    apikey_019fMp44cJDKJUAE2pAUcSVq: Dexter app
+    apikey_011uZowMWc3XAANxhd8DufiQ: paper-marketing-bot
+    apikey_015qBh5e3QxwJFTS4AHua7oU: household-finance-app
+    apikey_01KQ2Qt8BAEg6xFPbELqcgkm: Claude_engineer
+
+openai:
+  project_keys:
+    key_gETNQmMSd52h5Bmh: llm_evo_direct
+    key_E11rcBWFxTgKPw9u: llm_evo_openrouter (OpenRouter BYOK)
+    # Deleted keys with 2026 spend; assumed to be earlier LLM-evo keys.
+    key_f46tQxs3YlyL2eUv: deleted
+    key_G4YtfwjQ9iuNVbLT: deleted
+    key_pagaWftZUbOhT1Zd: deleted
+    key_yYdWnDb4yG25wqoI: deleted
+    key_18lyifYKAAfUEF2Q: deleted
+    key_nMDhVLTdndD3uVdO: deleted
+    key_JP5U5idxzbn0qugY: deleted
+  other_keys:
+    key_hO0EH8mOYGKX7l2O: Dexter app
+
+# OpenRouter has no dated cost history older than 30 days in its API. Spend
+# paid from OpenRouter credits up to `fixed_until` was read from the Activity
+# page (metric "Credits Usage"); BYOK traffic is excluded because Anthropic and
+# OpenAI bill it and it is already counted above. Later spend is the growth in
+# the account's lifetime credit usage (/api/v1/credits) since `snapshot`.
+openrouter:
+  fixed_until: "2026-10-01"
+  fixed_usd_by_month:
+    2026-01: 24.84
+    2026-02: 92.08
+    2026-03: 46.00
+    2026-04: 119.11
+    2026-05: 24.25
+    2026-06: 0.00
+    2026-07: 8.93
+    2026-08: 3.78
+    2026-09: 21.78
+  snapshot: null   # set with: python scripts/grant_budget.py --snapshot-openrouter
+
+# Google has no cost API without a BigQuery billing export. Refresh by hand from
+# https://console.cloud.google.com/billing/0154C5-218C4A-7856EC/reports;timeRange=CUSTOM_RANGE;from=2026-01-01;to=<today>;grouping=GROUP_BY_SERVICE
+# (all of it is the Gemini API, project "nano banana"). Billed in EUR.
+google:
+  amount_eur: 142.28
+  as_of: "2026-10-01"
