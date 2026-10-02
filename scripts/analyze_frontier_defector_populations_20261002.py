@@ -26,11 +26,34 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
 from src.experiment_condition import output_provenance  # noqa: E402
-from scripts.analyze_frontier_update_20260928 import ALLOWED, POOL_REASON, audited  # noqa: E402
+from scripts.analyze_frontier_update_20260928 import POOL_REASON, audited  # noqa: E402
 
 RECEIPT = ROOT / "data/json/noise_experiments/frontier_defector_pilot_20261001/all_receipt.json"
 OUTPUT = ROOT / "docs/figures/frontier_defector_populations_20261002"
 DEFECTORS = ("Agent_4", "Agent_8")
+# Exactly the condition differences present in these 45 finals (provenance.json), with this
+# design's reasons; anything else would fail the manifest check.
+_MODEL = "Design factor: model (Opus 5 vs GPT-5.6 Sol), each at its D011 request profile"
+_ORDER = "Design factor: task order (game, game -> myth, myth -> game)"
+_SEED = "Replicate seeds 0-4, matched across populations and task orders"
+_IDENTITY = "Run identity (set name, output path, replicate id)"
+ALLOWED = {
+    **{key: _MODEL for key in (
+        "llm.agents", "llm.endpoint", "llm.model", "llm.provider", "llm.provider_model",
+        "llm.parameters.max_completion_tokens", "llm.parameters.max_tokens", "llm.parameters.output_config",
+        "llm.parameters.reasoning_effort", "llm.parameters.thinking", "llm.policy.max_output_tokens",
+        "llm.policy.provider", "llm.policy.reasoning.output_config", "llm.policy.reasoning.reasoning_effort",
+        "llm.policy.reasoning.thinking")},
+    "protocol.simulation.task_order": _ORDER,
+    "protocol.simulation.memory_capacity": _ORDER + "; two-task runs keep 6 messages so every decision still sees three rounds",
+    "protocol.game.game_prompt_addition": _ORDER + "; myth runs add the instruction to take the myths into account",
+    "protocol.myth.round1_template": _ORDER + "; game-only runs have no myth templates",
+    "protocol.myth.later_rounds_template": _ORDER + "; game-only runs have no myth templates",
+    **{key: _SEED for key in ("replicate.defector_seed", "replicate.noise_seed", "replicate.pairing_seed",
+                              "replicate.random_defection_seed", "replicate.run_seed")},
+    **{key: _IDENTITY for key in ("replicate.identity.experiment", "replicate.identity.output_path",
+                                  "replicate.identity.replicate_id")},
+}
 POPULATIONS = {"opus4_sol4_d2": "4 Opus 5 + 4 Sol", "opus8_d2": "8 Opus 5", "sol8_d2": "8 Sol"}
 TASK_ORDERS = ("game", "game_myth", "myth_game")
 ORDER_LABELS = ["Game\nonly", "Game\n→ Myth", "Myth\n→ Game"]
