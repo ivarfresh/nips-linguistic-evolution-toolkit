@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (AI-assisted packet review; earlier entries retain their dated scope).
+Last updated: 2026-10-03 (bounded source/behavior follow-up; earlier entries retain their dated scope).
 
 ## Research question
 
@@ -188,7 +188,15 @@ and [data audit](../research/mixed_future_data_audit.md).
   preserved and organized separately: it highlights narrative justification,
   identity and inherited custom beyond action rules. A targeted saved-prompt
   check supports exposure-compatible name borrowing within H03's own dyad,
-  not transmission from the separate H01 run or a behavioral effect. See
+  not transmission from the separate H01 run or a behavioral effect. The subsequent
+  bounded steps 4–5 follow-up verifies sources and timing for all 44 selected
+  events. Actual-exposure novel-five-word overlap exceeds matched unseen overlap
+  by 1.08 percentage points (run SD 2.61; descriptive bootstrap 0.43–1.89,
+  45 runs), not a norm/causal estimate. Conditional triggers are insufficiently
+  measurable; only two of six explicit-amount cases have an immediate sender
+  opportunity, and both already sent that amount. Behavioral enactment remains
+  unidentified, not disproven. See the
+  [follow-up](../research/strategy_clause_audit_20261002/followup_findings_20261003.txt),
   [D013](decisions/013-strategy-clause-audit.md) and
   [the report](../research/strategy_clause_audit_20261002/README.md).
 - Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own

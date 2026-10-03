@@ -86,6 +86,23 @@ communication, causal rule uptake, or behavioral transmission. Original audit
 labels and analyses remain unchanged. Broader narrative coding is proposed,
 not authorized scaling; independent reliability and behavioral effects remain open.
 
+2026-10-03 bounded follow-up (explicit user instruction: "yes just go full
+autonomously just do it now please"): steps 4–5 completed for the existing
+sample, with no paid calls or simulations. The [follow-up plan](../../research/strategy_clause_audit_20261002/FOLLOWUP_PLAN_20261003.md)
+was fixed before new summaries, not preregistered or fully outcome-blind.
+[Results](../../research/strategy_clause_audit_20261002/followup_findings_20261003.txt)
+and [reproduction script](../../../analyses/strategy_clause_followup.py) verify
+480 own myths/game contexts and 432 exposures/unseen texts. Novel five-word
+overlap favors actual exposure by 1.08 percentage points (run SD 2.61;
+descriptive run-bootstrap interval 0.43–1.89, 45 runs), not a semantic or causal
+effect. All 44 earlier selected events have source/timing ledgers; original
+semantic labels remain inherited, unvalidated machine readings. Six forgiveness
+and ten reduction candidates fail strict measurable-trigger gates; of six
+unconditional amount candidates, only two have an immediate sender opportunity,
+and both already sent the named amount. No pooled behavioral inference is
+justified. Non-identifiability is not evidence of no enactment. This completes
+the bounded follow-up, not exhaustive coding or independent human reliability.
+
 Human validation of extraction and highlighted examples; separate blinded
 source-attribution checks if pursued; behavioral identification with clearly
 observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)
