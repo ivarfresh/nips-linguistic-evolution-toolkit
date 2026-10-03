@@ -17,7 +17,8 @@ between-round ones, so it understates change over time. This script adds:
 Same corpus and filters as myth_convergence_map.py. Runs are the unit of every
 test. No API calls.
 
-    python3 analyses/myth_map_significance.py
+    python3 analyses/myth_map_significance.py                      # September
+    python3 analyses/myth_map_significance.py --dataset frontier   # Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol
 """
 from __future__ import annotations
 
@@ -41,19 +42,29 @@ from sklearn.model_selection import GroupKFold, cross_val_predict  # noqa: E402
 
 SEED = 20261003
 N_BOOT = 1000
-PAIRS = [("Sonnet", "GPT"), ("Sonnet", "Gemini"), ("Gemini", "GPT")]
+FRONTIER_OUT = ROOT / "docs/figures/myth_convergence_map_frontier_20261003"
+# family pairs by position in the dataset's family order, with a colour per position, so a frontier
+# pair is drawn like its September counterpart (Opus–Sol like Sonnet–GPT, and so on)
+PAIR_SLOTS = [((0, 2), "#7570b3"), ((0, 1), "#1b9e77"), ((1, 2), "#d95f02")]
+
+
+def family_pairs(ds):
+    return [(ds.families[i], ds.families[j]) for (i, j), _ in PAIR_SLOTS]
+
+
+def pair_colors(ds):
+    return {f"{ds.families[i]}–{ds.families[j]}": c for (i, j), c in PAIR_SLOTS}
 
 
 def unit(v):
     return v / np.linalg.norm(v)
 
 
-def group_of(row) -> str:
-    """Cell for the distance plot: single-model runs pool across families; mixed runs by family pair."""
+def group_of(row, families) -> str:
+    """Cell for the distance plot: single-model runs pool across families; mixed runs by the families they hold."""
     if not row.mixed:
         return "single"
-    fams = sorted(set(row.composition.replace("+", " ").split()) & {"Sonnet", "GPT", "Gemini"})
-    return "+".join(fams)
+    return "+".join(sorted(set(row.composition.replace("+", " ").split()) & set(families)))
 
 
 # --------------------------------------------------------------------------- distances over rounds
@@ -86,7 +97,7 @@ def cross_distance(sums, runs_a, runs_b, key_a, key_b, mixed: bool) -> float:
     return 1 - dot / pairs
 
 
-def distance_curves(myths, emb, rng):
+def distance_curves(myths, emb, ds, rng):
     """Family-pair distance per round, with run-bootstrap samples kept for paired comparisons.
 
     Each bootstrap draw resamples runs once and evaluates every round on that draw
@@ -98,8 +109,8 @@ def distance_curves(myths, emb, rng):
     rows, boots_by_cell = [], {}
     for (to, size, group), cell in myths.groupby(["task_order", "size", "group"]):
         mixed = group != "single"
-        for a, b in PAIRS:
-            if mixed and group != "+".join(sorted((a, b))):
+        for a, b in family_pairs(ds):
+            if mixed and not {a, b} <= set(group.split("+")):
                 continue
             runs_a = cell[cell.family == a].run_id.unique()
             runs_b = cell[cell.family == b].run_id.unique()
@@ -140,7 +151,7 @@ def distance_curves(myths, emb, rng):
 
 
 def plot_distance_curves(curves, ds, out: Path) -> None:
-    pair_color = {"Sonnet–GPT": "#7570b3", "Sonnet–Gemini": "#1b9e77", "Gemini–GPT": "#d95f02"}
+    pair_color = pair_colors(ds)
     fig, axs = plt.subplots(2, 2, figsize=(13, 9), sharex=True, sharey=True)
     for i, size in enumerate([2, 8]):
         for j, to in enumerate(TASK_ORDERS):
@@ -174,7 +185,7 @@ def plot_distance_curves(curves, ds, out: Path) -> None:
 
 # --------------------------------------------------------------------------- map with chosen axes
 
-def chosen_axes(myths, emb):
+def chosen_axes(myths, emb, ds):
     """x: the direction holding the most between-family spread (top axis of the size-weighted family centroids).
     y: mean within-family round-1 -> round-10 shift, made orthogonal to x."""
     mu = emb.mean(0)
@@ -183,7 +194,7 @@ def chosen_axes(myths, emb):
     x_dir = np.linalg.svd(dev, full_matrices=False)[2][0]
     shifts = [unit(emb[(myths.family == f).to_numpy() & (myths["round"] == ROUNDS[-1]).to_numpy()].mean(0)
                    - emb[(myths.family == f).to_numpy() & (myths["round"] == ROUNDS[0]).to_numpy()].mean(0))
-              for f in ("Sonnet", "GPT", "Gemini")]
+              for f in ds.families]
     y_dir = np.mean(shifts, axis=0)
     y_dir = unit(y_dir - (y_dir @ x_dir) * x_dir)
     return x_dir, y_dir
@@ -258,7 +269,7 @@ def add(rows, claim, test, statistic, p, n, note=""):
     rows.append(dict(claim=claim, test=test, statistic=statistic, p=p, n=n, note=note))
 
 
-def tests(myths, emb, curves, boots, rng) -> pd.DataFrame:
+def tests(myths, emb, curves, boots, ds, rng) -> pd.DataFrame:
     rows = []
     # 1. family from a round-1 myth
     for to in TASK_ORDERS:
@@ -295,12 +306,13 @@ def tests(myths, emb, curves, boots, rng) -> pd.DataFrame:
         chi = stats.chi2_contingency(pd.crosstab(s.family, s.label))
         add(rows, f"Round-1 moral depends on family ({TASK_ORDERS[to]})", "chi-square, family × moral",
             f"χ² = {chi[0]:.1f}, df = {chi[2]}", chi[1], f"{len(s)} myths")
-    son = myths[(myths["round"] == 1) & (myths.family == "Sonnet")]
-    tab = pd.crosstab(son.task_order, son.label == "be generous")
-    add(rows, "One round of play makes Sonnet's opening less generous", "Fisher's exact, task order × generous",
-        f"generous {tab.loc['myth_game', True]}/{tab.loc['myth_game'].sum()} (Myth → Game) vs "
-        f"{tab.loc['game_myth', True]}/{tab.loc['game_myth'].sum()} (Game → Myth)",
-        stats.fisher_exact(tab.to_numpy())[1], f"{len(son)} myths")
+    for fam in ds.families:
+        one = myths[(myths["round"] == 1) & (myths.family == fam)]
+        tab = pd.crosstab(one.task_order, one.label == "be generous").reindex(columns=[False, True], fill_value=0)
+        add(rows, f"One round of play changes {fam}'s 'be generous' openings", "Fisher's exact, task order × generous",
+            f"generous {tab.loc['myth_game', True]}/{tab.loc['myth_game'].sum()} (Myth → Game) vs "
+            f"{tab.loc['game_myth', True]}/{tab.loc['game_myth'].sum()} (Game → Myth)",
+            stats.fisher_exact(tab.to_numpy())[1], f"{len(one)} myths")
     # 4. change in family distance from round 1 to 10, paired run bootstrap, every cell
     for (to, size, group, pair), draws in boots.items():
         c = curves[(curves.task_order == to) & (curves["size"] == size) & (curves.group == group) & (curves.pair == pair)]
@@ -353,18 +365,64 @@ def tests(myths, emb, curves, boots, rng) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def september_pools() -> tuple[dict, dict]:
+    """The September myth-run finals as (pools, allowed differences), as linguistic_provenance records them."""
+    from scripts import analyze_mixed_model_dyads as dyads
+    from scripts import analyze_mixed_model_populations as populations
+    used = {(ROOT / p).resolve() for p in load(linguistic_datasets.get("september"))[0].path.unique()}
+    dm, dsep = dyads.final_paths()
+    pm, psep = populations.final_paths()
+    mixed = [p.resolve() for p in dm + pm if p.resolve() in used]
+    single = [p.resolve() for p in dsep + psep if p.resolve() in used]
+    if {*mixed, *single} != used:
+        raise SystemExit("September myth runs and run finals disagree")
+    return {"september_mixed": mixed, "september_homogeneous": single}, {**dyads.ALLOWED, **populations.ALLOWED}
+
+
+def frontier_provenance(out: Path, myths_paths) -> None:
+    """provenance.json for the frontier folder: the audited frontier finals behind its myths, plus the
+    September myth runs when the joint round-1 figure (myth_map_joint_round1.py) is in the folder."""
+    import json
+    from src.experiment_condition import output_provenance
+    from scripts.analyze_frontier_main_mixed_20260928 import load as frontier_load
+    from scripts.analyze_frontier_update_20260928 import ALLOWED, POOL_REASON
+    _, homo, mixed = frontier_load()  # receipt-audited finals
+    used = {(ROOT / p).resolve() for p in myths_paths}
+    homo = [p.resolve() for p in homo if p.resolve() in used]
+    mixed = [p.resolve() for p in mixed if p.resolve() in used]
+    if {*homo, *mixed} != used:
+        raise SystemExit(f"{len(used - {*homo, *mixed})} frontier myth runs are not audited finals")
+    pools, allowed, reason = {"frontier_homogeneous": homo, "frontier_mixed": mixed}, dict(ALLOWED), POOL_REASON
+    if (out / "joint_round1.png").exists():
+        sep, sep_allowed = september_pools()
+        pools.update(sep)
+        allowed.update(sep_allowed)
+        reason += (" The September pools (Sonnet 4.5, Gemini 3.7 Flash, GPT-5 Nano) are read only by joint_round1.*, "
+                   "which places both corpora's round-1 myths on one map; no statistic pools them.")
+    outputs = sorted(p for p in out.rglob("*") if p.is_file() and p.name != "provenance.json" and not p.name.startswith("."))
+    runs = [p for paths in pools.values() for p in paths]
+    document = output_provenance(runs, outputs, allowed, output_root=out, pools=pools, pool_reason=reason)
+    (out / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"provenance: {len(runs)} runs, {len(outputs)} outputs -> {out / 'provenance.json'}")
+
+
 def main() -> None:
-    ds = linguistic_datasets.get("september")
-    out = SEPTEMBER_OUT
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--dataset", choices=["september", "frontier"], default="september")
+    args = ap.parse_args()
+    ds = linguistic_datasets.get(args.dataset)
+    out = SEPTEMBER_OUT if ds.name == "september" else FRONTIER_OUT
+    out.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(SEED)
     myths, emb = load(ds)
-    myths["group"] = [group_of(r) for r in myths.itertuples()]
+    myths["group"] = [group_of(r, ds.families) for r in myths.itertuples()]
 
-    curves, boots = distance_curves(myths, emb, rng)
+    curves, boots = distance_curves(myths, emb, ds, rng)
     curves.round(4).to_csv(out / "convergence_over_rounds.csv", index=False)
     plot_distance_curves(curves, ds, out)
 
-    x_dir, y_dir = chosen_axes(myths, emb)
+    x_dir, y_dir = chosen_axes(myths, emb, ds)
     for size in (8, 2):
         plot_family_time_map(myths, emb, ds, x_dir, y_dir, size, out)
 
@@ -372,11 +430,14 @@ def main() -> None:
     var = pd.DataFrame([dict(view="PCA map (PC1 + PC2)", **share_kept(myths, emb, list(pca.components_))),
                         dict(view="Chosen axes (family + time)", **share_kept(myths, emb, [x_dir, y_dir]))])
     var.round(3).to_csv(out / "variance.csv", index=False)
-    tests(myths, emb, curves, boots, rng).to_csv(out / "significance.csv", index=False, float_format="%.3g")
+    tests(myths, emb, curves, boots, ds, rng).to_csv(out / "significance.csv", index=False, float_format="%.3g")
     print(var.to_string(index=False))
 
-    from analyses import linguistic_provenance
-    linguistic_provenance.main(out)
+    if ds.name == "september":
+        from analyses import linguistic_provenance
+        linguistic_provenance.main(out)
+    else:
+        frontier_provenance(out, myths.path.unique())
 
 
 if __name__ == "__main__":
