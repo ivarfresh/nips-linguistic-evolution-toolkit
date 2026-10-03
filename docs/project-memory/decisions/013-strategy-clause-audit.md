@@ -71,6 +71,21 @@ available to the AI reader. No model batch, simulation, or behavioral analysis
 was launched. Subsequent user checking of these visible drafts is AI-assisted
 review, not independent blinded validation for any of the twelve trajectories.
 
+2026-10-03 user feedback received: Ivar supplied 36 round-comment blocks across
+H01–H04 and authorized organizing them. Original wording is preserved byte-for-byte
+in [the submitted notes](../../research/strategy_clause_audit_20261002/user_notes_original_20261003.txt);
+[organized feedback](../../research/strategy_clause_audit_20261002/user_notes_organized_20261003.json)
+contains 69 assistant-organized observations and 93 exact quote links, including
+explicit corrections and qualifications. These are not new independent human
+labels or an agreement statistic. The [synthesis](../../research/strategy_clause_audit_20261002/user_review_findings_20261003.txt)
+distinguishes action rules from sacred/identity/relational justification and
+fictional transmission. A targeted T36 check verifies partner names in accepted
+saved prompts before their appearance in own R9/R10 output (Oros/Elara and Kael).
+This is exposure-compatible narrative borrowing, not cross-run H01-to-H03
+communication, causal rule uptake, or behavioral transmission. Original audit
+labels and analyses remain unchanged. Broader narrative coding is proposed,
+not authorized scaling; independent reliability and behavioral effects remain open.
+
 Human validation of extraction and highlighted examples; separate blinded
 source-attribution checks if pursued; behavioral identification with clearly
 observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)

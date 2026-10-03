@@ -184,7 +184,12 @@ and [data audit](../research/mixed_future_data_audit.md).
   / 120 rounds have quotation-backed AI draft readings in a separate inspector
   tab. Human notes/completion remain separate and untouched. Checking these
   drafts is AI-assisted review, not independent blinded human validation. The
-  earlier frozen audit labels are unchanged. See [D013](decisions/013-strategy-clause-audit.md) and
+  earlier frozen audit labels are unchanged. Ivar's H01–H04 feedback is now
+  preserved and organized separately: it highlights narrative justification,
+  identity and inherited custom beyond action rules. A targeted saved-prompt
+  check supports exposure-compatible name borrowing within H03's own dyad,
+  not transmission from the separate H01 run or a behavioral effect. See
+  [D013](decisions/013-strategy-clause-audit.md) and
   [the report](../research/strategy_clause_audit_20261002/README.md).
 - Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
   per-round upward push at fixed partner and own history (Sonnet myth→game
