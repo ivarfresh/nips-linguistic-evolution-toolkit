@@ -87,7 +87,7 @@ def step(plan):
     load_dotenv(ROOT/'.env');client=OpenAI(base_url='https://api.openai.com/v1',max_retries=0,timeout=120)
     state_path=OUT/'state.json';state=read(state_path) if state_path.exists() else {'waves':[]}
     requests=read(OUT/'requests.json');byrequest={x['custom_id']:x for x in requests}
-    index={x['id']:x for x in read(OUT/'index.json')};screen.FEATURES=['challenge_dialogue']
+    index={x['id']:x for x in read(OUT/'index.json')};screen.FEATURES=plan.get('features',['challenge_dialogue'])
     for wave in state['waves']:
         if wave.get('collected'):continue
         if not wave.get('batch_id'):
@@ -131,18 +131,18 @@ def step(plan):
         save(state_path,state)
     if any(w.get('status')=='failed' for w in state['waves']):
         print('A Batch wave failed; inspect errors before further submissions.',flush=True)
-    else:
+    elif not (OUT/'STOP_SUBMISSIONS').exists():
         used={w['number'] for w in state['waves']}
         for definition in plan['waves']:
             if definition['number'] in used:continue
-            if not budget_allows(plan['pilot_accounted_upper_usd'],state['waves'],definition['bound']):break
+            if not budget_allows(plan['pilot_accounted_upper_usd'],state['waves'],definition['bound'],plan['cap_usd']):break
             path=ROOT/definition['path']
             if digest(path.read_bytes())!=definition['sha256']:raise ValueError('Batch input changed')
             with path.open('rb') as f:uploaded=client.files.create(file=f,purpose='batch')
             wave=dict(definition,tag=uuid.uuid4().hex,file_id=uploaded.id,status='submitting')
             state['waves'].append(wave);save(state_path,state)
             batch=client.batches.create(input_file_id=uploaded.id,endpoint='/v1/chat/completions',completion_window='24h',
-                metadata={'screen_wave':wave['tag'],'analysis':'myth-dialogue-20261003'})
+                metadata={'screen_wave':wave['tag'],'analysis':plan.get('analysis','myth-dialogue-20261003')})
             wave.update(batch_id=batch.id,status=batch.status);save(state_path,state)
             print(f"Submitted wave {wave['number']} ({wave['end']-wave['start']} requests), status={batch.status}",flush=True)
     summary=dict(submitted_waves=len(state['waves']),total_waves=len(plan['waves']),

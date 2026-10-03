@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (simplified dialogue screen running; other feature/evolution counts held).
+Last updated: 2026-10-03 (broad 300-trajectory exploratory audit running under $30 ceiling).
 
 ## Research question
 
@@ -29,9 +29,18 @@ and [data audit](../research/mixed_future_data_audit.md).
   interrupted calls without receipts. See the [calibration report](../research/narrative_evolution_20261003/calibration/REPORT.txt).
   **Later successor, Ivar: "ok do it":** simpler fresh 36-myth calibration and
   regression permit only challenge-dialogue screening. A 38,720-myth direct
-  Batch pass is now running, estimated $62.50 including allowance/pilots with
+  Batch pass was launched, estimated $62.50 including allowance/pilots with
   a $100 accounting guard. See the [batch plan](../research/narrative_evolution_20261003/feature_screen/full_dialogue/plan.json).
-  Other feature counts, evolution and source attribution remain held.
+  **Latest successor, Ivar: "yes run that now please", then "please keep it at $30 ceiling":**
+  broad exploratory audit of 300 complete trajectories / 3,000 myths from
+  300 distinct runs, covering all eight themes with punishment prioritized.
+  Screening estimate $23.07 ($28.84 with 25% allowance); $26 screen guard and
+  $30 total guard including targeted whole-trajectory readings. Batch execution
+  started; no findings yet. [Plan](../research/narrative_evolution_20261003/broad_audit_300/plan.json).
+  Dialogue-only local submitter stopped; STOP_SUBMISSIONS prevents further
+  waves. Its two accepted remote batches remain separate existing charges.
+  Exploratory candidates are authorized despite imperfect calibration;
+  validated prevalence, automatic evolution totals and causal attribution are not established.
   Human reliability remains unestablished; no expanded-corpus findings yet.
   See [D013](decisions/013-strategy-clause-audit.md).
 

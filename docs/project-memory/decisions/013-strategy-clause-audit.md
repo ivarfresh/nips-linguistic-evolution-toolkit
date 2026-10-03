@@ -216,3 +216,38 @@ is unchanged; full requests allow 6,000 completion tokens (pilot maximum usage
 Waves may require multiple Batch completion windows. Results are pending; no
 full-corpus finding is established by submission. Generated payloads remain local
 and reproducible from the pinned manifest, seed and code.
+
+## 2026-10-03 successor — broad exploratory audit, $30 ceiling
+
+**Explicit user instruction:** Ivar clarified punishment was most interesting,
+asked for a general audit encompassing multiple themes, accepted the proposed
+300-trajectory audit ("yes run that now please"), then reduced its budget:
+"please keep it at $30 ceiling". This supersedes the new audit's offered $100
+ceiling. Existing dialogue batches are separate prior commitments, not hidden
+inside the new ceiling. The dialogue-only local watcher was stopped and a
+STOP_SUBMISSIONS marker prevents accidental further waves; accepted batches
+are preserved remotely, not cancelled or relaunched.
+
+The [frozen selection](../../research/narrative_evolution_20261003/broad_audit_300/selection.json)
+contains one complete ten-round trajectory per 300 distinct final-run hashes.
+Selection uses only cohort/model/order/size/role metadata, not text/outcomes;
+seed 2026100307 balances available cohorts then cells, not proportional sampling.
+All eight themes remain in scope: punishment, conditional reduction, recovery,
+hypothetical, counterfactual, moral identity, communal rule, challenge dialogue.
+Earlier imperfect calibration is preserved and limits claims, rather than
+deleting those themes. Narrative/rejected instances are not endorsed norms.
+
+Implementation: [runner](../../../analyses/narrative_broad_audit.py) uses Sol/high,
+500 six-myth Batch requests, 24k completion cap, 25-request waves. Measured-pilot
+screen estimate $23.07 ($28.84 with allowance); pending worst-case reservations
+enforce a $26 screen guard. Up to 12 complete-trajectory readings prioritize
+six punishment-positive/four ambiguous/two negative contrasts when available,
+with a shared $30 total guard including settled screen costs. Those readings
+consider all themes and rule changes, requiring earlier/later quotations for
+changed prescriptions and retaining clarifications/reappearances separately.
+They are purposive AI interpretations, not independent human validation.
+Budget exhaustion may leave incomplete coverage; missing labels are not absent.
+
+Status: first seven waves (175 requests / 1,050 myths) accepted; outputs pending.
+No new simulation, experimental prompt, paper or inspector changes. Semantic
+review and a source-backed findings synthesis remain required after collection.
