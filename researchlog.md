@@ -1,16 +1,16 @@
-### 2026-10-03 — Result: frontier myths repeat the September pattern, but mixing helps less; Gemini Pro opens like Gemini Flash
+### 2026-10-03 — Result: frontier myths repeat the September pattern, but mixing holds families together less
 
-**Time:** ~2 h analysis; no API calls.
+**Time:** ~3 h analysis and review fixes; no API calls.
 
 Myth map, tests and time views for the main frontier set (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; 106 myth
 runs), kept separate from September (`docs/figures/myth_convergence_map_frontier_20261003/`). Round-1
 family is recognisable from one myth (98.2–98.7% on unseen runs; shuffle p ≤ 1×10⁻⁴); Opus and Gemini
 Pro open "be generous", Sol "be fair"; one round of play lowers Opus's generous openings (62 → 49 of 77,
-p = 0.03), as with Sonnet. Alone, families drift apart (12 of 12 cells). Mixed, they drift less but often
-still drift: 6 of 12 cells further apart, 4 no clear change, 2 closer (both Opus–Gemini Pro); by round 10
-mixed families are closer than single-model ones in 12 of 12 (8 intervals exclude 0). Partners converge
-(29/36 dyad runs, p = 3×10⁻⁴). Joint round-1 map: Gemini Pro's openings are nearly Gemini Flash's
-(centroid distance 0.03); Opus and Sol are distinct from their siblings. Caveat: 5–6 runs per cell.
+p = 0.03), as with Sonnet. Alone, families drift apart (12 of 12 cells). Mixed, 6 of 12 cells still drift
+apart, 5 show no clear change, 1 moves closer; like for like (pairs) 3 of 6 frontier cells drift apart vs
+0 of 6 in September. Partners converge (29/36 dyad runs, p = 3×10⁻⁴). Joint round-1 map: Gemini Pro sits
+closest to the same lab's September model (centroid distance 0.03), Opus and Sol further. Caveats: 5–6
+runs per cell; the 8-agent mixed designs differ between the sets.
 
 ### 2026-10-03 — Result: mixing model families stops their myths drifting apart; myth-map claims all hold at run level
 
