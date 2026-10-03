@@ -1,3 +1,16 @@
+### 2026-10-03 — Evidence-level inspector annotations added
+
+**Time:** not tracked separately.
+
+User-requested human-review interface now supports repeated observations per
+field, advice and narration together, and multiple source-round quotations per
+observation. Rationale/expected consequence has its own field. Export schema v2
+preserves v1 text/progress and shared evidence without inventing quote links;
+browser drafts remain local and exportable. No scientific runs, original texts,
+or machine labels changed. H01 round 1 received assistant-guided example coding
+in chat, so it must not count as independent validation. See D013 and
+`tools/trajectory-inspector/README.md` for the schema and scope.
+
 ### 2026-10-02 — Result: strategy clauses sometimes travel
 
 **Time:** not tracked separately.
