@@ -1,3 +1,16 @@
+### 2026-10-03 — User review broadens narrative interpretation
+
+**Time:** not tracked separately.
+
+Result: organized Ivar's 36 comment blocks on H01–H04 into 69 observations with
+93 exact quote links; original notes preserved byte-for-byte. Feedback identifies
+sacred, identity, relational and ritual framing missed by narrow action coding.
+Corrected several false-first-occurrence and story-setting readings. Saved-prompt
+checks for T36 R9/R10 verify exposure to partner names before their appearance in
+own output, supporting possible narrative borrowing, not behavioral transmission.
+No prior labels, experimental data, or analyses changed. This is AI-assisted
+feedback, not independent validation. See D013 and user_review_findings_20261003.txt.
+
 ### 2026-10-03 — AI packet review drafts completed
 
 **Time:** not tracked separately.
