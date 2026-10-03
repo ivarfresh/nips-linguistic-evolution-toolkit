@@ -355,12 +355,12 @@ def tests(myths, emb, curves, boots, ds, rng) -> pd.DataFrame:
             continue
         sg = boots[(to, size, "single", pair)]
         c = curves[(curves.task_order == to) & (curves["size"] == size) & (curves.pair == pair) & (curves["round"] == 10)]
-        d_s, d_m = c[c.group == "single"].distance.iloc[0], c[c.group != "single"].distance.iloc[0]
+        d_s, d_m = c[c.group == "single"].distance.iloc[0], c[c.group == group].distance.iloc[0]
         lo, hi = np.nanpercentile(mx[:, -1] - sg[:, -1], [2.5, 97.5])
         add(rows, f"Round 10, {pair}: mixed vs single-model distance ({size} agents, {TASK_ORDERS[to]})",
             "run bootstrap of the difference (different-run pairs)",
             f"single {d_s:.3f} vs mixed {d_m:.3f} ({d_m - d_s:+.3f}); 95% interval [{lo:+.3f}, {hi:+.3f}]", np.nan,
-            f"{c[c.group == 'single'].n_runs.iloc[0]} vs {c[c.group != 'single'].n_runs.iloc[0]} runs",
+            f"{c[c.group == 'single'].n_runs.iloc[0]} vs {c[c.group == group].n_runs.iloc[0]} runs",
             "interval excludes 0" if lo > 0 or hi < 0 else "interval includes 0")
     return pd.DataFrame(rows)
 

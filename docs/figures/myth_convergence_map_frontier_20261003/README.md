@@ -6,10 +6,12 @@ on one map. Same scripts, same methods, separate statistics: the two sets come
 from different models, request profiles and dates, and are never pooled.
 
 **Answer.** As in September, each frontier model opens with its own kind of
-myth, and families that never meet drift apart. Mixing helps less than in
-September: in half of the mixed cells the families still drift apart, only
-more slowly. Gemini 3.1 Pro opens almost exactly like Gemini 3.7 Flash; Opus
-and Sol each open with a myth of their own, not their smaller sibling's.
+myth, and families that never meet drift apart. Mixing holds them together
+less: in half of the mixed cells the families still drift apart, only more
+slowly. The like-for-like comparison is the pairs (the 8-agent designs
+differ): 3 of 6 frontier pair cells drift apart against 0 of 6 in September.
+Gemini 3.1 Pro's round-1 myths sit closest to Gemini 3.7 Flash's; Opus's and
+Sol's are further from the same lab's September model.
 
 ## Data
 
@@ -69,9 +71,9 @@ in 12 of 12 cells.
 
 | Mixed cell | Change round 1 → 10 | Cells |
 |---|---|---|
-| Further apart (interval above 0) | +0.04 to +0.17 | 6 of 12 |
-| No clear change | −0.06 to +0.03 | 4 of 12 |
-| Closer (interval below 0) | −0.04 and −0.05 | 2 of 12, both Opus–Gemini Pro |
+| Further apart (interval above 0) | +0.04 to +0.17 | 6 of 12 (3 of 6 pair cells) |
+| No clear change | −0.06 to +0.03 | 5 of 12 |
+| Closer (interval below 0) | −0.05 | 1 of 12 (Opus–Gemini Pro, 8 agents, Myth → Game) |
 
 By round 10 mixed families are closer than single-model ones in all 12 cells
 (0.02 to 0.17), with the interval of the difference excluding 0 in 8 of 12.
@@ -82,19 +84,20 @@ Opus–Sol pairs drift apart almost as much as when they never meet (+0.17 vs
 other runs' myths at round 10 (29 of 36 runs, sign test p = 3×10⁻⁴); the gap
 grows from round 1 (Wilcoxon p = 4×10⁻⁵).
 
-**6. Siblings** (`joint_round1.png`, `joint_round1_centroid_distance.csv`,
+**6. Same lab, September vs frontier** (`joint_round1.png`, `joint_round1_centroid_distance.csv`,
 `joint_round1_confusion.csv`; 768-d cosine distance between round-1 centroids,
 Myth → Game / Game → Myth):
 
-| Frontier model | Distance to its sibling | Nearest family | Classifier calls it the sibling |
+| Frontier model | Distance to the same lab's September model | Nearest family | Classifier calls it that model |
 |---|---|---|---|
 | Gemini 3.1 Pro | 0.035 / 0.026 (Gemini Flash) | Gemini Flash | 16 / 17 of 72 |
 | GPT-5.6 Sol | 0.103 / 0.072 (GPT-5 Nano) | Gemini Flash / GPT-5 Nano | 9 / 7 of 77 |
 | Opus 5 | 0.143 / 0.121 (Sonnet 4.5) | Sol / Sonnet | 1 / 1 of 77 |
 
-Gemini Pro's openings are nearly Gemini Flash's. Sol's sit between GPT-5 Nano
-and Gemini Flash. Opus's sit beside Sonnet's on the map but are told apart
-almost perfectly.
+Gemini Pro's openings are the closest pair here (0.03), yet the classifier
+still tells them apart in 55 and 54 of 72 myths. Sol's sit between GPT-5 Nano
+and Gemini Flash. Opus's are about as far from Sonnet's as from Sol's (Myth →
+Game: 0.143 vs 0.131) and are almost never mistaken for Sonnet's.
 
 ## Caveats
 
@@ -103,5 +106,12 @@ almost perfectly.
   run narrow: read them as a guide.
 - The joint map is fitted to round-1 myths only, so it is a different map from
   the per-set maps.
+- Same-lab distances also carry every other difference between the two sets
+  (date, request profile, launcher). "Same lab" is not "smaller version":
+  Gemini 3.7 Flash is a newer release than Gemini 3.1 Pro. The myth prompts are
+  the same in both sets.
+- The 8-agent mixed designs differ (all three models together here; a minority
+  of 1, 2 or 4 among one other model in September), so compare the sets on
+  the pairs.
 - Moral labels are from one judge model (GLM-5.2).
 - Language, not behaviour.

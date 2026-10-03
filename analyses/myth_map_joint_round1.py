@@ -2,7 +2,7 @@
 """Joint round-1 myth map: September models (Sonnet 4.5, Gemini 3.7 Flash, GPT-5 Nano) beside the
 frontier models (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol).
 
-Does each frontier model open with the same kind of myth as its smaller sibling from the same lab?
+Does each frontier model open with the same kind of myth as the same lab's September model?
 Round-1 myths of both corpora are embedded with all-mpnet-base-v2 (the cached vectors of each
 corpus) and projected onto the first two principal components of the round-1 myths of BOTH
 corpora, so this map is not the one in the per-corpus folders. Siblings share a hue: September
@@ -38,7 +38,7 @@ from sklearn.decomposition import PCA  # noqa: E402
 from sklearn.linear_model import LogisticRegression  # noqa: E402
 from sklearn.model_selection import GroupKFold, cross_val_predict  # noqa: E402
 
-SIBLING = {"Opus": "Sonnet", "GeminiPro": "Gemini", "Sol": "GPT"}  # same lab
+SIBLING = {"Opus": "Sonnet", "GeminiPro": "Gemini", "Sol": "GPT"}  # same lab's September model
 
 
 def round1(name: str) -> tuple[pd.DataFrame, np.ndarray]:
@@ -72,7 +72,7 @@ def main() -> None:
             pts = cell[cell.family == fam]
             color = pts.color.iloc[0]
             frontier = fam in SIBLING
-            label = f"{fam} (n={len(pts)})" + (f", sibling of {SIBLING[fam]}" if frontier else "")
+            label = f"{fam} (n={len(pts)})" + (f", same lab as {SIBLING[fam]}" if frontier else "")
             if frontier:
                 ax.scatter(pts.x, pts.y, s=22, marker="^", facecolors="none", edgecolors=color, lw=1.1, alpha=0.85, label=label)
             else:
@@ -87,8 +87,8 @@ def main() -> None:
         ax.set_ylim(*yr)
         ax.legend(frameon=False, fontsize=8.5, loc="best")
     axs[0].set_ylabel(f"PC2 ({var[1]:.0f}% of variance)")
-    fig.suptitle("Do frontier models open with the same kind of myth as their smaller siblings? Filled circles, solid "
-                 "rings: September models.\nOpen triangles, dashed rings: frontier models; siblings from the same lab "
+    fig.suptitle("Do frontier models open with the same kind of myth as the same lab's September model? Filled circles, solid "
+                 "rings: September models.\nOpen triangles, dashed rings: frontier models; models from the same lab "
                  "share a colour. One map fitted to the round-1 myths of both sets.", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.93))
     fig.savefig(FRONTIER_OUT / "joint_round1.png", dpi=160)
