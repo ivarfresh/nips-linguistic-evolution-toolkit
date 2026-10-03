@@ -4,9 +4,28 @@ Private static inspector for the twelve-trajectory human validation packet.
 No models are called. Research data and machine coding are never modified.
 
 `dist/packet.js` is generated **only** from the blinded `HUMAN_VALIDATION.md`.
-The identity key, machine judgments, exposed myths and game outcomes are not
-bundled. Myths render as text, never executable HTML. The view shows original
-text including any Markdown punctuation; no interpretation is added.
+The identity key, exposed myths and game outcomes are not bundled. Myths render
+as text, never executable HTML, including original Markdown punctuation.
+At the user's 2026-10-03 request, a separate `dist/ai-drafts.js` now supplies
+AI interpretations of all 120 rounds. The interface is therefore AI-assisted
+review, **not independent blinded human validation**.
+
+The AI draft tab and trajectory summary are read-only and explicitly await human
+review. Your notes remain separately editable and browser-local; no AI draft
+sets human read/completion flags or replaces existing notes. AI downloads carry
+provenance and cannot be imported as human notes. Human exports disclose that
+AI assistance is available. A malformed/mismatched AI packet disables the AI
+view without preventing access to human notes.
+
+Rebuild the curated AI artifact with
+`python3 docs/research/strategy_clause_audit_20261002/ai_reading_packet.py`.
+The source contains manually authored AI readings of the full frozen packet,
+not a keyword classifier or paid model pipeline. Its 841 entries include absence
+notes; 923 linked quote instances are verified as exact source substrings.
+Exact matching does not establish semantic correctness. Comparison notes also
+link the preceding round's action evidence. Original audit labels remain frozen;
+broader procedural/fractional refinements in this new reading can yield different
+trajectory labels. No cross-round counts are scientific prevalence estimates.
 
 Features: trajectory/round navigation, arbitrary-round comparison, repeatable
 evidence entries in six categories (condition, action, exception/recovery,

@@ -24,10 +24,25 @@
   const myth = (r) => packet.trajectories[index].rounds[r - 1].text;
   const hasNote = (r) => !!review().rounds[r]?.entries.length;
   const validateBundle = bundle => ReviewModel.validateBundle(bundle, packet);
+  let aiReviews = null, aiMode = false;
+  try {
+    if (window.AI_DRAFTS?.provenance?.status !== 'awaiting_human_review') throw Error('Missing AI draft provenance.');
+    aiReviews = validateBundle(window.AI_DRAFTS);
+    if (packet.trajectories.some(t => Object.keys(aiReviews[t.id]?.rounds || {}).length !== 10)) throw Error('Incomplete AI packet.');
+    for (const t of packet.trajectories) {
+      const draft = aiReviews[t.id];
+      if (draft.complete || draft.read.length) throw Error('AI draft must not claim human review.');
+      for (const notes of Object.values(draft.rounds)) for (const entry of notes.entries) for (const q of entry.quotes) {
+        if (!t.rounds[q.round - 1].text.includes(q.text)) throw Error('AI quotation does not match source.');
+      }
+    }
+    aiMode = true;
+  } catch (_) { aiReviews = null; }
   const currentNotes = () => review().rounds[noteRound] || (review().rounds[noteRound] = {entries: []});
   function bundle() {
     return {schema_version: 2, packet_id: packet.id, source_sha256: packet.source_sha256,
-      exported_at: new Date().toISOString(), blinding: 'No identities, game outcomes or machine coding supplied in this inspector.', reviews};
+      exported_at: new Date().toISOString(), blinding: 'Identities and game outcomes withheld. AI draft readings are available; these notes must not be treated as independent blinded validation.',
+      assistance: {ai_drafts_available: !!aiReviews, human_review_status: 'See each trajectory; never inferred from AI completion.'}, reviews};
   }
   try {
     const saved = localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey);
@@ -196,14 +211,22 @@
   function renderNotes() {
     const scrollTop = document.querySelector('.note-body').scrollTop;
     $('note-round').textContent = String(noteRound).padStart(2, '0');
-    const notes = review().rounds[noteRound] || {entries: []};
+    const notes = (aiMode ? aiReviews[id()] : review()).rounds[noteRound] || {entries: []};
+    $('ai-mode').setAttribute('aria-pressed', String(aiMode));
+    $('human-mode').setAttribute('aria-pressed', String(!aiMode));
+    $('ai-mode').disabled = !aiReviews;
+    $('ai-export').hidden = !aiMode;
+    $('notebook-label').textContent = aiMode ? 'AI DRAFT · AWAITING YOUR REVIEW' : 'YOUR READING';
+    $('ai-notice').textContent = aiReviews ? 'All 120 rounds have AI draft assessments. They are suggestions, not validated findings. Your own notes and completion marks remain separate.' : 'AI drafts could not load or failed validation. Your own notes remain available; reload to try again.';
+    $('selection-status').hidden = aiMode;
     $('migration-notice').hidden = !notes.legacy;
     $('evidence-groups').replaceChildren(...categories.map(([category, name, hint]) => {
       const entries = notes.entries.filter(e => e.category === category);
       const group = element('section', 'evidence-group'); group.dataset.category = category;
       const heading = element('div', 'group-heading'); heading.append(element('h3', '', name), element('span', 'entry-count', String(entries.length)));
       group.append(heading, element('p', 'group-hint', hint));
-      entries.forEach((entry, i) => group.append(evidenceCard(entry, i + 1)));
+      entries.forEach((entry, i) => group.append(aiMode ? aiCard(entry, i + 1) : evidenceCard(entry, i + 1)));
+      if (aiMode) return group;
       const add = button('+ Add entry', () => {
         const entry = {id: crypto.randomUUID(), category, text: '', types: [], quotes: []};
         currentNotes().entries.push(entry); changed(); renderNotes();
@@ -212,7 +235,33 @@
     }));
     document.querySelector('.note-body').scrollTop = scrollTop;
     selectionStatus();
+    $('ai-assessment').hidden = !aiReviews;
+    if (aiReviews) {
+      const draft = aiReviews[id()];
+      $('ai-evolution').textContent = draft.evolution[0].toUpperCase() + draft.evolution.slice(1);
+      $('ai-summary').textContent = draft.summary;
+    }
   }
+  function aiCard(entry, ordinal) {
+    const card = element('article', 'evidence-entry ai-entry');
+    card.append(element('span', 'eyebrow', `AI ENTRY ${ordinal}`), element('p', 'ai-observation', entry.text));
+    const names = {explicit: 'Explicit advice', narrated: 'Narrated event / belief', ambiguous: 'Ambiguous'};
+    card.append(element('p', 'field-hint', entry.types.length ? entry.types.map(t => names[t]).join(' + ') : 'Reader interpretation / absence note'));
+    for (const q of entry.quotes) {
+      const box = element('div', 'evidence-quote');
+      box.append(element('span', 'field-hint valid', `Round ${q.round} · exact quotation`), element('blockquote', '', q.text));
+      card.append(box);
+    }
+    if (!entry.quotes.length) card.append(element('p', 'field-hint', 'No quotation: absence or uncodeable feature, not invented evidence.'));
+    return card;
+  }
+  $('ai-mode').addEventListener('click', () => { if (aiReviews) { aiMode = true; renderNotes(); } });
+  $('human-mode').addEventListener('click', () => { aiMode = false; renderNotes(); });
+  $('ai-export').addEventListener('click', () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(window.AI_DRAFTS, null, 2)], {type: 'application/json'}));
+    const a = element('a'); a.href = url; a.download = 'myth-ai-drafts-awaiting-human-review.json';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
   function navigate(i, r) {
     if (!Number.isInteger(i) || i < 0 || i >= 12 || !Number.isInteger(r) || r < 1 || r > 10) throw Error('Invalid trajectory or round.');
     index = i; round = r; noteRound = r; reference = r > 1 ? r - 1 : 2; selection = null;
@@ -221,6 +270,7 @@
     $('previous-round').disabled = r === 1; $('next-round').disabled = r === 10;
     $('evolution').value = review().evolution; $('summary').value = review().summary;
     renderSidebar(); renderTimeline(); renderCards(); renderNotes(); updateProgress();
+    document.querySelector('.note-body').scrollTop = 0;
   }
   $('evolution').addEventListener('change', () => {
     review().evolution = $('evolution').value;
@@ -276,7 +326,9 @@
     const file = e.target.files[0]; e.target.value = ''; if (!file) return;
     try {
       if (file.size > 5_000_000) throw Error('Notes file is too large (maximum 5 MB).');
-      pendingImport = validateBundle(JSON.parse(await file.text()));
+      const imported = JSON.parse(await file.text());
+      if (imported.provenance?.author === 'Codex AI draft') throw Error('This is an AI draft, not your notes. Use the AI draft tab; your existing notes were not replaced.');
+      pendingImport = validateBundle(imported);
       $('import-description').textContent = `This file contains notes for ${Object.keys(pendingImport).length} trajectories from this exact packet.`;
       $('confirm-import').showModal();
     } catch (e) { pendingImport = null; toast('Import stopped: ' + e.message); }

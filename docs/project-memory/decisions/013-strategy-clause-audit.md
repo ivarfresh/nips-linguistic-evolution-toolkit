@@ -54,6 +54,23 @@ is guided practice, not independent human validation; do not report a subsequent
 whole-H01 assessment as wholly blinded to assistant interpretation. No human
 annotations have been ingested or judged complete by this update.
 
+2026-10-03 successor (explicit user request, same task): "Can you just rate it
+please :) i think tis fine for now. Lets just complete all the steps and then
+ill check later if i agree". All twelve packet trajectories / 120 rounds now
+have [AI draft assessments](../../research/strategy_clause_audit_20261002/ai_reading_packet.json),
+with separate observation types, exact quotations, uncertainty notes, and
+trajectory summaries. The inspector presents these separately from existing
+browser-local human notes. All AI read flags are empty and completion flags
+false; they do not stand in for a human review. The quote validator checks 923
+linked quote instances across 841 entries (including absence notes), not semantic
+validity. H07 round 3 is explicitly uncodeable because the packet contains an
+empty response object. This new reading uses a broader notion of refinement
+(including communication procedures and fractional specificity); it does not
+silently replace the frozen earlier machine labels. Prior audit summaries were
+available to the AI reader. No model batch, simulation, or behavioral analysis
+was launched. Subsequent user checking of these visible drafts is AI-assisted
+review, not independent blinded validation for any of the twelve trajectories.
+
 Human validation of extraction and highlighted examples; separate blinded
 source-attribution checks if pursued; behavioral identification with clearly
 observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)

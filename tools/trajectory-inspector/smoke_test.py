@@ -11,6 +11,12 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(URL)
+    assert page.locator('#ai-mode').get_attribute('aria-pressed') == 'true'
+    assert page.locator('.ai-entry').count() >= 6
+    assert page.locator('#complete-count').inner_text() == '0 / 12'
+    assert page.locator('#viewed-count').inner_text() == '0'
+    assert page.evaluate('Object.values(AI_DRAFTS.reviews).every(r => !r.complete && r.read.length === 0 && Object.keys(r.rounds).length === 10)')
+    page.locator('#human-mode').click()
     assert page.locator('.trajectory-button').count() == 12
     assert page.locator('.round-button').count() == 10
     assert page.locator('.myth-body').inner_text() == page.evaluate('PACKET.trajectories[0].rounds[0].text')
@@ -23,6 +29,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
       localStorage.setItem('myth-reading-room:'+PACKET.id,JSON.stringify(old)); return old;
     }''')
     page.reload()
+    page.locator('#human-mode').click()
     assert page.locator('[data-category="condition"] .entry-text').input_value() == 'Legacy condition'
     assert page.locator('[data-category="condition"] .quote-text').count() == 0
     assert page.locator('[data-category="other"] .quote-text').input_value() == old['reviews']['H01']['rounds']['1']['quote']
@@ -54,6 +61,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     assert target.locator('.evidence-quote select').nth(1).input_value() == '2'
     assert target.locator('.field-hint.valid').count() == 2
     page.reload()
+    page.locator('#human-mode').click()
     target = page.locator('[data-category="rationale"] .evidence-entry').last
     assert target.locator('input:checked').count() == 2
     assert target.locator('.quote-text').count() == 2
@@ -100,14 +108,34 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     page.get_by_role('checkbox', name='Narrated event / belief', exact=True).check()
     select_passage(0)
     page.locator('.attach-selection').click()
+    original_notes = page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")')
+    page.locator('#ai-mode').click()
+    assert page.locator('.ai-entry').count() >= 6
+    assert page.locator('#ai-evolution').inner_text() == 'Revision'
+    with page.expect_download() as download:
+        page.locator('#ai-export').click()
+    ai_export = Path(tmp) / 'ai.json'
+    download.value.save_as(ai_export)
+    drafts = json.loads(ai_export.read_text())
+    assert drafts['provenance']['status'] == 'awaiting_human_review'
+    page.locator('#import-file').set_input_files(str(ai_export))
+    expect(page.locator('#toast')).to_contain_text('This is an AI draft, not your notes.')
+    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")') == original_notes
+    for i in range(1,13):
+        page.get_by_role('button', name=f'Open trajectory H{i:02}', exact=True).click()
+        for r in range(1,11):
+            page.locator(f'.round-button[data-round="{r}"]').click()
+            assert page.locator('.ai-entry').count() >= 6
+            assert page.locator('.add-entry').count() == 0
+    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")') == original_notes
     page.evaluate('window.scrollTo(0, 0)')
-    page.screenshot(path='/tmp/myth-inspector-v2-desktop.png', full_page=True)
+    page.screenshot(path='/tmp/myth-inspector-ai-desktop.png', full_page=True)
     page.locator('#guide-button').click()
     assert page.locator('#guide').is_visible()
     page.keyboard.press('Escape')
     print('WebMCP native API available:', page.evaluate('!!document.modelContext?.registerTool'))
     page.set_viewport_size({'width': 390, 'height': 844})
-    page.screenshot(path='/tmp/myth-inspector-v2-mobile.png', full_page=True)
+    page.screenshot(path='/tmp/myth-inspector-ai-mobile.png', full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile horizontal overflow'
     page.evaluate('document.documentElement.style.fontSize = "200%"')
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), '200% text horizontal overflow'
