@@ -1,3 +1,16 @@
+### 2026-10-03 — Expanded narrative corpus audit completed
+
+**Time:** not tracked separately.
+
+Result: verified 1,109 unique completed-final hashes across canonical September-
+profile matrices/extensions, frontier main/update and ordinary frontier defectors;
+736 myth-bearing runs contain 38,720 entries in 3,872 complete trajectories.
+Ivar authorized expanded narrative coding and a dedicated rule-evolution lens.
+Four specialist audits informed the scoped plan; scripted-defector prose and
+forced game actions remain distinct. No paid coding or new simulations ran.
+Estimated full cost $795.50; proposed $800 cap awaiting approval. No full-corpus
+semantic results yet. See D013 and narrative_evolution_20261003/PLAN.md.
+
 ### 2026-10-03 — Bounded transmission follow-up completed
 
 **Time:** not tracked separately.
