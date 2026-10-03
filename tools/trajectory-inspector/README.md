@@ -1,6 +1,14 @@
 # Myth Reading Room
 
-The evidence inspector opens with three read-only plots: own sender/receiver
+The evidence inspector now opens with a guided, question-first explanation:
+what changed in the story, where it might have come from, and whether it changed
+play. Five examples explain borrowing, elaboration, ambiguous attribution and
+behavior predating text. T40's clause timeline and T23's recommended return-share
+schedule visualize text content, not internal beliefs or observed adherence.
+Dialogs link back to original stories. Existing `:plots` links open this clearer
+view; raw diagnostics remain available at `:diagnostics`. Notes are untouched.
+
+The optional raw diagnostics retain three read-only plots: own sender/receiver
 actions on separate axes with task-order-aware myth markers; contiguous-token
 source-match bars for the selected quotation; and a clickable 48 × 10 map of
 the 44 selected events. No complexity score, causal network, interpolated action
