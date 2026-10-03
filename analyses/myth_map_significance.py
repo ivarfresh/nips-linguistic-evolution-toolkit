@@ -148,8 +148,7 @@ def plot_distance_curves(curves, ds, out: Path) -> None:
                 single = group == "single"
                 color = pair_color[pair]
                 ax.fill_between(c["round"], c.ci_low, c.ci_high, color=color, alpha=0.10 if single else 0.18, lw=0)
-                ax.plot(c["round"], c.distance, color=color, lw=2, ls="--" if single else "-", marker="o", ms=3,
-                        label=f"{pair}, {'single-model runs' if single else 'mixed runs'} ({c.n_runs.iloc[0]} runs)")
+                ax.plot(c["round"], c.distance, color=color, lw=2, ls=(0, (5, 3)) if single else "-", marker="o", ms=3)
             ax.set_title(f"{size} agents · {TASK_ORDERS[to]}", fontsize=11)
             ax.set_xticks(list(ROUNDS))
             ax.grid(alpha=0.25)
@@ -157,7 +156,12 @@ def plot_distance_curves(curves, ds, out: Path) -> None:
                 ax.set_xlabel("Round")
             if j == 0:
                 ax.set_ylabel("Mean cosine distance between\na myth of each family (768-d)")
-            ax.legend(frameon=False, fontsize=8, loc="upper left")
+            # legend: colour = family pair, line style = run type (drawn without markers so the dashes show)
+            pairs = list(dict.fromkeys(cell.pair))
+            handles = [plt.Line2D([], [], color=pair_color[p], lw=3, label=p) for p in pairs]
+            handles += [plt.Line2D([], [], color="0.35", lw=2, ls=(0, (5, 3)), label="single-model runs (families never meet)"),
+                        plt.Line2D([], [], color="0.35", lw=2, label="mixed runs (families play together)")]
+            ax.legend(handles=handles, frameon=False, fontsize=8, loc="upper left", handlelength=4)
     fig.suptitle("Do the families' myths converge? Distance between a myth of one family and a myth of the other, "
                  "per round (pairs from different runs only).\nDashed: families in separate single-model runs. Solid: "
                  "families in mixed runs. Bands: 95% intervals from resampling runs.", fontsize=11)
@@ -198,11 +202,20 @@ def share_kept(myths, emb, basis) -> dict:
 
 def plot_family_time_map(myths, emb, ds, x_dir, y_dir, size: int, out: Path) -> None:
     myths = myths.assign(fx=emb @ x_dir, ty=emb @ y_dir)
+    pad = 0.04
+    xr = (myths.fx.min() - pad, myths.fx.max() + pad)
+    yr = (myths.ty.min() - pad, myths.ty.max() + pad)
+    gx, gy = np.mgrid[xr[0]:xr[1]:200j, yr[0]:yr[1]:200j]
     fig, axs = plt.subplots(2, 2, figsize=(13, 10), sharex=True, sharey=True)
     for i, mixed in enumerate([False, True]):
         for j, to in enumerate(TASK_ORDERS):
             ax = axs[i, j]
             cell = myths[(myths["size"] == size) & (myths.mixed == mixed) & (myths.task_order == to)]
+            end = cell[cell["round"] == ROUNDS[-1]]  # background: where this panel's round-10 myths end up
+            kde = stats.gaussian_kde(np.vstack([end.fx, end.ty]), bw_method=0.25)
+            ax.contourf(gx, gy, kde(np.vstack([gx.ravel(), gy.ravel()])).reshape(gx.shape), levels=12, cmap="Blues", alpha=0.85)
+            ax.set_xlim(*xr)
+            ax.set_ylim(*yr)
             for fam in ds.families:
                 f = cell[cell.family == fam]
                 if f.empty:
@@ -230,7 +243,8 @@ def plot_family_time_map(myths, emb, ds, x_dir, y_dir, size: int, out: Path) -> 
                 ax.set_ylabel("Time axis (average round-1 → round-10 shift)")
     fig.suptitle(f"Myths on axes chosen for the question ({size}-agent runs): left-right separates the families, "
                  f"up-down is the direction myths move over the game.\nLine = family average, light → dark = round "
-                 f"1 → 10; small dots = each run's family average at rounds 1 and 10", fontsize=11)
+                 f"1 → 10; small dots = each run's family average at rounds 1 and 10; blue background = where round-10 myths end up",
+                 fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(out / f"family_time_map_{size}agent.png", dpi=160)
     plt.close(fig)
