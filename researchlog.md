@@ -1,3 +1,18 @@
+### 2026-10-03 — Fresh screen narrows scalable endpoint
+
+**Time:** not tracked separately.
+
+Result: 36 fresh myths from disjoint runs were source-read before API labels.
+Eight-category screening passed two numerical gates; narrower regression held
+only challenge dialogue. Dialogue-only outputs were 36/36 technically valid,
+with 11/12 reference positives detected and 33/36 three-state matches. This is
+AI-assisted checking, not human reliability. New pilot cost estimated $0.83.
+After Ivar authorized simplify/validate/scale, a dialogue-only 38,720-myth Batch
+pass started: estimated $62.50 including pilots/allowance, $100 pending-token
+accounting guard. Results pending; other feature counts and evolution held.
+No experiments, paper or inspector changed. See D013 and
+docs/research/narrative_evolution_20261003/feature_screen/RESULTS.txt.
+
 ### 2026-10-03 — Narrative calibration reveals counting failures
 
 **Time:** not tracked separately.
