@@ -1,3 +1,18 @@
+### 2026-10-03 — Broad audit replaces narrow priority
+
+**Time:** not tracked separately.
+
+Decision: Ivar authorized a multi-theme 300-trajectory audit, emphasizing
+punishment, then imposed a $30 total ceiling. Selection is frozen across 300
+distinct completed runs / 3,000 myths, using metadata rather than outcomes.
+Sol/high eight-theme screen estimated $23.07, with $26 screen guard and $30
+combined guard for targeted whole-trajectory readings. First seven Batch waves
+accepted; results are pending, not completed findings. Earlier calibration
+limitations remain explicit; exploratory retrieval is not validated prevalence.
+Dialogue-only local submission stopped; two accepted remote batches remain
+separate existing commitments. No new experiments, paper or inspector changes.
+See D013 and docs/research/narrative_evolution_20261003/broad_audit_300/plan.json.
+
 ### 2026-10-03 — Fresh screen narrows scalable endpoint
 
 **Time:** not tracked separately.
