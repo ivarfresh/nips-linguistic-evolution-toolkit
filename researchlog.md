@@ -7,7 +7,7 @@ Significance and time views for the myth map (`analyses/myth_map_significance.py
 myth pairs from different runs. Alone, families' myths drift apart from round 1 to 10 (+0.05 to +0.19
 cosine distance; paired run-bootstrap interval excludes 0 in 11 of 12 cells). Mixed, they do not (−0.10
 to +0.03; 8 of 10 intervals include 0); by round 10 mixed families are 0.05–0.29 closer than
-single-model ones in 10 of 10 cells. Partner pairs are excluded, so this is a general shift, not only
+single-model ones in 10 of 10 cells (9 with interval excluding 0). Partner pairs are excluded, so this is a general shift, not only
 copying. Round-1 family is recognisable from one myth (98.8–99.1% on unseen runs; shuffle p ≤ 1×10⁻⁴);
 dyad partners converge (32/36 runs, p = 2×10⁻⁶). Caveat: 5–6 runs per cell, bootstrap intervals run narrow.
 Write-up: `docs/figures/myth_convergence_map_20261002/README.md`.
