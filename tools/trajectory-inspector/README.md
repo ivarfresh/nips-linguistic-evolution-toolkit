@@ -1,5 +1,12 @@
 # Myth Reading Room
 
+The evidence inspector opens with three read-only plots: own sender/receiver
+actions on separate axes with task-order-aware myth markers; contiguous-token
+source-match bars for the selected quotation; and a clickable 48 × 10 map of
+the 44 selected events. No complexity score, causal network, interpolated action
+series or new scientific label is inferred. Missing role opportunities are not
+zeros. Source-match bars are literal diagnostics, not semantic similarity.
+
 The separate `followup.html` evidence inspector is **unblinded and read-only**:
 48 full trajectories, 44 selected events, previous/exposed/unseen source panels,
 quoted clauses and game timing/eligibility. It does not read or write annotation
