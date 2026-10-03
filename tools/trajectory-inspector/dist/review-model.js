@@ -40,10 +40,11 @@
           return {round: q.round, text: text(q.text)};
         })};
     });
-    return {...(note.legacy ? {legacy: legacyNote(note.legacy)} : {}), entries};
+    return {...(note.legacy ? {legacy: legacyNote(note.legacy)} : {}), entries,
+      ...(note.thoughts !== undefined ? {thoughts: text(note.thoughts)} : {})};
   }
   function validateBundle(bundle, packet) {
-    if (!object(bundle) || bundle.packet_id !== packet.id || bundle.source_sha256 !== packet.source_sha256 || ![1, 2].includes(bundle.schema_version)) throw Error('These notes belong to a different packet or format.');
+    if (!object(bundle) || bundle.packet_id !== packet.id || bundle.source_sha256 !== packet.source_sha256 || ![1, 2, 3].includes(bundle.schema_version)) throw Error('These notes belong to a different packet or format.');
     if (!object(bundle.reviews)) throw Error('No review notes found.');
     const reviews = {};
     for (const [id, value] of Object.entries(bundle.reviews)) {

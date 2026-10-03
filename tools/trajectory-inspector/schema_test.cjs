@@ -18,3 +18,9 @@ for (const invalid of [{...v2, source_sha256: 'wrong'}, {...v2, schema_version: 
 const bad = JSON.parse(JSON.stringify(v2)); bad.reviews.H01.rounds[1].entries.at(-1).quotes[0].round = 11;
 assert.throws(() => validateBundle(bad, packet));
 console.log('PASS: lossless v1 migration, no invented quote links/types, v2 multi-entry roundtrip, bad input rejection.');
+const v3 = JSON.parse(JSON.stringify(v2)); v3.schema_version = 3;
+v3.reviews.H01.rounds[1].thoughts = '  My original words\nwith multiple lines 🙂  ';
+assert.deepEqual(validateBundle(v3, packet), v3.reviews);
+v3.reviews.H01.rounds[1].thoughts = 42;
+assert.throws(() => validateBundle(v3, packet));
+console.log('PASS: free-form thoughts round-trip verbatim; invalid text rejected.');

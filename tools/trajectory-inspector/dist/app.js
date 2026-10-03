@@ -7,7 +7,7 @@
     return;
   }
   const legacyStorageKey = 'myth-reading-room:' + packet.id;
-  const storageKey = legacyStorageKey + ':v2'; // Old tabs cannot overwrite the upgraded draft.
+  const storageKey = legacyStorageKey + ':v3'; // Old tabs cannot discard free-form thoughts.
   const categories = [
     ['condition', 'Condition', 'When does this apply? Record separate conditions separately.'],
     ['action', 'Proposed action / narrated action', 'What is recommended, or what does a character actually do?'],
@@ -22,7 +22,7 @@
   const id = () => packet.trajectories[index].id;
   const review = () => reviews[id()] || (reviews[id()] = emptyReview());
   const myth = (r) => packet.trajectories[index].rounds[r - 1].text;
-  const hasNote = (r) => !!review().rounds[r]?.entries.length;
+  const hasNote = (r) => !!(review().rounds[r]?.entries.length || review().rounds[r]?.thoughts?.trim());
   const validateBundle = bundle => ReviewModel.validateBundle(bundle, packet);
   let aiReviews = null, aiMode = false;
   try {
@@ -40,12 +40,12 @@
   } catch (_) { aiReviews = null; }
   const currentNotes = () => review().rounds[noteRound] || (review().rounds[noteRound] = {entries: []});
   function bundle() {
-    return {schema_version: 2, packet_id: packet.id, source_sha256: packet.source_sha256,
+    return {schema_version: 3, packet_id: packet.id, source_sha256: packet.source_sha256,
       exported_at: new Date().toISOString(), blinding: 'Identities and game outcomes withheld. AI draft readings are available; these notes must not be treated as independent blinded validation.',
       assistance: {ai_drafts_available: !!aiReviews, human_review_status: 'See each trajectory; never inferred from AI completion.'}, reviews};
   }
   try {
-    const saved = localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey);
+    const saved = localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey + ':v2') ?? localStorage.getItem(legacyStorageKey);
     if (saved) reviews = validateBundle(JSON.parse(saved));
   } catch (e) {
     storageOK = false;
@@ -211,6 +211,8 @@
   function renderNotes() {
     const scrollTop = document.querySelector('.note-body').scrollTop;
     $('note-round').textContent = String(noteRound).padStart(2, '0');
+    $('thought-round').textContent = `${id()} · round ${noteRound}`;
+    $('thoughts').value = review().rounds[noteRound]?.thoughts || '';
     const notes = (aiMode ? aiReviews[id()] : review()).rounds[noteRound] || {entries: []};
     $('ai-mode').setAttribute('aria-pressed', String(aiMode));
     $('human-mode').setAttribute('aria-pressed', String(!aiMode));
@@ -257,6 +259,39 @@
   }
   $('ai-mode').addEventListener('click', () => { if (aiReviews) { aiMode = true; renderNotes(); } });
   $('human-mode').addEventListener('click', () => { aiMode = false; renderNotes(); });
+  $('thoughts').addEventListener('input', () => {
+    currentNotes().thoughts = $('thoughts').value; changed();
+  });
+  function thoughtsForChat() {
+    const parts = [];
+    for (const t of packet.trajectories) for (let r = 1; r <= 10; r++) {
+      const thought = reviews[t.id]?.rounds[r]?.thoughts;
+      if (thought?.trim()) parts.push(`${t.id} — round ${r}\n${thought}`);
+    }
+    return parts.length ? 'Please organize my original thoughts below into the inspector fields. Preserve my original wording separately, link exact myth quotations where supported, and flag uncertainty rather than inventing a rule. Keep my observations separate from AI interpretations.\n\nPacket: ' + packet.id + '\nSource SHA256: ' + packet.source_sha256 + '\n\n' + parts.join('\n\n---\n\n') : '';
+  }
+  $('prepare-thoughts').addEventListener('click', () => {
+    const text = thoughtsForChat();
+    if (!text) { toast('Write a thought first—no fields or labels needed.'); $('thoughts').focus(); return; }
+    $('thoughts-handoff-text').value = text;
+    $('thoughts-copy-status').textContent = 'Nothing has been sent. Copy this text and paste it into our chat, or download and attach it.';
+    $('thoughts-handoff').showModal();
+  });
+  $('close-thoughts-handoff').addEventListener('click', () => $('thoughts-handoff').close());
+  $('copy-thoughts').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('thoughts-handoff-text').value);
+      $('thoughts-copy-status').textContent = 'Copied. Paste into our chat to ask me to organize it. Your original thoughts remain here.';
+    } catch (_) {
+      $('thoughts-handoff-text').focus(); $('thoughts-handoff-text').select();
+      $('thoughts-copy-status').textContent = 'Automatic copying is unavailable. The text is selected: copy it manually, or download it.';
+    }
+  });
+  $('download-thoughts').addEventListener('click', () => {
+    const url = URL.createObjectURL(new Blob([$('thoughts-handoff-text').value], {type: 'text/plain;charset=utf-8'}));
+    const a = element('a'); a.href = url; a.download = 'myth-thoughts-for-chat.txt';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
   $('ai-export').addEventListener('click', () => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(window.AI_DRAFTS, null, 2)], {type: 'application/json'}));
     const a = element('a'); a.href = url; a.download = 'myth-ai-drafts-awaiting-human-review.json';

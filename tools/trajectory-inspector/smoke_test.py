@@ -88,7 +88,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     export = Path(tmp) / 'notes.json'
     download.value.save_as(export)
     bundle = json.loads(export.read_text())
-    assert bundle['schema_version'] == 2
+    assert bundle['schema_version'] == 3
     assert bundle['reviews']['H01']['complete']
     assert bundle['reviews']['H01']['rounds']['1']['legacy'] == old['reviews']['H01']['rounds']['1']
     assert page.evaluate('k=>JSON.parse(localStorage.getItem(k))', 'myth-reading-room:' + bundle['packet_id']) == old
@@ -108,7 +108,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     page.get_by_role('checkbox', name='Narrated event / belief', exact=True).check()
     select_passage(0)
     page.locator('.attach-selection').click()
-    original_notes = page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")')
+    original_notes = page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v3")')
     page.locator('#ai-mode').click()
     assert page.locator('.ai-entry').count() >= 6
     assert page.locator('#ai-evolution').inner_text() == 'Revision'
@@ -120,14 +120,14 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='myth-inspector-
     assert drafts['provenance']['status'] == 'awaiting_human_review'
     page.locator('#import-file').set_input_files(str(ai_export))
     expect(page.locator('#toast')).to_contain_text('This is an AI draft, not your notes.')
-    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")') == original_notes
+    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v3")') == original_notes
     for i in range(1,13):
         page.get_by_role('button', name=f'Open trajectory H{i:02}', exact=True).click()
         for r in range(1,11):
             page.locator(f'.round-button[data-round="{r}"]').click()
             assert page.locator('.ai-entry').count() >= 6
             assert page.locator('.add-entry').count() == 0
-    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v2")') == original_notes
+    assert page.evaluate('localStorage.getItem("myth-reading-room:"+PACKET.id+":v3")') == original_notes
     page.evaluate('window.scrollTo(0, 0)')
     page.screenshot(path='/tmp/myth-inspector-ai-desktop.png', full_page=True)
     page.locator('#guide-button').click()

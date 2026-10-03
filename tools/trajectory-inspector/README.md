@@ -1,5 +1,14 @@
 # Myth Reading Room
 
+Free-form review: each round now has a **My thoughts** box, available beside
+both the AI and structured-note views. Temporary browser drafts retain exact
+wording. **Prepare all thoughts for chat** collects them with trajectory/round
+IDs for copying or downloading; the user must paste/attach that text in chat.
+No message, model call, or automatic classification occurs on the Site.
+Export schema v3 includes `thoughts` per round. V1/v2 imports remain supported;
+a separate v3 storage key preserves the original v2 draft from stale-tab writes.
+Refresh older tabs before continuing. Export JSON for a portable backup.
+
 Private static inspector for the twelve-trajectory human validation packet.
 No models are called. Research data and machine coding are never modified.
 
