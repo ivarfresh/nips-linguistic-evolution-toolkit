@@ -1,3 +1,18 @@
+### 2026-10-03 — Result: with a myth in play, Sonnet explains its game moves with the myth, not with game bookkeeping
+
+**Time:** ~2 h analysis; no API calls.
+
+Game-only runs have no myths, so the myth map cannot show them. Their only text is the game reply, and
+only Sonnet 4.5 writes any (81% of replies; GPT-5 Nano and Gemini 3.7 Flash return JSON only, GPT's
+reasoning is provider-encrypted). Mapped 4,394 Sonnet game explanations from the 111 September runs
+with Sonnet (`analyses/sonnet_game_reasoning_map.py`). Round 1: Game → Myth, whose prompt only adds
+"Take any myths written in this session into account", matches game only (8-agent distance
+0.010–0.029 vs split-half floor 0.010–0.018); Myth → Game is far (0.22–0.28). From round 2 both myth
+conditions are above the floor in 90 of 90 cells × rounds. Game only says *cooperative, reciprocate,
+history* (10.0, 5.9, 11.6 per 1,000 words); with myths, *myth, honor, courage*. Caveat: the myth
+conditions are told to use the myths and have them in context; this is language, not behaviour.
+Write-up: `docs/figures/sonnet_game_reasoning_20261002/README.md`.
+
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
 
 **Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
