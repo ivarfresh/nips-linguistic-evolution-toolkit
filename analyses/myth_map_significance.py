@@ -61,51 +61,80 @@ def group_of(row) -> str:
 def run_sums(myths, emb):
     """Per (task order, size, group, round, run, family): sum of unit embeddings and count."""
     keys = ["task_order", "size", "group", "round", "run_id", "family"]
-    out = {}
-    for key, ix in myths.groupby(keys).indices.items():
-        out[key] = (emb[ix].sum(0), len(ix))
-    return out
+    return {key: (emb[ix].sum(0), len(ix)) for key, ix in myths.groupby(keys).indices.items()}
 
 
-def cross_distance(sums, runs_a, runs_b, key_a, key_b):
-    """Mean cosine distance over all (A myth, B myth) pairs = 1 - (sum_A . sum_B) / (n_A n_B)."""
+def cross_distance(sums, runs_a, runs_b, key_a, key_b, mixed: bool) -> float:
+    """Mean cosine distance over (A myth, B myth) pairs from DIFFERENT runs.
+
+    For unit vectors the mean similarity over all pairs is (sum_A . sum_B) / (n_A n_B).
+    Mixed runs hold both families, so the same-run (partner) pairs are taken out:
+    single-model and mixed curves then compare the same kind of pair. Partner
+    pairs are tested separately (dyad partner rows in significance.csv).
+    """
     sa = sum(sums[key_a(r)][0] for r in runs_a)
     na = sum(sums[key_a(r)][1] for r in runs_a)
     sb = sum(sums[key_b(r)][0] for r in runs_b)
     nb = sum(sums[key_b(r)][1] for r in runs_b)
-    return 1 - sa @ sb / (na * nb)
+    dot, pairs = sa @ sb, na * nb
+    if mixed:  # runs_a is runs_b (one resample); drop each run's own A x B block
+        for r in runs_a:
+            dot -= sums[key_a(r)][0] @ sums[key_b(r)][0]
+            pairs -= sums[key_a(r)][1] * sums[key_b(r)][1]
+    return 1 - dot / pairs
 
 
-def distance_curves(myths, emb, rng) -> pd.DataFrame:
+def distance_curves(myths, emb, rng):
+    """Family-pair distance per round, with run-bootstrap samples kept for paired comparisons.
+
+    Each bootstrap draw resamples runs once and evaluates every round on that draw
+    (mixed: one draw of runs; single-model: one draw per family), so the change
+    from round 1 to 10 is bootstrapped as a paired quantity.
+    Returns (curves table, {(task_order, size, group, pair): array boots x rounds}).
+    """
     sums = run_sums(myths, emb)
-    rows = []
+    rows, boots_by_cell = [], {}
     for (to, size, group), cell in myths.groupby(["task_order", "size", "group"]):
+        mixed = group != "single"
         for a, b in PAIRS:
-            if group != "single" and group != "+".join(sorted((a, b))):
+            if mixed and group != "+".join(sorted((a, b))):
                 continue
             runs_a = cell[cell.family == a].run_id.unique()
             runs_b = cell[cell.family == b].run_id.unique()
             if len(runs_a) == 0 or len(runs_b) == 0:
                 continue
-            same_runs = group != "single"  # mixed: resample runs once, both families come along
-            for r in ROUNDS:
-                ka = lambda run, r=r: (to, size, group, r, run, a)  # noqa: E731
-                kb = lambda run, r=r: (to, size, group, r, run, b)  # noqa: E731
-                ok_a = [x for x in runs_a if ka(x) in sums]
-                ok_b = [x for x in runs_b if kb(x) in sums]
-                est = cross_distance(sums, ok_a, ok_b, ka, kb)
-                boots = []
-                for _ in range(N_BOOT):
-                    if same_runs:
-                        pick = rng.choice(ok_a, len(ok_a))
-                        ba, bb = [x for x in pick if kb(x) in sums and ka(x) in sums], None
-                        boots.append(cross_distance(sums, ba, ba, ka, kb))
-                    else:
-                        boots.append(cross_distance(sums, rng.choice(ok_a, len(ok_a)), rng.choice(ok_b, len(ok_b)), ka, kb))
-                lo, hi = np.percentile(boots, [2.5, 97.5])
+
+            def ka(run, r):
+                return (to, size, group, r, run, a)
+
+            def kb(run, r):
+                return (to, size, group, r, run, b)
+
+            def curve(ra, rb):
+                out = []
+                for r in ROUNDS:
+                    ra_r = [x for x in ra if (ka(x, r) in sums) and (not mixed or kb(x, r) in sums)]
+                    rb_r = ra_r if mixed else [x for x in rb if kb(x, r) in sums]
+                    if not ra_r or not rb_r:  # a draw of only the run missing this round's myth
+                        out.append(np.nan)
+                        continue
+                    out.append(cross_distance(sums, ra_r, rb_r, lambda x: ka(x, r), lambda x: kb(x, r), mixed))
+                return np.array(out)
+
+            est = curve(runs_a, runs_b)
+            draws = []
+            for _ in range(N_BOOT):
+                ra = rng.choice(runs_a, len(runs_a))
+                rb = ra if mixed else rng.choice(runs_b, len(runs_b))
+                draws.append(curve(ra, rb))
+            draws = np.array(draws)
+            boots_by_cell[(to, size, group, f"{a}–{b}")] = draws
+            lo, hi = np.nanpercentile(draws, [2.5, 97.5], axis=0)
+            n_runs = len(runs_a) if mixed else f"{len(runs_a)} + {len(runs_b)}"
+            for i, r in enumerate(ROUNDS):
                 rows.append(dict(task_order=to, size=size, group=group, pair=f"{a}–{b}", round=r,
-                                 distance=est, ci_low=lo, ci_high=hi, n_runs=len(set(ok_a) | set(ok_b))))
-    return pd.DataFrame(rows)
+                                 distance=est[i], ci_low=lo[i], ci_high=hi[i], n_runs=n_runs))
+    return pd.DataFrame(rows), boots_by_cell
 
 
 def plot_distance_curves(curves, ds, out: Path) -> None:
@@ -120,7 +149,7 @@ def plot_distance_curves(curves, ds, out: Path) -> None:
                 color = pair_color[pair]
                 ax.fill_between(c["round"], c.ci_low, c.ci_high, color=color, alpha=0.10 if single else 0.18, lw=0)
                 ax.plot(c["round"], c.distance, color=color, lw=2, ls="--" if single else "-", marker="o", ms=3,
-                        label=f"{pair}, {'single-model runs' if single else 'mixed runs'} (n={c.n_runs.iloc[0]})")
+                        label=f"{pair}, {'single-model runs' if single else 'mixed runs'} ({c.n_runs.iloc[0]} runs)")
             ax.set_title(f"{size} agents · {TASK_ORDERS[to]}", fontsize=11)
             ax.set_xticks(list(ROUNDS))
             ax.grid(alpha=0.25)
@@ -130,8 +159,8 @@ def plot_distance_curves(curves, ds, out: Path) -> None:
                 ax.set_ylabel("Mean cosine distance between\na myth of each family (768-d)")
             ax.legend(frameon=False, fontsize=8, loc="upper left")
     fig.suptitle("Do the families' myths converge? Distance between a myth of one family and a myth of the other, "
-                 "per round.\nDashed: families in separate single-model runs. Solid: families in the same mixed runs. "
-                 "Bands: 95% intervals from resampling runs.", fontsize=11)
+                 "per round (pairs from different runs only).\nDashed: families in separate single-model runs. Solid: "
+                 "families in mixed runs. Bands: 95% intervals from resampling runs.", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(out / "convergence_over_rounds.png", dpi=160)
     plt.close(fig)
@@ -213,7 +242,7 @@ def add(rows, claim, test, statistic, p, n, note=""):
     rows.append(dict(claim=claim, test=test, statistic=statistic, p=p, n=n, note=note))
 
 
-def tests(myths, emb, curves, rng) -> pd.DataFrame:
+def tests(myths, emb, curves, boots, rng) -> pd.DataFrame:
     rows = []
     # 1. family from a round-1 myth
     for to in TASK_ORDERS:
@@ -242,7 +271,8 @@ def tests(myths, emb, curves, rng) -> pd.DataFrame:
         obs = gap(fam)
         null = np.array([gap(rng.permutation(fam)) for _ in range(10000)])
         add(rows, f"Round-1 families differ, run level ({TASK_ORDERS[to]})", "permute family labels over single-model runs",
-            f"within − between family similarity {obs:.3f}", (np.sum(null >= obs) + 1) / 10001, f"{len(fam)} runs")
+            f"within − between family similarity {obs:.3f}", (np.sum(null >= obs) + 1) / 10001, f"{len(fam)} runs",
+            "1e-4 is the smallest p 10,000 shuffles can give")
     # 3. morals by family, and Sonnet generous by task order
     for to in TASK_ORDERS:
         s = myths[(myths["round"] == 1) & (myths.task_order == to)]
@@ -255,18 +285,16 @@ def tests(myths, emb, curves, rng) -> pd.DataFrame:
         f"generous {tab.loc['myth_game', True]}/{tab.loc['myth_game'].sum()} (Myth → Game) vs "
         f"{tab.loc['game_myth', True]}/{tab.loc['game_myth'].sum()} (Game → Myth)",
         stats.fisher_exact(tab.to_numpy())[1], f"{len(son)} myths")
-    # 4. single-model families drift apart: change in distance r1 -> r10 with bootstrap CI
-    sing = curves[curves.group == "single"]
-    for (to, size), c in sing.groupby(["task_order", "size"]):
-        d1 = c[c["round"] == 1].set_index("pair")
-        d10 = c[c["round"] == 10].set_index("pair")
-        for pair in d1.index:
-            change = d10.distance[pair] - d1.distance[pair]
-            sep = (d10.ci_low[pair] > d1.ci_high[pair])
-            add(rows, f"Single-model {pair} drift apart ({size} agents, {TASK_ORDERS[to]})",
-                "round 10 vs round 1 distance, 95% run-bootstrap intervals",
-                f"{d1.distance[pair]:.3f} → {d10.distance[pair]:.3f} ({change:+.3f})", np.nan,
-                f"{d1.n_runs[pair]} runs", "intervals do not overlap" if sep else "intervals overlap")
+    # 4. change in family distance from round 1 to 10, paired run bootstrap, every cell
+    for (to, size, group, pair), draws in boots.items():
+        c = curves[(curves.task_order == to) & (curves["size"] == size) & (curves.group == group) & (curves.pair == pair)]
+        d1, d10 = c[c["round"] == 1].distance.iloc[0], c[c["round"] == 10].distance.iloc[0]
+        lo, hi = np.nanpercentile(draws[:, -1] - draws[:, 0], [2.5, 97.5])
+        kind = "single-model" if group == "single" else "mixed"
+        add(rows, f"{kind.capitalize()} {pair}: family distance round 1 → 10 ({size} agents, {TASK_ORDERS[to]})",
+            "paired run bootstrap of the change (different-run pairs)",
+            f"{d1:.3f} → {d10:.3f} ({d10 - d1:+.3f}); 95% interval [{lo:+.3f}, {hi:+.3f}]", np.nan,
+            f"{c.n_runs.iloc[0]} runs", "interval excludes 0" if lo > 0 or hi < 0 else "interval includes 0")
     # 5. dyad partner convergence, per run
     dy = myths[myths.mixed & (myths["size"] == 2)]
     per_run = []
@@ -293,24 +321,19 @@ def tests(myths, emb, curves, rng) -> pd.DataFrame:
         add(rows, f"  {comp}, {TASK_ORDERS[to]}: partner closeness at round 10", "sign test over runs",
             f"mean +{x.mean():.3f}; {(x > 0).sum()}/{len(x)} runs > 0", stats.binomtest(int((x > 0).sum()), len(x)).pvalue,
             f"{len(x)} runs", "6 runs: the smallest possible two-sided p is 0.031")
-    # 6. mixing stops the drift: round-10 family distance, single-model vs mixed runs (same pair, size, task order)
-    r10c = curves[curves["round"] == 10]
-    for (to, size, pair), c in r10c.groupby(["task_order", "size", "pair"]):
-        if len(c) < 2:  # pair only in single-model runs (Sonnet–Gemini has no 8-agent mixed runs)
+    # 6. round 10: single-model vs mixed distance, same pair, size and task order (independent run sets)
+    for (to, size, group, pair), mx in boots.items():
+        if group == "single" or (to, size, "single", pair) not in boots:
             continue
-        sg, mx = c[c.group == "single"].iloc[0], c[c.group != "single"].iloc[0]
-        add(rows, f"Round 10, {pair}: mixed runs closer than single-model runs ({size} agents, {TASK_ORDERS[to]})",
-            "95% run-bootstrap intervals", f"single {sg.distance:.3f} vs mixed {mx.distance:.3f} ({mx.distance - sg.distance:+.3f})",
-            np.nan, f"{sg.n_runs} + {mx.n_runs} runs",
-            "intervals do not overlap" if mx.ci_high < sg.ci_low else "intervals overlap")
-    # 7. mixed populations: family distance r1 -> r10
-    mix8 = curves[(curves.group != "single") & (curves["size"] == 8)]
-    for (to, pair), c in mix8.groupby(["task_order", "pair"]):
-        d1, d10 = c[c["round"] == 1].iloc[0], c[c["round"] == 10].iloc[0]
-        add(rows, f"8-agent mixed {pair}: family distance round 1 → 10 ({TASK_ORDERS[to]})",
-            "95% run-bootstrap intervals", f"{d1.distance:.3f} → {d10.distance:.3f} ({d10.distance - d1.distance:+.3f})",
-            np.nan, f"{d1.n_runs} runs",
-            "intervals do not overlap" if (d10.ci_high < d1.ci_low or d10.ci_low > d1.ci_high) else "intervals overlap")
+        sg = boots[(to, size, "single", pair)]
+        c = curves[(curves.task_order == to) & (curves["size"] == size) & (curves.pair == pair) & (curves["round"] == 10)]
+        d_s, d_m = c[c.group == "single"].distance.iloc[0], c[c.group != "single"].distance.iloc[0]
+        lo, hi = np.nanpercentile(mx[:, -1] - sg[:, -1], [2.5, 97.5])
+        add(rows, f"Round 10, {pair}: mixed vs single-model distance ({size} agents, {TASK_ORDERS[to]})",
+            "run bootstrap of the difference (different-run pairs)",
+            f"single {d_s:.3f} vs mixed {d_m:.3f} ({d_m - d_s:+.3f}); 95% interval [{lo:+.3f}, {hi:+.3f}]", np.nan,
+            f"{c[c.group == 'single'].n_runs.iloc[0]} vs {c[c.group != 'single'].n_runs.iloc[0]} runs",
+            "interval excludes 0" if lo > 0 or hi < 0 else "interval includes 0")
     return pd.DataFrame(rows)
 
 
@@ -321,7 +344,7 @@ def main() -> None:
     myths, emb = load(ds)
     myths["group"] = [group_of(r) for r in myths.itertuples()]
 
-    curves = distance_curves(myths, emb, rng)
+    curves, boots = distance_curves(myths, emb, rng)
     curves.round(4).to_csv(out / "convergence_over_rounds.csv", index=False)
     plot_distance_curves(curves, ds, out)
 
@@ -333,7 +356,7 @@ def main() -> None:
     var = pd.DataFrame([dict(view="PCA map (PC1 + PC2)", **share_kept(myths, emb, list(pca.components_))),
                         dict(view="Chosen axes (family + time)", **share_kept(myths, emb, [x_dir, y_dir]))])
     var.round(3).to_csv(out / "variance.csv", index=False)
-    tests(myths, emb, curves, rng).to_csv(out / "significance.csv", index=False, float_format="%.3g")
+    tests(myths, emb, curves, boots, rng).to_csv(out / "significance.csv", index=False, float_format="%.3g")
     print(var.to_string(index=False))
 
     from analyses import linguistic_provenance

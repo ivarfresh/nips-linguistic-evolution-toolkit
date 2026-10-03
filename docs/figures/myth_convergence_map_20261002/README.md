@@ -110,15 +110,24 @@ keeps 92% of the between-family differences but only 13% of the
 between-round ones (`variance.csv`), so it understates change over time.
 
 - `convergence_over_rounds.png` (`.csv`): mean 768-d cosine distance between
-  a myth of family A and a myth of family B, per round, with 95% intervals
-  from resampling runs. Dashed = single-model runs, solid = mixed runs.
-  - Alone, families drift apart: +0.05 to +0.19 from round 1 to 10, intervals
-    separate in 11 of 12 cells.
-  - Mixed populations hold their distance: +0.01 to +0.03, intervals overlap
-    in 4 of 4.
-  - By round 10, mixed families are 0.05 to 0.29 closer than single-model
-    ones; intervals separate in 8 of 10 cells (not the two Sonnet–GPT dyad
-    cells). Mixing mainly stops the drift apart.
+  a myth of family A and a myth of family B from different runs, per round,
+  with 95% intervals from resampling runs. Dashed = single-model runs, solid =
+  mixed runs. Partner pairs (same run) are left out, so both lines compare the
+  same kind of pair; partner copying has its own test below.
+  - Alone, families drift apart: +0.05 to +0.19 from round 1 to 10; the paired
+    interval excludes 0 in 11 of 12 cells (not Sonnet–GPT, 2 agents,
+    Myth → Game).
+  - Mixed, they do not: changes of −0.10 to +0.03, interval includes 0 in 8 of
+    10 cells. One dyad cell moves closer (Gemini–GPT, Myth → Game, −0.10) and
+    one population cell drifts slightly (Sonnet–GPT, 8 agents, Myth → Game,
+    +0.03).
+  - By round 10, mixed families are 0.05 to 0.29 closer than single-model ones
+    in all 10 comparable cells (interval of the difference excludes 0).
+  - Because partner pairs are excluded, this is a general change in how each
+    family writes when mixed, not only copying the partner.
+  - Intervals rest on 5 runs per family (single-model), 6 (mixed dyads) or 15
+    (mixed populations). With so few runs, bootstrap intervals run narrow; read
+    them as a guide, not as exact p < 0.05.
 - `family_time_map_8agent.png`, `family_time_map_2agent.png`: x is the
   direction of largest between-family spread, y the average round-1 to
   round-10 shift within a family. They keep 74% and 76% of the two kinds of
@@ -126,10 +135,14 @@ between-round ones (`variance.csv`), so it understates change over time.
   the 768-d numbers and is not evidence on its own.
 - Round-1 family: a classifier tested on unseen runs names the family 98.8%
   (Myth → Game) and 99.1% (Game → Myth) of the time. A run-level shuffle of
-  family labels gives p = 0.0001.
+  family labels gives p ≤ 1×10⁻⁴ (the smallest 10,000 shuffles can give).
 - Dyad partners: +0.076 (±0.070) closer than other runs at round 10, 32 of
   36 runs, sign test p = 2×10⁻⁶. Growth from round 1: Wilcoxon p = 1.5×10⁻⁵.
   Single pairing × task-order cells have 6 runs (smallest possible p 0.031).
+  All runs in a cell share one pool of other runs, so the per-run differences
+  are not fully independent.
+- 8-agent mixed families pool the 1/7, 2/6 and 4/4 compositions; a minority
+  family mostly reads the majority's myths.
 
 ## Caveats
 
