@@ -1,3 +1,18 @@
+### 2026-10-03 — Narrative calibration reveals counting failures
+
+**Time:** not tracked separately.
+
+Result: user chose $10 calibration instead of ~$795.50 full coding. Initial
+version stopped after 16 returned readings (7 valid, 9 truncated). A repaired
+four-trajectory/two-reading test completed 8/8, with 7 exact-quote-valid outputs.
+Core examples survive, but source review rejects automatic evolution totals:
+shared false novelty labels confuse restatements with changed strategies.
+Conditional reduction is detectable; punishment can remain ambiguous.
+Confirmed usage costs $3.04; conservative total $5.54 includes interrupted
+requests without receipts. No full-corpus coding, new experiments or paper
+changes. See docs/research/narrative_evolution_20261003/calibration/REPORT.txt
+and D013. Human reliability remains unestablished.
+
 ### 2026-10-03 — Expanded narrative corpus audit completed
 
 **Time:** not tracked separately.
