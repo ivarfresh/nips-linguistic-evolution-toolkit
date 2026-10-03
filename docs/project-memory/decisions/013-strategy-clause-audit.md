@@ -141,3 +141,44 @@ cap (or calibration-only $10) has been offered; explicit cost approval is
 pending. Do not start paid calls until approved. Re-estimate after calibration
 and pass semantic-quality gates before full scaling. No new prevalence or
 evolution findings yet exist for this expanded corpus.
+
+## 2026-10-03 successor — $10 calibration only
+
+**Explicit user decision:** after asking why the full plan was expensive, Ivar
+accepted the proposed calibration-only alternative ("yeah do that instead").
+This authorizes a cumulative $10 cap, not the proposed $800 full batch.
+Use compact quotation-backed narrative/operator labels for 24 complete
+trajectories, two same-model readings each. Sixteen broadly cover the corpus;
+eight are named purposive challenges from the earlier audit. This is not a
+prevalence sample or independent human validation. No full-corpus or source-
+attribution pass, new simulation, or paper-claim change is authorized here.
+
+Implementation: [runner](../../../analyses/narrative_calibration.py),
+[fixed sample](../../research/narrative_evolution_20261003/calibration/sample.json)
+and [resolved configuration](../../research/narrative_evolution_20261003/calibration/config.json).
+The preflight estimate is $5.10 for 48 calls, high reasoning, eight workers.
+Budget reservations are persisted before dispatch, unresolved calls count
+conservatively against the cap, and non-stop completions are invalid. Raw
+responses and quote-validation failures remain auditable. Results pending.
+
+**Completed calibration, later 2026-10-03:** the original version stopped after
+16 returned readings (7 technically valid, 9 truncated); 32 planned readings
+have no usable saved output. A separate repaired rubric tested C18/C21/C22/C24
+twice with high reasoning and 24,000 completion tokens. All eight completed;
+seven passed exact-quote/schema checks. One C21_B quotation is invalid.
+The [report](../../research/narrative_evolution_20261003/calibration/REPORT.txt)
+and [source-check key](../../research/narrative_evolution_20261003/calibration/semantic_qa.txt)
+record the boundary: clear piecewise expansion, conditional reduction/recovery,
+and baseline punishment examples survive; automatic counts of meaningful
+evolution fail because both readings sometimes call clarification/restatement
+novel. Rich hypothetical dialogue can defend an unchanged simple rule.
+Punishment is ambiguous when the cause of a "dry" hand is unspecified.
+
+Confirmed response-reported cost is $3.0420116; 16 interrupted requests without
+receipts retain $2.502 in conservative reservations, total $5.5440116. BYOK
+upstream inference costs are included, not mistaken for the router's zero fee.
+No calls remain running, no full batch launched, and the failed original
+configuration is blocked from accidental resumption. No reliable cheaper
+full-corpus price or independent human reliability estimate is established.
+Recommended next measurement separates changed decisions, clarification and
+ambiguous candidates before scaling; this is not authority to launch it.

@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (expanded narrative audit authorized; paid coding pending cost approval).
+Last updated: 2026-10-03 (narrative calibration completed; automatic evolution counts fail semantic gate).
 
 ## Research question
 
@@ -20,8 +20,14 @@ and [data audit](../research/mixed_future_data_audit.md).
   3,872 trajectories, 38,720 entries verified against completed-final hashes.
   Four specialist audits and the [plan](../research/narrative_evolution_20261003/PLAN.md)
   are ready. Separate board/saboteur/transplant/replay protocols are excluded.
-  Calibration and paid coding have NOT started: roughly $795.50 estimated,
-  $800 cap proposed, awaiting explicit cost approval (or $10 calibration only).
+  Ivar chose calibration only, capped at $10, instead of the roughly $795.50
+  full analysis. The 24-trajectory calibration stopped early: 16 readings
+  returned, nine truncated. A four-case repaired test returned 8/8 complete
+  readings, 7/8 exact-quote valid. Core examples survived but semantic review
+  found shared false novelty labels: automatic evolution totals are not ready.
+  Confirmed response costs $3.04; conservative accounting $5.54 including
+  interrupted calls without receipts. See the [calibration report](../research/narrative_evolution_20261003/calibration/REPORT.txt).
+  The full-corpus batch and source-attribution pass are NOT authorized to launch.
   Human reliability remains unestablished; no expanded-corpus findings yet.
   See [D013](decisions/013-strategy-clause-audit.md).
 
