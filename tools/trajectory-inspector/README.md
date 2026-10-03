@@ -1,5 +1,14 @@
 # Myth Reading Room
 
+The separate `followup.html` evidence inspector is **unblinded and read-only**:
+48 full trajectories, 44 selected events, previous/exposed/unseen source panels,
+quoted clauses and game timing/eligibility. It does not read or write annotation
+storage. `build_followup.py` exports only curated texts, selected assessments and
+game values; local source paths and raw call histories are excluded. Rebuild from
+the research root with `python3 tools/trajectory-inspector/build_followup.py`.
+The original packet view and all existing note keys remain unchanged. The
+blinding statements below describe only that original packet, not this new view.
+
 Free-form review: each round now has a **My thoughts** box, available beside
 both the AI and structured-note views. Temporary browser drafts retain exact
 wording. **Prepare all thoughts for chat** collects them with trajectory/round
