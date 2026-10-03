@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (narrative calibration completed; automatic evolution counts fail semantic gate).
+Last updated: 2026-10-03 (simplified dialogue screen running; other feature/evolution counts held).
 
 ## Research question
 
@@ -27,7 +27,11 @@ and [data audit](../research/mixed_future_data_audit.md).
   found shared false novelty labels: automatic evolution totals are not ready.
   Confirmed response costs $3.04; conservative accounting $5.54 including
   interrupted calls without receipts. See the [calibration report](../research/narrative_evolution_20261003/calibration/REPORT.txt).
-  The full-corpus batch and source-attribution pass are NOT authorized to launch.
+  **Later successor, Ivar: "ok do it":** simpler fresh 36-myth calibration and
+  regression permit only challenge-dialogue screening. A 38,720-myth direct
+  Batch pass is now running, estimated $62.50 including allowance/pilots with
+  a $100 accounting guard. See the [batch plan](../research/narrative_evolution_20261003/feature_screen/full_dialogue/plan.json).
+  Other feature counts, evolution and source attribution remain held.
   Human reliability remains unestablished; no expanded-corpus findings yet.
   See [D013](decisions/013-strategy-clause-audit.md).
 

@@ -182,3 +182,37 @@ configuration is blocked from accidental resumption. No reliable cheaper
 full-corpus price or independent human reliability estimate is established.
 Recommended next measurement separates changed decisions, clarification and
 ambiguous candidates before scaling; this is not authority to launch it.
+
+## 2026-10-03 successor — simplify, validate, scale passing features
+
+**Explicit user decision:** "ok do it" accepted the proposed simpler Sol screen,
+fresh source checks including negatives, then scaling only passing categories.
+This supersedes the calibration-only restriction for a quality-gated feature
+screen, not for the rejected rule-evolution or source-attribution pipeline.
+
+The [frozen screen plan](../../research/narrative_evolution_20261003/feature_screen/PLAN.txt)
+uses 36 fresh myths from 36 previously unreviewed runs: 24 cohort/order cases
+and 12 lexical challenges. A source-first AI reference was frozen before API
+labels; this is not independent human validation or a prevalence sample.
+All 36 full-screen outputs completed with exact quotations. Only conditional
+reduction and challenge dialogue passed the preset numerical thresholds.
+The narrower two-category regression made reduction more uncertain (three-state
+agreement 27/36), so it does not scale. Five joined presentation-enum values
+were invalid; separate presence-only diagnostics preserve those raw failures.
+
+Dialogue-only regression completed with all 36 technically valid outputs:
+11/12 reference positives detected, no definite false positives, 33/36 three-
+state matches. Form/stance are not quantitative endpoints for whole dialogues
+containing both an objection and a reply. The full authorized screen therefore
+counts only fictional challenge-dialogue presence/uncertainty, not punishment,
+rule emergence, transmission or behavioral influence.
+
+Direct OpenAI Batch execution has started for 38,720 myths / 6,454 requests.
+The [batch plan](../../research/narrative_evolution_20261003/feature_screen/full_dialogue/plan.json)
+estimates $62.50 including pilots and 25% allowance; worst-case pending token
+reservations keep submissions within a $100 accounting guard. High reasoning
+is unchanged; full requests allow 6,000 completion tokens (pilot maximum usage
+1,773), with non-stop completions invalid rather than treated as negative.
+Waves may require multiple Batch completion windows. Results are pending; no
+full-corpus finding is established by submission. Generated payloads remain local
+and reproducible from the pinned manifest, seed and code.
