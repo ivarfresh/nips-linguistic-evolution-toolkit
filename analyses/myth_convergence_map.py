@@ -84,7 +84,7 @@ def shade(color, t: float):
 
 class Map:
     def __init__(self, myths: pd.DataFrame, emb: np.ndarray):
-        pca = PCA(2).fit(emb)
+        pca = PCA(2, svd_solver="full").fit(emb)  # deterministic, so figure hashes are stable
         xy = pca.transform(emb)
         myths["x"], myths["y"] = xy[:, 0], xy[:, 1]
         var = pca.explained_variance_ratio_ * 100
