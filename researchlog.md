@@ -1,3 +1,16 @@
+### 2026-10-03 — Result: mixing model families mainly stops their myths drifting apart; myth-map claims all hold at run level
+
+**Time:** ~2 h analysis; no API calls.
+
+Significance and time views for the myth map (`analyses/myth_map_significance.py`). The PCA map keeps
+92% of between-family but only 13% of between-round differences, so time is now read in 768-d. Alone,
+families' myths drift apart from round 1 to 10 (+0.05 to +0.19 cosine distance; run-bootstrap intervals
+separate in 11 of 12 cells). In 8-agent mixed runs they hold their distance (+0.01 to +0.03); by round 10
+mixed families are 0.05–0.29 closer than single-model ones (8 of 10 cells separate). Round-1 family is
+recognisable from one myth (classifier 98.8–99.1% on unseen runs; run-level shuffle p = 0.0001); dyad
+partners converge (32/36 runs, p = 2×10⁻⁶). A family × time axis map keeps 74% / 76% of each kind of
+difference but its time axis is fit to the data. Write-up: `docs/figures/myth_convergence_map_20261002/README.md`.
+
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
 
 **Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
