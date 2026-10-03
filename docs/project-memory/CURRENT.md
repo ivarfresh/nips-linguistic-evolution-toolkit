@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-02 (strategy-clause audit; earlier entries retain their dated scope).
+Last updated: 2026-10-03 (human annotation interface; earlier entries retain their dated scope).
 
 ## Research question
 
@@ -179,7 +179,9 @@ and [data audit](../research/mixed_future_data_audit.md).
   additions and dropped clauses. This is not proof of behavioral transmission
   or the mechanism behind increased cooperation. The 44 selected events are
   not a census; human validation remains pending. No new simulations or paid
-  judge batch. See [D013](decisions/013-strategy-clause-audit.md) and
+  judge batch. The human inspector now accepts repeated, individually quoted
+  observations (v2); H01 round 1 received guided example coding in chat and must
+  not count as independent human validation. See [D013](decisions/013-strategy-clause-audit.md) and
   [the report](../research/strategy_clause_audit_20261002/README.md).
 - Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
   per-round upward push at fixed partner and own history (Sonnet myth→game

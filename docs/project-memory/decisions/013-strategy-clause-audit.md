@@ -1,6 +1,6 @@
 # D013 — Bounded strategy-clause audit
 
-- Recorded / last verified: 2026-10-02 / 2026-10-02
+- Recorded / last verified: 2026-10-02 / 2026-10-03
 - Decision status: agreed
 - Scope: 48 complete trajectories from original September and main-frontier corpora; excludes extensions, frontier-update models and pilots.
 - Decision authority: Ivar's explicit instruction in the current Codex task, 2026-10-02: "oke great, do the analysis now please", following the staged existing-data proposal preserved in the audit plan.
@@ -39,8 +39,23 @@ but does not supersede earlier registered nulls or causal evidence boundaries.
 
 ## Unresolved / next evidence
 
+2026-10-03 inspector update (explicit user request in the same task): evidence
+entries can repeat within a field, carry both advice and narration labels, and
+link multiple quotations with source rounds. Rationale/expected consequence is
+available separately from actions. This changes the human annotation interface,
+not the frozen machine coding or corpus. [Inspector source and migration](../../../tools/trajectory-inspector/README.md)
+use export schema v2; v1 draft text, progress, and shared quotes are preserved,
+without inventing field-specific quote links. Machine/human comparisons must
+account for the different entry schemas.
+
+Validation provenance: H01 round 1 was discussed and given an example coding
+by the assistant in this task before the user finished reviewing. That example
+is guided practice, not independent human validation; do not report a subsequent
+whole-H01 assessment as wholly blinded to assistant interpretation. No human
+annotations have been ingested or judged complete by this update.
+
 Human validation of extraction and highlighted examples; separate blinded
 source-attribution checks if pursued; behavioral identification with clearly
 observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)
-is prepared but not human-coded. No scaling or new experiment is authorized by
+is prepared; independently completed human coding is not yet established. No scaling or new experiment is authorized by
 this record.
