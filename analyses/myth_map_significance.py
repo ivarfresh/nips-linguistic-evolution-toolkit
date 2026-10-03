@@ -77,10 +77,12 @@ def cross_distance(sums, runs_a, runs_b, key_a, key_b, mixed: bool) -> float:
     sb = sum(sums[key_b(r)][0] for r in runs_b)
     nb = sum(sums[key_b(r)][1] for r in runs_b)
     dot, pairs = sa @ sb, na * nb
-    if mixed:  # runs_a is runs_b (one resample); drop each run's own A x B block
-        for r in runs_a:
-            dot -= sums[key_a(r)][0] @ sums[key_b(r)][0]
-            pairs -= sums[key_a(r)][1] * sums[key_b(r)][1]
+    if mixed:  # runs_a is runs_b (one resample); drop every same-run A x B block
+        # a run drawn k times enters sa and sb k times each, so its own block sits in the product k^2 times
+        from collections import Counter
+        for r, k in Counter(runs_a).items():
+            dot -= k * k * (sums[key_a(r)][0] @ sums[key_b(r)][0])
+            pairs -= k * k * sums[key_a(r)][1] * sums[key_b(r)][1]
     return 1 - dot / pairs
 
 

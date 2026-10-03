@@ -122,7 +122,8 @@ between-round ones (`variance.csv`), so it understates change over time.
     one population cell drifts slightly (Sonnet–GPT, 8 agents, Myth → Game,
     +0.03).
   - By round 10, mixed families are 0.05 to 0.29 closer than single-model ones
-    in all 10 comparable cells (interval of the difference excludes 0).
+    in all 10 comparable cells; the interval of the difference excludes 0 in 9
+    (not Sonnet–GPT, 2 agents, Game → Myth).
   - Because partner pairs are excluded, this is a general change in how each
     family writes when mixed, not only copying the partner.
   - Intervals rest on 5 runs per family (single-model), 6 (mixed dyads) or 15
