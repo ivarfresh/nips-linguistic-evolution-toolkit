@@ -23,6 +23,7 @@ position of its average embedding. The drawn paths are real averages.
 
 ```
 python3 analyses/myth_convergence_map.py   # free; reuses the cached embeddings
+python3 analyses/myth_map_significance.py  # tests and the two time views below; ~20 s
 ```
 
 Inputs are the gitignored tables in `data/analysis/linguistic_20260923/`
@@ -100,6 +101,35 @@ contains its partner's last myth (`{other_agent_myth}` in
 baseline also rises in most cells, so later myths are more alike in general;
 that is why the comparison holds round fixed. In 8-agent populations each
 agent reads a different partner each round, and the map shows a weaker pull. This table is not computed for them.
+
+## Significance and change over time (added 2026-10-03)
+
+`analyses/myth_map_significance.py` adds the tests behind every claim
+(`significance.csv`, runs as the unit) and two views of time. The PCA map
+keeps 92% of the between-family differences but only 13% of the
+between-round ones (`variance.csv`), so it understates change over time.
+
+- `convergence_over_rounds.png` (`.csv`): mean 768-d cosine distance between
+  a myth of family A and a myth of family B, per round, with 95% intervals
+  from resampling runs. Dashed = single-model runs, solid = mixed runs.
+  - Alone, families drift apart: +0.05 to +0.19 from round 1 to 10, intervals
+    separate in 11 of 12 cells.
+  - Mixed populations hold their distance: +0.01 to +0.03, intervals overlap
+    in 4 of 4.
+  - By round 10, mixed families are 0.05 to 0.29 closer than single-model
+    ones; intervals separate in 8 of 10 cells (not the two Sonnet–GPT dyad
+    cells). Mixing mainly stops the drift apart.
+- `family_time_map_8agent.png`, `family_time_map_2agent.png`: x is the
+  direction of largest between-family spread, y the average round-1 to
+  round-10 shift within a family. They keep 74% and 76% of the two kinds of
+  difference. The time axis is fit to these myths, so the view illustrates
+  the 768-d numbers and is not evidence on its own.
+- Round-1 family: a classifier tested on unseen runs names the family 98.8%
+  (Myth → Game) and 99.1% (Game → Myth) of the time. A run-level shuffle of
+  family labels gives p = 0.0001.
+- Dyad partners: +0.076 (±0.070) closer than other runs at round 10, 32 of
+  36 runs, sign test p = 2×10⁻⁶. Growth from round 1: Wilcoxon p = 1.5×10⁻⁵.
+  Single pairing × task-order cells have 6 runs (smallest possible p 0.031).
 
 ## Caveats
 
