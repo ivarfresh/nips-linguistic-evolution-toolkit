@@ -1,3 +1,17 @@
+### 2026-10-03 — Bounded transmission follow-up completed
+
+**Time:** not tracked separately.
+
+Result: completed source/timing ledgers for 44 selected events in 48 trajectories
+from 45 runs; verified 480 myths/game contexts and 432 actual/unseen comparisons.
+New five-word overlap favors actual exposure by 1.08 percentage points (run SD
+2.61; descriptive bootstrap 0.43–1.89), not a semantic or causal estimate.
+Strict conditional tests lack measurable triggers. Only two of six explicit-
+amount cases have an immediate sender opportunity; both already sent the amount.
+No pooled behavioral inference; this is non-identifiability, not a null effect.
+No new simulation/API calls or experimental changes. Human reliability remains
+unestablished. See D013 and followup_findings_20261003.txt for scope and evidence.
+
 ### 2026-10-03 — User review broadens narrative interpretation
 
 **Time:** not tracked separately.
