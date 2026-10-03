@@ -13,8 +13,8 @@ after a myth is written, and it never goes back.
 
 The game prompt asks only for a JSON decision ("IMPORTANT: Provide your
 decision in the correct JSON format."). Every September model got the same
-prompt. Sonnet 4.5 adds an explanation anyway. GPT-5 Nano and Gemini 3.7 Flash
-reply with JSON only. GPT's stored reasoning field is a placeholder ("[N
+prompt. Sonnet 4.5 adds an explanation anyway: 4,394 of its 4,410 game replies have
+10 or more words. GPT-5 Nano and Gemini 3.7 Flash reply with JSON only. GPT's stored reasoning field is a placeholder ("[N
 reasoning tokens used, but content encrypted by provider]"). So a
 cross-family version of this map is not possible from the existing runs.
 
@@ -50,7 +50,8 @@ not spontaneous recall.
 
 - `round1.png`: round-1 explanations, senders left and receivers right.
   - Game → Myth's round-1 prompt differs from Game only by the one
-    instruction line, with no myth written yet.
+    instruction line, with no myth written yet. Receivers also see their
+    partner's round-1 send, which can differ between conditions.
   - Myth → Game has already written a myth.
 - `trajectories_8agent.png`, `trajectories_2agent.png`:
   - Rows: Sonnet as sender, Sonnet as receiver. The roles alternate by round,
@@ -62,33 +63,46 @@ not spontaneous recall.
 
 ## What we see
 
-**1. Round 1: the instruction alone does nothing, a written myth does a lot.**
-Distance from the game-only centroid (`distance_from_game_only.csv`, cosine,
-768-d), against a noise floor: the distance between two random halves of the
-game-only runs.
+**1. Round 1: the instruction alone shifts the explanations slightly; a
+written myth shifts them about ten times more.** Distance from the game-only
+centroid (`distance_from_game_only.csv`, cosine, 768-d). The test shuffles
+which runs are game-only and which are the myth condition (group sizes kept);
+p is one-sided, from 2,000 shuffles.
 
-| Round 1 | Noise floor | Game → Myth | Myth → Game |
-|---|---|---|---|
-| 8 agents (4 cells) | 0.010–0.018 | 0.010–0.029 | 0.22–0.28 |
-| 2 agents (6 cells) | 0.05–0.31 | 0.03–0.15 | 0.25–0.44 |
+| Round 1, 8 agents (4 cells) | Game → Myth | Myth → Game |
+|---|---|---|
+| Distance from game only | 0.010–0.029 | 0.22–0.28 |
+| p | 0.007–0.032 | 0.0005–0.011 |
 
-**2. After one myth, Game → Myth joins Myth → Game.** From round 2 both myth
-conditions sit above the noise floor in every cell and round (90 of 90). In
-8-agent runs they are 0.10–0.21 from game only at round 10, against a floor
-of 0.011–0.016. Game only stays on the left of the map for all 10 rounds.
+In 8-agent runs, the one line "Take any myths written in this session into
+account" already moves Sonnet's first explanation, though only a little. In
+2-agent runs the round-1 cells are too small to tell (next point).
+
+**2. After one myth, Game → Myth joins Myth → Game.**
+- In 8-agent runs, both myth conditions differ from game only in every cell
+  and round from 2 to 10: 36 of 36 each, p < 0.05. At round 10 they are
+  0.10–0.21 from game only.
+- In Sonnet + Sonnet dyads the same holds in 18 of 18 cells per condition
+  (largest p = 0.017).
+- In mixed dyads, Sonnet holds a given role in a given round in only 3 runs
+  per condition. With 3 runs against 3 the smallest possible p is 0.05, and
+  the cells sit at or near it (0.05–0.12). The direction matches, but the
+  test cannot reach significance there.
+- Game only stays on the left of the map for all 10 rounds.
 
 **3. Left-right on the map is game talk against myth talk.** Words most
 over-used relative to game only (`distinctive_words.csv`, log-odds with an
-informative prior; rate per 1,000 words):
+informative prior, stop words removed, 2- and 8-agent runs pooled; rate per
+1,000 non-stop words):
 
 | Word | Game only | Game → Myth | Myth → Game |
 |---|---|---|---|
-| cooperative | 10.0 | 2.3 | 0.9 |
-| reciprocate | 5.9 | 1.3 | 0.6 |
-| history | 11.6 | 5.3 | 4.0 |
-| myth / myths | 0 / 0 | 5.5 / 7.1 | 6.7 / 8.8 |
-| honor | 0.02 | 3.8 | 4.3 |
-| courage | 0 | 3.6 | 5.9 |
+| cooperative | 17.3 | 4.1 | 1.6 |
+| reciprocate | 10.2 | 2.2 | 1.0 |
+| history | 20.1 | 9.2 | 6.9 |
+| myth / myths | 0 / 0 | 9.6 / 12.4 | 11.6 / 15.3 |
+| honor | 0.04 | 6.5 | 7.4 |
+| courage | 0 | 6.2 | 10.3 |
 
 A typical Myth → Game reply (2 agents, round 4): "Both our myths now emphasize
 the same wisdom … I must continue the sacred pattern, offering nearly all my
@@ -107,7 +121,7 @@ earlier finding that the myth task breaks the lock.
   not show that Sonnet would bring them up unprompted.
 - This is language, not behaviour. Sending and returning are in the
   cooperation figures.
-- The 2-agent noise floor is wide (5–6 runs per half). In Sonnet + GPT dyads
-  at round 1 it is 0.25–0.31, close to the Myth → Game distance (0.35–0.44).
-  The 8-agent floor is tight.
+- The 2-agent mixed cells have 3 runs per condition per role and round, too
+  few for the run-level test (see point 2). Pooling across rounds would need
+  a model with run effects. That is not done here.
 - The 2-D map keeps 25% of the variance. Cite the 768-d numbers.

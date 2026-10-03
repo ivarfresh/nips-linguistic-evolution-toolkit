@@ -1,16 +1,17 @@
 ### 2026-10-03 — Result: with a myth in play, Sonnet explains its game moves with the myth, not with game bookkeeping
 
-**Time:** ~2 h analysis; no API calls.
+**Time:** ~2.5 h analysis and review fixes; no API calls.
 
 Game-only runs have no myths, so the myth map cannot show them. Their only text is the game reply, and
-only Sonnet 4.5 writes any (81% of replies; GPT-5 Nano and Gemini 3.7 Flash return JSON only, GPT's
-reasoning is provider-encrypted). Mapped 4,394 Sonnet game explanations from the 111 September runs
-with Sonnet (`analyses/sonnet_game_reasoning_map.py`). Round 1: Game → Myth, whose prompt only adds
-"Take any myths written in this session into account", matches game only (8-agent distance
-0.010–0.029 vs split-half floor 0.010–0.018); Myth → Game is far (0.22–0.28). From round 2 both myth
-conditions are above the floor in 90 of 90 cells × rounds. Game only says *cooperative, reciprocate,
-history* (10.0, 5.9, 11.6 per 1,000 words); with myths, *myth, honor, courage*. Caveat: the myth
-conditions are told to use the myths and have them in context; this is language, not behaviour.
+only Sonnet 4.5 writes any (4,394 of 4,410 replies with 10+ words; GPT-5 Nano and Gemini 3.7 Flash return
+JSON only). Mapped those explanations from the 111 September runs with Sonnet
+(`analyses/sonnet_game_reasoning_map.py`), with a run-label permutation test against game only.
+Round 1, 8 agents: the one line "Take any myths written in this session into account" (Game → Myth, no
+myth yet) shifts explanations slightly (distance 0.010–0.029, p 0.007–0.032); a written myth (Myth →
+Game) shifts them ten times more (0.22–0.28). From round 2 both myth conditions differ from game only in
+36/36 8-agent and 18/18 Sonnet + Sonnet dyad cells (p < 0.05); mixed dyads have 3 runs against 3 per cell,
+so p cannot go below 0.05. Game only says *cooperative, reciprocate, history*; with myths, *myth, honor,
+courage*. Caveat: myth conditions are told to use the myths; language, not behaviour.
 Write-up: `docs/figures/sonnet_game_reasoning_20261002/README.md`.
 
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)

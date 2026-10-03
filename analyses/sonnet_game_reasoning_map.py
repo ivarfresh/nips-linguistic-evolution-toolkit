@@ -2,8 +2,8 @@
 """Map of Sonnet's game reasoning: does writing myths change how Sonnet talks about play?
 
 The game prompt asks only for a JSON decision. Sonnet 4.5 adds a short
-explanation anyway (81% of its game replies); GPT-5 Nano and Gemini 3.7 Flash
-return JSON only, so this map is Sonnet-only. It covers every Sonnet decision in
+explanation anyway (4,394 of its 4,410 game replies have 10+ words); GPT-5 Nano
+and Gemini 3.7 Flash return JSON only, so this map is Sonnet-only. It covers every Sonnet decision in
 the 111 September runs that contain Sonnet (validated run tables behind Figures
 7 and 8): game only, game -> myth and myth -> game, with Sonnet partners, GPT
 partners or Gemini partners.
@@ -21,10 +21,11 @@ Figures:
 Tables:
   texts_per_cell.csv         how many replies carry text, per cell
   distance_from_game_only.csv  768-d cosine distance of each myth condition's
-                             centroid from the game-only centroid, per round,
-                             with the game-only split-half distance as the noise floor
+                             centroid from the game-only centroid, per round, with a
+                             run-label permutation null (95th percentile, p)
   distinctive_words.csv      words most over-used in each myth condition
-                             relative to game only (log-odds, informative prior)
+                             relative to game only (log-odds, informative prior;
+                             stop words removed)
 
 provenance.json lists the full validated September run set (linguistic_provenance
 with_game_only), of which the 111 runs containing Sonnet are read.
@@ -92,7 +93,8 @@ def extract() -> pd.DataFrame:
                     if meta.get("task") != "game":
                         continue
                     content = event["response"].get("content") or ""
-                    amount = AMOUNT.search(content)
+                    key = "send" if meta["role"] == "investor" else "return"
+                    amount = next((a for a in AMOUNT.finditer(content) if a.group(1) == key), None)
                     text = re.sub(r"\s+", " ", DECISION.sub(" ", content)).strip()
                     rows.append(dict(path=path, run_id=Path(path).stem, size=size, composition=composition,
                                      setting=setting_of(composition, size), task_order=task_order,
@@ -112,7 +114,7 @@ def shade(color, t: float):
 
 class Map:
     def __init__(self, df: pd.DataFrame, emb: np.ndarray):
-        pca = PCA(2).fit(emb)
+        pca = PCA(2, svd_solver="full").fit(emb)  # deterministic, so figure hashes are stable
         xy = pca.transform(emb)
         df["x"], df["y"] = xy[:, 0], xy[:, 1]
         var = pca.explained_variance_ratio_ * 100
@@ -198,35 +200,45 @@ def unit(v):
     return v / np.linalg.norm(v)
 
 
-def distance_from_game_only(df, emb, seed=20261002) -> pd.DataFrame:
-    """Cosine distance between each condition's centroid and the game-only centroid.
+def distance_from_game_only(df, emb, n_perm=2000, seed=20261002) -> pd.DataFrame:
+    """Cosine distance between each myth condition's centroid and the game-only centroid, with a run-level test.
 
-    The noise floor splits the game-only runs into two random halves (by run)
-    and measures the same distance between the halves, 200 times.
+    The null shuffles which runs are game-only and which are the myth condition
+    (group sizes kept) and recomputes the distance, so it compares groups of the
+    real size. Reported: the null's 95th percentile and the one-sided p-value.
     """
     rng = np.random.default_rng(seed)
     rows = []
     for (size, setting, role, r), cell in df.groupby(["size", "setting", "role", "round"]):
-        base = cell[cell.task_order == "game"]
-        c0 = unit(emb[base.index].mean(0))
-        runs = base.run_id.unique()
-        floor = []
-        for _ in range(200):
-            half = set(rng.permutation(runs)[: len(runs) // 2])
-            a = base.run_id.isin(half).to_numpy()
-            floor.append(1 - unit(emb[base.index[a]].mean(0)) @ unit(emb[base.index[~a]].mean(0)))
-        row = dict(size=size, setting=setting, role=ROLES[role], round=r, split_half_floor=np.mean(floor))
+        row = dict(size=size, setting=setting, role=ROLES[role], round=r)
         for order in ("game_myth", "myth_game"):
-            sel = cell[cell.task_order == order]
-            row[order] = 1 - unit(emb[sel.index].mean(0)) @ c0
+            pair = cell[cell.task_order.isin(["game", order])]
+            runs = [pair.index[ix] for ix in pair.groupby("run_id").indices.values()]  # row labels per run
+            sums = np.stack([emb[ix].sum(0) for ix in runs])
+            is_myth = np.array([pair.at[ix[0], "task_order"] == order for ix in runs])
+
+            def dist(mask):
+                return 1 - unit(sums[mask].sum(0)) @ unit(sums[~mask].sum(0))
+
+            observed = dist(is_myth)
+            null = np.array([dist(rng.permutation(is_myth)) for _ in range(n_perm)])
+            row[order] = observed
+            row[f"{order}_null95"] = np.percentile(null, 95)
+            row[f"{order}_p"] = (np.sum(null >= observed) + 1) / (n_perm + 1)
         rows.append(row)
     return pd.DataFrame(rows)
 
 
 def distinctive_words(df, top=15) -> pd.DataFrame:
-    """Weighted log-odds with an informative Dirichlet prior (Monroe et al. 2008), each myth order vs game only."""
+    """Weighted log-odds with an informative Dirichlet prior (Monroe et al. 2008), each myth order vs game only.
+
+    Stop words are left out; 2- and 8-agent runs are pooled. Rates are per 1,000 non-stop words.
+    """
     from collections import Counter
-    counts = {o: Counter(w for t in df[df.task_order == o].text for w in TOKEN.findall(t.lower())) for o in TASK_ORDERS}
+    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+    counts = {o: Counter(w for t in df[df.task_order == o].text for w in TOKEN.findall(t.lower())
+                         if w not in ENGLISH_STOP_WORDS) for o in TASK_ORDERS}
+    totals = {o: sum(c.values()) for o, c in counts.items()}
     prior = sum(counts.values(), Counter())
     a0 = sum(prior.values())
     rows = []
@@ -240,12 +252,12 @@ def distinctive_words(df, top=15) -> pd.DataFrame:
             l1 = np.log((c1[w] + aw) / (n1 + a0 - c1[w] - aw))
             l2 = np.log((c2[w] + aw) / (n2 + a0 - c2[w] - aw))
             z = (l1 - l2) / np.sqrt(1 / (c1[w] + aw) + 1 / (c2[w] + aw))
-            scores.append((w, z, c1[w] / n1 * 1000, c2[w] / n2 * 1000))
+            scores.append((w, z))
         scores.sort(key=lambda s: s[1])
         for direction, chosen in (("more in " + order, scores[::-1][:top]), ("more in game only", scores[:top])):
-            for w, z, f1, f2 in chosen:
+            for w, z in chosen:
                 rows.append(dict(comparison=f"{order} vs game", direction=direction, word=w, z=z,
-                                 per_1000_words_myth_condition=f1, per_1000_words_game_only=f2))
+                                 **{f"per_1000_{o}": counts[o][w] / totals[o] * 1000 for o in TASK_ORDERS}))
     return pd.DataFrame(rows)
 
 
