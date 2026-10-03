@@ -106,5 +106,38 @@ the bounded follow-up, not exhaustive coding or independent human reliability.
 Human validation of extraction and highlighted examples; separate blinded
 source-attribution checks if pursued; behavioral identification with clearly
 observed antecedents. The [12-trajectory packet](../../research/strategy_clause_audit_20261002/HUMAN_VALIDATION.md)
-is prepared; independently completed human coding is not yet established. No scaling or new experiment is authorized by
-this record.
+is prepared; independently completed human coding is not yet established. The
+bounded authorization above did not permit scaling or new experiments; the
+dated successor below expands only the existing-data analysis scope.
+
+## 2026-10-03 successor — expanded narrative and operator analysis
+
+**Explicit:** Ivar requested all September mid-tier and frontier runs, including
+the frontier defector pilot, and approved the team with an additional dedicated
+rule-evolution agent (simple-to-conditional and other operator changes). This
+supersedes the 48-trajectory scope restriction, not the lack of independent
+human reliability. Outputs must remain exploratory machine-coded findings.
+
+Four specialist audits completed: corpus, narrative schema, semantic rule
+evolution, and transmission/behavior safeguards. The [expanded plan](../../research/narrative_evolution_20261003/PLAN.md)
+preserves distinctions among narration, endorsement, hypothetical and genuine
+counterfactual reasoning; clause operators are not grammar counts. No new
+experiment, replay or paper-claim change is authorized.
+
+The [verified corpus manifest](../../research/narrative_evolution_20261003/corpus_manifest.json)
+contains 1,109 unique hash-matched ten-round finals, of which 736 contain 38,720
+myth entries in 3,872 trajectories. Scope includes canonical September-profile
+matrices/extensions, main and update frontier sets, and ordinary frontier
+defectors. Separate board/saboteur/transplant/replay/pressure/probe protocols are
+excluded explicitly. Defector-authored myths remain separate; forced game
+actions cannot support model-enactment claims. All entries are nonempty, but
+codability still requires checking; simple empty-object screening is insufficient.
+
+Implementation status: free preparation and manifest validation complete;
+calibration and full paid coding NOT started. The [budget estimate](../../research/narrative_evolution_20261003/budget_preflight.json)
+is approximately $795.50 under explicit token/output/repair assumptions using
+provider-verified GPT-6.1 Sol pricing, high reasoning, eight workers. An $800
+cap (or calibration-only $10) has been offered; explicit cost approval is
+pending. Do not start paid calls until approved. Re-estimate after calibration
+and pass semantic-quality gates before full scaling. No new prevalence or
+evolution findings yet exist for this expanded corpus.

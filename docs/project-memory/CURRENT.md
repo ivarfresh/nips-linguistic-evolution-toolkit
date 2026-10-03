@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (bounded source/behavior follow-up; earlier entries retain their dated scope).
+Last updated: 2026-10-03 (expanded narrative audit authorized; paid coding pending cost approval).
 
 ## Research question
 
@@ -13,6 +13,17 @@ culture remains unresolved. See the [design reference](../experiment_design_refe
 and [data audit](../research/mixed_future_data_audit.md).
 
 ## Current operational state
+
+- **Expanded narrative/rule-evolution analysis (2026-10-03, Ivar):** scope now
+  includes canonical September-profile matrices/extensions, main and update
+  frontier sets, and ordinary frontier defectors: 736 myth-bearing runs,
+  3,872 trajectories, 38,720 entries verified against completed-final hashes.
+  Four specialist audits and the [plan](../research/narrative_evolution_20261003/PLAN.md)
+  are ready. Separate board/saboteur/transplant/replay protocols are excluded.
+  Calibration and paid coding have NOT started: roughly $795.50 estimated,
+  $800 cap proposed, awaiting explicit cost approval (or $10 calibration only).
+  Human reliability remains unestablished; no expanded-corpus findings yet.
+  See [D013](decisions/013-strategy-clause-audit.md).
 
 - **Myth-pressure pilot (2026-09-28/29, 20/20 audited finals, $27.07):** Sonnet 4.5
   myth-first dyads, word budget (loose / tight) × council between rounds (off / on).
