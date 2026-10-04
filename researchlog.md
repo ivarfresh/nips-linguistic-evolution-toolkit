@@ -1,3 +1,17 @@
+### 2026-10-04 — Result: full-text reading of 70% of informed-noise myth runs
+
+**Time:** ~3 h wall-clock (31 Claude reader agents, ~16M subagent tokens; no API spend).
+
+Result: 2,324 trajectories (424 of 606 informed-negative-noise myth runs, all agents) read in
+full, plus all 240 scripted defectors and 90 controls read blind; all 16,354 quotes verbatim.
+Sanction prescribed by standard agents: Opus 5 88% (76% graded never-to-zero), GPT-5.6 Sol 87%
+(mostly unspecified withdrawal), Sonnet 4.5 48% (10% total exclusion), Opus 5.5 36%, Geminis
+10–11%, GPT-6 Sol 4%, Nano 3%. Scripted defectors raise it to 100% (frontier, still graded) and
+48% (September, 29% exclusion). Blind: withholding protagonist in Sonnet defectors 60/60, Sol 30/30,
+Opus 21/30, Gemini Flash 7/60, Nano 0/60 vs controls 4/90. Run-level rule-spread code did not
+discriminate (true in all runs) and is not reported. See
+docs/research/narrative_evolution_20261003/full_reading_70/RESULTS.md and D013.
+
 ### 2026-10-04 — Result: close reading of punishment and rule change in the myths
 
 **Time:** ~4 h (Claude session).
