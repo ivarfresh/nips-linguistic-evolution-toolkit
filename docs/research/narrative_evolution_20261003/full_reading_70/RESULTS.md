@@ -141,3 +141,55 @@ The unblinded main reading agrees:
 
 - **Rule spread inside 8-agent runs.** The run-level "shared rule" code was true for all 252 runs coded, because model-generic templates count. It does not discriminate, so I report no spread rates. Reader notes do record traceable cases, for example: "'Pattern Keepers' coined by Agent_5 R7, reused by Agent_4 R8" (F291), and "Hypocrite's Stone (A4, A5)" shared between two agents in a defector run (F089). Testing spread needs a design with a null model, as in D002 and D013.
 - **Causation.** These are text counts. The play check in `analyses/narrative_defector_play_check.py` links the "never nothing" rule to Opus's sends to defectors only at the level of task conditions.
+
+## 6. When each model does what (by condition)
+
+The percentages are standard agents prescribing any sanction. "Graded" means step down, never to zero. Cells are small:
+- frontier dyads: 4 runs per cell
+- frontier 8-agent: 4 runs per cell (12–32 agents)
+- September: 6–10 runs per cell
+
+The full per-cell table can be regenerated from `codes/` with the tally inputs; composition splits are listed below.
+
+**Group size.** Dyads rarely prescribe a sanction for any model (0–62%, mostly under 40%). The same models in 8-agent groups prescribe far more:
+
+| Model | Dyads | 8-agent groups (no defection) |
+|---|---|---|
+| Opus 5 | 0–50% | 92–100% |
+| GPT-5.6 Sol | 25–62% | 88–100% |
+| Sonnet 4.5 | 0–25% | 23–75% |
+
+**Task order.**
+
+| Model | Setting | Game→Myth | Myth→Game |
+|---|---|---|---|
+| Sonnet 4.5 | 8-agent, homogeneous | 38% | 23% |
+| Sonnet 4.5 | 8-agent, mixed | 70% | 30% |
+| Gemini 3.7 Flash | homogeneous, with scripted defectors | 77% (67% total exclusion) | 10% |
+| Opus 5.5 | mixed | 0% | 75% |
+| Opus 5.5 | homogeneous | 25% | 56% |
+| Gemini 3.1 Pro | mixed | 19% | 56% |
+
+- **September models** sanction more when they play the game before writing.
+- **Gemini Flash** writes about its own withholding only in Game→Myth (8/18 defectors vs 0/18).
+- **Frontier models** sanction more when the myth comes first.
+
+**Homogeneous vs mixed.**
+
+| Model | Homogeneous | Mixed, and alongside whom |
+|---|---|---|
+| Gemini 3.1 Pro | 0% | 38–75% (38–50% graded) alongside Opus 5 and GPT-5.6 Sol; 0–38% (never graded) alongside Opus 5.5 and GPT-6 Sol |
+| GPT-5.6 Sol (graded share) | 0–12% graded | 50–58% graded when Opus 5 is in the population |
+| GPT-5 Nano | 0% | 38–67% in Game→Myth when it is 1–2 agents among Sonnets; 0% among Gemini Flash |
+| Sonnet 4.5 | 38% | 60–75% in Game→Myth with GPT-5 Nano in the population (1, 2 or 4 Nano) |
+| Gemini 3.7 Flash | 0% | 0–16% (alongside Nano) |
+
+- **Gemini 3.1 Pro** takes on graded sanctions alongside Opus 5 and GPT-5.6 Sol, but not alongside the update pair.
+- **GPT-5.6 Sol** takes on Opus's graded form when Opus 5 is in the population.
+- **GPT-5 Nano**, which never sanctions in homogeneous runs, does when it is a minority among Sonnets.
+- **Sonnet 4.5** sanctions more with Nano in the group; Nano's game-only zero-lock gives it partners to sanction.
+
+**Defector self-narration by condition.**
+- Sonnet, Sol and Opus defectors write a withholding protagonist in both task orders and in both homogeneous and mixed runs.
+- Gemini Flash defectors do so only in Game→Myth.
+- Nano defectors never do.
