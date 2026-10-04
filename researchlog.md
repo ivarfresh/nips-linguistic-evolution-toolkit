@@ -1,3 +1,19 @@
+### 2026-10-04 — Result: close reading of punishment and rule change in the myths
+
+**Time:** ~4 h (Claude session).
+
+Result: read the per-round closing law of all 300 broad-audit trajectories
+(12 run sets), all 23 scripted defectors in full, plus 16 same-run Opus/Sol
+cooperators as baseline; no API spend. Defectors' myths keep returning to a
+protagonist who withholds from good partners in 17/17 Claude and Sol cases,
+0/6 Gemini Flash and Nano, vs 1/16 cooperators. Frontier sanction rules are
+graded with a way back ("send less, never nothing"). Play agrees: with a myth
+task, Opus sends a known defector exactly $0 in 0.01–0.02 of decisions per
+run vs 0.50 (±0.36) game-only; Sol about 0.5 vs 0.99. Task contrast, not
+myth-content causation. Audit task-order splits in punishment flags are 2–3
+trajectories each and are dropped. See
+docs/research/narrative_evolution_20261003/broad_audit_300/READING_FINDINGS_20261004.md and D013.
+
 ### 2026-10-03 — Broad audit replaces narrow priority
 
 **Time:** not tracked separately.
