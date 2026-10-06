@@ -123,13 +123,12 @@ def plot_dyads(df):
     configure_matplotlib()
     # Paper Figure 4: one column wide, drawn near print size, no title (the caption carries it).
     # Each dot = one run, mean of its 2 agents (n = 6 per box, 3 with each family sending first).
-    # Every run ends between 50 and 75, so the y-axis starts at 45 to show the spread.
     from matplotlib.patches import Patch
     fig, axes = plt.subplots(1, 3, figsize=(3.4, 2.9), sharey=True, squeeze=False)
     for ax, panel in zip(axes[0], ["Opus 5 + Sol", "Opus 5 + Gemini", "Gemini + Sol"]):
         draw(ax, df, panel, 2, "mixed", dot_size=10, dot_edge=.25)
         ax.set_xticks([])
-        ax.set_ylim(45, 77)
+        ax.set_yticks(range(0, 81, 10))
         ax.tick_params(axis="y", labelsize=7)
         ax.set_title(panel.replace("Opus 5", "Opus"), fontsize=7.5, fontweight="bold", pad=4)
     axes[0][0].set_ylabel("Resources per agent", fontsize=7.5)
