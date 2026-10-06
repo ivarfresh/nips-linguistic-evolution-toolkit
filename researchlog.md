@@ -26,6 +26,22 @@ copying. Round-1 family is recognisable from one myth (98.8–99.1% on unseen ru
 dyad partners converge (32/36 runs, p = 2×10⁻⁶). Caveat: 5–6 runs per cell, bootstrap intervals run narrow.
 Write-up: `docs/figures/myth_convergence_map_20261002/README.md`.
 
+### 2026-10-03 — Result: with a myth in play, Sonnet explains its game moves with the myth, not with game bookkeeping
+
+**Time:** ~2.5 h analysis and review fixes; no API calls.
+
+Game-only runs have no myths, so the myth map cannot show them. Their only text is the game reply, and
+only Sonnet 4.5 writes any (4,394 of 4,410 replies with 10+ words; GPT-5 Nano and Gemini 3.7 Flash return
+JSON only). Mapped those explanations from the 111 September runs with Sonnet
+(`analyses/sonnet_game_reasoning_map.py`), with a run-label permutation test against game only.
+Round 1, 8 agents: the one line "Take any myths written in this session into account" (Game → Myth, no
+myth yet) shifts explanations slightly (distance 0.010–0.029, p 0.007–0.032); a written myth (Myth →
+Game) shifts them ten times more (0.22–0.28). From round 2 both myth conditions differ from game only in
+36/36 8-agent and 18/18 Sonnet + Sonnet dyad cells (p < 0.05); mixed dyads have 3 runs against 3 per cell,
+so p cannot go below 0.05. Game only says *cooperative, reciprocate, history*; with myths, *myth, honor,
+courage*. Caveat: myth conditions are told to use the myths; language, not behaviour.
+Write-up: `docs/figures/sonnet_game_reasoning_20261002/README.md`.
+
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
 
 **Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
