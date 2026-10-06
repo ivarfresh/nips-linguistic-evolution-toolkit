@@ -10,7 +10,7 @@ empty GPT response).
 export LINGUISTIC_DATASET=september_n10   # provenance.json lists the n = 10 runs
 python3 analyses/myth_convergence_map.py --dataset september_n10
 python3 analyses/myth_map_significance.py --dataset september_n10
-python3 analyses/plot_myth_map_panel.py   # paper Figure 5b
+python3 analyses/plot_myth_map_panel.py   # paper Figure 5b; rewrites provenance.json
 ```
 
 Free; reuses the cached embeddings in `data/analysis/linguistic_n10_20261001/`.
@@ -20,8 +20,10 @@ Free; reuses the cached embeddings in `data/analysis/linguistic_n10_20261001/`.
 8-agent populations, Myth → Game, one task order and size only (never pooled).
 Dots and solid outlines are round-10 myths; dashed outlines are where the same
 runs' round-1 myths sat. Left: 30 single-model populations (80 round-10 myths per
-family). Right: 60 mixed populations, each GPT-5 Nano with one other family
-(1, 2 or 4 GPT agents of 8; 170 Sonnet, 70 Gemini, 240 GPT round-10 myths).
+family). Right: 60 mixed populations, each GPT-5 Nano with one other family:
+30 runs with 7, 6 or 4 Sonnet + 1, 2 or 4 GPT, and 30 runs with 1, 2 or 4 Gemini
++ 7, 6 or 4 GPT (170 Sonnet, 70 Gemini, 240 GPT round-10 myths; 170 of the GPT
+myths come from the GPT-majority Gemini runs).
 
 The picture is a 2-D view (PC1 + PC2 keep 23% of the variance). Cite the numbers
 below, which are computed in the full 768-d space (`significance.csv`).

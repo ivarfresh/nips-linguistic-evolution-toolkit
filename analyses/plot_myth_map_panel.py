@@ -9,7 +9,7 @@ only the end state. One cell only, never pooled: 8-agent populations, Myth → G
 family_time_map_*.png. Numbers to cite come from the 768-d tables in the same folder
 (family_separation.csv, significance.csv), not from this 2-D picture. No API calls.
 
-    python3 analyses/plot_myth_map_panel.py
+    LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_map_panel.py
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses import linguistic_datasets  # noqa: E402
-from analyses.myth_convergence_map import N10_OUT, Map, load  # noqa: E402  (also sets the matplotlib style)
+from analyses.myth_convergence_map import N10_OUT, Map, load, write_provenance  # noqa: E402  (also sets the matplotlib style)
 
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
@@ -34,7 +34,8 @@ def main() -> None:
     m = Map(myths, emb)
     cell = myths[(myths["size"] == SIZE) & (myths.task_order == TASK_ORDER)]
     shown = cell[cell["round"].isin([FIRST, LAST])]
-    xr = (shown.x.quantile(0.002) - 0.04, shown.x.quantile(0.998) + 0.04)  # zoom to this cell's myths
+    # zoom to this cell's myths; the outermost 0.2% on each side fall outside the frame
+    xr = (shown.x.quantile(0.002) - 0.04, shown.x.quantile(0.998) + 0.04)
     yr = (shown.y.quantile(0.002) - 0.04, shown.y.quantile(0.998) + 0.04)
 
     fig, axs = plt.subplots(1, 2, figsize=(6.5, 3.6), sharex=True, sharey=True)
@@ -70,6 +71,7 @@ def main() -> None:
     fig.savefig(N10_OUT / "myth_map_round10_8agent_myth_game.png", dpi=300)
     plt.close(fig)
     print(f"wrote {N10_OUT / 'myth_map_round10_8agent_myth_game.png'}; round-10 myths (single, mixed): {counts}")
+    write_provenance(ds, N10_OUT)  # the folder's provenance.json hashes this figure too
 
 
 if __name__ == "__main__":

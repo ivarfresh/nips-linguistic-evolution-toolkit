@@ -349,7 +349,7 @@ def tests(myths, emb, curves, boots, ds, rng) -> pd.DataFrame:
     for (comp, to), x in r10.groupby(level=["comp", "to"]):
         add(rows, f"  {comp}, {TASK_ORDERS[to]}: partner closeness at round 10", "sign test over runs",
             f"mean +{x.mean():.3f}; {(x > 0).sum()}/{len(x)} runs > 0", stats.binomtest(int((x > 0).sum()), len(x)).pvalue,
-            f"{len(x)} runs", "6 runs: the smallest possible two-sided p is 0.031")
+            f"{len(x)} runs", f"{len(x)} runs: the smallest possible two-sided p is {2 * 0.5 ** len(x):.2g}")
     # 6. round 10: single-model vs mixed distance, same pair, size and task order (independent run sets)
     for (to, size, group, pair), mx in boots.items():
         if group == "single" or (to, size, "single", pair) not in boots:
