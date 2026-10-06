@@ -1,3 +1,18 @@
+### 2026-10-06 — Result: myth map at n = 10 holds; paper Figure 5b built
+
+**Time:** ~1 h (Claude session; no API spend).
+
+Result: reran the myth map and its tests on the 300 n = 10 runs behind Figure 5a.
+Between-family cosine distance grows from round 1 to round 10 in all 12
+single-model cells (+0.04 to +0.20, every run-bootstrap interval excludes 0).
+In mixed cells it changes by −0.08 to +0.03, and the interval includes 0 in 7 of 10.
+The exception is Sonnet–GPT populations in Game → Myth, at +0.02 with the interval
+excluding 0. At round 10, mixed families are closer than single-model ones in
+8 of 10 cells. Figure 5b answers Ed's 2026-10-06 request for a coloured map: it
+shows 8-agent Myth → Game populations, round-10 dots coloured by family, with
+dashed round-1 outlines, single-model against mixed. See
+docs/figures/myth_convergence_map_n10_20261006/README.md and PR #38.
+
 ### 2026-10-04 — Result: full-text reading of 70% of informed-noise myth runs
 
 **Time:** ~3 h wall-clock (31 Claude reader agents, ~16M subagent tokens; no API spend).
