@@ -1,6 +1,6 @@
 # Current research state
 
-Last verified: 2026-09-30.
+Last updated: 2026-10-04 (broad audit partial; API credit exhaustion, source-checked examples available).
 
 ## Research question
 
@@ -13,6 +13,50 @@ culture remains unresolved. See the [design reference](../experiment_design_refe
 and [data audit](../research/mixed_future_data_audit.md).
 
 ## Current operational state
+
+- **Expanded narrative/rule-evolution analysis (2026-10-03, Ivar):** scope now
+  includes canonical September-profile matrices/extensions, main and update
+  frontier sets, and ordinary frontier defectors: 736 myth-bearing runs,
+  3,872 trajectories, 38,720 entries verified against completed-final hashes.
+  Four specialist audits and the [plan](../research/narrative_evolution_20261003/PLAN.md)
+  are ready. Separate board/saboteur/transplant/replay protocols are excluded.
+  Ivar chose calibration only, capped at $10, instead of the roughly $795.50
+  full analysis. The 24-trajectory calibration stopped early: 16 readings
+  returned, nine truncated. A four-case repaired test returned 8/8 complete
+  readings, 7/8 exact-quote valid. Core examples survived but semantic review
+  found shared false novelty labels: automatic evolution totals are not ready.
+  Confirmed response costs $3.04; conservative accounting $5.54 including
+  interrupted calls without receipts. See the [calibration report](../research/narrative_evolution_20261003/calibration/REPORT.txt).
+  **Later successor, Ivar: "ok do it":** simpler fresh 36-myth calibration and
+  regression permit only challenge-dialogue screening. A 38,720-myth direct
+  Batch pass was launched, estimated $62.50 including allowance/pilots with
+  a $100 accounting guard. See the [batch plan](../research/narrative_evolution_20261003/feature_screen/full_dialogue/plan.json).
+  **Latest successor, Ivar: "yes run that now please", then "please keep it at $30 ceiling":**
+  broad exploratory audit of 300 complete trajectories / 3,000 myths from
+  300 distinct runs, covering all eight themes with punishment prioritized.
+  Screening estimate $23.07 ($28.84 with 25% allowance); $26 screen guard and
+  $30 total guard including targeted whole-trajectory readings. Batch execution
+  started; no findings yet. [Plan](../research/narrative_evolution_20261003/broad_audit_300/plan.json).
+  Dialogue-only local submitter stopped; STOP_SUBMISSIONS prevents further
+  waves. Its two accepted remote batches remain separate existing charges.
+  Exploratory candidates are authorized despite imperfect calibration;
+  validated prevalence, automatic evolution totals and causal attribution are not established.
+  **2026-10-04 inspection:** 2,224/3,000 technically valid labels; 54 saved
+  requests report account credit exhaustion. No targeted follow-up receipt yet.
+  Partial source readings verify changing punishment/forgiveness prescriptions
+  in A004 and role-sensitive recovery in A001, not behavioral transmission.
+  [Partial findings](../research/narrative_evolution_20261003/broad_audit_300/PARTIAL_FINDINGS_20261004.txt).
+  Human reliability remains unestablished; no complete-corpus findings yet.
+  See [D013](decisions/013-strategy-clause-audit.md).
+  **2026-10-04 close reading (Claude, no API spend):** scripted defectors write
+  their own forced zeros into their myths (17/17 Claude and Sol, 0/6 Gemini Flash and Nano, 1/16 cooperators);
+  frontier myths prescribe graded sanctions with a way back, and with a myth task Opus almost
+  never sends a defector $0 (0.01–0.02 of sends per run vs 0.50 game-only).
+  [Reading findings](../research/narrative_evolution_20261003/broad_audit_300/READING_FINDINGS_20261004.md).
+  **Full-text 70% reading (2026-10-04, informed noise only, 2,324 trajectories + blind 240 defectors):**
+  sanctions mostly Opus 5 (88%, graded) / GPT-5.6 Sol (87%) / Sonnet (48%); defectors raise them
+  (frontier graded, September 29% exclusion); blind self-narration Sonnet 60/60, Sol 30/30, Opus 21/30,
+  Gemini Flash 7/60, Nano 0/60. [Results](../research/narrative_evolution_20261003/full_reading_70/RESULTS.md).
 
 - **Myth-pressure pilot (2026-09-28/29, 20/20 audited finals, $27.07):** Sonnet 4.5
   myth-first dyads, word budget (loose / tight) × council between rounds (off / on).
@@ -172,6 +216,33 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
+- Strategy-clause audit (2026-10-02, user-authorized bounded exploration):
+  48 complete trajectories / 480 myths from 45 original September and main-frontier
+  runs. Machine readings find candidate peer uptake of specific conditional
+  advice, including compensation for an already-cheated partner, and both
+  additions and dropped clauses. This is not proof of behavioral transmission
+  or the mechanism behind increased cooperation. The 44 selected events are
+  not a census; human validation remains pending. No new simulations or paid
+  judge batch. The human inspector now accepts repeated, individually quoted
+  observations (v2). At the user's subsequent request all 12 packet trajectories
+  / 120 rounds have quotation-backed AI draft readings in a separate inspector
+  tab. Human notes/completion remain separate and untouched. Checking these
+  drafts is AI-assisted review, not independent blinded human validation. The
+  earlier frozen audit labels are unchanged. Ivar's H01–H04 feedback is now
+  preserved and organized separately: it highlights narrative justification,
+  identity and inherited custom beyond action rules. A targeted saved-prompt
+  check supports exposure-compatible name borrowing within H03's own dyad,
+  not transmission from the separate H01 run or a behavioral effect. The subsequent
+  bounded steps 4–5 follow-up verifies sources and timing for all 44 selected
+  events. Actual-exposure novel-five-word overlap exceeds matched unseen overlap
+  by 1.08 percentage points (run SD 2.61; descriptive bootstrap 0.43–1.89,
+  45 runs), not a norm/causal estimate. Conditional triggers are insufficiently
+  measurable; only two of six explicit-amount cases have an immediate sender
+  opportunity, and both already sent that amount. Behavioral enactment remains
+  unidentified, not disproven. See the
+  [follow-up](../research/strategy_clause_audit_20261002/followup_findings_20261003.txt),
+  [D013](decisions/013-strategy-clause-audit.md) and
+  [the report](../research/strategy_clause_audit_20261002/README.md).
 - Myth effect mechanism (2026-09-30, existing runs only): the myth adds its own
   per-round upward push at fixed partner and own history (Sonnet myth→game
   +$0.14/round), which keeps the gap from fading. There is no sign that myths

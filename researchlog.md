@@ -1,3 +1,157 @@
+### 2026-10-04 — Result: full-text reading of 70% of informed-noise myth runs
+
+**Time:** ~3 h wall-clock (31 Claude reader agents, ~16M subagent tokens; no API spend).
+
+Result: 2,324 trajectories (424 of 606 informed-negative-noise myth runs, all agents) read in
+full, plus all 240 scripted defectors and 90 controls read blind; all 16,354 quotes verbatim.
+Sanction prescribed by standard agents: Opus 5 88% (76% graded never-to-zero), GPT-5.6 Sol 87%
+(mostly unspecified withdrawal), Sonnet 4.5 48% (10% total exclusion), Opus 5.5 36%, Geminis
+10–11%, GPT-6 Sol 4%, Nano 3%. Scripted defectors raise it to 100% (frontier, still graded) and
+48% (September, 29% exclusion). Blind: withholding protagonist in Sonnet defectors 60/60, Sol 30/30,
+Opus 21/30, Gemini Flash 7/60, Nano 0/60 vs controls 4/90. Run-level rule-spread code did not
+discriminate (true in all runs) and is not reported. See
+docs/research/narrative_evolution_20261003/full_reading_70/RESULTS.md and D013.
+
+### 2026-10-04 — Result: close reading of punishment and rule change in the myths
+
+**Time:** ~4 h (Claude session).
+
+Result: read the per-round closing law of all 300 broad-audit trajectories
+(12 run sets), all 23 scripted defectors in full, plus 16 same-run Opus/Sol
+cooperators as baseline; no API spend. Defectors' myths keep returning to a
+protagonist who withholds from good partners in 17/17 Claude and Sol cases,
+0/6 Gemini Flash and Nano, vs 1/16 cooperators. Frontier sanction rules are
+graded with a way back ("send less, never nothing"). Play agrees: with a myth
+task, Opus sends a known defector exactly $0 in 0.01–0.02 of decisions per
+run vs 0.50 (±0.36) game-only; Sol about 0.5 vs 0.99. Task contrast, not
+myth-content causation. Audit task-order splits in punishment flags are 2–3
+trajectories each and are dropped. See
+docs/research/narrative_evolution_20261003/broad_audit_300/READING_FINDINGS_20261004.md and D013.
+
+### 2026-10-03 — Broad audit replaces narrow priority
+
+**Time:** not tracked separately.
+
+Decision: Ivar authorized a multi-theme 300-trajectory audit, emphasizing
+punishment, then imposed a $30 total ceiling. Selection is frozen across 300
+distinct completed runs / 3,000 myths, using metadata rather than outcomes.
+Sol/high eight-theme screen estimated $23.07, with $26 screen guard and $30
+combined guard for targeted whole-trajectory readings. First seven Batch waves
+accepted; results are pending, not completed findings. Earlier calibration
+limitations remain explicit; exploratory retrieval is not validated prevalence.
+Dialogue-only local submission stopped; two accepted remote batches remain
+separate existing commitments. No new experiments, paper or inspector changes.
+See D013 and docs/research/narrative_evolution_20261003/broad_audit_300/plan.json.
+
+### 2026-10-03 — Fresh screen narrows scalable endpoint
+
+**Time:** not tracked separately.
+
+Result: 36 fresh myths from disjoint runs were source-read before API labels.
+Eight-category screening passed two numerical gates; narrower regression held
+only challenge dialogue. Dialogue-only outputs were 36/36 technically valid,
+with 11/12 reference positives detected and 33/36 three-state matches. This is
+AI-assisted checking, not human reliability. New pilot cost estimated $0.83.
+After Ivar authorized simplify/validate/scale, a dialogue-only 38,720-myth Batch
+pass started: estimated $62.50 including pilots/allowance, $100 pending-token
+accounting guard. Results pending; other feature counts and evolution held.
+No experiments, paper or inspector changed. See D013 and
+docs/research/narrative_evolution_20261003/feature_screen/RESULTS.txt.
+
+### 2026-10-03 — Narrative calibration reveals counting failures
+
+**Time:** not tracked separately.
+
+Result: user chose $10 calibration instead of ~$795.50 full coding. Initial
+version stopped after 16 returned readings (7 valid, 9 truncated). A repaired
+four-trajectory/two-reading test completed 8/8, with 7 exact-quote-valid outputs.
+Core examples survive, but source review rejects automatic evolution totals:
+shared false novelty labels confuse restatements with changed strategies.
+Conditional reduction is detectable; punishment can remain ambiguous.
+Confirmed usage costs $3.04; conservative total $5.54 includes interrupted
+requests without receipts. No full-corpus coding, new experiments or paper
+changes. See docs/research/narrative_evolution_20261003/calibration/REPORT.txt
+and D013. Human reliability remains unestablished.
+
+### 2026-10-03 — Expanded narrative corpus audit completed
+
+**Time:** not tracked separately.
+
+Result: verified 1,109 unique completed-final hashes across canonical September-
+profile matrices/extensions, frontier main/update and ordinary frontier defectors;
+736 myth-bearing runs contain 38,720 entries in 3,872 complete trajectories.
+Ivar authorized expanded narrative coding and a dedicated rule-evolution lens.
+Four specialist audits informed the scoped plan; scripted-defector prose and
+forced game actions remain distinct. No paid coding or new simulations ran.
+Estimated full cost $795.50; proposed $800 cap awaiting approval. No full-corpus
+semantic results yet. See D013 and narrative_evolution_20261003/PLAN.md.
+
+### 2026-10-03 — Bounded transmission follow-up completed
+
+**Time:** not tracked separately.
+
+Result: completed source/timing ledgers for 44 selected events in 48 trajectories
+from 45 runs; verified 480 myths/game contexts and 432 actual/unseen comparisons.
+New five-word overlap favors actual exposure by 1.08 percentage points (run SD
+2.61; descriptive bootstrap 0.43–1.89), not a semantic or causal estimate.
+Strict conditional tests lack measurable triggers. Only two of six explicit-
+amount cases have an immediate sender opportunity; both already sent the amount.
+No pooled behavioral inference; this is non-identifiability, not a null effect.
+No new simulation/API calls or experimental changes. Human reliability remains
+unestablished. See D013 and followup_findings_20261003.txt for scope and evidence.
+
+### 2026-10-03 — User review broadens narrative interpretation
+
+**Time:** not tracked separately.
+
+Result: organized Ivar's 36 comment blocks on H01–H04 into 69 observations with
+93 exact quote links; original notes preserved byte-for-byte. Feedback identifies
+sacred, identity, relational and ritual framing missed by narrow action coding.
+Corrected several false-first-occurrence and story-setting readings. Saved-prompt
+checks for T36 R9/R10 verify exposure to partner names before their appearance in
+own output, supporting possible narrative borrowing, not behavioral transmission.
+No prior labels, experimental data, or analyses changed. This is AI-assisted
+feedback, not independent validation. See D013 and user_review_findings_20261003.txt.
+
+### 2026-10-03 — AI packet review drafts completed
+
+**Time:** not tracked separately.
+
+Result: user requested AI completion before their own later review. All 12
+packet trajectories / 120 rounds now have AI draft readings, 841 entries
+(including absence notes), and 923 exact-match quote links. Empty H07 round 3
+is explicitly uncodeable. Drafts and human notes are separate; no human read or
+completion flags were set. Subsequent review is AI-assisted, not independently
+blinded. Frozen audit labels and experimental data are unchanged; no paid batch
+or simulation ran. See D013 and `ai_reading_packet.py` for source and caveats.
+
+### 2026-10-03 — Evidence-level inspector annotations added
+
+**Time:** not tracked separately.
+
+User-requested human-review interface now supports repeated observations per
+field, advice and narration together, and multiple source-round quotations per
+observation. Rationale/expected consequence has its own field. Export schema v2
+preserves v1 text/progress and shared evidence without inventing quote links;
+browser drafts remain local and exportable. No scientific runs, original texts,
+or machine labels changed. H01 round 1 received assistant-guided example coding
+in chat, so it must not count as independent validation. See D013 and
+`tools/trajectory-inspector/README.md` for the schema and scope.
+
+### 2026-10-02 — Result: strategy clauses sometimes travel
+
+**Time:** not tracked separately.
+
+Result: bounded existing-data audit of 48 complete trajectories (480 myths,
+45 unique runs), fixed by identifiers before reading. All sampled own texts
+and 432 actual exposures verified; 44 selected changes machine-coded, not a
+census. T34/T40 show near-verbatim uptake of specific peer clauses absent from
+earlier own texts and selected unseen comparisons. Rules also revert or disappear.
+Behavioral enactment and a causal explanation of cooperation remain unresolved.
+Independent bounded review passed; human validation is pending, with a
+12-trajectory packet prepared. No new experiment, paid API batch, or runtime
+change. Report: `docs/research/strategy_clause_audit_20261002/README.md`; decision D013.
+
 ### 2026-10-03 — Result: frontier myths repeat the September pattern, but mixing holds families together less
 
 **Time:** ~3 h analysis and review fixes; no API calls.
