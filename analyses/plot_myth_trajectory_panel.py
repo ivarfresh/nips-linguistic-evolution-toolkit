@@ -5,7 +5,7 @@ The trajectory view of myth_convergence_map.py (trajectories_8agent.png), on the
 same PCA map of all 300 n = 10 myth runs, with two changes for the paper: the two
 task orders are pooled into one panel per mixing condition, and the background is
 coloured by family (where that family's round-10 myths end up) instead of one blue
-density. Line = family average per round, light -> dark = round 1 -> 10; big dots =
+density. Line = family average per round, family colour -> dark = round 1 -> 10; big dots =
 rounds 1, 5, 10; small dots = each run's family average at round 10.
 8-agent populations (paper Figure 5b) by default; --size 2 draws the dyads (supplementary).
 The task-order split is in trajectories_<n>agent.png;
@@ -36,10 +36,9 @@ GROUP = {8: "populations", 2: "dyads"}
 
 
 def tone(color, t: float):
-    """t=0: pale tint (round 1); t=1: the family colour darkened by a third (round 10)."""
+    """t=0: the family colour (round 1); t=1: the family colour at 40% brightness (round 10)."""
     c = np.array(to_rgb(color))
-    pale, dark = 1 - (1 - c) * 0.15, c * 0.65
-    return tuple(pale + (dark - pale) * t)
+    return tuple(c * (1 - 0.6 * t))
 PATH_LW = 2.4
 
 
@@ -77,7 +76,7 @@ def main() -> None:
             sx = make_interp_spline(rounds, path.x, k=3)(t)
             sy = make_interp_spline(rounds, path.y, k=3)(t)
             ax.plot(sx, sy, color="k", lw=PATH_LW + 1.1, solid_capstyle="round", zorder=4)  # outline
-            for a in range(len(t) - 1):  # pale -> dark = round 1 -> 10
+            for a in range(len(t) - 1):  # family colour -> dark = round 1 -> 10
                 ax.plot(sx[a:a + 2], sy[a:a + 2], color=tone(color, a / len(t)), lw=PATH_LW,
                         solid_capstyle="round", zorder=4.5)
             # no arrowhead: the spline's last few points wiggle, so a head points the wrong way;
