@@ -70,17 +70,17 @@ def main() -> None:
             for r in MARK_ROUNDS:
                 ax.scatter(*path.loc[r], s=14, color=shade(color, (r - 1) / (rounds[-1] - 1)),
                            edgecolor="k", lw=0.5, zorder=6)
-            ax.text(*path.loc[1], f" {fam}", fontsize=6, color=color, fontweight="bold", zorder=7, va="center")
+            ax.text(*path.loc[1], f" {fam}", fontsize=5, color=color, fontweight="bold", zorder=7, va="center")
         kind = "Single-model" if not mixed else "Mixed"
-        ax.set_title(f"{kind} populations", fontsize=7, pad=2)  # run counts go in the caption
+        ax.set_title(f"{kind} populations", fontsize=5.5, pad=2)  # run counts go in the caption
         print(f"{kind}: {runs.run_id.nunique()} runs")
         ax.set_xlim(*m.xr)  # full-corpus extent, as in trajectories_*.png
         ax.set_ylim(*m.yr)
-        ax.tick_params(labelsize=5, length=2, width=0.5, pad=1)
+        ax.tick_params(labelsize=4.5, length=1.5, width=0.4, pad=1)  # panel (a) prints ~5 pt at column width
         for sp in ax.spines.values():
             sp.set_linewidth(0.6)
-        ax.set_xlabel(m.xlabel, fontsize=6, labelpad=2)
-    axs[0].set_ylabel(m.ylabel, fontsize=6, labelpad=2)
+        ax.set_xlabel(m.xlabel, fontsize=5, labelpad=1.5)
+    axs[0].set_ylabel(m.ylabel, fontsize=5, labelpad=1.5)
     fig.tight_layout(pad=0.3, w_pad=0.6)
     fig.savefig(N10_OUT / OUT_NAME, dpi=600)
     plt.close(fig)
