@@ -43,7 +43,7 @@ def main() -> None:
     rounds = np.array(ROUNDS)
     t = np.linspace(rounds[0], rounds[-1], 120)
 
-    fig, axs = plt.subplots(1, 2, figsize=(6.5, 3.4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(2, 1, figsize=(3.4, 5.6), sharex=True, sharey=True)
     for ax, mixed in zip(axs, (False, True)):
         runs = cell[cell.mixed == mixed]
         ax.set_facecolor("#f2f7fd")  # the pale blue of trajectories_*.png, sampled from that figure
@@ -74,13 +74,14 @@ def main() -> None:
                            edgecolor="k", lw=0.8, zorder=6)
             ax.text(*path.loc[1], f"  {fam}", fontsize=8, color=color, fontweight="bold", zorder=7, va="center")
         kind = "Single-model" if not mixed else "Mixed"
-        ax.set_title(f"{kind} populations ({runs.run_id.nunique()} runs)", fontsize=9, pad=3)
+        ax.set_title(f"{kind} populations", fontsize=9, pad=3)  # run counts go in the caption
+        print(f"{kind}: {runs.run_id.nunique()} runs")
         ax.set_xlim(*xr)
         ax.set_ylim(*yr)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xlabel(m.xlabel, fontsize=8)
-    axs[0].set_ylabel(m.ylabel, fontsize=8)
+        ax.set_ylabel(m.ylabel, fontsize=8)
+    axs[1].set_xlabel(m.xlabel, fontsize=8)
     fig.tight_layout()
     fig.savefig(N10_OUT / OUT_NAME, dpi=300)
     plt.close(fig)
