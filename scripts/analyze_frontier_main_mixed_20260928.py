@@ -132,9 +132,9 @@ def plot_dyads(df):
         ax.tick_params(axis="y", labelsize=7)
         ax.set_title(panel.replace("Opus 5", "Opus"), fontsize=7.5, fontweight="bold", pad=4)
     axes[0][0].set_ylabel("Resources per agent", fontsize=7.5)
-    fig.legend([Patch(facecolor=c, edgecolor="#666666") for c in BOX_COLORS], ORDER_LABELS,
-               loc="lower center", ncol=3, fontsize=7, frameon=False, handlelength=1.2, columnspacing=1.2)
-    fig.tight_layout(rect=(0, .07, 1, 1), w_pad=.6)
+    axes[0][2].legend([Patch(facecolor=c, edgecolor="#666666") for c in BOX_COLORS], ORDER_LABELS,
+                      loc="lower right", fontsize=6, frameon=False, handlelength=1.2, borderaxespad=.2)
+    fig.tight_layout(w_pad=.6)
     fig.savefig(OUTPUT / "frontier_mixed_dyads_resources_boxplots.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
