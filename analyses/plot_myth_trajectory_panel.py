@@ -5,7 +5,7 @@ The trajectory view of myth_convergence_map.py (trajectories_8agent.png), on the
 same PCA map of all 300 n = 10 myth runs, with two changes for the paper: the two
 task orders are pooled into one panel per mixing condition, and the background is
 coloured by family (where that family's round-10 myths end up) instead of one blue
-density. Line = family average per round, family colour -> dark = round 1 -> 10; big dots =
+density. Line = family average per round, faintest background band -> dark = round 1 -> 10; big dots =
 rounds 1, 5, 10; small dots = each run's family average at round 10.
 8-agent populations (paper Figure 5b) by default; --size 2 draws the dyads (supplementary).
 The task-order split is in trajectories_<n>agent.png;
@@ -35,10 +35,23 @@ from scipy.interpolate import make_interp_spline  # noqa: E402
 GROUP = {8: "populations", 2: "dyads"}
 
 
+BG = "#f2f7fd"  # the pale blue of trajectories_*.png, sampled from that figure
+BAND_ALPHA = 0.45
+
+
+def band_colors(color, n_bands: int = 5):
+    """Opaque on-screen colour of each background band, faintest first (contourf colours each band at
+    its level midpoint, then it is blended at BAND_ALPHA over BG)."""
+    cmap = LinearSegmentedColormap.from_list("", [shade(color, 0), color])
+    bg = np.array(to_rgb(BG))
+    return [BAND_ALPHA * np.array(cmap((i + 0.5) / n_bands)[:3]) + (1 - BAND_ALPHA) * bg for i in range(n_bands)]
+
+
 def tone(color, t: float):
-    """t=0: the family colour (round 1); t=1: the family colour at 40% brightness (round 10)."""
-    c = np.array(to_rgb(color))
-    return tuple(c * (1 - 0.6 * t))
+    """t=0: the faintest visible background band of this family (round 1); t=1: the family colour at
+    40% brightness (round 10)."""
+    start, end = band_colors(color)[0], np.array(to_rgb(color)) * 0.4
+    return tuple(start + (end - start) * t)
 PATH_LW = 2.4
 
 
@@ -57,14 +70,14 @@ def main() -> None:
     fig, axs = plt.subplots(1, 2, figsize=(3.35, 1.75), sharex=True, sharey=True)  # drawn at column width
     for ax, mixed in zip(axs, (False, True)):
         runs = cell[cell.mixed == mixed]
-        ax.set_facecolor("#f2f7fd")  # the pale blue of trajectories_*.png, sampled from that figure
+        ax.set_facecolor(BG)
         for fam in ds.families:  # background: where each family's round-10 myths end up
             last = runs[(runs.family == fam) & (runs["round"] == ROUNDS[-1])]
             if last.empty:
                 continue
             d = m.density(last, bw=0.3)
             cmap = LinearSegmentedColormap.from_list(fam, [shade(ds.colors[fam], 0), ds.colors[fam]])
-            ax.contourf(m.gx, m.gy, d, levels=np.linspace(d.max() * 0.15, d.max(), 6), cmap=cmap, alpha=0.45)
+            ax.contourf(m.gx, m.gy, d, levels=np.linspace(d.max() * 0.15, d.max(), 6), cmap=cmap, alpha=BAND_ALPHA)
         for fam in ds.families:
             f = runs[runs.family == fam]
             if f.empty:
@@ -76,7 +89,7 @@ def main() -> None:
             sx = make_interp_spline(rounds, path.x, k=3)(t)
             sy = make_interp_spline(rounds, path.y, k=3)(t)
             ax.plot(sx, sy, color="k", lw=PATH_LW + 1.1, solid_capstyle="round", zorder=4)  # outline
-            for a in range(len(t) - 1):  # family colour -> dark = round 1 -> 10
+            for a in range(len(t) - 1):  # faintest background band -> dark = round 1 -> 10
                 ax.plot(sx[a:a + 2], sy[a:a + 2], color=tone(color, a / len(t)), lw=PATH_LW,
                         solid_capstyle="round", zorder=4.5)
             # no arrowhead: the spline's last few points wiggle, so a head points the wrong way;
