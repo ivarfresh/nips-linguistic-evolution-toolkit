@@ -12,6 +12,7 @@ python3 analyses/myth_convergence_map.py --dataset september_n10
 python3 analyses/myth_map_significance.py --dataset september_n10
 python3 analyses/plot_myth_trajectory_panel.py            # paper Figure 5b (populations)
 python3 analyses/plot_myth_trajectory_panel.py --size 2   # supplementary: the same for dyads
+python3 analyses/plot_myth_trajectory_panel.py --axes time [--size 2]   # same style on the time-axis map
 python3 analyses/plot_myth_map_panel.py          # alternative 5b (round-10 dots)
 ```
 

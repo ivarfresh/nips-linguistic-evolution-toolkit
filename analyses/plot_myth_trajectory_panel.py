@@ -8,11 +8,15 @@ coloured by family (where that family's round-10 myths end up) instead of one bl
 density. Line = family average per round, 50% tint -> dark = round 1 -> 10; big dots =
 rounds 1, 5, 10; small dots = each run's family average at round 10.
 8-agent populations (paper Figure 5b) by default; --size 2 draws the dyads (supplementary).
+--axes time draws the same panels on the chosen axes of myth_map_significance.py instead of
+PCA: x = the direction of largest between-family spread, y = the average round-1 -> round-10
+shift (family_time_map_<n>agent.png, task orders pooled).
 The task-order split is in trajectories_<n>agent.png;
 numbers to cite are the 768-d ones in significance.csv. No API calls.
 
     LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_trajectory_panel.py            # populations
     LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_trajectory_panel.py --size 2   # dyads
+    ... --axes time [--size 2]                                                              # time-axis maps
 """
 from __future__ import annotations
 
@@ -35,6 +39,20 @@ from scipy.interpolate import make_interp_spline  # noqa: E402
 GROUP = {8: "populations", 2: "dyads"}
 
 
+class ChosenMap(Map):
+    """Map on myth_map_significance's chosen axes (x: family spread, y: round-1 -> round-10 shift)."""
+
+    def __init__(self, myths, emb, ds):
+        from analyses.myth_map_significance import chosen_axes
+        x_dir, y_dir = chosen_axes(myths, emb, ds)
+        myths["x"], myths["y"] = emb @ x_dir, emb @ y_dir
+        self.xlabel, self.ylabel = "Family axis", "Time axis (round 1 → 10)"
+        pad = 0.04  # as in family_time_map_<n>agent.png
+        self.xr = (myths.x.min() - pad, myths.x.max() + pad)
+        self.yr = (myths.y.min() - pad, myths.y.max() + pad)
+        self.gx, self.gy = np.mgrid[self.xr[0]:self.xr[1]:200j, self.yr[0]:self.yr[1]:200j]
+
+
 BG = "#f2f7fd"  # the pale blue of trajectories_*.png, sampled from that figure
 BAND_ALPHA = 0.45
 
@@ -51,11 +69,14 @@ PATH_LW = 2.4
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--size", type=int, choices=sorted(GROUP), default=8)
-    size = ap.parse_args().size
-    out_name = f"myth_map_trajectories_{size}agent_pooled.png"
+    ap.add_argument("--axes", choices=["pca", "time"], default="pca")
+    args = ap.parse_args()
+    size = args.size
+    out_name = (f"myth_map_trajectories_{size}agent_pooled.png" if args.axes == "pca"
+                else f"myth_time_map_{size}agent_pooled.png")
     ds = linguistic_datasets.get("september_n10")
     myths, emb = load(ds)
-    m = Map(myths, emb)
+    m = Map(myths, emb) if args.axes == "pca" else ChosenMap(myths, emb, ds)
     cell = myths[myths["size"] == size]
     rounds = np.array(ROUNDS)
     t = np.linspace(rounds[0], rounds[-1], 120)
