@@ -43,7 +43,7 @@ def main() -> None:
     rounds = np.array(ROUNDS)
     t = np.linspace(rounds[0], rounds[-1], 120)
 
-    fig, axs = plt.subplots(2, 1, figsize=(3.4, 5.6), sharex=True, sharey=True)
+    fig, axs = plt.subplots(1, 2, figsize=(3.35, 1.75), sharex=True, sharey=True)  # drawn at column width
     for ax, mixed in zip(axs, (False, True)):
         runs = cell[cell.mixed == mixed]
         ax.set_facecolor("#f2f7fd")  # the pale blue of trajectories_*.png, sampled from that figure
@@ -60,30 +60,32 @@ def main() -> None:
                 continue
             color = ds.colors[fam]
             per_run = f[f["round"] == ROUNDS[-1]].groupby("run_id")[["x", "y"]].mean()
-            ax.scatter(per_run.x, per_run.y, s=6, color=color, alpha=0.8, lw=0.3, edgecolor="white", zorder=3)
+            ax.scatter(per_run.x, per_run.y, s=3, color=color, alpha=0.8, lw=0.2, edgecolor="white", zorder=3)
             path = f.groupby("round")[["x", "y"]].mean().reindex(rounds)
             sx = make_interp_spline(rounds, path.x, k=3)(t)
             sy = make_interp_spline(rounds, path.y, k=3)(t)
             for a in range(len(t) - 1):
-                ax.plot(sx[a:a + 2], sy[a:a + 2], color=shade(color, a / len(t)), lw=3,
+                ax.plot(sx[a:a + 2], sy[a:a + 2], color=shade(color, a / len(t)), lw=1.8,
                         solid_capstyle="round", zorder=4)
             ax.annotate("", xy=(sx[-1], sy[-1]), xytext=(sx[-8], sy[-8]), zorder=5,
-                        arrowprops=dict(arrowstyle="-|>", color=color, lw=0, mutation_scale=16))
+                        arrowprops=dict(arrowstyle="-|>", color=color, lw=0, mutation_scale=9))
             for r in MARK_ROUNDS:
-                ax.scatter(*path.loc[r], s=40, color=shade(color, (r - 1) / (rounds[-1] - 1)),
-                           edgecolor="k", lw=0.8, zorder=6)
-            ax.text(*path.loc[1], f"  {fam}", fontsize=8, color=color, fontweight="bold", zorder=7, va="center")
+                ax.scatter(*path.loc[r], s=14, color=shade(color, (r - 1) / (rounds[-1] - 1)),
+                           edgecolor="k", lw=0.5, zorder=6)
+            ax.text(*path.loc[1], f" {fam}", fontsize=6, color=color, fontweight="bold", zorder=7, va="center")
         kind = "Single-model" if not mixed else "Mixed"
-        ax.set_title(f"{kind} populations", fontsize=9, pad=3)  # run counts go in the caption
+        ax.set_title(f"{kind} populations", fontsize=7, pad=2)  # run counts go in the caption
         print(f"{kind}: {runs.run_id.nunique()} runs")
         ax.set_xlim(*xr)
         ax.set_ylim(*yr)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_ylabel(m.ylabel, fontsize=8)
-    axs[1].set_xlabel(m.xlabel, fontsize=8)
-    fig.tight_layout()
-    fig.savefig(N10_OUT / OUT_NAME, dpi=300)
+        for sp in ax.spines.values():
+            sp.set_linewidth(0.6)
+        ax.set_xlabel(m.xlabel, fontsize=6, labelpad=2)
+    axs[0].set_ylabel(m.ylabel, fontsize=6, labelpad=2)
+    fig.tight_layout(pad=0.3, w_pad=0.6)
+    fig.savefig(N10_OUT / OUT_NAME, dpi=600)
     plt.close(fig)
     print(f"wrote {N10_OUT / OUT_NAME}")
     write_provenance(ds, N10_OUT)  # the folder's provenance.json hashes this figure too
