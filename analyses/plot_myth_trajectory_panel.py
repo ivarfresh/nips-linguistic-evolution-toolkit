@@ -29,10 +29,17 @@ from analyses.myth_convergence_map import (MARK_ROUNDS, N10_OUT, ROUNDS, Map, lo
                                            write_provenance)
 
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
+from matplotlib.colors import LinearSegmentedColormap, to_rgb  # noqa: E402
 from scipy.interpolate import make_interp_spline  # noqa: E402
 
 GROUP = {8: "populations", 2: "dyads"}
+
+
+def tone(color, t: float):
+    """t=0: pale tint (round 1); t=1: the family colour darkened by a third (round 10)."""
+    c = np.array(to_rgb(color))
+    pale, dark = 1 - (1 - c) * 0.15, c * 0.65
+    return tuple(pale + (dark - pale) * t)
 PATH_LW = 2.4
 
 
@@ -70,13 +77,13 @@ def main() -> None:
             sx = make_interp_spline(rounds, path.x, k=3)(t)
             sy = make_interp_spline(rounds, path.y, k=3)(t)
             ax.plot(sx, sy, color="k", lw=PATH_LW + 1.1, solid_capstyle="round", zorder=4)  # outline
-            for a in range(len(t) - 1):  # light -> dark = round 1 -> 10, starting darker than shade(.., 0)
-                ax.plot(sx[a:a + 2], sy[a:a + 2], color=shade(color, 0.35 + 0.65 * a / len(t)), lw=PATH_LW,
+            for a in range(len(t) - 1):  # pale -> dark = round 1 -> 10
+                ax.plot(sx[a:a + 2], sy[a:a + 2], color=tone(color, a / len(t)), lw=PATH_LW,
                         solid_capstyle="round", zorder=4.5)
             # no arrowhead: the spline's last few points wiggle, so a head points the wrong way;
             # light -> dark and the round 1/5/10 dots give the direction
             for r in MARK_ROUNDS:
-                ax.scatter(*path.loc[r], s=14, color=shade(color, 0.35 + 0.65 * (r - 1) / (rounds[-1] - 1)),
+                ax.scatter(*path.loc[r], s=14, color=tone(color, (r - 1) / (rounds[-1] - 1)),
                            edgecolor="k", lw=0.5, zorder=6)
             ax.text(*path.loc[1], f" {fam}", fontsize=5, color=color, fontweight="bold", zorder=7, va="center")
         kind = "Single-model" if not mixed else "Mixed"
