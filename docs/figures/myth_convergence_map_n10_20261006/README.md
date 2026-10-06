@@ -10,12 +10,21 @@ empty GPT response).
 export LINGUISTIC_DATASET=september_n10   # provenance.json lists the n = 10 runs
 python3 analyses/myth_convergence_map.py --dataset september_n10
 python3 analyses/myth_map_significance.py --dataset september_n10
-python3 analyses/plot_myth_map_panel.py   # paper Figure 5b; rewrites provenance.json
+python3 analyses/plot_myth_trajectory_panel.py   # paper Figure 5b (trajectories)
+python3 analyses/plot_myth_map_panel.py          # alternative 5b (round-10 dots)
 ```
 
 Free; reuses the cached embeddings in `data/analysis/linguistic_n10_20261001/`.
 
-## Figure 5b: `myth_map_round10_8agent_myth_game.png`
+## Figure 5b: `myth_map_trajectories_8agent_pooled.png`
+
+The trajectory view of `trajectories_8agent.png`, 8-agent populations, both task
+orders pooled (single-model 60 runs, mixed 120). Line = family average from
+round 1 (light) to round 10 (dark); big dots = rounds 1, 5, 10; small dots = each
+run's family average at round 10; coloured background = where each family's
+round-10 myths end up. The per-task-order panels are in `trajectories_8agent.png`.
+
+## Alternative: `myth_map_round10_8agent_myth_game.png`
 
 8-agent populations, Myth → Game, one task order and size only (never pooled).
 Dots and solid outlines are round-10 myths; dashed outlines are where the same
