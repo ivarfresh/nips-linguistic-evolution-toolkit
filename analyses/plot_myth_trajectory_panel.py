@@ -7,13 +7,16 @@ task orders are pooled into one panel per mixing condition, and the background i
 coloured by family (where that family's round-10 myths end up) instead of one blue
 density. Line = family average per round, light -> dark = round 1 -> 10; big dots =
 rounds 1, 5, 10; small dots = each run's family average at round 10.
-8-agent populations only. The task-order split is in trajectories_8agent.png;
+8-agent populations (paper Figure 5b) by default; --size 2 draws the dyads (supplementary).
+The task-order split is in trajectories_<n>agent.png;
 numbers to cite are the 768-d ones in significance.csv. No API calls.
 
-    LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_trajectory_panel.py
+    LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_trajectory_panel.py            # populations
+    LINGUISTIC_DATASET=september_n10 python3 analyses/plot_myth_trajectory_panel.py --size 2   # dyads
 """
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import sys
 
@@ -29,15 +32,18 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 from scipy.interpolate import make_interp_spline  # noqa: E402
 
-SIZE = 8
-OUT_NAME = "myth_map_trajectories_8agent_pooled.png"
+GROUP = {8: "populations", 2: "dyads"}
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--size", type=int, choices=sorted(GROUP), default=8)
+    size = ap.parse_args().size
+    out_name = f"myth_map_trajectories_{size}agent_pooled.png"
     ds = linguistic_datasets.get("september_n10")
     myths, emb = load(ds)
     m = Map(myths, emb)
-    cell = myths[myths["size"] == SIZE]
+    cell = myths[myths["size"] == size]
     rounds = np.array(ROUNDS)
     t = np.linspace(rounds[0], rounds[-1], 120)
 
@@ -72,7 +78,7 @@ def main() -> None:
                            edgecolor="k", lw=0.5, zorder=6)
             ax.text(*path.loc[1], f" {fam}", fontsize=5, color=color, fontweight="bold", zorder=7, va="center")
         kind = "Single-model" if not mixed else "Mixed"
-        ax.set_title(f"{kind} populations", fontsize=5.5, pad=2)  # run counts go in the caption
+        ax.set_title(f"{kind} {GROUP[size]}", fontsize=5.5, pad=2)  # run counts go in the caption
         print(f"{kind}: {runs.run_id.nunique()} runs")
         ax.set_xlim(*m.xr)  # full-corpus extent, as in trajectories_*.png
         ax.set_ylim(*m.yr)
@@ -82,9 +88,9 @@ def main() -> None:
         ax.set_xlabel(m.xlabel, fontsize=5, labelpad=1.5)
     axs[0].set_ylabel(m.ylabel, fontsize=5, labelpad=1.5)
     fig.tight_layout(pad=0.3, w_pad=0.6)
-    fig.savefig(N10_OUT / OUT_NAME, dpi=600)
+    fig.savefig(N10_OUT / out_name, dpi=600)
     plt.close(fig)
-    print(f"wrote {N10_OUT / OUT_NAME}")
+    print(f"wrote {N10_OUT / out_name}")
     write_provenance(ds, N10_OUT)  # the folder's provenance.json hashes this figure too
 
 
