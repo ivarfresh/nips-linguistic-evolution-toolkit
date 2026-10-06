@@ -7,7 +7,7 @@ start of the Gemini-among-GPT row and at the end of the GPT-among-Sonnet row. Ed
 (6 Oct meeting) asked for nine panels and no plot titles. Same data, same colours.
 
 Two layouts, to choose from:
-  *_two_rows.png  the existing two rows; the second row's duplicate 8 GPT slot is left empty
+  *_two_rows.png  the existing two rows; the second row (no duplicate 8 GPT) is centred
   *_one_row.png   one row ordered by number of GPT agents: 8 Gemini ... 8 GPT ... 8 Sonnet
   *_grid.png      3 x 3: single-model populations, then one row per ladder
 
@@ -88,17 +88,23 @@ def plot(layout, draw, data, ylabel: str, filename: str, legend: bool) -> None:
 
     ncols = len(layout[0][1])
     width = 2.4 * ncols if len(layout) == 1 else 3.6 * ncols if ncols > 3 else 3.4 * ncols
-    fig, axes = plt.subplots(len(layout), ncols, figsize=(width, 3.6 * len(layout) + 0.4), sharey=True, squeeze=False)
-    for axrow, (row_label, compositions) in zip(axes, layout):
-        for ax, composition in zip(axrow, compositions):
-            if composition is None:
-                ax.set_visible(False)
-                continue
+    fig = plt.figure(figsize=(width, 3.6 * len(layout) + 0.4))
+    # Half-column grid so a shorter row (the two-row layout's bottom row) can be centred.
+    grid = fig.add_gridspec(len(layout), 2 * ncols)
+    first = None
+    for r, (row_label, compositions) in enumerate(layout):
+        panels = [c for c in compositions if c is not None]
+        offset = ncols - len(panels)
+        for i, composition in enumerate(panels):
+            ax = fig.add_subplot(grid[r, offset + 2 * i: offset + 2 * i + 2], sharey=first)
+            first = first or ax
             draw(ax, data, composition)
             ax.set_title(label(composition), fontsize=10.5, fontweight="bold")
             ax.spines[["top", "right"]].set_visible(False)
-        if row_label:
-            axrow[0].set_ylabel(row_label, fontsize=11, fontweight="bold", labelpad=10)
+            if i:
+                ax.tick_params(labelleft=False)
+            elif row_label:
+                ax.set_ylabel(row_label, fontsize=11, fontweight="bold", labelpad=10)
     fig.supylabel(ylabel, fontsize=11.5, x=0.004)
     bottom = 0.0
     if legend:
