@@ -38,8 +38,6 @@ def main() -> None:
     myths, emb = load(ds)
     m = Map(myths, emb)
     cell = myths[myths["size"] == SIZE]
-    xr = (cell.x.quantile(0.002) - 0.03, cell.x.quantile(0.998) + 0.03)  # outermost 0.2% fall outside the frame
-    yr = (cell.y.quantile(0.002) - 0.03, cell.y.quantile(0.998) + 0.03)
     rounds = np.array(ROUNDS)
     t = np.linspace(rounds[0], rounds[-1], 120)
 
@@ -76,10 +74,9 @@ def main() -> None:
         kind = "Single-model" if not mixed else "Mixed"
         ax.set_title(f"{kind} populations", fontsize=7, pad=2)  # run counts go in the caption
         print(f"{kind}: {runs.run_id.nunique()} runs")
-        ax.set_xlim(*xr)
-        ax.set_ylim(*yr)
-        ax.set_xticks([])
-        ax.set_yticks([])
+        ax.set_xlim(*m.xr)  # full-corpus extent, as in trajectories_*.png
+        ax.set_ylim(*m.yr)
+        ax.tick_params(labelsize=5, length=2, width=0.5, pad=1)
         for sp in ax.spines.values():
             sp.set_linewidth(0.6)
         ax.set_xlabel(m.xlabel, fontsize=6, labelpad=2)
