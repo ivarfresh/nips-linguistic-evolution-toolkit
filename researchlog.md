@@ -152,6 +152,50 @@ Independent bounded review passed; human validation is pending, with a
 12-trajectory packet prepared. No new experiment, paid API batch, or runtime
 change. Report: `docs/research/strategy_clause_audit_20261002/README.md`; decision D013.
 
+### 2026-10-03 — Result: frontier myths repeat the September pattern, but mixing holds families together less
+
+**Time:** ~3 h analysis and review fixes; no API calls.
+
+Myth map, tests and time views for the main frontier set (Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; 106 myth
+runs), kept separate from September (`docs/figures/myth_convergence_map_frontier_20261003/`). Round-1
+family is recognisable from one myth (98.2–98.7% on unseen runs; shuffle p ≤ 1×10⁻⁴); Opus and Gemini
+Pro open "be generous", Sol "be fair"; one round of play lowers Opus's generous openings (62 → 49 of 77,
+p = 0.03), as with Sonnet. Alone, families drift apart (12 of 12 cells). Mixed, 6 of 12 cells still drift
+apart, 5 show no clear change, 1 moves closer; like for like (pairs) 3 of 6 frontier cells drift apart vs
+0 of 6 in September. Partners converge (29/36 dyad runs, p = 3×10⁻⁴). Joint round-1 map: Gemini Pro sits
+closest to the same lab's September model (centroid distance 0.03), Opus and Sol further. Caveats: 5–6
+runs per cell; the 8-agent mixed designs differ between the sets.
+
+### 2026-10-03 — Result: mixing model families stops their myths drifting apart; myth-map claims all hold at run level
+
+**Time:** ~3 h analysis and review fixes; no API calls.
+
+Significance and time views for the myth map (`analyses/myth_map_significance.py`). The PCA map keeps
+92% of between-family but only 13% of between-round differences, so time is now read in 768-d, on
+myth pairs from different runs. Alone, families' myths drift apart from round 1 to 10 (+0.05 to +0.19
+cosine distance; paired run-bootstrap interval excludes 0 in 11 of 12 cells). Mixed, they do not (−0.10
+to +0.03; 8 of 10 intervals include 0); by round 10 mixed families are 0.05–0.29 closer than
+single-model ones in 10 of 10 cells (9 with interval excluding 0). Partner pairs are excluded, so this is a general shift, not only
+copying. Round-1 family is recognisable from one myth (98.8–99.1% on unseen runs; shuffle p ≤ 1×10⁻⁴);
+dyad partners converge (32/36 runs, p = 2×10⁻⁶). Caveat: 5–6 runs per cell, bootstrap intervals run narrow.
+Write-up: `docs/figures/myth_convergence_map_20261002/README.md`.
+
+### 2026-10-03 — Result: with a myth in play, Sonnet explains its game moves with the myth, not with game bookkeeping
+
+**Time:** ~2.5 h analysis and review fixes; no API calls.
+
+Game-only runs have no myths, so the myth map cannot show them. Their only text is the game reply, and
+only Sonnet 4.5 writes any (4,394 of 4,410 replies with 10+ words; GPT-5 Nano and Gemini 3.7 Flash return
+JSON only). Mapped those explanations from the 111 September runs with Sonnet
+(`analyses/sonnet_game_reasoning_map.py`), with a run-label permutation test against game only.
+Round 1, 8 agents: the one line "Take any myths written in this session into account" (Game → Myth, no
+myth yet) shifts explanations slightly (distance 0.010–0.029, p 0.007–0.032); a written myth (Myth →
+Game) shifts them ten times more (0.22–0.28). From round 2 both myth conditions differ from game only in
+36/36 8-agent and 18/18 Sonnet + Sonnet dyad cells (p < 0.05); mixed dyads have 3 runs against 3 per cell,
+so p cannot go below 0.05. Game only says *cooperative, reciprocate, history*; with myths, *myth, honor,
+courage*. Caveat: myth conditions are told to use the myths; language, not behaviour.
+Write-up: `docs/figures/sonnet_game_reasoning_20261002/README.md`.
+
 ### 2026-10-02 — Correction: the transmission pilot null is narrower than first written (independent review)
 
 **Time:** ~1.5 h (Codex gpt-6-astra review, read-only, plus corrections).
