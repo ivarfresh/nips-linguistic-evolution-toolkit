@@ -26,6 +26,7 @@ myth_moral_judge.py): <data>/myths.csv, <data>/embeddings_mpnet.npy,
 
     python analyses/myth_convergence_map.py
     python analyses/myth_convergence_map.py --dataset frontier   # -> <frontier data>/myth_map
+    LINGUISTIC_DATASET=september_n10 python analyses/myth_convergence_map.py --dataset september_n10
 """
 from __future__ import annotations
 
@@ -57,6 +58,8 @@ ROUND1_NOTE = {"myth_game": "written before any game is played",
 ROUNDS = tuple(range(1, 11))
 MARK_ROUNDS = (1, 5, 10)
 SEPTEMBER_OUT = ROOT / "docs/figures/myth_convergence_map_20261002"
+N10_OUT = ROOT / "docs/figures/myth_convergence_map_n10_20261006"  # the 300 runs behind paper Figure 5
+TRACKED_OUT = {"september": SEPTEMBER_OUT, "september_n10": N10_OUT}  # folders with a provenance.json
 MIN_WORDS = 20  # as in linguistic_uptake
 
 
@@ -207,6 +210,13 @@ def partner_convergence(myths, emb) -> pd.DataFrame:
     return out
 
 
+def write_provenance(ds, out: Path) -> None:
+    from analyses import linguistic_provenance  # picks its dataset from LINGUISTIC_DATASET at import
+    if linguistic_provenance.DS.name != ds.name:
+        raise SystemExit(f"set LINGUISTIC_DATASET={ds.name} so provenance.json lists the {ds.name} runs")
+    linguistic_provenance.main(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dataset", choices=sorted(linguistic_datasets.DATASETS), default=None)
@@ -214,7 +224,7 @@ def main() -> None:
     args = ap.parse_args()
     ds = linguistic_datasets.get(args.dataset)
     if args.out is None:  # never let another corpus overwrite the September figures
-        args.out = SEPTEMBER_OUT if ds.name == "september" else ds.data / "myth_map"
+        args.out = TRACKED_OUT.get(ds.name, ds.data / "myth_map")
     args.out.mkdir(parents=True, exist_ok=True)
 
     myths, emb = load(ds)
@@ -230,9 +240,8 @@ def main() -> None:
     (r1.groupby(["task_order", "family"]).label.value_counts().unstack(fill_value=0)
        .to_csv(args.out / "round1_morals.csv"))
     print(f"wrote {args.out} ({m.xlabel}, {m.ylabel})")
-    if args.out == SEPTEMBER_OUT:  # the same 156 myth runs as the linguistic analysis; run after README edits too
-        from analyses import linguistic_provenance
-        linguistic_provenance.main(args.out)
+    if args.out == TRACKED_OUT.get(ds.name):  # the same runs as the linguistic analysis; run after README edits too
+        write_provenance(ds, args.out)
 
 
 if __name__ == "__main__":
