@@ -46,7 +46,7 @@ def main() -> None:
     fig, axs = plt.subplots(1, 2, figsize=(6.5, 3.4), sharex=True, sharey=True)
     for ax, mixed in zip(axs, (False, True)):
         runs = cell[cell.mixed == mixed]
-        ax.set_facecolor(plt.cm.Blues(0.06))  # the pale blue of trajectories_*.png
+        ax.set_facecolor("#f2f7fd")  # the pale blue of trajectories_*.png, sampled from that figure
         for fam in ds.families:  # background: where each family's round-10 myths end up
             last = runs[(runs.family == fam) & (runs["round"] == ROUNDS[-1])]
             if last.empty:
