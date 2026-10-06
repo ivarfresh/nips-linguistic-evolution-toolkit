@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-03 (broad 300-trajectory exploratory audit running under $30 ceiling).
+Last updated: 2026-10-04 (broad audit partial; API credit exhaustion, source-checked examples available).
 
 ## Research question
 
@@ -41,8 +41,22 @@ and [data audit](../research/mixed_future_data_audit.md).
   waves. Its two accepted remote batches remain separate existing charges.
   Exploratory candidates are authorized despite imperfect calibration;
   validated prevalence, automatic evolution totals and causal attribution are not established.
-  Human reliability remains unestablished; no expanded-corpus findings yet.
+  **2026-10-04 inspection:** 2,224/3,000 technically valid labels; 54 saved
+  requests report account credit exhaustion. No targeted follow-up receipt yet.
+  Partial source readings verify changing punishment/forgiveness prescriptions
+  in A004 and role-sensitive recovery in A001, not behavioral transmission.
+  [Partial findings](../research/narrative_evolution_20261003/broad_audit_300/PARTIAL_FINDINGS_20261004.txt).
+  Human reliability remains unestablished; no complete-corpus findings yet.
   See [D013](decisions/013-strategy-clause-audit.md).
+  **2026-10-04 close reading (Claude, no API spend):** scripted defectors write
+  their own forced zeros into their myths (17/17 Claude and Sol, 0/6 Gemini Flash and Nano, 1/16 cooperators);
+  frontier myths prescribe graded sanctions with a way back, and with a myth task Opus almost
+  never sends a defector $0 (0.01–0.02 of sends per run vs 0.50 game-only).
+  [Reading findings](../research/narrative_evolution_20261003/broad_audit_300/READING_FINDINGS_20261004.md).
+  **Full-text 70% reading (2026-10-04, informed noise only, 2,324 trajectories + blind 240 defectors):**
+  sanctions mostly Opus 5 (88%, graded) / GPT-5.6 Sol (87%) / Sonnet (48%); defectors raise them
+  (frontier graded, September 29% exclusion); blind self-narration Sonnet 60/60, Sol 30/30, Opus 21/30,
+  Gemini Flash 7/60, Nano 0/60. [Results](../research/narrative_evolution_20261003/full_reading_70/RESULTS.md).
 
 - **Myth-pressure pilot (2026-09-28/29, 20/20 audited finals, $27.07):** Sonnet 4.5
   myth-first dyads, word budget (loose / tight) × council between rounds (off / on).

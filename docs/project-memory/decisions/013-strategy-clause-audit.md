@@ -251,3 +251,69 @@ Budget exhaustion may leave incomplete coverage; missing labels are not absent.
 Status: first seven waves (175 requests / 1,050 myths) accepted; outputs pending.
 No new simulation, experimental prompt, paper or inspector changes. Semantic
 review and a source-backed findings synthesis remain required after collection.
+
+## 2026-10-04 inspection — partial outputs and account credit exhaustion
+
+At inspection, 2,224/3,000 myths have technically valid labels and 54 saved
+request errors explicitly report credit_balance_exhausted. The account limit
+is distinct from the audit's $30 guard; $25.657355 includes unresolved/pending
+maximum reservations and is not invoiced spend. Targeted follow-up receipt is
+absent. No new paid calls or budget expansion authorized by this status request.
+
+The [dated partial report](../../research/narrative_evolution_20261003/broad_audit_300/PARTIAL_FINDINGS_20261004.txt)
+preserves snapshot theme counts and purposive complete-source readings of A001
+and A004 with original final hashes rechecked. Punishment includes rejected and
+endorsed instances; A004's withholding, extra chance and limited sanction rules
+change across rounds. A001 distinguishes victimization from perpetration.
+These are textual observations, not validated prevalence, actual game behavior,
+transmission or a between-model comparison. Partial missingness prevents treating
+the output set as the planned balanced sample. Counts may change on collection.
+
+## 2026-10-04 result — close reading, no API spend (Claude)
+
+**User instruction:** after Codex substituted dialogue screening for his
+punishment question, Ivar asked for a reading focused on punishment and on
+how rules and morals change, across the September and frontier runs ("yes go
+ahead … also look at … how rule evolve"). Claude read the per-round closing law
+of all 300 trajectories (all 12 run sets), the full text of all 23 scripted
+defectors, and 16 same-run Opus/Sol cooperators as a baseline. One claim was checked
+against play. Report:
+[READING_FINDINGS_20261004.md](../../research/narrative_evolution_20261003/broad_audit_300/READING_FINDINGS_20261004.md);
+script: [narrative_defector_play_check.py](../../../analyses/narrative_defector_play_check.py).
+
+Results (single-reader coding, quotation-checked, not validated prevalence):
+- Scripted defectors, whose forced zeros sit in their own chat memory, write
+  a protagonist who keeps withholding from good partners in 17/17 Claude
+  (Opus 5, Sonnet 4.5) and Sol cases, 0/6 Gemini 3.7 Flash and GPT-5 Nano,
+  vs 1/16 same-run cooperators. Claude mostly confesses hypocrisy and
+  sometimes justifies itself; Sol uses a cautious character who is
+  corrected.
+- Frontier sanction rules are graded and leave a way back ("send less,
+  never nothing"). In 45 frontier defector runs, cooperators' sends to
+  defectors at round 3 or later are exactly $0 in 0.01–0.02 of decisions per
+  run for Opus with a myth task vs 0.50 (±0.36) game-only. For Sol the
+  figures are about 0.5 vs 0.99 (±0.04). This is a task-condition contrast,
+  not causation by myth content.
+- September Gemini Flash punishes by permanent exclusion. Rule-writing
+  styles differ by family: Opus builds a law code and then drops it, Sol
+  restates one policy, Gemini 3.1 Pro freezes on "exactly half".
+- The audit's task-order splits in punishment flags come from 2–3
+  trajectories per cell and are not findings.
+
+## 2026-10-04 result — full-text reading of 70% of informed-noise runs (Claude readers)
+
+**User instructions:** Ivar asked for the full myths to be read ("full trajectories from start to
+finish ... 70%"), restricted to informed negative noise ("we only want the ones under informed
+negative noise"), via a workflow with up to 30 agents. A closing-sentences pass was stopped after
+it was shown to miss ~91% of the audit's punishment evidence.
+
+424 of 606 informed-noise myth runs (largest-remainder 70% per design cell; all agents) = 2,324
+trajectories read in full; plus blind full-text reading of all 240 scripted defectors and 90
+controls. Every code carries a verbatim quote; 16,354/16,354 verified. Results:
+[RESULTS.md](../../research/narrative_evolution_20261003/full_reading_70/RESULTS.md),
+[summary.json](../../research/narrative_evolution_20261003/full_reading_70/summary.json),
+tally `analyses/narrative_full_reading_tally.py`. AI-reader codes, not human-validated;
+descriptive counts (agents within a run are not independent). The defector self-narration result
+holds blind (Sonnet 60/60, Sol 30/30, Opus 21/30, Gemini Flash 7/60, Nano 0/60; controls 4/90),
+correcting the 23-trajectory reading's Opus 8/8 and Gemini 0/3. Rule-spread within runs is not
+measured (run-level code non-discriminating).
