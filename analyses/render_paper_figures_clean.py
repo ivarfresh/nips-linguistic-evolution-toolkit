@@ -8,6 +8,7 @@ Each figure is re-drawn by the script that made it, with matplotlib patched so t
     ("homogeneous · n = 10 per box" -> dropped), so panels show just the group name,
   * only the figures the paper uses are saved, into --out under their Overleaf paths;
     every other savefig call is skipped, so no tracked figure is overwritten.
+Each script runs in its own process, so style settings cannot leak between figures.
 Data, colours and layout are otherwise unchanged. The scripts may still rewrite their
 CSV side outputs; run from a scratch checkout and discard those.
 
@@ -21,6 +22,7 @@ import argparse
 import importlib.util
 import inspect
 import os
+import re
 from pathlib import Path
 import runpy
 import sys
@@ -59,10 +61,11 @@ def text(self, *args, **kwargs):
 def set_title(self, label, *args, **kwargs):
     if DROP_AXES_TITLES[0]:
         return None
-    lines = str(label).split("\n")
-    if len(lines) > 1 and all(("n =" in l or "n=" in l) for l in lines[1:]):
-        label = lines[0]
-    return _set_title(self, label, *args, **kwargs)
+    # Drop run-count lines ("homogeneous · n = 10 per box"); strip run counts from the rest
+    # ("Opus 5 (frontier, n = 5 runs)" -> "Opus 5 (frontier)") so model names stay.
+    lines = [l for l in str(label).split("\n") if not re.search(r"(^|·)\s*(homogeneous|mixed)\b|n\s*=\s*\d+\s*per box", l)]
+    lines = [re.sub(r",?\s*n\s*=\s*\d+(\s*(runs?|per (box|panel|point)))?", "", l).replace("()", "").strip() for l in lines]
+    return _set_title(self, "\n".join(l for l in lines if l), *args, **kwargs)
 
 
 def savefig(self, fname, *args, **kwargs):
@@ -131,7 +134,9 @@ def main() -> None:
     global OUT
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, required=True)
-    OUT = ap.parse_args().out.expanduser()
+    ap.add_argument("--job", type=int, help="run one job in this process (used internally)")
+    args = ap.parse_args()
+    OUT = args.out.expanduser()
     SCRATCH.mkdir(parents=True, exist_ok=True)
     jobs = [
         lambda: run_script("analyses/figure2_noise_comparison.py", ["--out", str(SCRATCH)],
@@ -172,9 +177,15 @@ def main() -> None:
                            {"replay_ablation_style.png": "figures/replay_ablation/replay_ablation_style.png"}),
         lambda: run_marker_rates({"cross_family_marker_rates.png": "figures/mid_tier_n10/cross_family_marker_rates.png"}),
     ]
-    for job in jobs:
-        job()
-    print("\n".join(SAVED))
+    if args.job is not None:
+        jobs[args.job]()
+        print("\n".join(SAVED))
+        return
+    # One fresh process per figure script, as each was originally run: matplotlib style
+    # settings (e.g. grid lines) from one script must not leak into the next.
+    import subprocess
+    for i in range(len(jobs)):
+        subprocess.run([sys.executable, __file__, "--out", str(OUT), "--job", str(i)], check=True)
 
 
 if __name__ == "__main__":
