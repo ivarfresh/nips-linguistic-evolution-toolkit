@@ -19,6 +19,7 @@ test. No API calls.
 
     python3 analyses/myth_map_significance.py                      # September
     python3 analyses/myth_map_significance.py --dataset frontier   # Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol
+    LINGUISTIC_DATASET=september_n10 python3 analyses/myth_map_significance.py --dataset september_n10
 """
 from __future__ import annotations
 
@@ -31,7 +32,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from analyses import linguistic_datasets  # noqa: E402
-from analyses.myth_convergence_map import ROUNDS, SEPTEMBER_OUT, TASK_ORDERS, load, shade  # noqa: E402
+from analyses.myth_convergence_map import ROUNDS, TASK_ORDERS, TRACKED_OUT, load, shade, write_provenance  # noqa: E402
 
 import matplotlib.pyplot as plt  # noqa: E402  (backend set by myth_convergence_map)
 from scipy import stats  # noqa: E402
@@ -348,7 +349,7 @@ def tests(myths, emb, curves, boots, ds, rng) -> pd.DataFrame:
     for (comp, to), x in r10.groupby(level=["comp", "to"]):
         add(rows, f"  {comp}, {TASK_ORDERS[to]}: partner closeness at round 10", "sign test over runs",
             f"mean +{x.mean():.3f}; {(x > 0).sum()}/{len(x)} runs > 0", stats.binomtest(int((x > 0).sum()), len(x)).pvalue,
-            f"{len(x)} runs", "6 runs: the smallest possible two-sided p is 0.031")
+            f"{len(x)} runs", f"{len(x)} runs: the smallest possible two-sided p is {2 * 0.5 ** len(x):.2g}")
     # 6. round 10: single-model vs mixed distance, same pair, size and task order (independent run sets)
     for (to, size, group, pair), mx in boots.items():
         if group == "single" or (to, size, "single", pair) not in boots:
@@ -409,10 +410,10 @@ def frontier_provenance(out: Path, myths_paths) -> None:
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--dataset", choices=["september", "frontier"], default="september")
+    ap.add_argument("--dataset", choices=["september", "september_n10", "frontier"], default="september")
     args = ap.parse_args()
     ds = linguistic_datasets.get(args.dataset)
-    out = SEPTEMBER_OUT if ds.name == "september" else FRONTIER_OUT
+    out = TRACKED_OUT.get(ds.name, FRONTIER_OUT)
     out.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(SEED)
     myths, emb = load(ds)
@@ -433,9 +434,8 @@ def main() -> None:
     tests(myths, emb, curves, boots, ds, rng).to_csv(out / "significance.csv", index=False, float_format="%.3g")
     print(var.to_string(index=False))
 
-    if ds.name == "september":
-        from analyses import linguistic_provenance
-        linguistic_provenance.main(out)
+    if ds.name in TRACKED_OUT:
+        write_provenance(ds, out)
     else:
         frontier_provenance(out, myths.path.unique())
 
