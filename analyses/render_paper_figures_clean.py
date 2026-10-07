@@ -66,12 +66,31 @@ def set_title(self, label, *args, **kwargs):
     lines = [l for l in str(label).split("\n") if not re.search(r"(^|·)\s*(homogeneous|mixed)\b|n\s*=\s*\d+\s*per box", l)]
     lines = [re.sub(r",?\s*n\s*=\s*\d+(\s*(runs?|per (box|panel|point)))?", "", l).replace("()", "").strip() for l in lines]
     # "Opus 5 (frontier)" / "vs Sonnet 4.5 (September)" -> "Opus 5 vs Sonnet 4.5" (the legend says which is which).
-    lines = [re.sub(r"\s*\((frontier|September)\)", "", l) for l in lines if l]
+    lines = [re.sub(r"\s*\(frontier\)", "", l) for l in lines if l]
     label = "\n".join(lines).replace("\nvs ", " vs ")
     return _set_title(self, label, *args, **kwargs)
 
 
+LABEL_FIXES = [
+    ("frontier arm (left box)", "frontier model (left box)"),
+    ("September reference (right box)", "main model, same provider (right box)"),
+    (" (high)", ""),
+]
+
+
+def clean_label(text: str) -> str:
+    """Paper wording: no 'September', no '(high)', Sol always with its GPT version."""
+    for old, new in LABEL_FIXES:
+        text = text.replace(old, new)
+    text = re.sub(r"\s*\(?September\)?", "", text)
+    return re.sub(r"(GPT-[\d.]+ )?\bSol\b", lambda m: m.group(0) if m.group(1) else "GPT-5.6 Sol", text)
+
+
 def savefig(self, fname, *args, **kwargs):
+    from matplotlib.text import Text
+    for t in self.findobj(Text):
+        if t.get_text():
+            t.set_text(clean_label(t.get_text()))
     name = Path(str(fname)).name
     if name not in TARGETS:
         # Side figures the script reads back go to the scratch folder; anything else is skipped.
