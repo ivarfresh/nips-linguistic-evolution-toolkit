@@ -65,7 +65,10 @@ def set_title(self, label, *args, **kwargs):
     # ("Opus 5 (frontier, n = 5 runs)" -> "Opus 5 (frontier)") so model names stay.
     lines = [l for l in str(label).split("\n") if not re.search(r"(^|·)\s*(homogeneous|mixed)\b|n\s*=\s*\d+\s*per box", l)]
     lines = [re.sub(r",?\s*n\s*=\s*\d+(\s*(runs?|per (box|panel|point)))?", "", l).replace("()", "").strip() for l in lines]
-    return _set_title(self, "\n".join(l for l in lines if l), *args, **kwargs)
+    # "Opus 5 (frontier)" / "vs Sonnet 4.5 (September)" -> "Opus 5 vs Sonnet 4.5" (the legend says which is which).
+    lines = [re.sub(r"\s*\((frontier|September)\)", "", l) for l in lines if l]
+    label = "\n".join(lines).replace("\nvs ", " vs ")
+    return _set_title(self, label, *args, **kwargs)
 
 
 def savefig(self, fname, *args, **kwargs):
