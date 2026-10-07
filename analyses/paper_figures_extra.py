@@ -15,6 +15,7 @@ frontier finals. Run through analyses/render_paper_figures_clean.py. No API call
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import sys
 
@@ -28,6 +29,9 @@ SHARES = ROOT / "docs/figures/linguistic_analysis_n10_20261001/moral_label_share
 OUTPUT = ROOT / "data/analysis/_clean_render_scratch"  # the copies the paper uses come via render_paper_figures_clean.py
 LABELS = ["be generous", "be fair", "be cautious"]
 COLORS = ["#4a9a5c", "#d9aa3a", "#a83236"]  # as the current Figure 6
+# Figure 4a y-axis range. Per-run dots span 50.0-75.0 (54 runs), so (45, 80) shows every dot.
+# Override for a one-off render with FIG4A_YLIM="lo,hi" in the environment.
+FIG4A_YLIM = (45, 80)  # paper choice, 2026-10-08
 NAME = {"Gemini": "Gemini-3.7", "Sonnet": "Sonnet-4.5", "GPT": "GPT-5-Nano"}
 SETTING = {"2-agent homogeneous": "single-model dyads", "2-agent mixed": "mixed dyads",
            "8-agent homogeneous": "single-model populations", "8-agent mixed": "mixed populations"}
@@ -98,6 +102,14 @@ def supplement(g: pd.DataFrame) -> None:
     plt.close(fig)
 
 
+def fig4a_ylim() -> tuple[float, float]:
+    raw = os.environ.get("FIG4A_YLIM")
+    if not raw:
+        return FIG4A_YLIM
+    lo, hi = (float(x) for x in raw.split(","))
+    return lo, hi
+
+
 def figure4a() -> None:
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
@@ -107,6 +119,11 @@ def figure4a() -> None:
                .groupby(["panel", "task_order", "path"], as_index=False)["resources"].mean())
     if per_run["path"].nunique() != 54:
         raise SystemExit("expected 54 mixed frontier dyads")
+    ylim = fig4a_ylim()
+    lo, hi = per_run["resources"].min(), per_run["resources"].max()
+    print(f"Figure 4a per-run dots: min {lo:.2f}, max {hi:.2f}; y-axis {ylim[0]:g}-{ylim[1]:g}")
+    if lo < ylim[0] or hi > ylim[1]:
+        raise SystemExit(f"Figure 4a y-axis {ylim} would hide dots (range {lo:.2f}-{hi:.2f})")
     panels = [("Opus 5 + Sol", "Opus-5 + GPT-5.6-Sol"), ("Opus 5 + Gemini", "Opus-5 + Gemini-3.1"),
               ("Gemini + Sol", "Gemini-3.1 + GPT-5.6-Sol")]
     fig, axes = plt.subplots(1, 3, figsize=(5.2, 4.4), sharey=True)
@@ -121,7 +138,7 @@ def figure4a() -> None:
         ax.set_title(title.replace(" + ", " +\n"), fontsize=9.5, fontweight="bold")
         ax.set_xticks([])
         ax.set_xlim(.4, 3.6)
-        ax.set_ylim(0, 80)
+        ax.set_ylim(*ylim)
         ax.grid(axis="y", alpha=.25)
         ax.spines[["top", "right"]].set_visible(False)
     axes[0].set_ylabel("Resources per agent")

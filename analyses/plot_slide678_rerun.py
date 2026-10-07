@@ -44,7 +44,12 @@ ALLOWED_DIFFERENCES = {
 }
 
 
-def load_verified_values(run_root=RUN_ROOT, receipt_path=RECEIPT) -> tuple[dict[str, list[float]], dict, list[Path]]:
+def load_verified_values(run_root=RUN_ROOT, receipt_path=RECEIPT, return_agents: bool = False):
+    """Joint (all-agent) final balances per cell, checked against the receipt.
+
+    With ``return_agents`` also returns the number of agents per run (one value
+    across all 35 finals, or a ValueError).
+    """
     receipt = json.loads(receipt_path.read_text())
     if receipt.get("completed") != 35 or receipt.get("planned") != 35:
         raise ValueError("Completion receipt does not certify all 35 planned runs")
@@ -55,6 +60,7 @@ def load_verified_values(run_root=RUN_ROOT, receipt_path=RECEIPT) -> tuple[dict[
     values = {cell: [] for cell, _, _ in CELLS}
     seen = set()
     sources: list[Path] = []
+    agent_counts: set[int] = set()
     for entry in entries:
         path = run_root / entry["path"]
         if path in seen:
@@ -67,6 +73,7 @@ def load_verified_values(run_root=RUN_ROOT, receipt_path=RECEIPT) -> tuple[dict[
         history = data["conversation_history"]
         if [row.get("round") for row in history] != list(range(1, 11)):
             raise ValueError(f"Not a complete ten-round final: {path}")
+        agent_counts.add(len(history[-1]["balances"]))
         joint = float(sum(history[-1]["balances"].values()))
         if not np.isclose(joint, entry["joint_resources"]):
             raise ValueError(f"Receipt value mismatch: {path}")
@@ -77,6 +84,10 @@ def load_verified_values(run_root=RUN_ROOT, receipt_path=RECEIPT) -> tuple[dict[
         recorded = sorted(receipt["cells"][cell]["values"])
         if len(values[cell]) != 5 or not np.allclose(values[cell], recorded):
             raise ValueError(f"Cell {cell} does not contain five receipt-matched finals")
+    if return_agents:
+        if len(agent_counts) != 1:
+            raise ValueError(f"Runs differ in agent count: {sorted(agent_counts)}")
+        return values, receipt, sources, agent_counts.pop()
     return values, receipt, sources
 
 
@@ -87,13 +98,27 @@ def main() -> None:
     parser.add_argument("--ceiling", type=float, default=CEILING)
     parser.add_argument("--population", default="8-agent rotating population")
     parser.add_argument("--output-stem", default="slide678_cell_means")
+    parser.add_argument(
+        "--per-agent", action=argparse.BooleanOptionalAction, default=True,
+        help="Plot resources per agent (joint balance / number of agents), the paper "
+             "rendering (default). --no-per-agent draws the older joint-balance plot. "
+             "--ceiling is always the joint ceiling and is divided the same way.",
+    )
     args = parser.parse_args()
     receipt_path = args.run_root / "completion_receipt.json"
-    values, receipt, sources = load_verified_values(args.run_root, receipt_path)
+    joint_values, receipt, sources, n_agents = load_verified_values(
+        args.run_root, receipt_path, return_agents=True)
+    scale = n_agents if args.per_agent else 1
+    values = {cell: [v / scale for v in vals] for cell, vals in joint_values.items()}
+    ceiling = args.ceiling / scale
+    # Label offset and number format: unchanged for the joint plot, scaled for per agent.
+    label_offset = 12 / scale
+    fmt = ".1f" if args.per_agent else ".0f"
     configure_matplotlib()
     fig, ax = plt.subplots(figsize=(15, 7))
     positions = np.arange(len(CELLS))
     rng = np.random.default_rng(seed=6)
+    label_tops = []
 
     for index, (cell, _label, color) in enumerate(CELLS):
         observations = values[cell]
@@ -115,25 +140,32 @@ def main() -> None:
             linewidth=0.8,
             zorder=3,
         )
+        # Sit the label above both the error bar and the highest dot.
+        label_y = max(mean + sd, max(observations)) + label_offset
+        label_tops.append(label_y)
         ax.text(
-            positions[index], mean + sd + 12,
-            f"${mean:.0f}\n(±${sd:.0f})\nn={len(observations)}",
+            positions[index], label_y,
+            f"${mean:{fmt}}\n(±${sd:{fmt}})\nn={len(observations)}",
             ha="center", va="bottom", fontsize=9.5,
         )
 
     baseline_mean = statistics.mean(values["baseline"])
     ax.axhline(
-        args.ceiling, color="red", linestyle="--", alpha=0.55,
-        label=f"Cooperation ceiling (${int(args.ceiling)})",
+        ceiling, color="red", linestyle="--", alpha=0.55,
+        label=f"Cooperation ceiling (${ceiling:.0f}{' per agent' if args.per_agent else ''})",
     )
     ax.axhline(
         baseline_mean, color="#7f7f7f", linestyle=":", alpha=0.6,
-        linewidth=1.4, label=f"Baseline mean (${baseline_mean:.0f})",
+        linewidth=1.4, label=f"Baseline mean (${baseline_mean:{fmt}})",
     )
     ax.set_xticks(positions)
     ax.set_xticklabels([label for _, label, _ in CELLS], fontsize=10)
-    ax.set_ylabel(f"Joint balance after 10 rounds ({args.population})")
-    ax.set_ylim(0, args.ceiling * 7 / 6)
+    if args.per_agent:
+        ax.set_ylabel(f"Resources per agent after 10 rounds ({args.population})")
+    else:
+        ax.set_ylabel(f"Joint balance after 10 rounds ({args.population})")
+    # Leave room for the three-line value label above the tallest bar.
+    ax.set_ylim(0, max(ceiling * 7 / 6, max(label_tops) + ceiling * 0.16))
     ax.legend(loc="upper left", fontsize=10)
     ax.grid(axis="y", alpha=0.3)
     means = {cell: statistics.mean(cell_values) for cell, cell_values in values.items()}
@@ -158,12 +190,16 @@ def main() -> None:
     summary = {
         "completion_receipt_sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
         "plan_sha256": receipt["plan_sha256"],
+        "n_agents": n_agents,
+        "per_agent": args.per_agent,
+        "plotted_unit": "resources per agent" if args.per_agent else "joint balance",
         "cells": {
             cell: {
                 "n": len(values[cell]),
                 "mean": statistics.mean(values[cell]),
                 "sd": statistics.stdev(values[cell]),
                 "values": values[cell],
+                "joint_values": joint_values[cell],
             }
             for cell, _, _ in CELLS
         },

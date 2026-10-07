@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Resource boxplot grid for the 2026-09-18 frontier rerun against the September references.
+"""Resource boxplot grid for the 2026-09-18 frontier rerun against the n = 10 main-model runs.
 
-Rows: 2-agent and 8-agent runs. Columns: one per provider, frontier arm beside its
-September predecessor (Opus 5 vs Sonnet 4.5, Gemini 3.1 Pro vs 3.7 Flash, GPT-5.6 Sol at
-effort high vs GPT-5 Nano at high). Three task-order groups per panel; within each group the
-frontier box sits left and the September box right. Each dot is one agent's cumulative
-resources after round 10, so a 2-agent run contributes two dots and an 8-agent run eight.
+Rows: 2-agent and 8-agent runs. Columns: one per provider, frontier arm beside the main
+model from the same provider (Opus 5 vs Sonnet 4.5, Gemini 3.1 Pro vs 3.7 Flash, GPT-5.6 Sol
+at effort high vs GPT-5 Nano at high). Three task-order groups per panel; within each group
+the frontier box sits left and the main-model box right. Each dot is one run: the mean
+cumulative resources over that run's agents after round 10 (so no dot exceeds 75).
 Frontier runs come from the launcher-audited finals under data/json/noise_experiments/
-frontier_rerun_20260918/ (pilot: one run per cell; main stage adds four more).
+frontier_rerun_20260918/ (pilot: one run per cell; main stage adds four more). Main-model
+runs are the single-model pools of Table 1 at n = 10 (analyses/table1_n10.n10_pools():
+the five September runs plus the five 2026-10-01 extension runs per cell).
 
 Outputs (docs/figures/frontier_rerun_20260918/): resources_boxplots.{png,svg,pdf},
-cell_summary.csv (per arm x size x task order: runs, agents, mean (sd) resources).
+cell_summary.csv (per arm x size x task order: runs, mean (sd over runs) resources).
 """
 from __future__ import annotations
 import json
@@ -102,12 +104,19 @@ def audited_frontier_finals():
             print(f"skipping unaudited final (not in any receipt): {p.relative_to(ROOT)}")
 
 
+def main_model_n10_finals():
+    """Single-model dyads and populations of Table 1 at n = 10 (September runs + 2026-10-01 extension)."""
+    from analyses.table1_n10 import n10_pools
+    pools = n10_pools()
+    return pools["dyad"][1] + pools["dyad"][3] + pools["pop"][1] + pools["pop"][3]
+
+
 def load():
     rows = []
     for p in audited_frontier_finals():
         rows += rows_for(p, "frontier")
-    for p in finals(SEPTEMBER_ROOT, NO_DEFECTOR_PARAMS):
-        rows += rows_for(p, "september")
+    for p in main_model_n10_finals():
+        rows += rows_for(p, "main_n10")
     df = pd.DataFrame(rows)
     df = df[df["arm"].isin(PLOTTED_ARMS)].copy()  # the Sol-none smoke run is not part of any comparison
     runs = df.drop_duplicates("path")
@@ -126,9 +135,18 @@ def write_provenance(df):
     return document
 
 
-def cell_summary(df):
-    g = df.groupby(["source", "arm", "num_agents", "task_order"])
-    out = g.agg(runs=("path", "nunique"), agents=("resources", "size"),
+def per_run(df):
+    """One row per run: mean cumulative resources over the run's agents after round 10."""
+    out = (df.groupby(["source", "arm", "column", "num_agents", "task_order", "replicate_id", "path"])
+           .agg(agents=("resources", "size"), resources=("resources", "mean")).reset_index())
+    if out["resources"].max() > 75 + 1e-9:
+        raise RuntimeError("a run mean exceeds 75; per-run aggregation is wrong")
+    return out
+
+
+def cell_summary(runs):
+    g = runs.groupby(["source", "arm", "num_agents", "task_order"])
+    out = g.agg(runs=("path", "nunique"), agents=("agents", "sum"),
                 resources_mean=("resources", "mean"), resources_sd=("resources", "std")).reset_index()
     out["resources"] = out.apply(lambda r: f"{r.resources_mean:.1f} (±{0 if np.isnan(r.resources_sd) else r.resources_sd:.1f})", axis=1)
     return out
@@ -159,23 +177,23 @@ def plot(df):
                                edgecolors="white", linewidths=.5, zorder=3, alpha=.9)
             ax.set_xticks([1, 2, 3], ORDER_LABELS)
             ax.set_xlim(.5, 3.5)
-            ax.set_ylim(0, 95)
+            ax.set_ylim(0, 80)
             ax.set_axisbelow(True)
             ax.grid(axis="y", alpha=.22)
             ax.spines[["top", "right"]].set_visible(False)
             n_front = sorted({counts[(0, t)] for t in TASK_ORDERS}); n_sept = sorted({counts[(1, t)] for t in TASK_ORDERS})
-            ax.set_title(f"{front} (frontier, n = {'/'.join(map(str, n_front))} runs)\nvs {sept} (September, n = {'/'.join(map(str, n_sept))})",
+            ax.set_title(f"{front} (frontier, n = {'/'.join(map(str, n_front))} runs)\nvs {sept} (n = {'/'.join(map(str, n_sept))} runs)",
                          fontsize=11, fontweight="bold", pad=8)
         axes[r][0].set_ylabel(f"{n_agents} agents", fontsize=12, fontweight="bold", labelpad=14)
     fig.legend(handles=[Patch(facecolor="#cccccc", edgecolor="#666666", label="frontier arm (left box)"),
-                        Patch(facecolor="white", edgecolor="#666666", hatch="////", label="September reference (right box)")],
+                        Patch(facecolor="white", edgecolor="#666666", hatch="////", label="main model, same provider (right box)")],
                loc="upper center", bbox_to_anchor=(.5, .935), ncol=2, fontsize=9, frameon=False)
-    fig.suptitle("Final cumulative resources per agent\nFrontier rerun vs September references · Informed negative-only noise · No defectors · Round 10",
+    fig.suptitle("Final cumulative resources (mean over a run's agents)\nFrontier rerun vs n = 10 main-model runs · Informed negative-only noise · No defectors · Round 10",
                  fontsize=14, fontweight="bold")
-    fig.text(.5, .012, "Each dot = one agent at round 10 (2 per dyad run, 8 per population run)\n"
+    fig.text(.5, .012, "Each dot = one run: mean resources over its agents at round 10\n"
              "Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR",
              ha="center", fontsize=9, color="#444444")
-    fig.supylabel("Cumulative resources per agent", fontsize=12, x=.006)
+    fig.supylabel("Mean resources per agent at round 10 (one dot per run)", fontsize=12, x=.006)
     fig.tight_layout(rect=(.045, .05, 1, .905), h_pad=2.4, w_pad=2.2)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "svg", "pdf"):
@@ -185,10 +203,11 @@ def plot(df):
 
 def main():
     df = load()
-    summary = cell_summary(df)
+    runs = per_run(df)
+    summary = cell_summary(runs)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     summary.to_csv(OUTPUT / "cell_summary.csv", index=False)
-    plot(df)
+    plot(runs)
     document = write_provenance(df)
     print(summary[["source", "arm", "num_agents", "task_order", "runs", "resources"]].to_string(index=False))
     print(f"figure: {OUTPUT / 'resources_boxplots.png'}; provenance: {document['n_runs']} runs, "
