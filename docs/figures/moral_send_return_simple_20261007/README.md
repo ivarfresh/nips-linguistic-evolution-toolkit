@@ -29,7 +29,8 @@ cautious-vs-fair interval below is wide, so "barely" fits; "no effect" would
 overclaim for cautious myths.
 
 **Matching test.** Agent-within-run + round fixed effects, own last move
-(`linguistic_analysis_n10_20261001/moral_carryover_models.csv`, all settings,
+(`linguistic_analysis_n10_20261001/moral_carryover_models.csv`; the shown-myth rows
+are refitted into `carryover_test_shown_label.csv` here; all settings,
 "own + shown label, own lag"): shown generous vs fair −0.004 sent/5
 (95% CI −0.021 to 0.012, p = 0.62); shown cautious vs fair +0.007
 (−0.031 to 0.045, p = 0.72); returns +0.001 and +0.003, both p > 0.5. That model includes Gemini players
@@ -42,6 +43,8 @@ whatever it reads. 2- and 8-agent, homogeneous and mixed, both task orders are
 pooled (260 runs; sent: 5,528 decisions, returns: 4,797). Lines are means over
 runs, each run averaged first; bands are 95% t-intervals across runs. Round 1
 has no shown myth; round 2 holds only myth→game runs. Descriptive.
+
+The frontier version is in `../moral_send_return_simple_frontier_20261007/`.
 
 Reproduce (no API calls):
 
