@@ -12,13 +12,19 @@ played (judge: GLM-5.2).
   more than those who read a fair one (averaged over decisions: 0.996 vs 0.946
   of the endowment) and returned more (0.50 vs 0.44).
 - **Bottom row, the same player compared with itself.** The two lines mostly
-  overlap. In rounds 2–4 the "fair" line sits a little lower for sends (about
-  −0.03 against 0), and the two lines meet from round 5 on.
+  overlap. For sends the "fair" line starts a little lower (about −0.03 in
+  rounds 2–4) and ends a little higher (about +0.02 in rounds 9–10). That looks
+  like Sol's sends rising over the run, which the subtraction turns into "low
+  early, high late", rather than an effect of the myth.
 
 The top-row gap is mainly about which model wrote the myth and which model is
-reading. 74% of the generous myths shown were written by Opus 5, while 73% of
-the fair ones were written by GPT-5.6 Sol. Opus sends close to everything
-whatever it reads (1.00 / 0.99 / 1.00 after cautious / fair / generous myths).
+reading. 74% of the decisions after a generous myth follow one written by Opus 5,
+while 73% of those after a fair myth follow one written by GPT-5.6 Sol. Opus
+sends close to everything whatever it reads (1.00 / 0.99 / 1.00 after cautious /
+fair / generous myths). Sol on its own still shows a raw gap (sends 0.93 after
+fair vs 0.99 after generous myths), but the same-player test removes it: Sol
+reads generous myths mostly in mixed runs next to Opus, where it plays more
+generously anyway.
 
 **Matching test.** Agent-within-run + round fixed effects, own last move, all
 frontier families, 106 runs (`carryover_test_shown_label.csv`). Shown generous

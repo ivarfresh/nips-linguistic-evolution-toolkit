@@ -26,7 +26,8 @@ runs are hidden. Round 2 holds only myth→game runs (game→myth players first
 act on a shown myth in round 3). Descriptive; the matching test is the
 agent-fixed-effects carryover model in moral_carryover_models.csv.
 
-The script also refits that test (shown-myth rows only) into
+The script also refits that test (own label, shown label and own last move;
+the shown-label coefficients are saved) into
 carryover_test_shown_label.csv, with all families included.
 
 No API calls. Run from the repo root:
@@ -88,7 +89,7 @@ def main() -> None:
     test = mc.carryover_models(full)
     test = test[(test["fe"] == "agent") & (test["setting"] == "all settings")
                 & (test["model"] == "own + shown label, own lag") & (test["predictor"] == "shown_label")]
-    test.to_csv(out / "carryover_test_shown_label.csv", index=False)
+    test.drop(columns=["error"], errors="ignore").to_csv(out / "carryover_test_shown_label.csv", index=False)
     print(test[["role", "level", "coef", "ci_low", "ci_high", "p", "n_decisions", "n_runs"]].round(3).to_string(index=False))
 
     d = full[full["family"] != ceiling_family].dropna(subset=["shown_label", "coop"]).copy()
