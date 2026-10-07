@@ -16,8 +16,8 @@ shown before the decision. Two rows:
           own average move in that role over the run. If reading a generous myth
           changed play, the green line would sit above the others here.
 
-Gemini 3.7 Flash is left out (it sends and returns at the ceiling whatever it
-reads, as in the appendix grids). All settings (2 and 8 agents, homogeneous and
+Gemini 3.7 Flash (September) and Gemini 3.1 Pro (frontier) are left out: they
+send at the ceiling whatever they read, as in the appendix grids. All settings (2 and 8 agents, homogeneous and
 mixed) and both task orders are pooled. Lines are means over runs (each run
 averaged first). Round 1 has no shown myth (players first see another
 player's myth after writing their own), so the x axis starts at round 2.
@@ -26,8 +26,13 @@ runs are hidden. Round 2 holds only myth→game runs (game→myth players first
 act on a shown myth in round 3). Descriptive; the matching test is the
 agent-fixed-effects carryover model in moral_carryover_models.csv.
 
+The script also refits that test (own label, shown label and own last move;
+the shown-label coefficients are saved) into
+carryover_test_shown_label.csv, with all families included.
+
 No API calls. Run from the repo root:
   LINGUISTIC_DATASET=september_n10 python3 analyses/plot_moral_send_return_simple.py
+  LINGUISTIC_DATASET=frontier python3 analyses/plot_moral_send_return_simple.py   # writes its own provenance
 """
 from __future__ import annotations
 
@@ -43,9 +48,16 @@ sys.path.insert(0, str(ROOT))
 from analyses._shared import configure_matplotlib  # noqa: E402
 from analyses import moral_carryover as mc  # noqa: E402
 
-OUT = ROOT / "docs/figures/moral_send_return_simple_20261007"
+# Per corpus: output folder, the family left out (sends at the ceiling whatever it reads)
+# and the models named in the title.
+SETUP = {
+    "september_n10": (ROOT / "docs/figures/moral_send_return_simple_20261007", "Gemini",
+                      "Sonnet 4.5 and GPT-5 Nano", {"coop": 0.25, "coop_vs_own_avg": -0.35}),
+    "frontier": (ROOT / "docs/figures/moral_send_return_simple_frontier_20261007", "GeminiPro",
+                 "Claude Opus 5 and GPT-5.6 Sol", {"coop": 0.3, "coop_vs_own_avg": -0.08}),
+}
+MIN_LABEL_DECISIONS = 50  # a label read fewer times than this in a role gets no line (frontier 'be cautious')
 MIN_RUNS = 5
-YMIN = {"coop": 0.25, "coop_vs_own_avg": -0.35}  # keep wide early bands inside the axes
 ROLES = (("investor", "amount sent / 5"), ("trustee", "share of the pot returned"))
 
 
@@ -65,29 +77,43 @@ def per_round(d: pd.DataFrame, value: str) -> pd.DataFrame:
 
 def main() -> None:
     import matplotlib.pyplot as plt
-    if mc._DS.name != "september_n10":
-        raise SystemExit("run with LINGUISTIC_DATASET=september_n10")
-    OUT.mkdir(parents=True, exist_ok=True)
+    if mc._DS.name not in SETUP:
+        raise SystemExit("run with LINGUISTIC_DATASET=september_n10 or LINGUISTIC_DATASET=frontier")
+    out, ceiling_family, models, ymin = SETUP[mc._DS.name]  # ymin keeps wide early bands inside the axes
+    out.mkdir(parents=True, exist_ok=True)
     myths, dec = mc.load("moral_labels_z-ai__glm-5.2.csv")
-    d = mc.decision_table(myths, dec)
-    d = d[d["family"] != "Gemini"].dropna(subset=["shown_label", "coop"]).copy()
+    full = mc.decision_table(myths, dec)
+
+    # The matching test: agent-within-run + round fixed effects, own last move, all families
+    # (the same model moral_carryover.py writes to moral_carryover_models.csv).
+    test = mc.carryover_models(full)
+    test = test[(test["fe"] == "agent") & (test["setting"] == "all settings")
+                & (test["model"] == "own + shown label, own lag") & (test["predictor"] == "shown_label")]
+    test.drop(columns=["error"], errors="ignore").to_csv(out / "carryover_test_shown_label.csv", index=False)
+    print(test[["role", "level", "coef", "ci_low", "ci_high", "p", "n_decisions", "n_runs"]].round(3).to_string(index=False))
+
+    d = full[full["family"] != ceiling_family].dropna(subset=["shown_label", "coop"]).copy()
     d["coop_vs_own_avg"] = d["coop"] - d.groupby(["run_id", "agent", "role"])["coop"].transform("mean")
 
     table = pd.concat([per_round(d, "coop"), per_round(d, "coop_vs_own_avg")], ignore_index=True)
-    table.to_csv(OUT / "send_return_by_shown_moral.csv", index=False)
+    table.to_csv(out / "send_return_by_shown_moral.csv", index=False)
 
     configure_matplotlib()
     fig, axes = plt.subplots(2, 2, figsize=(10, 6.6), sharex=True, layout="constrained")
     rows = (("coop", "What players did"),
             ("coop_vs_own_avg", "Same player compared with itself\n(move minus its own average)"))
+    dropped = set()
     for i, (measure, ylabel) in enumerate(rows):
         for j, (role, title) in enumerate(ROLES):
             ax = axes[i, j]
             for lab in mc.LABELS:
                 s = table[(table["measure"] == measure) & (table["role"] == role) & (table["shown_label"] == lab)]
+                if s["n_decisions"].sum() < MIN_LABEL_DECISIONS:
+                    dropped.add(lab)
+                    continue
                 s = s.set_index("round").reindex(range(2, 11))
                 s.loc[s["n_runs"] < MIN_RUNS, ["mean", "ci_low", "ci_high"]] = np.nan
-                ax.fill_between(s.index, s["ci_low"].clip(lower=YMIN[measure]), s["ci_high"], color=mc.LABEL_COLORS[lab], alpha=0.15, lw=0)
+                ax.fill_between(s.index, s["ci_low"].clip(lower=ymin[measure]), s["ci_high"], color=mc.LABEL_COLORS[lab], alpha=0.15, lw=0)
                 ax.plot(s.index, s["mean"], color=mc.LABEL_COLORS[lab], lw=2, marker="o", ms=3,
                         label=f"read a '{lab}' myth")
             if measure == "coop_vs_own_avg":
@@ -99,18 +125,23 @@ def main() -> None:
             ax.grid(alpha=0.3)
             ax.set_xticks(range(2, 11))
         axes[i, 1].sharey(axes[i, 0])
-        axes[i, 0].set_ylim(bottom=YMIN[measure])
+        axes[i, 0].set_ylim(bottom=ymin[measure])
     for ax in axes[-1]:
         ax.set_xlabel("round")
     axes[0, 0].legend(fontsize=8, loc="lower right", frameon=False)
     fig.suptitle("Does the moral of the myth a player just read change how it plays?\n"
-                 "Sonnet 4.5 and GPT-5 Nano, all settings and task orders pooled; "
-                 f"bands: 95% CI across runs (n = {d['run_id'].nunique()} runs)", fontsize=11)
-    fig.savefig(OUT / "send_return_by_shown_moral.png", dpi=200)
+                 f"{models}, all settings and task orders pooled; "
+                 f"bands: 95% CI across runs (n = {d['run_id'].nunique()} runs)"
+                 + "".join(f"\n'{lab}' not shown: fewer than {MIN_LABEL_DECISIONS} decisions follow such a myth"
+                           for lab in sorted(dropped)), fontsize=11)
+    fig.savefig(out / "send_return_by_shown_moral.png", dpi=200)
     plt.close(fig)
 
     overall = d.groupby(["role", "shown_label"])[["coop", "coop_vs_own_avg"]].mean().round(3)
     print(overall.to_string())
+    if mc._DS.name == "frontier":
+        from analyses.myth_map_significance import frontier_provenance
+        frontier_provenance(out, myths["path"].unique())
 
 
 if __name__ == "__main__":

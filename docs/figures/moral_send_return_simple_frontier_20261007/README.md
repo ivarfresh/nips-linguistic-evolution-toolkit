@@ -1,0 +1,51 @@
+# Frontier models: send and return by the moral of the myth a player read (2026-10-07)
+
+The frontier version of `../moral_send_return_simple_20261007/`. Same script and
+layout: one line per moral of the latest myth a player was shown before it
+played (judge: GLM-5.2).
+
+![](send_return_by_shown_moral.png)
+
+**What it shows.**
+
+- **Top row, what players did.** Players who had just read a generous myth sent
+  more than those who read a fair one (averaged over decisions: 0.996 vs 0.946
+  of the endowment) and returned more (0.50 vs 0.44).
+- **Bottom row, the same player compared with itself.** The two lines mostly
+  overlap. For sends the "fair" line starts a little lower (about −0.03 in
+  rounds 2–4) and ends a little higher (about +0.02 in rounds 9–10). That looks
+  like Sol's sends rising over the run, which the subtraction turns into "low
+  early, high late", rather than an effect of the myth.
+
+The top-row gap is mainly about which model wrote the myth and which model is
+reading. 74% of the decisions after a generous myth follow one written by Opus 5,
+while 73% of those after a fair myth follow one written by GPT-5.6 Sol. Opus
+sends close to everything whatever it reads (1.00 / 0.99 / 1.00 after cautious /
+fair / generous myths). Sol on its own still shows a raw gap (sends 0.93 after
+fair vs 0.99 after generous myths), but the same-player test removes it: Sol
+reads generous myths mostly in mixed runs next to Opus, where it plays more
+generously anyway.
+
+**Matching test.** Agent-within-run + round fixed effects, own last move, all
+frontier families, 106 runs (`carryover_test_shown_label.csv`). Shown generous
+vs fair: +0.003 sent/5 (95% CI −0.005 to 0.011, p = 0.47); returns −0.001
+(−0.007 to 0.005, p = 0.68).
+
+**No "be cautious" line.** Frontier myths are almost never cautious. Only 39
+decisions in 18 runs follow a cautious myth, and 87% of those cautious myths
+were written by Sol. The test's cautious-vs-fair interval is wide (sends −0.032,
+CI −0.118 to 0.054). Don't draw conclusions about cautious myths from the
+frontier models.
+
+**Sample and choices.** These are the main frontier runs: the homogeneous runs
+from 2026-09-18 plus the mixed runs from 2026-09-28 (`LINGUISTIC_DATASET=frontier`).
+The figure uses Claude Opus 5 and GPT-5.6 Sol. Gemini 3.1 Pro is left out
+because it sends at the ceiling (0.99) whatever it reads. 2- and 8-agent,
+homogeneous and mixed, both task orders pooled: 86 runs, 1,310 send and 1,308
+return decisions. Lines are means over runs, each run averaged first; bands are
+95% t-intervals across runs. Points built on fewer than 5 runs are hidden.
+Round 1 has no shown myth. Descriptive.
+
+Reproduce (no API calls; also writes provenance.json):
+
+    LINGUISTIC_DATASET=frontier python3 analyses/plot_moral_send_return_simple.py
