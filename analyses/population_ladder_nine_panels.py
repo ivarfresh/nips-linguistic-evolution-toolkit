@@ -67,17 +67,14 @@ def draw_box(ax, per_run: pd.DataFrame, composition: str) -> None:
     ax.grid(axis="y", alpha=.22)
 
 
-def draw_round(ax, stats: pd.DataFrame, composition: str, metric: str = "send") -> None:
-    d = stats[(stats["composition"] == composition) & (stats["metric"] == metric)]
+def draw_round(ax, stats: pd.DataFrame, composition: str) -> None:
+    d = stats[(stats["composition"] == composition) & (stats["metric"] == "send")]
     for task_order in pr.TASK_ORDERS:
         t = d[d["task_order"] == task_order].sort_values("round")
         x, mean, sd = t["round"].to_numpy(), t["mean"].to_numpy(), np.nan_to_num(t["sd"].to_numpy())
         color = pr.LINE_COLORS[task_order]
         ax.fill_between(x, np.clip(mean - sd, 0, 1), np.clip(mean + sd, 0, 1), color=color, alpha=0.15, linewidth=0)
         ax.plot(x, mean, color=color, linewidth=2, marker="o", ms=3)
-    if metric == "return":
-        ax.axhline(1 / 3, color="#bbbbbb", linewidth=0.9, linestyle="--", zorder=0)
-        ax.axhline(0.5, color="#bbbbbb", linewidth=0.9, linestyle=":", zorder=0)
     ax.set_xticks([1, 5, 10])
     ax.set_xlim(0.6, 10.4)
     ax.set_ylim(0, 1.02)
@@ -112,10 +109,7 @@ def plot(layout, draw, data, ylabel: str, filename: str, legend: bool) -> None:
     bottom = 0.0
     if legend:
         handles = [Line2D([], [], color=pr.LINE_COLORS[t], linewidth=2, marker="o", ms=4, label=pr.ORDER_LABELS[t]) for t in pr.TASK_ORDERS]
-        if "return" in filename:
-            handles += [Line2D([], [], color="#bbbbbb", linestyle="--", label="1/3 = sender breaks even"),
-                        Line2D([], [], color="#bbbbbb", linestyle=":", label="1/2 = gain split evenly")]
-        fig.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=10)
+        fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10)
         bottom = 0.1 if len(layout) == 1 else 0.05 if len(layout) == 2 else 0.04
     fig.tight_layout(rect=(0.015, bottom, 1, 1), h_pad=1.6, w_pad=0.8)
     fig.savefig(OUTPUT / f"{filename}.png", dpi=200, bbox_inches="tight")
@@ -135,8 +129,6 @@ def main() -> None:
     for name, layout in (("two_rows", TWO_ROWS), ("one_row", ONE_ROW), ("grid", GRID)):
         plot(layout, draw_box, per_run, "Resources per agent", f"population_resources_boxplots_{name}", legend=False)
         plot(layout, draw_round, stats, "Send fraction (sent / $5)", f"population_send_per_round_{name}", legend=True)
-    plot(TWO_ROWS, lambda ax, d, c: draw_round(ax, d, c, "return"), stats, "Return ratio (returned / received)",
-         "population_return_per_round_two_rows", legend=True)
 
 
 if __name__ == "__main__":
