@@ -97,7 +97,7 @@ def family_summary(df):
     return out
 
 
-def draw(ax, df, panel, n_agents, setting):
+def draw(ax, df, panel, n_agents, setting, dot_size=30, dot_edge=.6):
     per_run = df[(df.panel == panel) & (df.num_agents == n_agents) & (df.setting == setting)]
     per_run = per_run.groupby(["task_order", "path"]).resources.mean().reset_index()
     n = []
@@ -108,7 +108,7 @@ def draw(ax, df, panel, n_agents, setting):
                    boxprops=dict(facecolor=BOX_COLORS[pos - 1], edgecolor="#666666"),
                    medianprops=dict(color="#222222", linewidth=1.6),
                    whiskerprops=dict(color="#666666"), capprops=dict(color="#666666"))
-        ax.scatter(pos + np.linspace(-.1, .1, len(v)), v, s=30, c=DOT_COLORS[pos - 1], edgecolors="white", linewidths=.6, zorder=3)
+        ax.scatter(pos + np.linspace(-.1, .1, len(v)), v, s=dot_size, c=DOT_COLORS[pos - 1], edgecolors="white", linewidths=dot_edge, zorder=3)
     ax.set_xticks([1, 2, 3], ORDER_LABELS, fontsize=9)
     ax.set_xlim(.5, 3.5)
     ax.set_ylim(0, 80)
@@ -121,17 +121,22 @@ def draw(ax, df, panel, n_agents, setting):
 def plot_dyads(df):
     import matplotlib.pyplot as plt
     configure_matplotlib()
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6), sharey=True, squeeze=False)
+    # Paper Figure 4: one column wide, drawn near print size, no title (the caption carries it).
+    # Each dot = one run, mean of its 2 agents (n = 6 per box, 3 with each family sending first).
+    from matplotlib.patches import Patch
+    fig, axes = plt.subplots(1, 3, figsize=(3.4, 2.9), sharey=True, squeeze=False)
     for ax, panel in zip(axes[0], ["Opus 5 + Sol", "Opus 5 + Gemini", "Gemini + Sol"]):
-        n = draw(ax, df, panel, 2, "mixed")
-        ax.set_title(f"{panel}\nmixed · n = {n} per box", fontsize=12, fontweight="bold", pad=8)
-    fig.suptitle("Final cumulative resources · Frontier mixed-model dyads (Opus 5, GPT-5.6 Sol, Gemini 3.1 Pro)\n"
-                 "Informed negative-only noise · No defectors · Round 10", fontsize=13, fontweight="bold")
-    fig.text(.5, .005, "Each dot = one run, mean of its 2 agents (n = 6 per box, 3 with each family sending first) · "
-             "Box = middle 50% · Line = median · Whiskers = up to 1.5 × IQR", ha="center", fontsize=9, color="#444444")
-    fig.supylabel("Cumulative resources per agent", fontsize=11, x=.006)
-    fig.tight_layout(rect=(.02, .05, 1, .86), w_pad=1.6)
-    fig.savefig(OUTPUT / "frontier_mixed_dyads_resources_boxplots.png", dpi=200, bbox_inches="tight")
+        draw(ax, df, panel, 2, "mixed", dot_size=10, dot_edge=.25)
+        ax.set_xticks([])
+        ax.set_yticks(range(0, 81, 10))
+        ax.tick_params(axis="y", labelsize=7)
+        ax.set_title(panel.replace("Opus 5", "Opus"), fontsize=7.5, fontweight="bold", pad=4)
+    axes[0][0].set_ylabel("Resources per agent", fontsize=7.5)
+    fig.legend([Patch(facecolor=c, edgecolor="#666666") for c in BOX_COLORS], ORDER_LABELS,
+               loc="lower center", bbox_to_anchor=(.5, -.01), ncol=3, fontsize=7, frameon=False,
+               handlelength=1.2, columnspacing=1.2)
+    fig.tight_layout(rect=(0, .04, 1, 1), w_pad=.6)
+    fig.savefig(OUTPUT / "frontier_mixed_dyads_resources_boxplots.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
