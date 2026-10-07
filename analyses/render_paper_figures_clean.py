@@ -71,23 +71,59 @@ def set_title(self, label, *args, **kwargs):
     return _set_title(self, label, *args, **kwargs)
 
 
-LABEL_FIXES = [
-    ("frontier arm (left box)", "frontier model (left box)"),
-    ("September reference (right box)", "main model, same provider (right box)"),
-    (" (high)", ""),
-]
+CONTEXT = {"gemini": "Gemini-3.7", "models": True}  # set per job: what a bare "Gemini" means in that figure
+MODEL = re.compile(r"\b(?:(?:Claude )?Sonnet(?:[ -]4\.5)?|(?:Claude )?Opus(?:[ -]5\.5|[ -]5)?"
+                   r"|Gemini(?:[ -]3\.7(?: Flash)?|[ -]3\.1(?: Pro)?)?|GPT-5\.6[ -]Sol|GPT-6[ -]Sol"
+                   r"|GPT-5[ -][Nn]ano|Sol(?: \(high\))?|GPT(?![-\w.]))")
+
+
+def model_name(m: re.Match) -> str:
+    t = m.group(0)
+    if "Sonnet" in t:
+        return "Sonnet-4.5"
+    if "Opus" in t:
+        return "Opus-5.5" if "5.5" in t else "Opus-5"
+    if t.startswith("Gemini"):
+        return "Gemini-3.1" if "3.1" in t else "Gemini-3.7" if "3.7" in t else CONTEXT["gemini"]
+    if "GPT-6" in t:
+        return "GPT-6-Sol"
+    if "Sol" in t:
+        return "GPT-5.6-Sol"
+    return "GPT-5-Nano"
 
 
 def clean_label(text: str) -> str:
-    """Paper wording: no 'September', no '(high)', Sol always with its GPT version."""
-    for old, new in LABEL_FIXES:
-        text = text.replace(old, new)
+    """Paper figure wording: family-version model names, dyads/populations, single-model/mixed."""
+    text = text.replace("frontier arm (left box)", "frontier model (left box)")
+    text = text.replace("September reference (right box)", "main model, same provider (right box)")
     text = re.sub(r"\s*\(?September\)?", "", text)
-    return re.sub(r"(GPT-[\d.]+ )?\bSol\b", lambda m: m.group(0) if m.group(1) else "GPT-5.6 Sol", text)
+    text = text.replace("GPT-5-nano", "GPT-5-Nano")
+    if CONTEXT["models"]:
+        text = MODEL.sub(model_name, text)
+    text = text.replace("Homogeneous dyads\n(single-model controls)", "Single-model dyads")
+    text = text.replace("Single model", "Single-model")
+    text = re.sub(r"\bhomogeneous\b", "single-model", text)
+    text = re.sub(r"\bHomogeneous\b", "Single-model", text)
+    text = re.sub(r"\b2-agent fixed dyad\b", "dyad", text)
+    text = re.sub(r"\b8-agent rotating population\b", "population", text)
+    text = re.sub(r"\b2-agent(\s+)(single-model|mixed)", r"\2\1dyads", text)
+    text = re.sub(r"\b8-agent(\s+)(single-model|mixed)", r"\2\1populations", text)
+    text = text.replace("(2-agent)", "(dyads)").replace("(8-agent)", "(populations)")
+    text = re.sub(r"^2 agents$", "Dyads", text)
+    return re.sub(r"^8 agents$", "Populations", text)
 
 
 def savefig(self, fname, *args, **kwargs):
     from matplotlib.text import Text
+    from matplotlib.ticker import FixedLocator
+    for ax in self.axes:  # fixed tick labels are produced by the formatter at draw time; re-set them renamed
+        for axis in (ax.xaxis, ax.yaxis):
+            if not isinstance(axis.get_major_locator(), FixedLocator):
+                continue
+            old = [t.get_text() for t in axis.get_ticklabels()]
+            new = [clean_label(t) for t in old]
+            if new != old:
+                axis.set_ticklabels(new)
     for t in self.findobj(Text):
         if t.get_text():
             t.set_text(clean_label(t.get_text()))
@@ -107,8 +143,14 @@ def savefig(self, fname, *args, **kwargs):
 Figure.suptitle, Figure.text, Axes.set_title, Figure.savefig = no_suptitle, text, set_title, savefig
 
 
-def run_script(path: str, argv: list[str], targets: dict[str, str], drop_axes_titles: bool = False) -> None:
+def run_script(path: str, argv: list[str], targets: dict[str, str], drop_axes_titles: bool = False,
+               gemini: str = "Gemini-3.7", models: bool = True, env: dict[str, str] | None = None) -> None:
+    if not (ROOT / path).exists():  # e.g. a script still on an unmerged branch
+        print(f"SKIPPED (script not on this branch): {path}")
+        return
     DROP_AXES_TITLES[0] = drop_axes_titles
+    CONTEXT.update(gemini=gemini, models=models)
+    os.environ.update(env or {})
     TARGETS.clear()
     TARGETS.update(targets)
     sys.argv = [path, *argv]
@@ -129,6 +171,7 @@ def load_module(path: str):
 def run_n10(path: str, targets: dict[str, str]) -> None:
     """Scripts that analyses/table1_n10.py re-points at the n = 10 tables."""
     import pandas as pd
+    CONTEXT.update(gemini="Gemini-3.7", models=True)
     TARGETS.clear()
     TARGETS.update(targets)
     import analyses.table1_n10 as t1
@@ -146,6 +189,7 @@ def run_marker_rates(targets: dict[str, str]) -> None:
     """Cross-family signature words: replot from the saved n = 10 rates table (no re-analysis)."""
     import pandas as pd
     os.environ["LINGUISTIC_DATASET"] = "september_n10"
+    CONTEXT.update(gemini="Gemini-3.7", models=True)
     TARGETS.clear()
     TARGETS.update(targets)
     mod = load_module("analyses/linguistic_uptake.py")
@@ -179,25 +223,52 @@ def main() -> None:
                         {"fig7_dyads_send_per_round.png": "figures/mid_tier_n10/fig7_dyads_send_per_round.png",
                          "fig7_dyads_return_per_round.png": "figures/mid_tier_n10/fig7_dyads_return_per_round.png"}),
         lambda: run_script("scripts/analyze_frontier_rerun.py", [],
-                           {"resources_boxplots.png": "figures/frontier_resources_boxplots_final.png"}),
+                           {"resources_boxplots.png": "figures/frontier_resources_boxplots_final.png"}, gemini="Gemini-3.1"),
         lambda: run_script("scripts/analyze_frontier_main_mixed_20260928.py", [],
-                           {"frontier_mixed_populations_resources_boxplots.png": "figures/frontier_mixed_populations_resources_boxplots.png"}),
+                           {"frontier_mixed_populations_resources_boxplots.png": "figures/frontier_mixed_populations_resources_boxplots.png"}, gemini="Gemini-3.1"),
         lambda: run_script("scripts/analyze_frontier_update_20260928.py", [],
-                           {"frontier_update_set_resources_boxplots.png": "figures/frontier_update_set_resources_boxplots.png"}),
+                           {"frontier_update_set_resources_boxplots.png": "figures/frontier_update_set_resources_boxplots.png"}, gemini="Gemini-3.1"),
         lambda: run_script("scripts/analyze_frontier_defector_populations_20261002.py", [],
-                           {"resources_boxplots.png": "figures/Frontier_defector_run/resources_boxplots.png"}),
+                           {"resources_boxplots.png": "figures/Frontier_defector_run/resources_boxplots.png"}, gemini="Gemini-3.1"),
         lambda: run_script("analyses/frontier_defector_population_figures.py", [],
-                           {"fig8_populations_send_per_round.png": "figures/Frontier_defector_run/fig8_populations_send_per_round.png"}),
+                           {"fig8_populations_send_per_round.png": "figures/Frontier_defector_run/fig8_populations_send_per_round.png"}, gemini="Gemini-3.1"),
         lambda: run_script("analyses/plot_slide678_rerun.py", ["--out-dir", str(SCRATCH)],
-                           {"slide678_cell_means.png": "figures/ablation_run_8-agent.png"}, drop_axes_titles=True),
+                           {"slide678_cell_means.png": "figures/ablation_run_8-agent.png"}, drop_axes_titles=True, models=False),
         lambda: run_script("analyses/plot_slide678_rerun.py",
                            ["--run-root", str(ROOT / "data/json/noise_experiments/slide678_dyad_rerun_20260917"),
                             "--out-dir", str(SCRATCH), "--ceiling", "150",
                             "--population", "2-agent fixed dyad", "--output-stem", "slide678_dyad_cell_means"],
-                           {"slide678_dyad_cell_means.png": "figures/ablation_run_2-agent.png"}, drop_axes_titles=True),
+                           {"slide678_dyad_cell_means.png": "figures/ablation_run_2-agent.png"}, drop_axes_titles=True, models=False),
         lambda: run_script("analyses/myth_replay_plots.py", [],
                            {"replay_ablation_style.png": "figures/replay_ablation/replay_ablation_style.png"}),
         lambda: run_marker_rates({"cross_family_marker_rates.png": "figures/mid_tier_n10/cross_family_marker_rates.png"}),
+        # Main-text figures and the figures this branch draws itself.
+        lambda: run_script("analyses/dyad_resources_boxplots_clean.py", [],
+                           {"dyad_resources_boxplots.png": "figures/mid_tier_n10/mid_tier_n10_resources_boxplots.png"}),
+        lambda: run_script("analyses/population_ladder_nine_panels.py", [],
+                           {"population_resources_boxplots_two_rows.png": "figures/mid_tier_n10/population_resources_boxplots_nine_panels.png",
+                            "population_send_per_round_two_rows.png": "figures/mid_tier_n10/population_send_per_round_nine_panels.png",
+                            "population_return_per_round_two_rows.png": "figures/mid_tier_n10/fig8_populations_return_per_round.png"}),
+        lambda: run_script("analyses/frontier_mixed_dyads_per_round.py", [],
+                           {"frontier_mixed_dyads_send_per_round.png": "figures/frontier_mixed_dyads_send_per_round.png",
+                            "frontier_mixed_dyads_send_per_round_split.png": "figures/frontier_mixed_dyads_send_per_round_split.png"},
+                           gemini="Gemini-3.1"),
+        lambda: run_script("analyses/paper_figures_extra.py", [],
+                           {"moral_label_shares_populations.pdf": "figures/mid_tier_n10/moral_label_shares_populations.pdf",
+                            "moral_label_shares_notitle.png": "figures/mid_tier_n10/moral_label_shares_notitle.png",
+                            "frontier_mixed_dyads_resources_boxplots.png": "figures/frontier_mixed_dyads_resources_boxplots.png"}),
+        lambda: run_script("analyses/plot_word_adoption_panel.py", [],
+                           {"language_reuse_words_only.png": "figures/mid_tier_n10/language_reuse_words_only.png"}),
+        lambda: run_script("analyses/linguistic_uptake.py", ["--replot"],
+                           {"language_reuse_shown_vs_unseen.png": "figures/mid_tier_n10/language_reuse_shown_vs_unseen.png"},
+                           env={"LINGUISTIC_DATASET": "september_n10"}),
+    ] + [
+        (lambda size=size, axes=axes: run_script(
+            "analyses/plot_myth_trajectory_panel.py", ["--size", str(size), "--axes", axes],
+            {f"myth_map_trajectories_{size}agent_pooled.png": f"figures/mid_tier_n10/myth_map_trajectories_{size}agent_pooled.png",
+             f"myth_time_map_{size}agent_pooled.png": f"figures/mid_tier_n10/myth_time_map_{size}agent_pooled.png"},
+            env={"LINGUISTIC_DATASET": "september_n10"}))
+        for size in (8, 2) for axes in ("pca", "time")
     ]
     if args.job is not None:
         jobs[args.job]()
