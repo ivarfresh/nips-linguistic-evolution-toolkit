@@ -11,22 +11,29 @@ rounds for the three moral labels instead of the appendix grids
 before it played (judge: GLM-5.2; be generous / be fair / be cautious).
 
 - **Top row, what players did.** Players who had just read a generous myth sent
-  more (0.75 of the endowment on average) than those who read a fair one (0.68)
+  more (averaged over decisions: 0.75 of the endowment) than those who read a fair one (0.68)
   or a cautious one (0.60). Returns barely differ (0.45 / 0.43 / 0.40).
 - **Bottom row, the same player compared with itself.** Each move minus that
   player's own average move in that role. Here the three lines lie on top of
   each other. A player does not send more in the rounds after it reads a
   generous myth than in the rounds after it reads a cautious one.
 
-So the gap in the top row comes from *who* reads which myth (generous writers
-and generous players cluster in the same runs and models), not from the myth
-changing the reader. This is the behaviour-transfer claim: it barely happens.
+So the gap in the top row comes from *who* reads which myth, not from the myth
+changing the reader. The gap holds inside each model (GPT investors send
+0.56 / 0.65 / 0.71 after cautious / fair / generous myths, Sonnet 0.67 / 0.71 /
+0.78), so it is about the run and partner a player has: for example, 27% of the
+generous myths shown came from Gemini partners, against none of the cautious
+ones. This is the behaviour-transfer claim: it barely happens. Only 9% of
+players see both a generous and a cautious myth in one run, and the
+cautious-vs-fair interval below is wide, so "barely" fits; "no effect" would
+overclaim for cautious myths.
 
 **Matching test.** Agent-within-run + round fixed effects, own last move
 (`linguistic_analysis_n10_20261001/moral_carryover_models.csv`, all settings,
 "own + shown label, own lag"): shown generous vs fair −0.004 sent/5
 (95% CI −0.021 to 0.012, p = 0.62); shown cautious vs fair +0.007
-(−0.031 to 0.045, p = 0.72); returns +0.001 and +0.003, both p > 0.5.
+(−0.031 to 0.045, p = 0.72); returns +0.001 and +0.003, both p > 0.5. That model includes Gemini players
+(300 runs; 6,718 send and 5,561 return decisions); the figure leaves them out.
 
 **Sample and choices.** September informed negative-only runs at n = 10 per
 cell (`LINGUISTIC_DATASET=september_n10`). Sonnet 4.5 and GPT-5 Nano only;

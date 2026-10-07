@@ -8,8 +8,10 @@ per-condition appendix grids from analyses/moral_carryover.py.
 
 The label is the judge's moral (GLM-5.2) of the latest myth the player was
 shown before the decision. Two rows:
-  top:    raw means. Players shown generous myths do send more, but that mixes
-          who is reading (each model has its own style) with what they read.
+  top:    raw means. Players shown generous myths do send more, even within
+          one model, but that mixes the run and partner a player has (e.g.
+          generous myths come from Gemini partners far more often than
+          cautious ones) with what they read.
   bottom: the same player compared with itself: each move minus that player's
           own average move in that role over the run. If reading a generous myth
           changed play, the green line would sit above the others here.
@@ -43,6 +45,7 @@ from analyses import moral_carryover as mc  # noqa: E402
 
 OUT = ROOT / "docs/figures/moral_send_return_simple_20261007"
 MIN_RUNS = 5
+YMIN = {"coop": 0.25, "coop_vs_own_avg": -0.35}  # keep wide early bands inside the axes
 ROLES = (("investor", "amount sent / 5"), ("trustee", "share of the pot returned"))
 
 
@@ -84,7 +87,7 @@ def main() -> None:
                 s = table[(table["measure"] == measure) & (table["role"] == role) & (table["shown_label"] == lab)]
                 s = s.set_index("round").reindex(range(2, 11))
                 s.loc[s["n_runs"] < MIN_RUNS, ["mean", "ci_low", "ci_high"]] = np.nan
-                ax.fill_between(s.index, s["ci_low"], s["ci_high"], color=mc.LABEL_COLORS[lab], alpha=0.15, lw=0)
+                ax.fill_between(s.index, s["ci_low"].clip(lower=YMIN[measure]), s["ci_high"], color=mc.LABEL_COLORS[lab], alpha=0.15, lw=0)
                 ax.plot(s.index, s["mean"], color=mc.LABEL_COLORS[lab], lw=2, marker="o", ms=3,
                         label=f"read a '{lab}' myth")
             if measure == "coop_vs_own_avg":
@@ -96,6 +99,7 @@ def main() -> None:
             ax.grid(alpha=0.3)
             ax.set_xticks(range(2, 11))
         axes[i, 1].sharey(axes[i, 0])
+        axes[i, 0].set_ylim(bottom=YMIN[measure])
     for ax in axes[-1]:
         ax.set_xlabel("round")
     axes[0, 0].legend(fontsize=8, loc="lower right", frameon=False)
