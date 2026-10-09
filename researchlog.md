@@ -1,3 +1,21 @@
+### 2026-10-09 — Result: placebo controls and the interaction table now rebuild from the repo
+
+**Time:** ~1.5 h (Claude session; no API spend).
+
+Result: the two placebo analyses behind paper Section 4.5 and the Welch/Holm interaction
+table behind Section 4.2 existed only in scratch files; the claims check of 2026-10-09 flagged
+them. All three are now scripts under `analyses/` with committed outputs and READMEs, each
+gated on reproducing the stored tables exactly. Word adoption: the shown myth beats the
+author's-next-myth placebo at 1.16–1.34× in every setting (44/60 to 119/120 runs, Holm
+p ≤ 2.2e-5); the placebo explains 43–65% of the shown-vs-unseen gap
+(`docs/figures/word_adoption_placebo_20261008/`). Moral matching: within family +2.7 pp over
+unseen (p = 0.015) but +0.8 [−1.7, 3.3] over the placebo (p = 0.54); across families −1.1
+(p = 0.67); no setting or task order has shown > placebo (`docs/figures/moral_placebo_20261008/`).
+Interaction: 17/18 cells positive, 4/18 Holm-significant, as in the paper, with Welch t-intervals;
+a few last-digit entries in Overleaf differ from the committed inputs and are listed in
+`docs/figures/mixed_vs_average_interaction_20261009/README.md`. The gitignored n = 10 inputs and
+the three output folders are mirrored on the shared HF dataset under `ivarfresh/analysis/`.
+
 ### 2026-10-06 — Result: myth map at n = 10 holds; paper Figure 5b built
 
 **Time:** ~1 h (Claude session; no API spend).

@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-04 (broad audit partial; API credit exhaustion, source-checked examples available).
+Last updated: 2026-10-09 (placebo controls and interaction table committed; broad audit still partial).
 
 ## Research question
 
@@ -216,6 +216,14 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Result boundaries
 
+- Placebo controls for the paper's Section 4.5 (2026-10-08, committed 2026-10-09,
+  no API spend): word adoption from a shown myth survives the author's-next-myth
+  placebo in all five settings (1.16–1.34×, Holm p ≤ 2.2e-5), so reading does
+  cause word uptake; moral-label matching does not (within family +0.8 points
+  over the placebo, 95% CI −1.7 to 3.3), so the 2.7-point moral excess cannot be
+  attributed to reading. The placebo errs high because the author always read
+  the reader's previous myth. Scripts `analyses/word_adoption_placebo.py`,
+  `analyses/moral_placebo.py`; outputs under `docs/figures/*_placebo_20261008/`.
 - Strategy-clause audit (2026-10-02, user-authorized bounded exploration):
   48 complete trajectories / 480 myths from 45 original September and main-frontier
   runs. Machine readings find candidate peer uptake of specific conditional
