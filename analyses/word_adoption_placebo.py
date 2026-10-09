@@ -29,7 +29,9 @@ Inputs (gitignored, mirrored on the shared HF dataset under
 ivarfresh/analysis/linguistic_n10_20261001/): data/analysis/linguistic_n10_20261001/
 {myths.csv, uptake_children.csv} and the committed
 docs/figures/linguistic_analysis_n10_20261001/reuse_summary.csv as the gate.
-Outputs: docs/figures/word_adoption_placebo_20261008/. No API calls.
+Outputs: docs/figures/word_adoption_placebo_20261008/ (summary, per-run table, README,
+provenance.json) and the per-pair table in data/analysis/word_adoption_placebo_20261008/
+(gitignored, mirrored on the HF dataset next to the inputs). No API calls.
 
 Run from the repo root: python analyses/word_adoption_placebo.py
 """
@@ -46,10 +48,12 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("LINGUISTIC_DATASET", "september_n10")
+from analyses import linguistic_provenance  # noqa: E402
 from analyses.linguistic_uptake import (DATA, FIGS, MIN_WORDS, child_table, content_words, holm,  # noqa: E402
-                                        index_of, null_candidates, own_history, run_level_summary)
+                                        index_of, load_myths, null_candidates, own_history, run_level_summary)
 
 OUT = ROOT / "docs/figures/word_adoption_placebo_20261008"
+PAIRS = ROOT / "data/analysis/word_adoption_placebo_20261008"
 ORDER = [(2, "homogeneous"), (2, "mixed, other family"), (8, "homogeneous"),
          (8, "mixed, same family"), (8, "mixed, other family")]
 CONTRASTS = {"shown_vs_unseen": ("adopt_parent", "adopt_null"),
@@ -62,10 +66,7 @@ CONTRASTS = {"shown_vs_unseen": ("adopt_parent", "adopt_null"),
 
 def main() -> None:
     assert DATA.name == "linguistic_n10_20261001", DATA
-    myths = pd.read_csv(DATA / "myths.csv")
-    myths["valid"] = myths["n_words"] >= MIN_WORDS
-    myths["text"] = myths["text"].fillna("")
-    myths = myths.reset_index(drop=True)
+    myths = load_myths()
     later = myths[myths["round"] > 1]
     assert (later.exposed_round == later["round"] - 1).all()
 
@@ -160,7 +161,8 @@ def main() -> None:
     print(f"{len(ch)} reader-myth pairs; {n_drop} dropped (placebo myth missing or under {MIN_WORDS} words)")
     ch = ch[ch["placebo_ok"]].copy()
     OUT.mkdir(parents=True, exist_ok=True)
-    ch.to_csv(OUT / "placebo_children.csv")
+    PAIRS.mkdir(parents=True, exist_ok=True)
+    ch.to_csv(PAIRS / "placebo_children.csv", index=False)
 
     # ---- 3. run-level summary: per-run means, paired Wilcoxon over runs, Holm across the five settings
     cols = ["adopt_parent", "adopt_null", "adopt_null_same_round", "adopt_placebo", "adopt_shown_only",
@@ -177,11 +179,12 @@ def main() -> None:
             rec[c] = g[c].mean()
             rec[c + "_sd"] = g[c].std(ddof=1)
         for name, (a, b) in CONTRASTS.items():
-            d = (g[a] - g[b]).dropna()
-            rec[f"{name}_ratio"] = g[a].mean() / g[b].mean()
+            d = (g[a] - g[b]).dropna().round(10)
+            rec[f"{name}_ratio"] = g[a].mean() / g[b].mean() if g[b].mean() else np.nan
             rec[f"{name}_runs_pos"] = int((d > 0).sum())
             rec[f"{name}_n"] = len(d)
-            rec[f"{name}_p"] = stats.wilcoxon(d).pvalue
+            # same guard as linguistic_uptake.run_level_summary: too few runs or all-zero differences give NaN
+            rec[f"{name}_p"] = stats.wilcoxon(d).pvalue if len(d) >= 5 and (d != 0).any() else np.nan
         out.append(rec)
     out = pd.DataFrame(out)
     for name in CONTRASTS:
@@ -209,6 +212,8 @@ def main() -> None:
         pr = g.groupby(["exposure", "run_id"])[["adopt_parent", "adopt_placebo", "adopt_null"]].mean()
         print("8-agent, author is current partner =", flag, len(g), "pairs")
         print(pr.groupby(level=0).mean().round(4).to_string())
+
+    linguistic_provenance.main(OUT)
 
 
 if __name__ == "__main__":

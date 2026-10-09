@@ -14,7 +14,9 @@ analyses/moral_carryover.py:summary_measures + run_summary do, then adds:
 Inputs (gitignored, mirrored on the shared HF dataset under
 ivarfresh/analysis/linguistic_n10_20261001/): data/analysis/linguistic_n10_20261001/
 {myths.csv, moral_labels_z-ai__glm-5.2.csv, embeddings_moral_summary_mpnet.npy,
-moral_uptake_children.csv (gate)}. Outputs: docs/figures/moral_placebo_20261008/. No API calls.
+moral_uptake_children.csv (gate)}. Outputs: docs/figures/moral_placebo_20261008/ (summaries, README,
+provenance.json) and the per-pair table in data/analysis/moral_placebo_20261008/ (gitignored,
+mirrored on the HF dataset next to the inputs). No API calls.
 
 Run from the repo root: python analyses/moral_placebo.py
 """
@@ -31,10 +33,14 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("LINGUISTIC_DATASET", "september_n10")
+from analyses import linguistic_provenance  # noqa: E402
 from analyses import linguistic_uptake as lu  # noqa: E402
+from analyses.moral_carryover import setting_of  # noqa: E402
 
 DATA = lu.DATA
 OUT = ROOT / "docs/figures/moral_placebo_20261008"
+PAIRS = ROOT / "data/analysis/moral_placebo_20261008"
+PAPER_PAIRS, PAPER_RUNS = 4090, 60  # 8-agent mixed populations, myth->game, n = 10
 KEY = ["run_id", "round", "agent"]
 MAIN_SETTING, MAIN_ORDER = "8-agent mixed", "myth_game"
 SUMMARY_COLS = ["n_runs", "shown", "unseen", "placebo", "unseen_next", "shown_minus_unseen", "shown_minus_unseen_p",
@@ -85,7 +91,7 @@ def main() -> None:
     myths = lu.load_myths()
     lab = pd.read_csv(DATA / "moral_labels_z-ai__glm-5.2.csv")
     myths = myths.merge(lab[KEY + ["label", "summary"]], on=KEY, how="left")
-    myths["setting"] = [f"{s}-agent {'mixed' if m else 'homogeneous'}" for s, m in zip(myths["size"], myths["mixed"])]
+    myths["setting"] = [setting_of(s, m) for s, m in zip(myths["size"], myths["mixed"])]
     emb = np.load(DATA / "embeddings_moral_summary_mpnet.npy")
     assert emb.shape[0] == len(myths), (emb.shape, len(myths))
     has = myths["summary"].notna().to_numpy()
@@ -129,7 +135,8 @@ def main() -> None:
     U["same_label_excess"] = U["same_label_shown"] - U["same_label_unseen"]
     U["moral_cos_excess"] = U["moral_cos_shown"] - U["moral_cos_unseen"]
     OUT.mkdir(parents=True, exist_ok=True)
-    U.to_csv(OUT / "moral_placebo_children.csv", index=False)
+    PAIRS.mkdir(parents=True, exist_ok=True)
+    U.to_csv(PAIRS / "moral_placebo_children.csv", index=False)
 
     # ---- gate: reproduce the stored child table exactly
     stored = pd.read_csv(DATA / "moral_uptake_children.csv")
@@ -140,6 +147,7 @@ def main() -> None:
 
     # paper numbers on the full set (no placebo restriction): 2.7 pp p=0.015 within, 1.6 pp p=0.13 across
     paper = U[(U.setting == MAIN_SETTING) & (U.task_order == MAIN_ORDER)]
+    assert len(paper) == PAPER_PAIRS and paper["run_id"].nunique() == PAPER_RUNS, (len(paper), paper["run_id"].nunique())
     paper_rows = []
     for exp, g in paper.groupby("exposure"):
         v = g.groupby("run_id")["same_label_excess"].mean()
@@ -172,6 +180,8 @@ def main() -> None:
     print(cos[["exposure"] + SUMMARY_COLS].round(4).T.to_string())
     print("\nALL settings:")
     print(allt[["setting", "exposure", "task_order"] + SUMMARY_COLS].round(4).to_string())
+
+    linguistic_provenance.main(OUT)
 
 
 if __name__ == "__main__":

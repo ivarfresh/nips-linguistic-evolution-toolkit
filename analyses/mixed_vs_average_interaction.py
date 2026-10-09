@@ -17,13 +17,15 @@ Inputs are the per-run tables committed with Table 1 at n = 10, so no raw JSON
 is read:
   docs/figures/mixed_vs_average_n10_20261001/dyad_decisions.csv          (last round, total / 2)
   docs/figures/mixed_vs_average_n10_20261001/population_agent_finals.csv (mean over 8 agents)
-Outputs: docs/figures/mixed_vs_average_interaction_20261009/{interaction.csv, table_rows.tex}.
+Outputs: docs/figures/mixed_vs_average_interaction_20261009/{interaction.csv, table_rows.tex,
+provenance.json} (the provenance lists the same 450 run finals as Table 1 at n = 10).
 
 Run from the repo root: python analyses/mixed_vs_average_interaction.py
 """
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +34,8 @@ from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from analyses.mixed_vs_average import SPECS, holm, welch_contrast  # noqa: E402
+from analyses import table1_n10  # noqa: E402
+from analyses.mixed_vs_average import SPECS, holm, per_run_values, welch_contrast  # noqa: E402
 
 N10 = ROOT / "docs/figures/mixed_vs_average_n10_20261001"
 OUT = ROOT / "docs/figures/mixed_vs_average_interaction_20261009"
@@ -41,17 +44,9 @@ B = 20000
 SEED = 20261009
 
 
-def per_run_values() -> pd.DataFrame:
-    d = pd.read_csv(N10 / "dyad_decisions.csv")
-    last = d.sort_values("round").groupby("path").tail(1)
-    dyads = last.assign(v=last["total_balance"] / 2)[["path", "composition", "task_order", "v"]]
-    a = pd.read_csv(N10 / "population_agent_finals.csv")
-    pops = (a.groupby(["path", "composition", "task_order"])["final_balance"].mean()
-            .reset_index().rename(columns={"final_balance": "v"}))
-    return pd.concat([dyads, pops], ignore_index=True)
-
-
 def fmt_p(p: float) -> str:
+    if np.isnan(p):
+        raise ValueError("degenerate Welch contrast (no variance in any group); nothing to print")
     return "$<0.001$" if p < 0.001 else f"{p:.3f}"
 
 
@@ -75,8 +70,9 @@ def write_table_rows(table: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    start = time.time() - 1
     rng = np.random.default_rng(SEED)
-    runs = per_run_values()
+    runs = per_run_values(N10 / "dyad_decisions.csv", N10 / "population_agent_finals.csv")
     get = lambda comp, to: runs[(runs.composition == comp) & (runs.task_order == to)]["v"].to_numpy()
     rows = []
     for label, comp, parts in SPECS:
@@ -91,7 +87,8 @@ def main() -> None:
             est = sum(c * g.mean() for g, c in groups)
             boot = sum(c * rng.choice(g, (B, len(g))).mean(1) for g, c in groups)
             t, df, p = welch_contrast(groups)
-            half = stats.t.ppf(0.975, df) * est / t
+            se = np.sqrt(sum(c ** 2 * g.var(ddof=1) / len(g) for g, c in groups))
+            half = stats.t.ppf(0.975, df) * se
             diff_myth = m_mix.mean() - sum(w * h.mean() for h, w in m_parts)
             diff_game = g_mix.mean() - sum(w * h.mean() for h, w in g_parts)
             rows.append({
@@ -113,6 +110,8 @@ def main() -> None:
           .reindex([s[0] for s in SPECS]).to_string())
     print(f"\n{int((out.welch_p_holm < 0.05).sum())} of {len(out)} cells Holm-significant; "
           f"{int((out['diff'] > 0).sum())} positive")
+    table1_n10.OUT = OUT
+    table1_n10.write_provenance(table1_n10.n10_pools(), start)
 
 
 if __name__ == "__main__":

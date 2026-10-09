@@ -27,11 +27,13 @@ B = 20000
 SEED = 20260930
 
 
-def per_run_values() -> pd.DataFrame:
-    d = pd.read_csv(FIGS / "mixed_model_dyads_20260917/decisions.csv")
+def per_run_values(dyads_csv: Path = FIGS / "mixed_model_dyads_20260917/decisions.csv",
+                   populations_csv: Path = FIGS / "mixed_model_populations_20260918/agent_finals.csv") -> pd.DataFrame:
+    """Final resources per agent per run: dyads from the last round (total / 2), populations as the mean over 8 agents."""
+    d = pd.read_csv(dyads_csv)
     last = d.sort_values("round").groupby("path").tail(1)
     dyads = last.assign(v=last["total_balance"] / 2)[["path", "composition", "task_order", "v"]]
-    a = pd.read_csv(FIGS / "mixed_model_populations_20260918/agent_finals.csv")
+    a = pd.read_csv(populations_csv)
     pops = (a.groupby(["path", "composition", "task_order"])["final_balance"].mean()
             .reset_index().rename(columns={"final_balance": "v"}))
     return pd.concat([dyads, pops], ignore_index=True)

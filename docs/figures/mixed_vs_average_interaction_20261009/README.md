@@ -56,3 +56,5 @@ The 1 Gemini + 7 GPT point estimates here are what Table 1's own committed diffe
 - `interaction.csv`: per cell the two Table 1 differences, their difference, Welch t / df /
   p, Holm p, t-interval and bootstrap interval.
 - `table_rows.tex`: the LaTeX rows for Table s-interaction (bold = Holm p < 0.05).
+- `provenance.json`: the same 450 run finals as `mixed_vs_average_n10_20261001/` and the
+  hashes of this folder's files.

@@ -22,10 +22,12 @@ here.
 
 ## Result (8-agent mixed populations, myth→game, 60 runs)
 
+Same-label shares are means over runs (± sd over runs), in percent.
+
 | Exposure | Pairs | Shown % | Unseen % | Placebo % | Shown − unseen (p) | Shown − placebo [95% CI] (p) |
 |---|---|---|---|---|---|---|
-| Same family | 2,455 | 69.2 | 66.5 | 68.4 | +2.7 (0.015) | +0.8 [−1.7, 3.3] (0.54) |
-| Other family | 1,632 | 59.8 | 58.2 | 61.0 | +1.6 (0.13) | −1.1 [−3.9, 1.5] (0.67) |
+| Same family | 2,455 | 69.2 (±13.1) | 66.5 (±12.3) | 68.4 (±13.1) | +2.7 (0.015) | +0.8 [−1.7, 3.3] (0.54) |
+| Other family | 1,632 | 59.8 (±17.3) | 58.2 (±15.3) | 61.0 (±18.7) | +1.6 (0.13) | −1.1 [−3.9, 1.5] (0.67) |
 
 No setting or task order has shown > placebo at p < 0.05 (`placebo_by_setting_task_order.csv`).
 Caveat: the author always read the reader's previous myth before writing the placebo
@@ -41,7 +43,10 @@ myth is closer than the placebo by +0.0075, p = 0.0016; across families no diffe
   quantity exists (4,087 of 4,090).
 - `placebo_by_setting_task_order.csv`: the same for every setting × exposure × task order.
 - `placebo_main_moral_cos.csv`: the cosine version of the main table.
-- `moral_placebo_children.csv`: per reader–myth pair.
+- `provenance.json`: the 300 run finals behind the corpus and the hashes of this folder's files.
+- `data/analysis/moral_placebo_20261008/moral_placebo_children.csv` (gitignored, 4.6 MB): per
+  reader–myth pair; mirrored on the shared private HF dataset under
+  `ivarfresh/analysis/moral_placebo_20261008/`.
 
 Inputs are the gitignored `data/analysis/linguistic_n10_20261001/` tables (myths, GLM-5.2
 labels, moral-summary embeddings), mirrored on the shared private HF dataset under
