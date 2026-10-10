@@ -27,7 +27,7 @@ python3 analyses/myth_structure_analysis.py --dataset september_n10
 ```
 
 Corpora: `september_n10` (Sonnet 4.5 / Gemini 3.7 Flash / GPT-5 Nano, 10 runs per cell; 10,053 of
-10,080 myths coded, $1.86) and `frontier` (Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol). The two are never
+10,080 myths coded, $1.86) and `frontier` (Opus 5 / Gemini 3.1 Pro / GPT-5.6 Sol, 5 runs per cell; 2,685 of 2,712 coded, $1.40). The two are never
 pooled, and the task orders are never pooled.
 
 ## Files per corpus folder
@@ -49,6 +49,8 @@ pooled, and the task orders are never pooled.
   and 50% on resolution (65% on the central opposition, 70% on arc). Both fields are left out of the headline tests.
 - The Holm family was restricted to eight headline measures after the first run. With 10 runs per cell, the smallest
   exact Wilcoxon p is 0.002, so correcting over all ~70 measures could never reach 0.05.
+- **Frontier tests cannot reach significance**: with 5 runs per cell the smallest exact Wilcoxon p is 0.0625. Read
+  the frontier trend tables as descriptive.
 - Round 1 uses a different prompt from rounds 2-10, so a step between rounds 1 and 2 is partly the prompt.
 - In dyads the shown myth is the partner's, and partners have been reading each other's myths every round, so
   shown-vs-unseen matching there mixes per-round uptake with the pair evolving together. Adoption of new features
