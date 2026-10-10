@@ -3,7 +3,7 @@
 Three standalone TikZ figures that show the myth channel of the current
 8-agent population design. Compile each with `pdflatex <file>.tex`, or paste
 the `tikzpicture` into Overleaf (needs `arrows.meta`, `positioning`, `calc`).
-The PNGs are 130 dpi previews rendered with Ghostscript.
+The PNGs are 300 dpi renders made with Ghostscript (the PDFs are vector and scale without loss).
 
 | File | What it shows |
 |---|---|
