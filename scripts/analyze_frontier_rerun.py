@@ -56,6 +56,8 @@ def rows_for(path, source):
     run = json.loads(path.read_text())
     m = run["run_metadata"]
     plan = m["llm_request"]
+    if plan["provider_model"] not in ARM_OF:  # later sets (e.g. the 2026-09-28 update) share this folder
+        return []
     label, column = ARM_OF[plan["provider_model"]]
     effort = (plan.get("parameters") or {}).get("reasoning_effort")
     if plan["provider_model"] == "gpt-5.6-sol":
