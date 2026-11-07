@@ -1,4 +1,7 @@
-"""Persistent myth board (2026-10-02): every agent reads every earlier myth."""
+"""Persistent myth board (2026-10-02): every agent reads every earlier myth.
+
+Game-board kind ``persistent_game`` (2026-11-07 pilot): the same board is also
+pasted ahead of every game decision prompt from round 2 and kept out of chat memory."""
 import contextlib
 import io
 import itertools
@@ -23,17 +26,22 @@ def build_game():
     )
 
 
-def build_writer(board="persistent", template=BOARD_TEMPLATE):
-    return MythWriter("anything", round1_template="Write a myth.", later_rounds_template=template, board=board)
+def build_writer(board="persistent", template=BOARD_TEMPLATE, board_seed=None):
+    return MythWriter("anything", round1_template="Write a myth.", later_rounds_template=template, board=board,
+                      board_seed=board_seed)
 
 
-def run_sim(writer, turns=3, num_agents=4):
+def run_sim(writer, turns=3, num_agents=4, task_order=("myth",)):
     prompts, lock, counter = [], threading.Lock(), itertools.count(1)
 
     def fake_call_llm(client, model, temperature, messages):
         with lock:
-            prompts.append(messages[-1]["content"])
-            return {"content": f"Myth: story {next(counter)}", "reasoning": None, "usage": None}
+            content = messages[-1]["content"]
+            prompts.append(content)
+            if content == "Write a myth." or content.rstrip().endswith("Write your own myth."):
+                return {"content": f"Myth: story {next(counter)}", "reasoning": None, "usage": None}
+            # A game decision: both keys satisfy the validator whatever the role.
+            return {"content": '{"send": 1, "return": 1, "reason": "test"}', "reasoning": None, "usage": None}
 
     with patch("src.simulation.create_llm_client", return_value=object()), patch(
         "src.agents.call_llm", side_effect=fake_call_llm,
@@ -41,7 +49,7 @@ def run_sim(writer, turns=3, num_agents=4):
         sim = run_simulation(
             game=build_game(), model="mock/model", temperature=0, num_turns=turns,
             num_agents=num_agents, memory_capacity=6, agent_biases="", myth_writer=writer,
-            task_order=["myth"], chat_memory_mode="memory_primary",
+            task_order=list(task_order), chat_memory_mode="memory_primary",
         )
     return sim, prompts
 
@@ -111,6 +119,95 @@ class BoardTests(unittest.TestCase):
         game = build_game()
         self.assertEqual(build_condition(game, build_writer(), {}, {})["protocol"]["myth"]["board"], "persistent")
         self.assertNotIn("board", build_condition(game, build_writer(None, PARTNER_TEMPLATE), {}, {})["protocol"]["myth"])
+
+
+GAME_BOARD_HEAD = "Here is the shared myth board."
+
+
+class GameBoardTests(unittest.TestCase):
+    def check_order(self, task_order):
+        sim, _ = run_sim(build_writer(board="persistent_game", board_seed=3), task_order=task_order)
+        history = sim.conversation_history
+        for agent_id, agent in sim.agents.items():
+            game_calls = [e for e in agent.interaction_history if e["metadata"]["task"] == "game"]
+            self.assertEqual([e["metadata"]["round"] for e in game_calls], [1, 2, 3])
+            # Round 1: nothing written yet, so no board.
+            self.assertNotIn(GAME_BOARD_HEAD, game_calls[0]["prompt"])
+            for e in game_calls[1:]:
+                r = e["metadata"]["round"]
+                self.assertTrue(e["prompt"].startswith(GAME_BOARD_HEAD))
+                self.assertNotIn("Write your own myth.", e["prompt"])
+                # Every myth from earlier rounds is on it; this round's myths (already
+                # written in myth->game) are not.
+                for earlier in history[:r - 1]:
+                    for myth in earlier["myths"].values():
+                        self.assertIn(myth, e["prompt"])
+                for myth in history[r - 1]["myths"].values():
+                    self.assertNotIn(myth, e["prompt"])
+                record = history[r - 1]["board_in_game"][agent_id]
+                self.assertEqual(record["board"], "persistent_game")
+                self.assertEqual(record["board_seed"], 3)
+                self.assertEqual(len(record["board_items"]), 4 * (r - 1))
+                self.assertEqual(record["source_rounds"], list(range(1, r)))
+            # Chat memory never holds the board text, only the note ahead of the prompt.
+            remembered = [m["content"] for m in agent.messages if m["role"] == "user"]
+            self.assertTrue(all("Round 1, myth 1:" not in m for m in remembered))
+            self.assertTrue(any(m.startswith("[The shared myth board was shown here: 4 myths from rounds 1-1.]\n\n")
+                                and "Write your own myth." not in m for m in remembered))
+            # The myth prompt shows the board too, as for the legacy kind.
+            myth_calls = [e for e in agent.interaction_history if e["metadata"]["task"] == "myth"]
+            self.assertTrue(myth_calls[1]["prompt"].startswith("BOARD"))
+            self.assertEqual(history[1]["myth_exposures"][agent_id]["board"], "persistent_game")
+            self.assertEqual(history[1]["myth_exposures"][agent_id]["board_seed"], 3)
+        return sim
+
+    def test_game_myth_order(self):
+        self.check_order(["game", "myth"])
+
+    def test_myth_game_order(self):
+        self.check_order(["myth", "game"])
+
+    def test_board_and_myth_prompt_show_the_same_order(self):
+        sim, _ = run_sim(build_writer(board="persistent_game", board_seed=3), task_order=["game", "myth"])
+        r3 = sim.conversation_history[2]
+        self.assertEqual(r3["board_in_game"]["Agent_1"]["board_items"], r3["myth_exposures"]["Agent_1"]["board_items"])
+        # Same board for every reader in a round.
+        self.assertEqual(len({str(v["board_items"]) for v in r3["board_in_game"].values()}), 1)
+
+    def test_shuffle_differs_by_seed_and_legacy_order_is_unchanged(self):
+        class Fake:
+            conversation_history = [{"round": 1, "myths": {f"Agent_{i}": f"m{i}" for i in range(1, 9)}}]
+        orders = {seed: [a for _, a, _ in build_writer(board="persistent_game", board_seed=seed)._board_items(Fake(), 2)]
+                  for seed in range(4)}
+        self.assertGreater(len({str(o) for o in orders.values()}), 1)
+        legacy = [a for _, a, _ in build_writer()._board_items(Fake(), 2)]
+        import random
+        expected = sorted(Fake.conversation_history[0]["myths"])
+        random.Random("myth-board-v1|1").shuffle(expected)
+        self.assertEqual(legacy, expected)
+
+    def test_game_board_rejects_unsupported_setups(self):
+        with self.assertRaisesRegex(ValueError, "board_seed"):
+            build_writer(board="persistent_game")
+        for order, pattern in ((["game"], "both a game and a myth task"), (["myth"], "both a game and a myth task")):
+            with patch("src.simulation.create_llm_client", return_value=object()), \
+                    self.assertRaisesRegex(ValueError, pattern), contextlib.redirect_stdout(io.StringIO()):
+                run_simulation(game=build_game(), model="mock/model", temperature=0, num_turns=2, num_agents=4,
+                               memory_capacity=6, agent_biases="", task_order=order,
+                               myth_writer=build_writer(board="persistent_game", board_seed=0),
+                               chat_memory_mode="memory_primary")
+        with patch("src.simulation.create_llm_client", return_value=object()), \
+                self.assertRaisesRegex(ValueError, "memory_primary"), contextlib.redirect_stdout(io.StringIO()):
+            run_simulation(game=build_game(), model="mock/model", temperature=0, num_turns=2, num_agents=4,
+                           memory_capacity=6, agent_biases="", task_order=["game", "myth"],
+                           myth_writer=build_writer(board="persistent_game", board_seed=0),
+                           chat_memory_mode="stateless")
+
+    def test_condition_records_seed_for_game_board_only(self):
+        game = build_game()
+        myth = build_condition(game, build_writer(board="persistent_game", board_seed=7), {}, {})["protocol"]["myth"]
+        self.assertEqual((myth["board"], myth["board_seed"]), ("persistent_game", 7))
+        self.assertNotIn("board_seed", build_condition(game, build_writer(), {}, {})["protocol"]["myth"])
 
 
 if __name__ == "__main__":

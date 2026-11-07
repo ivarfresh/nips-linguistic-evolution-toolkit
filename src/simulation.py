@@ -8,6 +8,7 @@ from src.utils import create_llm_client, llm_runtime_metadata, print_simulation_
 from concurrent.futures import ThreadPoolExecutor
 from src.experiment_condition import build_condition, check_conditions, condition_from_run, digest
 from src.llm_settings import LLMSettingsError, agent_request_plans, is_mixed_plan
+from src.myth_writer import GAME_BOARD_KINDS
 
 
 DEFAULT_AGENT_NAMES = [
@@ -480,6 +481,16 @@ def run_simulation(
     if getattr(myth_writer, "board", None) and chat_memory_mode == "myth_only":
         # myth_only always uses the round-1 prompt, so the board would never be shown.
         raise ValueError("myth_board is not supported with chat_memory_mode='myth_only'")
+    if getattr(myth_writer, "board", None) in GAME_BOARD_KINDS:
+        # The board is pasted into every game decision prompt from round 2 and kept
+        # out of chat memory via memory_prompt; that path needs a remembered game
+        # call, a myth task to fill the board, and no scripted (defector) moves.
+        if "myth" not in task_order or "game" not in task_order:
+            raise ValueError(f"myth_board {myth_writer.board!r} needs both a game and a myth task")
+        if chat_memory_mode != "memory_primary":
+            raise ValueError(f"myth_board {myth_writer.board!r} is only supported with chat_memory_mode='memory_primary'")
+        if getattr(game, "defector_agent_ids", None) or getattr(game, "random_defection_probability", 0):
+            raise ValueError(f"myth_board {myth_writer.board!r} does not support forced or random defectors")
     plant = getattr(myth_writer, "plant", None)
     if plant and plant["agent"] not in {f"Agent_{i+1}" for i in range(num_agents)}:
         raise ValueError(f"myth_plant agent {plant['agent']!r} is not one of the run's {num_agents} agents")
@@ -798,6 +809,18 @@ def run_simulation(
                             if myth_context:
                                 prompt = f"{prompt}\n\n{myth_context}"
 
+                        # Game-board kinds: the shared myth board goes ahead of the
+                        # decision prompt for this call only; chat memory keeps the
+                        # prompt with a one-line note where the board stood.
+                        board_memory_prompt = None
+                        game_board = getattr(myth_writer, "game_board_block", None)
+                        if game_board is not None:
+                            shown = game_board(agent_id, turn, sim_data)
+                            if shown is not None:
+                                board_block, board_note = shown
+                                board_memory_prompt = f"{board_note}\n\n{prompt}"
+                                prompt = f"{board_block}\n\n{prompt}"
+
                         interaction_metadata = _interaction_metadata(
                             turn,
                             "game",
@@ -842,10 +865,11 @@ def run_simulation(
                                     transcript_metadata=interaction_metadata,
                                     remember=remember_game,
                                     response_validator=validate_game_response,
+                                    memory_prompt=board_memory_prompt,
                                 )
                             except Exception as e:
                                 retry_prompt = prompt
-                                memory_prompt = None
+                                memory_prompt = board_memory_prompt
                                 if (
                                     game_response_retry_policy
                                     == GAME_RESPONSE_RETRY_CORRECTIVE
@@ -854,7 +878,7 @@ def run_simulation(
                                         prompt,
                                         role,
                                     )
-                                    memory_prompt = prompt
+                                    memory_prompt = board_memory_prompt or prompt
                                 print(
                                     f"⚠️  Game decision failed for {agent_id}: "
                                     f"{type(e).__name__}: {e}. Retrying once "

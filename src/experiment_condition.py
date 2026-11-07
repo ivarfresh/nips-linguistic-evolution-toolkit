@@ -56,6 +56,9 @@ def build_condition(game, myth_writer, runtime_metadata, simulation, replicate_i
     board = getattr(myth_writer, "board", None)
     if board is not None:
         protocol["myth"]["board"] = board
+        # Game-board kinds shuffle per replicate; the seed is a real input of the run.
+        if getattr(myth_writer, "board_seed", None) is not None:
+            protocol["myth"]["board_seed"] = myth_writer.board_seed
     saboteur = getattr(myth_writer, "saboteur", None)
     if saboteur is not None:
         protocol["myth"]["saboteur"] = saboteur
