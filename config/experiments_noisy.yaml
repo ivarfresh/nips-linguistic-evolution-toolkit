@@ -20,6 +20,7 @@ base_models:
   claude_haiku: "anthropic/claude-3-haiku"
   claude_haiku_45: "anthropic/claude-haiku-4.5"
   claude_sonnet_45: "anthropic/claude-sonnet-4.5"
+  claude_sonnet_55: "anthropic/claude-sonnet-5-5"
   deepseek_v3: "deepseek/deepseek-chat-v3-0324"
   gemini_3_flash: "google/gemini-3-flash-preview"
   gemini_3_7_flash: "google/gemini-3.7-flash"
@@ -37,6 +38,18 @@ llm_profiles:
       thinking:
         type: "enabled"
         budget_tokens: 8192
+    temperature: "default"
+    max_output_tokens: 64000
+  # 2026-11-07 Sonnet 5.5 baseline cell: adaptive thinking at effort high, as the
+  # frontier Opus 5 / 5.5 arms (config/frontier_rerun_20260918.yaml september18_opus5);
+  # Sonnet 5.5 rejects the fixed 8192-token budget Sonnet 4.5 used and non-default temperature.
+  november7_sonnet55: &november7_sonnet55
+    provider: "anthropic"
+    reasoning:
+      thinking:
+        type: "adaptive"
+      output_config:
+        effort: "high"
     temperature: "default"
     max_output_tokens: 64000
   september8_gpt: &september8_gpt
@@ -6252,3 +6265,20 @@ experiment_sets:
         later: "myth_writing_later_rounds_board_memory_primary"
     game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
     replicate_ids: [0, 1, 2, 3, 4]
+
+  # 2026-11-07 Sonnet 5.5 partner-myth baselines (Ivar): the September Sonnet 4.5
+  # population cells rerun on Claude Sonnet 5.5, replicates 0-4, seed-paired to the
+  # Sonnet 4.5 twins. Decides whether Sonnet 5.5 has headroom for a board cell.
+  sonnet55_baseline_population_game_myth_n5:
+    <<: *reasoning_rerun_population_game_myth
+    models: ["claude_sonnet_55"]
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings: *november7_sonnet55
+
+  sonnet55_baseline_population_myth_game_n5:
+    <<: *reasoning_rerun_population_myth_game
+    models: ["claude_sonnet_55"]
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings: *november7_sonnet55

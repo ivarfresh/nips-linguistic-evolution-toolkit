@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Myth board pilot (2026-11-07): 10 Sonnet 4.5 + 10 GPT-5 Nano board populations; dry-run by default.
+"""Myth board pilot (2026-11-07): board runs and the Sonnet 5.5 baseline cell; dry-run by default.
+
+--stage board (default): 10 Sonnet 4.5 + 10 GPT-5 Nano board populations.
+--stage sonnet55_baseline: 10 Claude Sonnet 5.5 partner-myth populations (no board), seed twins
+of the September Sonnet 4.5 cells, to see whether Sonnet 5.5 has headroom before any board run.
 
 Twenty 8-agent runs from the four myth_board_pilot_* sets in config/experiments_noisy.yaml:
 Sonnet 4.5 and GPT-5 Nano, game->myth and myth->game, replicates 0-4. Each run is the
@@ -50,18 +54,33 @@ RATES = {"anthropic": (3, 15), "openai": (0.05, 0.4)}
 BASE_USD = {"anthropic": 3.35, "openai": 0.44}
 BOARD_INPUT_TOKENS = 8 * 2 * 360 * 300
 GAME_BOARD_HEAD = MYTH_BOARD_GAME_BLOCK.split("\n")[0].split("{")[0]
-# Keys of comparison_inputs that may differ from the baseline twin, and nothing else.
-ALLOWED_DIFFS = {"game_params", "myth_board", "myth_writing_later_rounds"}
+# Sonnet 5.5 at $2/$10 per M with the Sonnet 4.5 token profile (~560k in, ~110k out).
+SONNET55_BASE_USD = 2.20
 
-
-def pilot_sets():
-    """(pilot set, September baseline set, provider)."""
-    out = []
-    for shape in ("game_myth", "myth_game"):
-        for model, provider in (("claude", "anthropic"), ("gpt", "openai")):
-            out.append((f"myth_board_pilot_population_{shape}_{model}_n5",
-                        f"negative_only_reasoning_rerun_population_{shape}_{model}_n5", provider))
-    return out
+# Stages. ``board``: the 20 board runs (seed twins of the September baselines; inputs
+# may differ only in the board template and game params). ``sonnet55_baseline``: the
+# September Sonnet 4.5 partner-myth cells rerun on Claude Sonnet 5.5 (2026-11-07,
+# "baselines first, then decide"); inputs may differ only in the model and request.
+STAGES = {
+    "board": {
+        "sets": [(f"myth_board_pilot_population_{shape}_{model}_n5",
+                  f"negative_only_reasoning_rerun_population_{shape}_{model}_n5", provider)
+                 for shape in ("game_myth", "myth_game")
+                 for model, provider in (("claude", "anthropic"), ("gpt", "openai"))],
+        "allowed_diffs": {"game_params", "myth_board", "myth_writing_later_rounds"},
+        "board": True,
+        "runs": 20,
+    },
+    "sonnet55_baseline": {
+        "sets": [(f"sonnet55_baseline_population_{shape}_n5",
+                  f"negative_only_reasoning_rerun_population_{shape}_claude_n5", "anthropic")
+                 for shape in ("game_myth", "myth_game")],
+        "allowed_diffs": {"model", "llm_request"},
+        "board": False,
+        "runs": 10,
+    },
+}
+SONNET55_MODEL = "claude-sonnet-5-5"
 
 
 def _quiet(name):
@@ -73,9 +92,10 @@ def _seeds(c):
     return resolve_protocol_seeds(c["game_params"], c)
 
 
-def plan():
+def plan(stage):
+    spec = STAGES[stage]
     jobs = []
-    for name, src, provider in pilot_sets():
+    for name, src, provider in spec["sets"]:
         combos = _quiet(name)
         twins = {o["replicate_id"]: o for o in _quiet(src)
                  if o["game_params"].get("defector_ratio", 0) == 0
@@ -85,29 +105,42 @@ def plan():
             twin = twins[c["replicate_id"]]
             inputs, ref = c["comparison_inputs"], twin["comparison_inputs"]
             differing = sorted(k for k in set(inputs) | set(ref) if inputs.get(k) != ref.get(k))
-            assert set(differing) <= ALLOWED_DIFFS, (name, "unexpected differences from the baseline twin", differing)
-            assert set(differing) >= {"game_params", "myth_board", "myth_writing_later_rounds"}, (name, differing)
-            gp, gp_ref = dict(c["game_params"]), dict(twin["game_params"])
-            assert gp.pop("myth_board") == BOARD_KIND and "myth_board" not in gp_ref and gp == gp_ref, (name, "game params")
-            assert c["game_params_name"] == BOARD_PARAMS and c["myth_later_prompt_key"] == BOARD_TEMPLATE
+            assert set(differing) <= spec["allowed_diffs"], (name, "unexpected differences from the baseline twin", differing)
+            assert set(differing) == spec["allowed_diffs"], (name, "expected differences missing", differing)
+            request = c["request_plan"].as_dict()
+            assert request["provider"] == provider
             assert c["myth_default_prompt_key"] == twin["myth_default_prompt_key"]
-            assert c["request_plan"].as_dict() == twin["request_plan"].as_dict(), (name, "request plan differs")
-            assert c["request_plan"].as_dict()["provider"] == provider
+            if spec["board"]:
+                gp, gp_ref = dict(c["game_params"]), dict(twin["game_params"])
+                assert gp.pop("myth_board") == BOARD_KIND and "myth_board" not in gp_ref and gp == gp_ref, (name, "game params")
+                assert c["game_params_name"] == BOARD_PARAMS and c["myth_later_prompt_key"] == BOARD_TEMPLATE
+                assert request == twin["request_plan"].as_dict(), (name, "request plan differs")
+            else:
+                assert c["game_params"] == twin["game_params"] and c["myth_later_prompt_key"] == twin["myth_later_prompt_key"]
+                assert request["provider_model"] == SONNET55_MODEL, request
+                assert request["parameters"].get("thinking") == {"type": "adaptive"}, request
+                assert request["parameters"].get("output_config") == {"effort": "high"}, request
             assert _seeds(c) == _seeds(twin), (name, "seeds differ from the baseline twin", _seeds(c), _seeds(twin))
             game, writer = build_noisy_protocol(c, i)
             assert len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0
             assert not game.punishment_enabled
-            assert writer.board == BOARD_KIND and writer.board_seed == c["replicate_id"]
-            jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT), provider))
-    assert len(jobs) == 20 and len({str(j[3]) for j in jobs}) == 20, len(jobs)
+            if spec["board"]:
+                assert writer.board == BOARD_KIND and writer.board_seed == c["replicate_id"]
+            else:
+                assert writer.board is None
+            jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT), provider, stage))
+    assert len(jobs) == spec["runs"] and len({str(j[3]) for j in jobs}) == spec["runs"], len(jobs)
     jobs.sort(key=lambda j: (0 if j[4] == "anthropic" else 1, j[0], j[1]))  # slow Sonnet runs first
     return jobs
 
 
 def estimate(jobs):
     total = {"anthropic": 0.0, "openai": 0.0}
-    for *_, provider in jobs:
-        total[provider] += BASE_USD[provider] + BOARD_INPUT_TOKENS * RATES[provider][0] / 1e6
+    for *_, provider, stage in jobs:
+        if STAGES[stage]["board"]:
+            total[provider] += BASE_USD[provider] + BOARD_INPUT_TOKENS * RATES[provider][0] / 1e6
+        else:
+            total[provider] += SONNET55_BASE_USD
     return total
 
 
@@ -128,7 +161,8 @@ def quarantine(job, reason):
 
 
 def audit(job):
-    name, i, c, path, provider = job
+    name, i, c, path, provider, stage = job
+    board = STAGES[stage]["board"]
     check_existing_final(path, c)
     d = json.loads(path.read_text())
     m = d["run_metadata"]
@@ -140,9 +174,12 @@ def audit(job):
     assert m["replicate_id"] == c["replicate_id"]
     assert m["noise_config"] == c["game_params"]["noise_config"]
     cond = m["experiment_condition"]["protocol"]["myth"]
-    assert cond["board"] == BOARD_KIND and cond["board_seed"] == c["replicate_id"], cond
+    if board:
+        assert cond["board"] == BOARD_KIND and cond["board_seed"] == c["replicate_id"], cond
+    else:
+        assert "board" not in cond, cond
     # Board exposure records: every agent, every round from 2, 8*(r-1) myths, in myth and game.
-    for entry in d["conversation_history"]:
+    for entry in d["conversation_history"] if board else []:
         r = entry["round"]
         if r == 1:
             assert "board_in_game" not in entry
@@ -174,10 +211,10 @@ def audit(job):
             if u.get("outcome") == "error":
                 raise ErroredCall(f"{agent_id} round {meta.get('round')}: call recorded outcome=error")
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
-            if meta.get("task") == "game" and meta.get("round", 0) >= 2:
+            if board and meta.get("task") == "game" and meta.get("round", 0) >= 2:
                 assert e["prompt"].startswith(GAME_BOARD_HEAD), (name, agent_id, meta.get("round"), "board missing from game prompt")
                 assert e["prompt"].count("\nRound 1, myth ") == n_agents, (name, agent_id, meta.get("round"))
-            if meta.get("task") == "game" and meta.get("round") == 1:
+            if (not board or meta.get("round") == 1) and meta.get("task") == "game":
                 assert GAME_BOARD_HEAD not in e["prompt"]
             calls += 1
             output_per_call.append(u.get("output_tokens") or 0)
@@ -186,6 +223,7 @@ def audit(job):
         "path": str(path.relative_to(ROOT)),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "set": name,
+        "stage": stage,
         "provider": provider,
         "task_order": "_".join(c["task_order"]),
         "replicate_id": c["replicate_id"],
@@ -199,6 +237,7 @@ def audit(job):
 def main():
     os.chdir(ROOT)  # workers write finals relative to the cwd; the audit reads ROOT-relative paths
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--stage", choices=sorted(STAGES), default="board")
     p.add_argument("--workers", type=int, default=6)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--audit-only", action="store_true")
@@ -207,7 +246,7 @@ def main():
     p.add_argument("--provider", choices=sorted(RATES), help="restrict to one provider's runs")
     args = p.parse_args()
     assert 1 <= args.workers <= 20
-    jobs = plan()
+    jobs = plan(args.stage)
     if args.provider:
         jobs = [j for j in jobs if j[4] == args.provider]
     if args.smoke:
@@ -225,9 +264,10 @@ def main():
                 quarantine(j, str(e))
         pending.append(j)
     est = estimate(pending)
-    print(f"VALIDATED N={len(jobs)} BOARD={BOARD_KIND} TEMPLATE={BOARD_TEMPLATE} SEEDS=EQUAL_TO_BASELINE_TWIN "
-          f"EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
-    print(f"MODEL=claude-sonnet-4.5/gpt-5-nano (September profiles) N={len(pending)} WORKERS={args.workers} "
+    print(f"VALIDATED STAGE={args.stage} N={len(jobs)} BOARD={BOARD_KIND if STAGES[args.stage]['board'] else 'none'} "
+          f"SEEDS=EQUAL_TO_BASELINE_TWIN EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
+    models = SONNET55_MODEL + " (adaptive thinking, effort high)" if args.stage == "sonnet55_baseline" else "claude-sonnet-4.5/gpt-5-nano (September profiles)"
+    print(f"MODEL={models} N={len(pending)} WORKERS={args.workers} "
           f"EST_COST=${sum(est.values()):.2f} (anthropic ${est['anthropic']:.2f}, openai ${est['openai']:.2f}; "
           f"+20% allowance ${1.2 * sum(est.values()):.2f})", flush=True)
     if args.audit_only:
@@ -288,7 +328,7 @@ def main():
                 print(f"CONTINUATION PENDING={len(pending)} WORKERS={workers} ATTEMPT={attempt + 1}", flush=True)
                 time.sleep(min(60, 2 ** attempt))
     by_provider = {k: sum(r["standard_rate_usd"] for r in receipts if r["provider"] == k) for k in RATES}
-    target = ROOT / "data/json/noise_experiments" / OUTPUT / ("smoke_receipt.json" if args.smoke else "completion_receipt.json")
+    target = ROOT / "data/json/noise_experiments" / OUTPUT / f"{args.stage}_{'smoke' if args.smoke else 'completion'}_receipt.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({
         "runs": len(receipts),
