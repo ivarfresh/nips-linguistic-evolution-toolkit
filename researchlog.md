@@ -1,3 +1,32 @@
+### 2026-11-07 — Result: Sonnet 5.5 partner-myth baselines sit near the ceiling; board pilot code built, board runs on hold
+
+**Time:** ~6 h (Claude session; API spend $24.31 Anthropic, on promotional credits; ~$0.50 on a stopped Sonnet 4.5 smoke run).
+
+Result: ten Claude Sonnet 5.5 8-agent partner-myth populations (`sonnet55_baseline_population_{game_myth,myth_game}_n5`,
+replicates 0-4, seed twins of the September Sonnet 4.5 cells, adaptive thinking at effort high) end at
+game→myth 67.4 (±4.3) and myth→game 73.3 (±1.9) mean final resources per agent (ceiling 75).
+Sonnet 4.5 in the same cells: 55.7 (±3.2) / 67.3 (±3.9); Opus 5.5: 72.1 / 74.8. So Sonnet 5.5 has
+about 8 points of headroom in game→myth and none in myth→game: a poor cell for a board effect.
+Per run $2.43, 222-252 output tokens per call (adaptive thinking barely thinks here).
+Finals and the audited receipt: `data/json/noise_experiments/myth_board_pilot_20261107/`.
+
+Decision context: Ivar wants a 10-run message-board pilot (every agent reads every earlier myth,
+also pasted into the game decision) on Nano plus one Claude model. The multi-arm design
+(`docs/research/myth_board_design_v2_20261106.md`) was cut to this pilot. Full-board Sonnet 4.5 runs
+cost ~$8.50 each because the board adds ~1.7M input tokens per run; a Sonnet smoke run was
+stopped after round 1 on that cost. Sonnet 5.5 was tried as a cheaper Claude ($2/$10) via
+these baselines first; the result above says it is not a good board cell either.
+
+Built (branch `myth-board-pilot`, from fork main): board kind `persistent_game` (board also ahead of
+every game decision from round 2, kept out of chat memory via `memory_prompt`, per-replicate shuffle),
+template `myth_writing_later_rounds_board_memory_primary`, game params
+`noisy8_crossmodel_negative_twotask_board_r3`, sets `myth_board_pilot_population_*`, launcher
+`scripts/run_myth_board_pilot.py` (seed-twin and input-diff assertions, board audit). Tests pass.
+Board runs not started: Nano blocked on OpenAI credits (balance exhausted 2026-11-07); Claude cell
+undecided (Sonnet 4.5 full board $85, last-round board ~$34, Haiku 5.5 untested ~$4).
+
+Rejected: Opus 5 / 5.5 as the Claude cell (72-75 with myths, no headroom, $11-13 per board run).
+
 ### 2026-10-09 — Result: placebo controls and the interaction table now rebuild from the repo
 
 **Time:** ~1.5 h (Claude session; no API spend).
