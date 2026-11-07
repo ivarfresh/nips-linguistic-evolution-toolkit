@@ -202,12 +202,16 @@ def main():
     p.add_argument("--workers", type=int, default=6)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--audit-only", action="store_true")
-    p.add_argument("--smoke", action="store_true", help="only the first GPT-5 Nano game->myth run (replicate 0)")
+    p.add_argument("--smoke", nargs="?", const="openai", choices=sorted(RATES),
+                   help="only that provider's game->myth replicate 0 (default openai: one GPT-5 Nano run)")
+    p.add_argument("--provider", choices=sorted(RATES), help="restrict to one provider's runs")
     args = p.parse_args()
     assert 1 <= args.workers <= 20
     jobs = plan()
+    if args.provider:
+        jobs = [j for j in jobs if j[4] == args.provider]
     if args.smoke:
-        jobs = [j for j in jobs if j[0] == "myth_board_pilot_population_game_myth_gpt_n5" and j[1] == 0]
+        jobs = [j for j in jobs if j[4] == args.smoke and j[2]["task_order"] == ["game", "myth"] and j[1] == 0]
         assert len(jobs) == 1
     pending, receipts = [], []
     for j in jobs:
