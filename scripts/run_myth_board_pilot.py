@@ -4,6 +4,9 @@
 --stage board (default): 10 Sonnet 4.5 + 10 GPT-5 Nano board populations.
 --stage sonnet55_baseline: 10 Claude Sonnet 5.5 partner-myth populations (no board), seed twins
 of the September Sonnet 4.5 cells, to see whether Sonnet 5.5 has headroom before any board run.
+--stage mixed_board (2026-11-09): 10 board runs of the 4 GPT-5 Nano + 4 Sonnet 4.5 population,
+game->myth, replicates 0-9, seed twins of the Table 1 cells mixed_pop_game_myth_gpt4_sonnet4_n5
+and _n5ext (per-agent request plans equal to the twins'; priced per provider from usage).
 
 Twenty 8-agent runs from the four myth_board_pilot_* sets in config/experiments_noisy.yaml:
 Sonnet 4.5 and GPT-5 Nano, game->myth and myth->game, replicates 0-4. Each run is the
@@ -38,6 +41,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.run_noisy_missing import load_combinations, expected_output_path, check_existing_final, run_missing_job  # noqa: E402
 from scripts.rerun_negative_only_crossmodel import TRUNCATION_REASONS  # noqa: E402
 from experiments.run_noisy_batch import build_noisy_protocol, resolve_protocol_seeds  # noqa: E402
+from src.llm_settings import is_mixed_plan  # noqa: E402
 from src.myth_writer import MYTH_BOARD_GAME_BLOCK  # noqa: E402
 from src.utils import is_exhausted_quota  # noqa: E402
 
@@ -53,6 +57,13 @@ RATES = {"anthropic": (3, 15), "openai": (0.05, 0.4)}
 # sum_{r=2..10} 8(r-1) = 360 myths x ~300 tokens = ~1.73M extra input tokens per run.
 BASE_USD = {"anthropic": 3.35, "openai": 0.44}
 BOARD_INPUT_TOKENS = 8 * 2 * 360 * 300
+# Per-agent view of the same numbers for mixed populations (base cost per agent of a
+# September game->myth run from the Table 1 launcher, plus one agent's share of the board).
+PER_AGENT_BASE_USD = {"anthropic": 0.4085, "openai": 0.0555}
+AGENT_BOARD_INPUT_TOKENS = BOARD_INPUT_TOKENS // 8
+MIXED_MODELS = {"Agent_1": "openai/gpt-5-nano", "Agent_2": "openai/gpt-5-nano", "Agent_3": "openai/gpt-5-nano",
+                "Agent_4": "openai/gpt-5-nano", "Agent_5": "anthropic/claude-sonnet-4.5", "Agent_6": "anthropic/claude-sonnet-4.5",
+                "Agent_7": "anthropic/claude-sonnet-4.5", "Agent_8": "anthropic/claude-sonnet-4.5"}
 GAME_BOARD_HEAD = MYTH_BOARD_GAME_BLOCK.split("\n")[0].split("{")[0]
 # Sonnet 5.5 at $2/$10 per M with the Sonnet 4.5 token profile (~560k in, ~110k out).
 SONNET55_BASE_USD = 2.20
@@ -79,6 +90,15 @@ STAGES = {
         "board": False,
         "runs": 10,
     },
+    # Twins: replicates 0-4 from the n5 set, 5-9 from the n5ext set (both the same cell).
+    "mixed_board": {
+        "sets": [("myth_board_pilot_population_game_myth_gpt4_sonnet4_n10",
+                  ("mixed_pop_game_myth_gpt4_sonnet4_n5", "mixed_pop_game_myth_gpt4_sonnet4_n5ext"), "mixed")],
+        "allowed_diffs": {"game_params", "myth_board", "myth_writing_later_rounds"},
+        "board": True,
+        "runs": 10,
+        "replicates": list(range(10)),
+    },
 }
 SONNET55_MODEL = "claude-sonnet-5-5"
 
@@ -92,15 +112,26 @@ def _seeds(c):
     return resolve_protocol_seeds(c["game_params"], c)
 
 
+def agent_requests(c, agent_ids):
+    """Per-agent request plan: the shared plan for a single-model run, the agent's own for a mixed one."""
+    request = c["request_plan"].as_dict()
+    if is_mixed_plan(request):
+        assert set(request["agents"]) == set(agent_ids), (set(request["agents"]), set(agent_ids))
+        return request["agents"]
+    return {agent_id: request for agent_id in agent_ids}
+
+
 def plan(stage):
     spec = STAGES[stage]
+    replicates = spec.get("replicates", REPLICATES)
     jobs = []
     for name, src, provider in spec["sets"]:
         combos = _quiet(name)
-        twins = {o["replicate_id"]: o for o in _quiet(src)
+        twins = {o["replicate_id"]: o
+                 for s in ((src,) if isinstance(src, str) else src) for o in _quiet(s)
                  if o["game_params"].get("defector_ratio", 0) == 0
                  and o["game_params"].get("random_defection_probability", 0) == 0}
-        assert [c["replicate_id"] for c in combos] == REPLICATES, (name, [c["replicate_id"] for c in combos])
+        assert [c["replicate_id"] for c in combos] == replicates, (name, [c["replicate_id"] for c in combos])
         for i, c in enumerate(combos):
             twin = twins[c["replicate_id"]]
             inputs, ref = c["comparison_inputs"], twin["comparison_inputs"]
@@ -108,7 +139,11 @@ def plan(stage):
             assert set(differing) <= spec["allowed_diffs"], (name, "unexpected differences from the baseline twin", differing)
             assert set(differing) == spec["allowed_diffs"], (name, "expected differences missing", differing)
             request = c["request_plan"].as_dict()
-            assert request["provider"] == provider
+            if provider == "mixed":
+                assert is_mixed_plan(request) and c["agent_models"] == MIXED_MODELS == twin["agent_models"], (name, c.get("agent_models"))
+                assert {a["model"] for a in request["agents"].values()} == set(MIXED_MODELS.values())
+            else:
+                assert request["provider"] == provider
             assert c["myth_default_prompt_key"] == twin["myth_default_prompt_key"]
             if spec["board"]:
                 gp, gp_ref = dict(c["game_params"]), dict(twin["game_params"])
@@ -136,8 +171,12 @@ def plan(stage):
 
 def estimate(jobs):
     total = {"anthropic": 0.0, "openai": 0.0}
-    for *_, provider, stage in jobs:
-        if STAGES[stage]["board"]:
+    for _, _, c, _, provider, stage in jobs:
+        if provider == "mixed":
+            for agent_request in c["request_plan"].as_dict()["agents"].values():
+                p = agent_request["provider"]
+                total[p] += PER_AGENT_BASE_USD[p] + AGENT_BOARD_INPUT_TOKENS * RATES[p][0] / 1e6
+        elif STAGES[stage]["board"]:
             total[provider] += BASE_USD[provider] + BOARD_INPUT_TOKENS * RATES[provider][0] / 1e6
         else:
             total[provider] += SONNET55_BASE_USD
@@ -171,6 +210,8 @@ def audit(job):
     assert m["defector_count"] == 0 and m["random_defection_probability"] == 0
     assert not m["code_dirty"]
     assert m["llm_request"] == request
+    if provider == "mixed":
+        assert m["llm_provider"] == "mixed" and m["agent_models"] == c["agent_models"] == MIXED_MODELS, m.get("agent_models")
     assert m["replicate_id"] == c["replicate_id"]
     assert m["noise_config"] == c["game_params"]["noise_config"]
     cond = m["experiment_condition"]["protocol"]["myth"]
@@ -194,9 +235,12 @@ def audit(job):
         assert len(same) == 1 and same == {str(rec["board_items"]) for rec in entry["myth_exposures"].values()}
     calls, output_per_call = 0, []
     cost = {"anthropic": 0.0, "openai": 0.0}
-    ir, orr = RATES[provider]
+    expected_requests = agent_requests(c, list(d["agents"]))
     for agent_id, a in d["agents"].items():
-        assert a["model"] == request["model"], (agent_id, a["model"])
+        expected = expected_requests[agent_id]
+        agent_provider = expected["provider"]
+        ir, orr = RATES[agent_provider]
+        assert a["model"] == expected["model"], (agent_id, a["model"])
         # Chat memory (the saved window) never holds the board text.
         for msg in a["messages"]:
             if msg.get("role") == "user":
@@ -207,7 +251,7 @@ def audit(job):
             if r.get("response_source", "llm") != "llm":
                 raise AssertionError((name, agent_id, "non-LLM response"))
             u = r.get("usage") or {}
-            assert u.get("request_settings") == request, (name, agent_id)
+            assert u.get("request_settings") == expected, (name, agent_id)
             if u.get("outcome") == "error":
                 raise ErroredCall(f"{agent_id} round {meta.get('round')}: call recorded outcome=error")
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
@@ -218,18 +262,25 @@ def audit(job):
                 assert GAME_BOARD_HEAD not in e["prompt"]
             calls += 1
             output_per_call.append(u.get("output_tokens") or 0)
-            cost[provider] += ((u.get("input_tokens") or 0) * ir + (u.get("output_tokens") or 0) * orr) / 1e6
+            cost[agent_provider] += ((u.get("input_tokens") or 0) * ir + (u.get("output_tokens") or 0) * orr) / 1e6
+    balances = d["game_data"]["balances"]
+    by_model = {}
+    for agent_id, model in (c.get("agent_models") or {}).items():
+        by_model.setdefault(model, []).append(balances[agent_id])
     return {
         "path": str(path.relative_to(ROOT)),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "set": name,
         "stage": stage,
         "provider": provider,
+        "agent_models": c.get("agent_models"),
         "task_order": "_".join(c["task_order"]),
         "replicate_id": c["replicate_id"],
         "calls": calls,
         "output_tokens_per_call_mean": statistics.mean(output_per_call) if output_per_call else 0,
-        "mean_final_resources": statistics.mean(d["game_data"]["balances"].values()),
+        "mean_final_resources": statistics.mean(balances.values()),
+        "mean_final_resources_by_model": {m: statistics.mean(v) for m, v in by_model.items()} or None,
+        "standard_rate_usd_by_provider": cost,
         "standard_rate_usd": sum(cost.values()),
     }
 
@@ -241,8 +292,9 @@ def main():
     p.add_argument("--workers", type=int, default=6)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--audit-only", action="store_true")
-    p.add_argument("--smoke", nargs="?", const="openai", choices=sorted(RATES),
-                   help="only that provider's game->myth replicate 0 (default openai: one GPT-5 Nano run)")
+    p.add_argument("--smoke", nargs="?", const="openai", choices=sorted(RATES) + ["mixed"],
+                   help="only that provider's game->myth replicate 0 (default openai: one GPT-5 Nano run; "
+                        "mixed: replicate 0 of the mixed_board stage)")
     p.add_argument("--provider", choices=sorted(RATES), help="restrict to one provider's runs")
     args = p.parse_args()
     assert 1 <= args.workers <= 20
@@ -250,7 +302,7 @@ def main():
     if args.provider:
         jobs = [j for j in jobs if j[4] == args.provider]
     if args.smoke:
-        jobs = [j for j in jobs if j[4] == args.smoke and j[2]["task_order"] == ["game", "myth"] and j[1] == 0]
+        jobs = [j for j in jobs if j[4] == args.smoke and j[2]["task_order"] == ["game", "myth"] and j[2]["replicate_id"] == 0]
         assert len(jobs) == 1
     pending, receipts = [], []
     for j in jobs:
@@ -266,7 +318,9 @@ def main():
     est = estimate(pending)
     print(f"VALIDATED STAGE={args.stage} N={len(jobs)} BOARD={BOARD_KIND if STAGES[args.stage]['board'] else 'none'} "
           f"SEEDS=EQUAL_TO_BASELINE_TWIN EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
-    models = SONNET55_MODEL + " (adaptive thinking, effort high)" if args.stage == "sonnet55_baseline" else "claude-sonnet-4.5/gpt-5-nano (September profiles)"
+    models = {"sonnet55_baseline": SONNET55_MODEL + " (adaptive thinking, effort high)",
+              "mixed_board": "4x gpt-5-nano + 4x claude-sonnet-4.5 per run (September profiles)"}.get(
+                  args.stage, "claude-sonnet-4.5/gpt-5-nano (September profiles)")
     print(f"MODEL={models} N={len(pending)} WORKERS={args.workers} "
           f"EST_COST=${sum(est.values()):.2f} (anthropic ${est['anthropic']:.2f}, openai ${est['openai']:.2f}; "
           f"+20% allowance ${1.2 * sum(est.values()):.2f})", flush=True)
@@ -327,7 +381,7 @@ def main():
                 workers = max(1, workers // 2)
                 print(f"CONTINUATION PENDING={len(pending)} WORKERS={workers} ATTEMPT={attempt + 1}", flush=True)
                 time.sleep(min(60, 2 ** attempt))
-    by_provider = {k: sum(r["standard_rate_usd"] for r in receipts if r["provider"] == k) for k in RATES}
+    by_provider = {k: sum(r["standard_rate_usd_by_provider"][k] for r in receipts) for k in RATES}
     target = ROOT / "data/json/noise_experiments" / OUTPUT / f"{args.stage}_{'smoke' if args.smoke else 'completion'}_receipt.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({

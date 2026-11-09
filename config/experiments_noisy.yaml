@@ -6282,3 +6282,17 @@ experiment_sets:
     game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
     replicate_ids: [0, 1, 2, 3, 4]
     llm_settings: *november7_sonnet55
+
+  # 2026-11-09 mixed-population board cell (Ivar): 4 GPT-5 Nano (Agent_1-4) +
+  # 4 Sonnet 4.5 (Agent_5-8), game->myth, replicates 0-9, seed-paired to the
+  # Table 1 twins mixed_pop_game_myth_gpt4_sonnet4_n5 (0-4) and _n5ext (5-9).
+  # Only the myth later-round template and the game params (myth_board) differ.
+  # Launcher: scripts/run_myth_board_pilot.py --stage mixed_board.
+  myth_board_pilot_population_game_myth_gpt4_sonnet4_n10:
+    <<: *t1x_mixed_pop_game_myth_gpt4_sonnet4_n5
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
