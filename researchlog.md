@@ -1,3 +1,29 @@
+### 2026-11-10 — Result: a partner-marked myth board does not help Sonnet 4.5 populations against two defectors
+
+**Time:** ~4 h (Claude session; API spend $75.07 Anthropic, promotional credits).
+
+Result: ten runs in which the game prompt showed every myth written so far with the current co-player's myths
+labelled "(written by the co-player you are paired with this round)" (`myth_board: persistent_game_partner`,
+sets `myth_board_partner_population_{game_myth,myth_game}_claude_n5`, 8 Sonnet 4.5, 2 forced-zero defectors,
+informed negative-only noise) ended with the six ordinary agents at 48.4 (±5.0) against 49.0 (±3.3) for their
+September seed twins (`negative_only_reasoning_rerun_population_*_claude_n5`, defectors25 params): -0.5,
+paired t p 0.68; game -> myth 45.7 vs 46.9, myth -> game 51.2 vs 51.0. Sends to a defector fell from $1.01 to
+$0.90 per decision (p 0.09; rounds 8-10: 0.39 -> 0.12), $0 sends to defectors after round 1 from 60% to 80%.
+Sends to ordinary agents did not rise (3.39 vs 3.49). 10/10 audited; defectors received no board.
+
+Why: agents did read it (259/266 later-round investor reasons cite the marked myths; 6/266 in the twins cite
+any myth) and defectors' myths confess (171/200 with nothing/zero/kept-all language). But the twins' game
+prompt already lists the co-player's last three moves, so defectors were identified by action history before
+the board; the myths added a marginal extra sanction and, in 14/70 decisions, a reason to give the confessing
+defector one more chance. Write-up `docs/figures/myth_board_partner_20261109/README.md`; analysis
+`scripts/analyze_myth_board_partner_20261109.py`.
+
+Decision: the board line is closed on the current prompts. Anonymous board (2026-11-09), attributed board
+(this entry) and the October frontier board all return nulls; the myth effect in Table 1 comes from writing,
+not from reading more or better-attributed myths. Rejected without running: pseudonymous author names on the
+board (confounds the hidden-name twins) and removing chat memory (the action history, not memory, carries
+the reputation).
+
 ### 2026-11-09 — Result: a shared myth board does not lift a 4 GPT-5 Nano + 4 Sonnet 4.5 population; myths do not converge
 
 **Time:** ~3 h (Claude session; API spend $44.27: $41.56 Anthropic on promotional credits, $2.71 OpenAI).
