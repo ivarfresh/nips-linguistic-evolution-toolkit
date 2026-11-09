@@ -1,3 +1,30 @@
+### 2026-11-09 — Result: a shared myth board does not lift a 4 GPT-5 Nano + 4 Sonnet 4.5 population; myths do not converge
+
+**Time:** ~3 h (Claude session; API spend $44.27: $41.56 Anthropic on promotional credits, $2.71 OpenAI).
+
+Result: ten board runs of the Table 1 cell with the most headroom (4 Nano + 4 Sonnet 4.5, game -> myth,
+8 agents, informed negative-only noise, no defectors; set `myth_board_pilot_population_game_myth_gpt4_sonnet4_n10`)
+ended at 51.5 (±7.4) against 54.0 (±8.9) for their seed twins with the partner myth
+(`mixed_pop_game_myth_gpt4_sonnet4_n5` + `_n5ext`): -2.5, 6 of 10 pairs up, paired t p 0.53. Nano 52.9 vs 55.0,
+Sonnet 50.1 vs 52.9. Sends to every family pairing equal or lower with the board (Nano->Sonnet 2.17 vs 2.82,
+Sonnet->Sonnet 3.24 both). The board (`myth_board: persistent_game`) held every earlier myth without author
+names and was pasted ahead of every myth and game prompt from round 2 (72 myths at round 10), kept out of chat
+memory. Launcher plan asserted equal seeds and per-agent request plans before launch; 10/10 audited.
+
+- Myths did not converge: word-overlap cosine between the eight myths of a round (rounds 8-10) 0.25 (±0.02)
+  with the board vs 0.24 (±0.03) without; overlap with the agent's own previous myth 0.48 vs 0.47; 2 of 720
+  later-round myths in each condition mention other stories or a board. Agents rewrite their own myth and
+  treat the board as background. Same null as the October frontier board (4 Opus 5 + 4 Sol, n=3).
+- Decision: no further board runs on this design. A board of unattributed prose is not a stronger channel
+  than one partner's myth; the remaining Sonnet-only and Nano-only board sets (`myth_board_pilot_population_*_n5`)
+  stay unrun. Any next step needs a different mechanism (attribution, voting, or a board that agents
+  are asked to act on), not more replicates.
+- A mid-batch network drop failed 7 workers at once (APIConnectionError on both providers); the launcher
+  halved workers and resumed every run from its checkpoint, so no run was resampled.
+
+Write-up `docs/figures/myth_board_mixed_20261109/README.md`; comparison `scripts/analyze_myth_board_mixed_20261109.py`;
+receipt `data/json/noise_experiments/myth_board_pilot_20261107/mixed_board_completion_receipt.json`. Branch `myth-board-pilot`.
+
 ### 2026-11-07 — Result: Sonnet 5.5 partner-myth baselines sit near the ceiling; board pilot code built, board runs on hold
 
 **Time:** ~6 h (Claude session; API spend $24.31 Anthropic, on promotional credits; ~$0.50 on a stopped Sonnet 4.5 smoke run).
