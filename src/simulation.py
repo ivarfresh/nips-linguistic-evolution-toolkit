@@ -8,7 +8,7 @@ from src.utils import create_llm_client, llm_runtime_metadata, print_simulation_
 from concurrent.futures import ThreadPoolExecutor
 from src.experiment_condition import build_condition, check_conditions, condition_from_run, digest
 from src.llm_settings import LLMSettingsError, agent_request_plans, is_mixed_plan
-from src.myth_writer import GAME_BOARD_KINDS
+from src.myth_writer import GAME_BOARD_KINDS, PARTNER_MARKED_BOARD_KINDS
 
 
 DEFAULT_AGENT_NAMES = [
@@ -484,13 +484,21 @@ def run_simulation(
     if getattr(myth_writer, "board", None) in GAME_BOARD_KINDS:
         # The board is pasted into every game decision prompt from round 2 and kept
         # out of chat memory via memory_prompt; that path needs a remembered game
-        # call, a myth task to fill the board, and no scripted (defector) moves.
+        # call and a myth task to fill the board. Only the partner-marked kinds accept
+        # forced defectors (their scripted game moves get no board; see the game call).
         if "myth" not in task_order or "game" not in task_order:
             raise ValueError(f"myth_board {myth_writer.board!r} needs both a game and a myth task")
         if chat_memory_mode != "memory_primary":
             raise ValueError(f"myth_board {myth_writer.board!r} is only supported with chat_memory_mode='memory_primary'")
-        if getattr(game, "defector_agent_ids", None) or getattr(game, "random_defection_probability", 0):
-            raise ValueError(f"myth_board {myth_writer.board!r} does not support forced or random defectors")
+        if getattr(game, "random_defection_probability", 0):
+            raise ValueError(f"myth_board {myth_writer.board!r} does not support random defectors")
+        has_defectors = bool(getattr(game, "defector_agent_ids", None)
+                             or getattr(game, "requested_defector_agent_ids", None)
+                             or getattr(game, "defector_ratio", 0))
+        if has_defectors and myth_writer.board not in PARTNER_MARKED_BOARD_KINDS:
+            raise ValueError(f"myth_board {myth_writer.board!r} does not support forced defectors")
+        if has_defectors and getattr(game, "defector_action_policy", None) != "forced_zero":
+            raise ValueError(f"myth_board {myth_writer.board!r} supports defectors only with defector_action_policy='forced_zero'")
     plant = getattr(myth_writer, "plant", None)
     if plant and plant["agent"] not in {f"Agent_{i+1}" for i in range(num_agents)}:
         raise ValueError(f"myth_plant agent {plant['agent']!r} is not one of the run's {num_agents} agents")
@@ -809,13 +817,28 @@ def run_simulation(
                             if myth_context:
                                 prompt = f"{prompt}\n\n{myth_context}"
 
+                        forced_response = None
+                        if hasattr(game, "get_forced_game_response"):
+                            forced_response = game.get_forced_game_response(
+                                agent_id,
+                                roles_by_agent.get(agent_id),
+                                turn,
+                            )
+
                         # Game-board kinds: the shared myth board goes ahead of the
                         # decision prompt for this call only; chat memory keeps the
-                        # prompt with a one-line note where the board stood.
+                        # prompt with a one-line note where the board stood. A
+                        # scripted (forced defector) move makes no model call and
+                        # gets no board.
                         board_memory_prompt = None
                         game_board = getattr(myth_writer, "game_board_block", None)
-                        if game_board is not None:
-                            shown = game_board(agent_id, turn, sim_data)
+                        if game_board is not None and forced_response is None:
+                            partner_pairing = _pairing_for_agent(pairings, agent_id) or {}
+                            partner_id = next(
+                                (other for other in partner_pairing.get("agents") or [] if other != agent_id),
+                                None,
+                            )
+                            shown = game_board(agent_id, turn, sim_data, partner_id=partner_id)
                             if shown is not None:
                                 board_block, board_note = shown
                                 board_memory_prompt = f"{board_note}\n\n{prompt}"
@@ -836,13 +859,6 @@ def run_simulation(
                             "hybrid",
                             "stateless",
                         )
-                        forced_response = None
-                        if hasattr(game, "get_forced_game_response"):
-                            forced_response = game.get_forced_game_response(
-                                agent_id,
-                                roles_by_agent.get(agent_id),
-                                turn,
-                            )
                         if forced_response is not None:
                             interaction_metadata["response_source"] = forced_response[
                                 "response_source"

@@ -146,12 +146,24 @@ class InvalidCouncilResponseError(ValueError):
 # never kept in chat memory (the remembered prompt carries MYTH_BOARD_MEMORY_NOTE
 # instead). The within-round order is shuffled per replicate (``board_seed``) and
 # round, so no agent's myth always leads.
-VALID_MYTH_BOARDS = {"persistent", "persistent_game"}
-GAME_BOARD_KINDS = {"persistent_game"}
+# ``persistent_game_partner`` (2026-11-09): the same game board, but in the game
+# prompt the myths written by the agent's co-player of this round are marked and the
+# agent is told to judge the co-player by them. Names stay hidden; the myth prompt's
+# board is unmarked. Forced-zero defectors make no game call, so they get no game board.
+VALID_MYTH_BOARDS = {"persistent", "persistent_game", "persistent_game_partner"}
+GAME_BOARD_KINDS = {"persistent_game", "persistent_game_partner"}
+PARTNER_MARKED_BOARD_KINDS = {"persistent_game_partner"}
 MYTH_BOARD_MEMORY_NOTE = "[The shared myth board was shown here: {count} myths from rounds 1-{last_round}.]"
 MYTH_BOARD_GAME_BLOCK = (
     "Here is the shared myth board. It holds every myth that any agent in this population has "
     "written in earlier rounds, without author names:\n{board}"
+)
+MYTH_BOARD_PARTNER_MARK = " (written by the co-player you are paired with this round)"
+MYTH_BOARD_GAME_PARTNER_BLOCK = (
+    "Here is the shared myth board. It holds every myth that any agent in this population has "
+    "written in earlier rounds, without author names. The myths written by the co-player you are "
+    "paired with this round are marked; use them to judge how this co-player is likely to play "
+    "before you decide:\n{board}"
 )
 
 
@@ -246,15 +258,22 @@ class MythWriter:
             return f"myth-board-v1|{source_round}"
         return f"myth-board-v2|{self.board_seed}|{source_round}"
 
-    def game_board_block(self, agent_id, turn, sim_data):
+    def game_board_block(self, agent_id, turn, sim_data, partner_id=None):
         """(text to put ahead of the game prompt, text to keep in memory instead) or None.
 
         Only for the game-board kinds and only from round 2; records the exposure
         under the round entry's ``board_in_game``. The board holds rounds 1..turn-1,
-        so in myth->game runs the myths written this round are not on it yet.
+        so in myth->game runs the myths written this round are not on it yet. The
+        partner-marked kinds need ``partner_id`` (this round's co-player) and mark
+        that agent's myths on the board.
         """
         if self.board not in GAME_BOARD_KINDS or turn <= 1:
             return None
+        marked = None
+        if self.board in PARTNER_MARKED_BOARD_KINDS:
+            if not partner_id:
+                raise ValueError(f"myth_board {self.board!r} needs the agent's co-player for round {turn}")
+            marked = partner_id
         items = self._board_items(sim_data, turn)
         if not items:
             raise ValueError(f"myth_board {self.board!r}: no myths to show in round {turn}")
@@ -264,23 +283,30 @@ class MythWriter:
             "source_rounds": sorted({r for r, _, _ in items}),
             "board_items": [[source_round, author] for source_round, author, _ in items],
         }
+        if marked is not None:
+            record["partner_id"] = marked
+            record["partner_items"] = sum(author == marked for _, author, _ in items)
+            if record["partner_items"] == 0:
+                raise ValueError(f"myth_board {self.board!r}: co-player {marked} has no myth on the board in round {turn}")
         for entry in sim_data.conversation_history:
             if entry.get("round") == turn:
                 entry.setdefault("board_in_game", {})[agent_id] = record
                 break
         else:
             raise ValueError(f"MYTH BOARD AUDIT ERROR: current round {turn} is unavailable.")
-        block = MYTH_BOARD_GAME_BLOCK.format(board=self._format_board(items))
+        template = MYTH_BOARD_GAME_PARTNER_BLOCK if marked is not None else MYTH_BOARD_GAME_BLOCK
+        block = template.format(board=self._format_board(items, marked))
         note = MYTH_BOARD_MEMORY_NOTE.format(count=len(items), last_round=turn - 1)
         return block, note
 
     @staticmethod
-    def _format_board(items):
+    def _format_board(items, marked_author=None):
         blocks = []
         for source_round in sorted({r for r, _, _ in items}):
-            in_round = [myth for r, _, myth in items if r == source_round]
+            in_round = [(author, myth) for r, author, myth in items if r == source_round]
             blocks.append("\n\n".join(
-                f"Round {source_round}, myth {i}:\n{myth}" for i, myth in enumerate(in_round, 1)
+                f"Round {source_round}, myth {i}{MYTH_BOARD_PARTNER_MARK if author == marked_author else ''}:\n{myth}"
+                for i, (author, myth) in enumerate(in_round, 1)
             ))
         return "\n\n".join(blocks)
 

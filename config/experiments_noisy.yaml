@@ -1261,6 +1261,37 @@ game_params:
     defector_myth_policy: "normal"
     defector_role_visible_to_self: false
 
+  # 2026-11-09 partner-marked board: the defectors25 two-task cell plus a shared
+  # myth board in every myth prompt and, with this round's co-player's myths
+  # marked, ahead of every game decision from round 2 (persistent_game_partner).
+  noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    myth_board: "persistent_game_partner"
+
   noisy8_crossmodel_negative_defectors50_twotask_r3:
     endowment: 5
     multiplier: 3
@@ -6296,3 +6327,26 @@ experiment_sets:
         later: "myth_writing_later_rounds_board_memory_primary"
     game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
     replicate_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+  # 2026-11-09 partner-marked board (Ivar): the September Sonnet 4.5 defectors25
+  # population cells (two forced-zero defectors, drawn per replicate) with the board;
+  # replicates 0-4, seed-paired to negative_only_reasoning_rerun_population_*_claude_n5.
+  # Measures whether a board that marks the co-player's myths lets agents stop paying
+  # the defectors. Launcher: scripts/run_myth_board_pilot.py --stage partner_board.
+  myth_board_partner_population_game_myth_claude_n5:
+    <<: *reasoning_rerun_population_game_myth
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  myth_board_partner_population_myth_game_claude_n5:
+    <<: *reasoning_rerun_population_myth_game
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]

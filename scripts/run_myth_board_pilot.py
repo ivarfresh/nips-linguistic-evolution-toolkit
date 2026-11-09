@@ -42,7 +42,9 @@ from scripts.run_noisy_missing import load_combinations, expected_output_path, c
 from scripts.rerun_negative_only_crossmodel import TRUNCATION_REASONS  # noqa: E402
 from experiments.run_noisy_batch import build_noisy_protocol, resolve_protocol_seeds  # noqa: E402
 from src.llm_settings import is_mixed_plan  # noqa: E402
-from src.myth_writer import MYTH_BOARD_GAME_BLOCK  # noqa: E402
+from src.myth_writer import (  # noqa: E402
+    MYTH_BOARD_GAME_BLOCK, MYTH_BOARD_GAME_PARTNER_BLOCK, MYTH_BOARD_PARTNER_MARK, PARTNER_MARKED_BOARD_KINDS,
+)
 from src.utils import is_exhausted_quota  # noqa: E402
 
 CONFIG = ROOT / "config/experiments_noisy.yaml"
@@ -72,14 +74,17 @@ SONNET55_BASE_USD = 2.20
 # may differ only in the board template and game params). ``sonnet55_baseline``: the
 # September Sonnet 4.5 partner-myth cells rerun on Claude Sonnet 5.5 (2026-11-07,
 # "baselines first, then decide"); inputs may differ only in the model and request.
+BOARD_DIFFS = {"game_params", "myth_board", "myth_writing_later_rounds"}
+# ``kind``: board kind; ``params``: the board game params; ``twin_params``: suffix of
+# the twin's game params name; ``defectors``: forced-zero defectors per run.
 STAGES = {
     "board": {
         "sets": [(f"myth_board_pilot_population_{shape}_{model}_n5",
                   f"negative_only_reasoning_rerun_population_{shape}_{model}_n5", provider)
                  for shape in ("game_myth", "myth_game")
                  for model, provider in (("claude", "anthropic"), ("gpt", "openai"))],
-        "allowed_diffs": {"game_params", "myth_board", "myth_writing_later_rounds"},
-        "board": True,
+        "allowed_diffs": BOARD_DIFFS,
+        "kind": BOARD_KIND, "params": BOARD_PARAMS, "twin_params": "negative_twotask_r3", "defectors": 0,
         "runs": 20,
     },
     "sonnet55_baseline": {
@@ -87,19 +92,33 @@ STAGES = {
                   f"negative_only_reasoning_rerun_population_{shape}_claude_n5", "anthropic")
                  for shape in ("game_myth", "myth_game")],
         "allowed_diffs": {"model", "llm_request"},
-        "board": False,
+        "kind": None, "params": None, "twin_params": "negative_twotask_r3", "defectors": 0,
         "runs": 10,
     },
     # Twins: replicates 0-4 from the n5 set, 5-9 from the n5ext set (both the same cell).
     "mixed_board": {
         "sets": [("myth_board_pilot_population_game_myth_gpt4_sonnet4_n10",
                   ("mixed_pop_game_myth_gpt4_sonnet4_n5", "mixed_pop_game_myth_gpt4_sonnet4_n5ext"), "mixed")],
-        "allowed_diffs": {"game_params", "myth_board", "myth_writing_later_rounds"},
-        "board": True,
+        "allowed_diffs": BOARD_DIFFS,
+        "kind": BOARD_KIND, "params": BOARD_PARAMS, "twin_params": "negative_twotask_r3", "defectors": 0,
         "runs": 10,
         "replicates": list(range(10)),
     },
+    # 2026-11-09: partner-marked board on the September Sonnet 4.5 defectors25 cells (two
+    # forced-zero defectors drawn per replicate, same seeds as the twins). Defectors make
+    # no game call, so they get no game board; their myths are on it like everyone's.
+    "partner_board": {
+        "sets": [(f"myth_board_partner_population_{shape}_claude_n5",
+                  f"negative_only_reasoning_rerun_population_{shape}_claude_n5", "anthropic")
+                 for shape in ("game_myth", "myth_game")],
+        "allowed_diffs": BOARD_DIFFS,
+        "kind": "persistent_game_partner", "params": "noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3",
+        "twin_params": "negative_defectors25_twotask_r3", "defectors": 2,
+        "runs": 10,
+    },
 }
+GAME_BOARD_HEADS = {kind: block.split("\n")[0] for kind, block in
+                    (("persistent_game", MYTH_BOARD_GAME_BLOCK), ("persistent_game_partner", MYTH_BOARD_GAME_PARTNER_BLOCK))}
 SONNET55_MODEL = "claude-sonnet-5-5"
 
 
@@ -129,8 +148,8 @@ def plan(stage):
         combos = _quiet(name)
         twins = {o["replicate_id"]: o
                  for s in ((src,) if isinstance(src, str) else src) for o in _quiet(s)
-                 if o["game_params"].get("defector_ratio", 0) == 0
-                 and o["game_params"].get("random_defection_probability", 0) == 0}
+                 if o["game_params_name"].endswith(spec["twin_params"])}
+        assert len(twins) == len(replicates), (name, "twins", sorted(twins))
         assert [c["replicate_id"] for c in combos] == replicates, (name, [c["replicate_id"] for c in combos])
         for i, c in enumerate(combos):
             twin = twins[c["replicate_id"]]
@@ -145,10 +164,10 @@ def plan(stage):
             else:
                 assert request["provider"] == provider
             assert c["myth_default_prompt_key"] == twin["myth_default_prompt_key"]
-            if spec["board"]:
+            if spec["kind"]:
                 gp, gp_ref = dict(c["game_params"]), dict(twin["game_params"])
-                assert gp.pop("myth_board") == BOARD_KIND and "myth_board" not in gp_ref and gp == gp_ref, (name, "game params")
-                assert c["game_params_name"] == BOARD_PARAMS and c["myth_later_prompt_key"] == BOARD_TEMPLATE
+                assert gp.pop("myth_board") == spec["kind"] and "myth_board" not in gp_ref and gp == gp_ref, (name, "game params")
+                assert c["game_params_name"] == spec["params"] and c["myth_later_prompt_key"] == BOARD_TEMPLATE
                 assert request == twin["request_plan"].as_dict(), (name, "request plan differs")
             else:
                 assert c["game_params"] == twin["game_params"] and c["myth_later_prompt_key"] == twin["myth_later_prompt_key"]
@@ -157,10 +176,14 @@ def plan(stage):
                 assert request["parameters"].get("output_config") == {"effort": "high"}, request
             assert _seeds(c) == _seeds(twin), (name, "seeds differ from the baseline twin", _seeds(c), _seeds(twin))
             game, writer = build_noisy_protocol(c, i)
-            assert len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0
+            # Defectors are drawn when the agents are configured; here only the ratio is set.
+            expected_ratio = spec["defectors"] / c["game_params"]["num_agents"]
+            assert abs(game.defector_ratio - expected_ratio) < 1e-9 and game.random_defection_probability == 0, (name, game.defector_ratio)
+            if spec["defectors"]:
+                assert game.defector_action_policy == "forced_zero" and game.defector_myth_policy == "normal"
             assert not game.punishment_enabled
-            if spec["board"]:
-                assert writer.board == BOARD_KIND and writer.board_seed == c["replicate_id"]
+            if spec["kind"]:
+                assert writer.board == spec["kind"] and writer.board_seed == c["replicate_id"]
             else:
                 assert writer.board is None
             jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT), provider, stage))
@@ -172,12 +195,16 @@ def plan(stage):
 def estimate(jobs):
     total = {"anthropic": 0.0, "openai": 0.0}
     for _, _, c, _, provider, stage in jobs:
+        spec = STAGES[stage]
         if provider == "mixed":
             for agent_request in c["request_plan"].as_dict()["agents"].values():
                 p = agent_request["provider"]
                 total[p] += PER_AGENT_BASE_USD[p] + AGENT_BOARD_INPUT_TOKENS * RATES[p][0] / 1e6
-        elif STAGES[stage]["board"]:
-            total[provider] += BASE_USD[provider] + BOARD_INPUT_TOKENS * RATES[provider][0] / 1e6
+        elif spec["kind"]:
+            # Defectors make no game call: fewer base calls and fewer board pastes.
+            n = c["game_params"]["num_agents"]
+            share = (2 * n - spec["defectors"]) / (2 * n)
+            total[provider] += BASE_USD[provider] * share + BOARD_INPUT_TOKENS * share * RATES[provider][0] / 1e6
         else:
             total[provider] += SONNET55_BASE_USD
     return total
@@ -201,13 +228,16 @@ def quarantine(job, reason):
 
 def audit(job):
     name, i, c, path, provider, stage = job
-    board = STAGES[stage]["board"]
+    spec = STAGES[stage]
+    board = spec["kind"]
     check_existing_final(path, c)
     d = json.loads(path.read_text())
     m = d["run_metadata"]
     request = c["request_plan"].as_dict()
     n_agents = c["game_params"]["num_agents"]
-    assert m["defector_count"] == 0 and m["random_defection_probability"] == 0
+    defectors = set(d["game_data"].get("defector_agent_ids") or [])
+    assert m["defector_count"] == spec["defectors"] == len(defectors) and m["random_defection_probability"] == 0, (m["defector_count"], defectors)
+    ordinary = set(d["agents"]) - defectors
     assert not m["code_dirty"]
     assert m["llm_request"] == request
     if provider == "mixed":
@@ -216,21 +246,27 @@ def audit(job):
     assert m["noise_config"] == c["game_params"]["noise_config"]
     cond = m["experiment_condition"]["protocol"]["myth"]
     if board:
-        assert cond["board"] == BOARD_KIND and cond["board_seed"] == c["replicate_id"], cond
+        assert cond["board"] == board and cond["board_seed"] == c["replicate_id"], cond
     else:
         assert "board" not in cond, cond
-    # Board exposure records: every agent, every round from 2, 8*(r-1) myths, in myth and game.
+    # Board exposure records: every agent's myth prompt and every ordinary agent's game
+    # prompt, every round from 2, 8*(r-1) myths; partner kinds mark the co-player's r-1 myths.
+    partner_marked = board in PARTNER_MARKED_BOARD_KINDS
     for entry in d["conversation_history"] if board else []:
         r = entry["round"]
         if r == 1:
             assert "board_in_game" not in entry
             continue
-        for key in ("myth_exposures", "board_in_game"):
+        for key, readers in (("myth_exposures", set(d["agents"])), ("board_in_game", ordinary)):
             records = entry.get(key) or {}
-            assert set(records) == set(d["agents"]), (name, r, key, "missing records")
+            assert set(records) == readers, (name, r, key, "missing records")
             for agent_id, rec in records.items():
-                assert rec["board"] == BOARD_KIND and rec["board_seed"] == c["replicate_id"], (name, r, key, agent_id)
+                assert rec["board"] == board and rec["board_seed"] == c["replicate_id"], (name, r, key, agent_id)
                 assert len(rec["board_items"]) == n_agents * (r - 1), (name, r, key, agent_id, "board size")
+                if key == "board_in_game" and partner_marked:
+                    pairing = next(p for p in entry["pairings"] if agent_id in p["agents"])
+                    partner = next(a for a in pairing["agents"] if a != agent_id)
+                    assert rec["partner_id"] == partner and rec["partner_items"] == r - 1, (name, r, agent_id, rec.get("partner_id"))
         same = {str(rec["board_items"]) for rec in entry["board_in_game"].values()}
         assert len(same) == 1 and same == {str(rec["board_items"]) for rec in entry["myth_exposures"].values()}
     calls, output_per_call = 0, []
@@ -249,17 +285,22 @@ def audit(job):
             r = e.get("response") or {}
             meta = e.get("metadata") or {}
             if r.get("response_source", "llm") != "llm":
-                raise AssertionError((name, agent_id, "non-LLM response"))
+                # Only a defector's scripted game move; it never carries the board.
+                assert agent_id in defectors and r["response_source"] == "forced_zero" and meta.get("task") == "game", (name, agent_id, "non-LLM response")
+                assert "shared myth board" not in e["prompt"], (name, agent_id, meta.get("round"), "board shown to a scripted move")
+                continue
             u = r.get("usage") or {}
             assert u.get("request_settings") == expected, (name, agent_id)
             if u.get("outcome") == "error":
                 raise ErroredCall(f"{agent_id} round {meta.get('round')}: call recorded outcome=error")
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
             if board and meta.get("task") == "game" and meta.get("round", 0) >= 2:
-                assert e["prompt"].startswith(GAME_BOARD_HEAD), (name, agent_id, meta.get("round"), "board missing from game prompt")
+                assert e["prompt"].startswith(GAME_BOARD_HEADS[board]), (name, agent_id, meta.get("round"), "board missing from game prompt")
                 assert e["prompt"].count("\nRound 1, myth ") == n_agents, (name, agent_id, meta.get("round"))
+                marks = e["prompt"].count(MYTH_BOARD_PARTNER_MARK)
+                assert marks == (meta["round"] - 1 if partner_marked else 0), (name, agent_id, meta.get("round"), "partner marks", marks)
             if (not board or meta.get("round") == 1) and meta.get("task") == "game":
-                assert GAME_BOARD_HEAD not in e["prompt"]
+                assert "shared myth board" not in e["prompt"]
             calls += 1
             output_per_call.append(u.get("output_tokens") or 0)
             cost[agent_provider] += ((u.get("input_tokens") or 0) * ir + (u.get("output_tokens") or 0) * orr) / 1e6
@@ -280,6 +321,8 @@ def audit(job):
         "output_tokens_per_call_mean": statistics.mean(output_per_call) if output_per_call else 0,
         "mean_final_resources": statistics.mean(balances.values()),
         "mean_final_resources_by_model": {m: statistics.mean(v) for m, v in by_model.items()} or None,
+        "defector_agent_ids": sorted(defectors),
+        "ordinary_mean_final_resources": statistics.mean(balances[a] for a in ordinary),
         "standard_rate_usd_by_provider": cost,
         "standard_rate_usd": sum(cost.values()),
     }
@@ -316,10 +359,11 @@ def main():
                 quarantine(j, str(e))
         pending.append(j)
     est = estimate(pending)
-    print(f"VALIDATED STAGE={args.stage} N={len(jobs)} BOARD={BOARD_KIND if STAGES[args.stage]['board'] else 'none'} "
-          f"SEEDS=EQUAL_TO_BASELINE_TWIN EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
+    print(f"VALIDATED STAGE={args.stage} N={len(jobs)} BOARD={STAGES[args.stage]['kind'] or 'none'} "
+          f"DEFECTORS={STAGES[args.stage]['defectors']} SEEDS=EQUAL_TO_BASELINE_TWIN EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
     models = {"sonnet55_baseline": SONNET55_MODEL + " (adaptive thinking, effort high)",
-              "mixed_board": "4x gpt-5-nano + 4x claude-sonnet-4.5 per run (September profiles)"}.get(
+              "mixed_board": "4x gpt-5-nano + 4x claude-sonnet-4.5 per run (September profiles)",
+              "partner_board": "claude-sonnet-4.5 (September profile), 2 forced-zero defectors per run"}.get(
                   args.stage, "claude-sonnet-4.5/gpt-5-nano (September profiles)")
     print(f"MODEL={models} N={len(pending)} WORKERS={args.workers} "
           f"EST_COST=${sum(est.values()):.2f} (anthropic ${est['anthropic']:.2f}, openai ${est['openai']:.2f}; "
@@ -359,7 +403,7 @@ def main():
                             raise RuntimeError(f"Worker failed; inspect {result.get('worker_log')}: {result.get('error')}")
                         receipt = audit(j)
                         receipts.append(receipt)
-                        print(f"COMPLETE {len(receipts)}/{len(jobs)} {j[0]} index={j[1]} resources={receipt['mean_final_resources']:.1f} "
+                        print(f"COMPLETE {len(receipts)}/{len(jobs)} {j[0]} index={j[1]} resources={receipt['ordinary_mean_final_resources']:.1f} "
                               f"out/call={receipt['output_tokens_per_call_mean']:.0f} cost=${receipt['standard_rate_usd']:.3f}", flush=True)
                     except ErroredCall as e:
                         quarantine(j, str(e))

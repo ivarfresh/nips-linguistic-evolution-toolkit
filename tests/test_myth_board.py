@@ -11,18 +11,19 @@ from unittest.mock import patch
 
 from games.trust_game import TrustGame
 from src.experiment_condition import build_condition
-from src.myth_writer import MythWriter, validate_myth_board
+from src.myth_writer import MYTH_BOARD_GAME_PARTNER_BLOCK, MYTH_BOARD_PARTNER_MARK, MythWriter, validate_myth_board
 from src.simulation import run_simulation
 
 BOARD_TEMPLATE = "BOARD\n{myth_board}\nWrite your own myth."
 PARTNER_TEMPLATE = "PARTNER\n{other_agent_myth}\nWrite your own myth."
 
 
-def build_game():
+def build_game(**kwargs):
     return TrustGame(
         endowment=5, multiplier=3, system_prompt_template="Game rules",
         round1_investor_template="Send.", round1_trustee_template="Return.",
         later_investor_template="Send.", later_trustee_template="Return.",
+        **kwargs,
     )
 
 
@@ -31,7 +32,7 @@ def build_writer(board="persistent", template=BOARD_TEMPLATE, board_seed=None):
                       board_seed=board_seed)
 
 
-def run_sim(writer, turns=3, num_agents=4, task_order=("myth",)):
+def run_sim(writer, turns=3, num_agents=4, task_order=("myth",), game=None):
     prompts, lock, counter = [], threading.Lock(), itertools.count(1)
 
     def fake_call_llm(client, model, temperature, messages):
@@ -47,7 +48,7 @@ def run_sim(writer, turns=3, num_agents=4, task_order=("myth",)):
         "src.agents.call_llm", side_effect=fake_call_llm,
     ), contextlib.redirect_stdout(io.StringIO()):
         sim = run_simulation(
-            game=build_game(), model="mock/model", temperature=0, num_turns=turns,
+            game=game or build_game(), model="mock/model", temperature=0, num_turns=turns,
             num_agents=num_agents, memory_capacity=6, agent_biases="", myth_writer=writer,
             task_order=list(task_order), chat_memory_mode="memory_primary",
         )
@@ -208,6 +209,63 @@ class GameBoardTests(unittest.TestCase):
         myth = build_condition(game, build_writer(board="persistent_game", board_seed=7), {}, {})["protocol"]["myth"]
         self.assertEqual((myth["board"], myth["board_seed"]), ("persistent_game", 7))
         self.assertNotIn("board_seed", build_condition(game, build_writer(), {}, {})["protocol"]["myth"])
+
+
+PARTNER_HEAD = MYTH_BOARD_GAME_PARTNER_BLOCK.split("\n")[0]
+
+
+class PartnerBoardTests(unittest.TestCase):
+    """``persistent_game_partner``: the game board marks this round's co-player's myths."""
+
+    def defector_game(self):
+        return build_game(defector_agent_ids=["Agent_2"], defector_action_policy="forced_zero",
+                          defector_myth_policy="normal", defector_role_visible_to_self=False)
+
+    def test_marks_the_co_players_myths_and_skips_scripted_moves(self):
+        sim, _ = run_sim(build_writer(board="persistent_game_partner", board_seed=5), task_order=["game", "myth"],
+                         game=self.defector_game())
+        history = sim.conversation_history
+        for r in (2, 3):
+            entry = history[r - 1]
+            # Every ordinary agent's game prompt carries the board; the defector's scripted move does not.
+            self.assertEqual(set(entry["board_in_game"]), {"Agent_1", "Agent_3", "Agent_4"})
+            self.assertEqual(set(entry["myth_exposures"]), {"Agent_1", "Agent_2", "Agent_3", "Agent_4"})
+            for agent_id, rec in entry["board_in_game"].items():
+                pairing = next(p for p in entry["pairings"] if agent_id in p["agents"])
+                partner = next(a for a in pairing["agents"] if a != agent_id)
+                self.assertEqual(rec["partner_id"], partner)
+                self.assertEqual(rec["partner_items"], r - 1)
+                self.assertEqual(len(rec["board_items"]), 4 * (r - 1))
+                call = next(e for e in sim.agents[agent_id].interaction_history
+                            if e["metadata"]["task"] == "game" and e["metadata"]["round"] == r)
+                self.assertTrue(call["prompt"].startswith(PARTNER_HEAD))
+                self.assertEqual(call["prompt"].count(MYTH_BOARD_PARTNER_MARK), r - 1)
+                # The marked myths are exactly the partner's earlier myths.
+                for earlier in history[:r - 1]:
+                    self.assertIn(f"{MYTH_BOARD_PARTNER_MARK}:\n{earlier['myths'][partner]}", call["prompt"])
+            defector_call = next(e for e in sim.agents["Agent_2"].interaction_history
+                                 if e["metadata"]["task"] == "game" and e["metadata"]["round"] == r)
+            self.assertEqual(defector_call["response"]["response_source"], "forced_zero")
+            self.assertNotIn("shared myth board", defector_call["prompt"])
+        for agent in sim.agents.values():
+            self.assertTrue(all("Round 1, myth 1" not in m["content"] for m in agent.messages if m["role"] == "user"))
+        # The myth prompt's board stays unmarked.
+        myth_call = [e for e in sim.agents["Agent_1"].interaction_history if e["metadata"]["task"] == "myth"][1]
+        self.assertNotIn(MYTH_BOARD_PARTNER_MARK, myth_call["prompt"])
+
+    def test_plain_game_board_still_refuses_defectors(self):
+        with patch("src.simulation.create_llm_client", return_value=object()), \
+                self.assertRaisesRegex(ValueError, "forced defectors"), contextlib.redirect_stdout(io.StringIO()):
+            run_simulation(game=self.defector_game(), model="mock/model", temperature=0, num_turns=2, num_agents=4,
+                           memory_capacity=6, agent_biases="", task_order=["game", "myth"],
+                           myth_writer=build_writer(board="persistent_game", board_seed=0),
+                           chat_memory_mode="memory_primary")
+
+    def test_partner_board_needs_a_partner(self):
+        class Fake:
+            conversation_history = [{"round": 1, "myths": {"Agent_1": "a", "Agent_2": "b"}}, {"round": 2}]
+        with self.assertRaisesRegex(ValueError, "co-player"):
+            build_writer(board="persistent_game_partner", board_seed=0).game_board_block("Agent_1", 2, Fake())
 
 
 if __name__ == "__main__":
