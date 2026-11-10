@@ -2,16 +2,16 @@
 
 **Headline.** Marking the current co-player's myths on the board, so a myth becomes a
 reputation signal, did not change what the six ordinary agents earned (48.4 vs 49.0 for the
-partner-myth twins, paired t p 0.68). Agents read the marked myths in 97% of their game
-reasoning, and the defectors' myths confess their withholding in 171 of 200 cases, yet the
+partner-myth twins, paired t p 0.68). Agents cite the co-player's myths in 97% of their game
+reasoning (7% in the twins), and the defectors' myths confess their withholding in 171 of 200 cases, yet the
 board only trimmed sends to defectors from $1.01 to $0.90 per decision (p 0.09). The game
 prompt already shows the co-player's last three moves, so defectors were visible before the
 board; the myths added little a three-round action history had not already said.
 
 ## What was run
 
-- **Population:** 8 Claude Sonnet 4.5 agents (September profile: no thinking, reasoning
-  then JSON), hidden names, balanced rotating pairs, informed negative-only noise, 10 rounds,
+- **Population:** 8 Claude Sonnet 4.5 agents (September profile: thinking enabled with an 8,192-token budget,
+  reasoning then JSON; identical in board runs and twins), hidden names, balanced rotating pairs, informed negative-only noise, 10 rounds,
   two forced-zero defectors (`defector_ratio 0.25`, `defector_action_policy forced_zero`,
   `defector_myth_policy normal`: defectors send and return $0 without an LLM call but write
   myths normally). Both task orders, 5 replicates each.
@@ -59,7 +59,8 @@ Share of $0 sends to a defector in rounds 2-10: 42/70 (60%) with the partner myt
 ordinary agents (3.19 -> 2.98, p 0.12), which is why those five runs ended a point lower.
 
 **Agents did read the board.** 259 of 266 later-round investor reasons with the board cite
-the co-player's myths (6 of 266 in the twins cite any myth). Reasons quote the marked myths
+the co-player's myths. In the twins every reason mentions a myth, but almost always the
+agent's own: 19 of 266 cite the other agent's myth. Reasons quote the marked myths
 and set them against the visible action history. The defectors' myths describe their own
 withholding (171/200 contain nothing/zero/kept-all language, as 176/200 do in the twins):
 characters called Keeper, Silence, Stone, the Oracle who "knows but cannot act".
@@ -85,17 +86,22 @@ proper names = capitalised words not at a sentence start).
 | Similarity to other agents' previous myths | 0.21 (±0.03) | 0.23 (±0.02) |
 | Words per myth | 208 | 210 |
 | Myths that refer to other stories or a board | 14/720 | 22/720 |
-| Proper names per run first used by one agent and taken up by 3+ others | 11.9 | 4.1 |
-| ... of which first used by a defector | 2.6 | 0.4 |
 
 The board made agents more self-anchored: a myth resembles its author's previous myth more
-(0.47 vs 0.38) and the shared vocabulary of a round barely rises. Characters and places spread
-less, not more. With one partner myth in the prompt and an invitation to take inspiration,
-about twelve names per run travel from one author to three or more others (River, Spirit,
-Keeper, Mirror, Covenant); with 72 anonymous myths on the board, four. The exception shows
-what the board can do when it works: in game -> myth replicate 0 the defector's self-portrait
-as "the Stone" was taken up by all seven other agents, who then wrote "to the Stone Valleys
-I send nothing" and cited it in their game reasoning. That happened in one run of ten.
+(0.47 vs 0.38, 10 of 10 pairs). Whether the board spreads content between agents more or less
+than one partner myth is NOT established. An earlier version of this file reported that fewer
+character names travel with the board (4.1 vs 11.9 per run). An independent audit (2026-11-10)
+found that count does not survive a placebo: the same names recur at nearly the same rate in
+runs that never saw the myth (they are generic: Spirit, Keeper, Valley, Oracle), and twins
+simply coin about twice as many new names. Against a cross-run placebo, shared content-word
+phrases spread more with the board, not less. What does hold: in the twins, borrowing comes
+from the one shown myth (similarity 0.25 to the shown myth vs 0.16 to others); the board
+flattens that one strong channel into many weak ones (0.21 vs 0.20). One vivid case remains:
+in game -> myth replicate 0 the defector's self-portrait as "the Stone" was taken up by all
+seven other agents and cited in their game reasoning.
+
+Sharper punishment, small in money: excluding round 1 (no board yet), sends to a defector
+are 0.43 with the board vs 0.58 in the twins (rounds 2-10, paired p 0.01, audit figure).
 
 ## Reading
 
@@ -104,6 +110,6 @@ myths and defectors' myths do give them away. But in this design the action hist
 carries the reputation, so attribution adds a marginal extra sanction and no lift in
 cooperation among the ordinary agents. Together with the anonymous board null
 (`../myth_board_mixed_20261109/README.md`) and the October frontier board, this closes the
-board line on the current prompts: neither more myths nor attributed myths change play, and the board spreads characters and phrases less than one partner myth does.
+board line on the current prompts: neither more myths nor attributed myths change play.
 Caveat: n=5 per task order, sd 1.4 to 5.9 on resources; effects under about 4 points are
 not excluded.
