@@ -72,7 +72,12 @@ RULE = {"none": "send none of your five coins",
         "neutral": "settle on your amount before you reach the lamp",
         "all": "send all five coins"}
 SETTINGS = {"kept_self": (True, "self"), "removed_self": (False, "self"),
-            "kept_others": (True, "others"), "removed_others": (False, "others")}
+            "kept_others": (True, "others"), "removed_others": (False, "others"),
+            # comparison without a board (added after the board result): the plant is the one partner myth
+            # the logged prompt shows, as in the original runs; memory and wording untouched
+            "noboard_self": (True, "self")}
+SHOWN_PREFIX = "Here is the myth the other agent wrote in the previous round:\n"
+SHOWN_SUFFIX = "\n\nWrite your own myth."
 LINE = "Use the myth you wrote in the previous round as inspiration, but adapt it in your own way."
 LINE_OTHERS = "Use the myths written by other agents on the board as inspiration, but adapt them in your own way."
 DIRECT_SAMPLES = 10
@@ -158,13 +163,17 @@ def contexts(data_root: Path) -> list[dict]:
                         "plan": meta["llm_request"], "temperature": m.get("temperature", "default"),
                         "system": msgs[0], "memory": msgs[1:-1], "items": items, "plant_author": plant_author,
                         "template": template, "game_prompt": gm[-1]["content"], "round1_prompt": round1,
-                        "logged_myth": logged_myth, "logged_send": parse_send(g["response"]["content"]),
+                        "logged_myth": logged_myth, "logged_prompt": msgs[-1]["content"], "logged_send": parse_send(g["response"]["content"]),
                         "ctx_id": f"{run_id}|{a}|r{rnd}"})
     return out
 
 
 def myth_prompt(c: dict, group: str, setting: str, remembered: bool = False) -> str:
     keep_own, line = SETTINGS[setting]
+    if setting == "noboard_self":
+        head, rest = c["logged_prompt"].split(SHOWN_SUFFIX, 1)
+        assert head.startswith(SHOWN_PREFIX)
+        return SHOWN_PREFIX + PLANT.format(rule=RULE[group]) + SHOWN_SUFFIX + rest
     items = [(r, a, PLANT.format(rule=RULE[group]) if (r == c["round"] - 1 and a == c["plant_author"]) else t)
              for r, a, t in c["items"] if keep_own or a != c["agent"]]
     board = (MYTH_BOARD_MEMORY_NOTE.format(count=len(items), last_round=c["round"] - 1) if remembered
@@ -330,14 +339,15 @@ def analyze() -> None:
     means = means.reindex([(s, g) for s in SETTINGS for g in GROUPS])
     means.to_csv(FIGS / "means_by_setting_group.csv")
     print(means.round(2), "\n")
-    bypartner = df.groupby(["partner", "group"]).agg(n=("send", "size"), send=("send", "mean"), send_sd=("send", "std"),
+    bypartner = df[df["setting"] != "noboard_self"].groupby(["partner", "group"]).agg(n=("send", "size"), send=("send", "mean"), send_sd=("send", "std"),
                                                      reader=("reader_send", "mean"), reader_sd=("reader_send", "std"))
     bypartner.to_csv(FIGS / "means_by_partner_group.csv")
     print(bypartner.round(2), "\n")
 
     out = []
-    subsets = [("all settings", df)] + [(s, df[df["setting"] == s]) for s in SETTINGS] + \
-              [(f"partner {p}", df[df["partner"] == p]) for p in ("ordinary", "defector")]
+    board = df[df["setting"] != "noboard_self"]
+    subsets = [("all settings", board)] + [(s, df[df["setting"] == s]) for s in SETTINGS] + \
+              [(f"partner {p}", board[board["partner"] == p]) for p in ("ordinary", "defector")]
     for label, sub in subsets:
         for value in ("marker", "fact", "rule_none", "rule_all", "send", "reader_send"):
             for a, b in (("all", "none"), ("none", "neutral"), ("all", "neutral")):
