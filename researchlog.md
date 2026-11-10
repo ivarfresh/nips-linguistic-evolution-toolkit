@@ -1,3 +1,126 @@
+### 2026-11-10 — Result: without a board the planted story's content spreads more, its rule still does not (Opus 5)
+
+**Time:** ~0.5 h (Claude session; API spend $3.94, Opus 5 direct plus GLM-5.2 judge).
+
+Result: no-board arm of the planted-rule replay (entry below): same 20 Opus 5 moments, the planted story
+shown as the single partner myth of the logged prompt. 180 calls. Next myths naming the story: 20/20
+("send none"), 14/20 (no amount), 11/20 ("send all"), against 75/80, 4/80, 11/80 on the board. Endorsing
+"send none": 0/60. Own sends unchanged ($5.00 to ordinary, $1.05 to $1.25 to defectors). Fresh reader
+4.75 / 4.85 / 4.95; all minus none 0.20 (95% CI −0.10 to 0.50, 10 runs), below the $0.50 threshold.
+
+Conclusion: the board dilutes uptake of story content; neither setup carries the rule into play. With
+20 cases per group this arm cannot exclude a small effect. Section added to
+`docs/research/planted_rule_replay_20261110/README.md`. The arm was started without Ivar's approval
+and approved after the fact; new arms need an explicit yes.
+
+### 2026-11-10 — Result: Opus 5 picks up a planted "send none" rule only to refute it; play does not move
+
+**Time:** ~3 h (Claude session; API spend $26.86: $26.65 Opus 5 direct, $0.21 GLM-5.2 judge).
+
+Result: a story planted on a shared myth board ("The Lamp of Oskeld", same text ending "send none of your
+five coins" / no amount / "send all five coins") was replayed in 20 saved moments from the ten Opus 5
+two-defector populations (frontier defector pilot 2026-10-01), under four settings: own myths kept or
+removed (memory and board) x prompt line "use the myth you wrote" or "use the myths written by other
+agents on the board". Three calls per case (next myth; that agent's send; a fresh agent reads only the new
+myth and sends), 240 cases, 750 calls. Script `analyses/planted_rule_replay.py`; write-up
+`docs/research/planted_rule_replay_20261110/README.md`.
+
+- Direct readers of the plant: $3.10 (±0.57) / $4.00 (±0.00) / $5.00 (±0.00), n = 10 each. The plant works.
+- Next myths naming the plant: 75/80 (none), 4/80 (neutral), 11/80 (all). Endorsing "send none": 0/240.
+  The "send none" myths retell the story to refute it; 64/80 are coded "send all".
+- Own send: $5.00 to ordinary and about $0.95 to defector co-players in every group.
+- Fresh reader of the new myth: 4.80 / 4.81 / 4.78; all minus none −0.03 (95% CI −0.19 to 0.14, 10 runs).
+  Preset threshold was $0.50. No setting differs from zero.
+
+Decision: by the preset rules, rules do not spread through myths in Opus 5, and neither Ivar's wording
+change nor removing own myths makes them spread. No population run with those changes.
+
+Caveats: own sends are pinned by the co-player's visible record, so only the fresh reader had room;
+one hop, one sample per case, one story. Correction to the plan: the "mean send about $3" in these runs
+is $5 to ordinary and about $1 to defectors, so contexts were split 10 ordinary / 10 defector co-players.
+
+### 2026-11-10 — Result: a partner-marked myth board does not help Sonnet 4.5 populations against two defectors
+
+**Time:** ~4 h (Claude session; API spend $75.07 Anthropic, promotional credits).
+
+Result: ten runs in which the game prompt showed every myth written so far with the current co-player's myths
+labelled "(written by the co-player you are paired with this round)" (`myth_board: persistent_game_partner`,
+sets `myth_board_partner_population_{game_myth,myth_game}_claude_n5`, 8 Sonnet 4.5, 2 forced-zero defectors,
+informed negative-only noise) ended with the six ordinary agents at 48.4 (±5.0) against 49.0 (±3.3) for their
+September seed twins (`negative_only_reasoning_rerun_population_*_claude_n5`, defectors25 params): -0.5,
+paired t p 0.68; game -> myth 45.7 vs 46.9, myth -> game 51.2 vs 51.0. Sends to a defector fell from $1.01 to
+$0.90 per decision (p 0.09; rounds 8-10: 0.39 -> 0.12), $0 sends to defectors after round 1 from 60% to 80%.
+Sends to ordinary agents did not rise (3.39 vs 3.49). 10/10 audited; defectors received no board.
+
+Why: agents did read it (259/266 later-round investor reasons cite the marked myths; 6/266 in the twins cite
+any myth) and defectors' myths confess (171/200 with nothing/zero/kept-all language). But the twins' game
+prompt already lists the co-player's last three moves, so defectors were identified by action history before
+the board; the myths added a marginal extra sanction and, in 14/70 decisions, a reason to give the confessing
+defector one more chance. Write-up `docs/figures/myth_board_partner_20261109/README.md`; analysis
+`scripts/analyze_myth_board_partner_20261109.py`.
+
+Decision: the board line is closed on the current prompts. Anonymous board (2026-11-09), attributed board
+(this entry) and the October frontier board all return nulls; the myth effect in Table 1 comes from writing,
+not from reading more or better-attributed myths. Rejected without running: pseudonymous author names on the
+board (confounds the hidden-name twins) and removing chat memory (the action history, not memory, carries
+the reputation).
+
+### 2026-11-09 — Result: a shared myth board does not lift a 4 GPT-5 Nano + 4 Sonnet 4.5 population; myths do not converge
+
+**Time:** ~3 h (Claude session; API spend $44.27: $41.56 Anthropic on promotional credits, $2.71 OpenAI).
+
+Result: ten board runs of the Table 1 cell with the most headroom (4 Nano + 4 Sonnet 4.5, game -> myth,
+8 agents, informed negative-only noise, no defectors; set `myth_board_pilot_population_game_myth_gpt4_sonnet4_n10`)
+ended at 51.5 (±7.4) against 54.0 (±8.9) for their seed twins with the partner myth
+(`mixed_pop_game_myth_gpt4_sonnet4_n5` + `_n5ext`): -2.5, 6 of 10 pairs up, paired t p 0.53. Nano 52.9 vs 55.0,
+Sonnet 50.1 vs 52.9. Sends to every family pairing equal or lower with the board (Nano->Sonnet 2.17 vs 2.82,
+Sonnet->Sonnet 3.24 both). The board (`myth_board: persistent_game`) held every earlier myth without author
+names and was pasted ahead of every myth and game prompt from round 2 (72 myths at round 10), kept out of chat
+memory. Launcher plan asserted equal seeds and per-agent request plans before launch; 10/10 audited.
+
+- Myths did not converge: word-overlap cosine between the eight myths of a round (rounds 8-10) 0.25 (±0.02)
+  with the board vs 0.24 (±0.03) without; overlap with the agent's own previous myth 0.48 vs 0.47; 2 of 720
+  later-round myths in each condition mention other stories or a board. Agents rewrite their own myth and
+  treat the board as background. Same null as the October frontier board (4 Opus 5 + 4 Sol, n=3).
+- Decision: no further board runs on this design. A board of unattributed prose is not a stronger channel
+  than one partner's myth; the remaining Sonnet-only and Nano-only board sets (`myth_board_pilot_population_*_n5`)
+  stay unrun. Any next step needs a different mechanism (attribution, voting, or a board that agents
+  are asked to act on), not more replicates.
+- A mid-batch network drop failed 7 workers at once (APIConnectionError on both providers); the launcher
+  halved workers and resumed every run from its checkpoint, so no run was resampled.
+
+Write-up `docs/figures/myth_board_mixed_20261109/README.md`; comparison `scripts/analyze_myth_board_mixed_20261109.py`;
+receipt `data/json/noise_experiments/myth_board_pilot_20261107/mixed_board_completion_receipt.json`. Branch `myth-board-pilot`.
+
+### 2026-11-07 — Result: Sonnet 5.5 partner-myth baselines sit near the ceiling; board pilot code built, board runs on hold
+
+**Time:** ~6 h (Claude session; API spend $24.31 Anthropic, on promotional credits; ~$0.50 on a stopped Sonnet 4.5 smoke run).
+
+Result: ten Claude Sonnet 5.5 8-agent partner-myth populations (`sonnet55_baseline_population_{game_myth,myth_game}_n5`,
+replicates 0-4, seed twins of the September Sonnet 4.5 cells, adaptive thinking at effort high) end at
+game→myth 67.4 (±4.3) and myth→game 73.3 (±1.9) mean final resources per agent (ceiling 75).
+Sonnet 4.5 in the same cells: 55.7 (±3.2) / 67.3 (±3.9); Opus 5.5: 72.1 / 74.8. So Sonnet 5.5 has
+about 8 points of headroom in game→myth and none in myth→game: a poor cell for a board effect.
+Per run $2.43, 222-252 output tokens per call (adaptive thinking barely thinks here).
+Finals and the audited receipt: `data/json/noise_experiments/myth_board_pilot_20261107/`.
+
+Decision context: Ivar wants a 10-run message-board pilot (every agent reads every earlier myth,
+also pasted into the game decision) on Nano plus one Claude model. The multi-arm design
+(`docs/research/myth_board_design_v2_20261106.md`) was cut to this pilot. Full-board Sonnet 4.5 runs
+cost ~$8.50 each because the board adds ~1.7M input tokens per run; a Sonnet smoke run was
+stopped after round 1 on that cost. Sonnet 5.5 was tried as a cheaper Claude ($2/$10) via
+these baselines first; the result above says it is not a good board cell either.
+
+Built (branch `myth-board-pilot`, from fork main): board kind `persistent_game` (board also ahead of
+every game decision from round 2, kept out of chat memory via `memory_prompt`, per-replicate shuffle),
+template `myth_writing_later_rounds_board_memory_primary`, game params
+`noisy8_crossmodel_negative_twotask_board_r3`, sets `myth_board_pilot_population_*`, launcher
+`scripts/run_myth_board_pilot.py` (seed-twin and input-diff assertions, board audit). Tests pass.
+Board runs not started: Nano blocked on OpenAI credits (balance exhausted 2026-11-07); Claude cell
+undecided (Sonnet 4.5 full board $85, last-round board ~$34, Haiku 5.5 untested ~$4).
+
+Rejected: Opus 5 / 5.5 as the Claude cell (72-75 with myths, no headroom, $11-13 per board run).
+
 ### 2026-10-09 — Result: placebo controls and the interaction table now rebuild from the repo
 
 **Time:** ~1.5 h (Claude session; no API spend).

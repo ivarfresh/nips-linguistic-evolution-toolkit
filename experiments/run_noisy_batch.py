@@ -523,6 +523,8 @@ def build_noisy_protocol(combo, index):
         board=combo.get("myth_board"),
         saboteur=combo.get("myth_saboteur"),
         plant=combo.get("myth_plant"),
+        # Per-replicate board shuffle (game-board kinds only; ignored otherwise).
+        board_seed=combo.get("replicate_id"),
     )
 
     return game, myth_writer

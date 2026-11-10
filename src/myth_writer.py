@@ -141,8 +141,30 @@ class InvalidCouncilResponseError(ValueError):
 # ``persistent``: from round 2 every agent reads every myth any agent has written
 # in all earlier rounds (the shared board), without author names, instead of only
 # its previous partner's myth. Inspired by the 2026 Hugging Face incident board.
-VALID_MYTH_BOARDS = {"persistent"}
+# ``persistent_game`` (2026-11-07 board pilot): the same board, but it is also pasted
+# once into every game decision prompt from round 2, ahead of the decision text, and
+# never kept in chat memory (the remembered prompt carries MYTH_BOARD_MEMORY_NOTE
+# instead). The within-round order is shuffled per replicate (``board_seed``) and
+# round, so no agent's myth always leads.
+# ``persistent_game_partner`` (2026-11-09): the same game board, but in the game
+# prompt the myths written by the agent's co-player of this round are marked and the
+# agent is told to judge the co-player by them. Names stay hidden; the myth prompt's
+# board is unmarked. Forced-zero defectors make no game call, so they get no game board.
+VALID_MYTH_BOARDS = {"persistent", "persistent_game", "persistent_game_partner"}
+GAME_BOARD_KINDS = {"persistent_game", "persistent_game_partner"}
+PARTNER_MARKED_BOARD_KINDS = {"persistent_game_partner"}
 MYTH_BOARD_MEMORY_NOTE = "[The shared myth board was shown here: {count} myths from rounds 1-{last_round}.]"
+MYTH_BOARD_GAME_BLOCK = (
+    "Here is the shared myth board. It holds every myth that any agent in this population has "
+    "written in earlier rounds, without author names:\n{board}"
+)
+MYTH_BOARD_PARTNER_MARK = " (written by the co-player you are paired with this round)"
+MYTH_BOARD_GAME_PARTNER_BLOCK = (
+    "Here is the shared myth board. It holds every myth that any agent in this population has "
+    "written in earlier rounds, without author names. The myths written by the co-player you are "
+    "paired with this round are marked; use them to judge how this co-player is likely to play "
+    "before you decide:\n{board}"
+)
 
 
 def validate_myth_plant(plant):
@@ -164,12 +186,19 @@ class MythWriter:
     """Handles myth writing functionality, separate from game logic"""
 
     def __init__(self, myth_topic, round1_template=None, later_rounds_template=None, pressure=None, board=None,
-                 saboteur=None, plant=None):
+                 saboteur=None, plant=None, board_seed=None):
         self.myth_topic = myth_topic
         self.round1_template = round1_template
         self.later_rounds_template = later_rounds_template
         self.pressure = validate_myth_pressure(pressure) if pressure is not None else None
         self.board = validate_myth_board(board)
+        # Only the game-board kinds shuffle per replicate; the legacy ``persistent`` board
+        # keeps its fixed per-round order so the 2026-10-02 frontier runs stay reproducible.
+        self.board_seed = None
+        if self.board in GAME_BOARD_KINDS:
+            if board_seed is None:
+                raise ValueError(f"myth_board {self.board!r} needs a board_seed (the replicate id)")
+            self.board_seed = int(board_seed)
         # Private instruction prepended to the defectors' myth prompts only (2026-10-02
         # saboteur pilot). Ordinary agents never see it; they see the resulting myths.
         if saboteur is not None and (not isinstance(saboteur, str) or not saboteur.strip()):
@@ -206,11 +235,12 @@ class MythWriter:
     def _board_items(self, sim_data, turn):
         """(round, author, myth) for every myth written before ``turn``.
 
-        Within a round the order is a fixed shuffle keyed by the round only, so
-        every reader sees the same board and positions carry no author labels.
-        The shuffle is the same in every run, so a given position always holds
-        the same agent id (e.g. a defector's myth leads round 1 in the frontier
-        board runs); kept fixed so all board runs stay comparable.
+        Within a round the order is a fixed shuffle, so every reader sees the
+        same board and positions carry no author labels. For the legacy
+        ``persistent`` board the shuffle is keyed by the round only, so it is
+        the same in every run (a given position always holds the same agent id,
+        e.g. a defector's myth leads round 1 in the frontier board runs). The
+        game-board kinds key it by replicate and round as well.
         """
         items = []
         for entry in sim_data.conversation_history:
@@ -219,17 +249,64 @@ class MythWriter:
             if source_round is None or source_round >= turn or not myths:
                 continue
             authors = sorted(author for author, myth in myths.items() if myth)
-            random.Random(f"myth-board-v1|{source_round}").shuffle(authors)
+            random.Random(self._shuffle_key(source_round)).shuffle(authors)
             items.extend((source_round, author, myths[author]) for author in authors)
         return items
 
+    def _shuffle_key(self, source_round):
+        if self.board_seed is None:
+            return f"myth-board-v1|{source_round}"
+        return f"myth-board-v2|{self.board_seed}|{source_round}"
+
+    def game_board_block(self, agent_id, turn, sim_data, partner_id=None):
+        """(text to put ahead of the game prompt, text to keep in memory instead) or None.
+
+        Only for the game-board kinds and only from round 2; records the exposure
+        under the round entry's ``board_in_game``. The board holds rounds 1..turn-1,
+        so in myth->game runs the myths written this round are not on it yet. The
+        partner-marked kinds need ``partner_id`` (this round's co-player) and mark
+        that agent's myths on the board.
+        """
+        if self.board not in GAME_BOARD_KINDS or turn <= 1:
+            return None
+        marked = None
+        if self.board in PARTNER_MARKED_BOARD_KINDS:
+            if not partner_id:
+                raise ValueError(f"myth_board {self.board!r} needs the agent's co-player for round {turn}")
+            marked = partner_id
+        items = self._board_items(sim_data, turn)
+        if not items:
+            raise ValueError(f"myth_board {self.board!r}: no myths to show in round {turn}")
+        record = {
+            "board": self.board,
+            "board_seed": self.board_seed,
+            "source_rounds": sorted({r for r, _, _ in items}),
+            "board_items": [[source_round, author] for source_round, author, _ in items],
+        }
+        if marked is not None:
+            record["partner_id"] = marked
+            record["partner_items"] = sum(author == marked for _, author, _ in items)
+            if record["partner_items"] == 0:
+                raise ValueError(f"myth_board {self.board!r}: co-player {marked} has no myth on the board in round {turn}")
+        for entry in sim_data.conversation_history:
+            if entry.get("round") == turn:
+                entry.setdefault("board_in_game", {})[agent_id] = record
+                break
+        else:
+            raise ValueError(f"MYTH BOARD AUDIT ERROR: current round {turn} is unavailable.")
+        template = MYTH_BOARD_GAME_PARTNER_BLOCK if marked is not None else MYTH_BOARD_GAME_BLOCK
+        block = template.format(board=self._format_board(items, marked))
+        note = MYTH_BOARD_MEMORY_NOTE.format(count=len(items), last_round=turn - 1)
+        return block, note
+
     @staticmethod
-    def _format_board(items):
+    def _format_board(items, marked_author=None):
         blocks = []
         for source_round in sorted({r for r, _, _ in items}):
-            in_round = [myth for r, _, myth in items if r == source_round]
+            in_round = [(author, myth) for r, author, myth in items if r == source_round]
             blocks.append("\n\n".join(
-                f"Round {source_round}, myth {i}:\n{myth}" for i, myth in enumerate(in_round, 1)
+                f"Round {source_round}, myth {i}{MYTH_BOARD_PARTNER_MARK if author == marked_author else ''}:\n{myth}"
+                for i, (author, myth) in enumerate(in_round, 1)
             ))
         return "\n\n".join(blocks)
 
@@ -363,6 +440,8 @@ class MythWriter:
             presented_author_id=presented_author_id,
             substitution_applied=substitution_applied,
             board_items=board_items if self.board else None,
+            board_kind=self.board,
+            board_seed=self.board_seed,
         )
 
         game_behavior_summary = self._get_game_behavior_summary(agent_id, turn, sim_data)
@@ -500,6 +579,8 @@ class MythWriter:
         presented_author_id,
         substitution_applied,
         board_items=None,
+        board_kind=None,
+        board_seed=None,
     ):
         metadata = getattr(sim_data, "run_metadata", {}) or {}
         game_data = getattr(sim_data, "game_data", {}) or {}
@@ -530,7 +611,9 @@ class MythWriter:
         if board_items is not None:
             # The partner's myth is on the board; the record keeps that pairing
             # and lists every board item in the order shown.
-            record["board"] = "persistent"
+            record["board"] = board_kind
+            if board_seed is not None:
+                record["board_seed"] = board_seed
             record["board_items"] = [[source_round, author] for source_round, author, _ in board_items]
         for entry in sim_data.conversation_history:
             if entry.get("round") == turn:
