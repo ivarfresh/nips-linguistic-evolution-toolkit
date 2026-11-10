@@ -1,3 +1,18 @@
+### 2026-11-10 — Result: without a board the planted story's content spreads more, its rule still does not (Opus 5)
+
+**Time:** ~0.5 h (Claude session; API spend $3.94, Opus 5 direct plus GLM-5.2 judge).
+
+Result: no-board arm of the planted-rule replay (entry below): same 20 Opus 5 moments, the planted story
+shown as the single partner myth of the logged prompt. 180 calls. Next myths naming the story: 20/20
+("send none"), 14/20 (no amount), 11/20 ("send all"), against 75/80, 4/80, 11/80 on the board. Endorsing
+"send none": 0/60. Own sends unchanged ($5.00 to ordinary, $1.05 to $1.25 to defectors). Fresh reader
+4.75 / 4.85 / 4.95; all minus none 0.20 (95% CI −0.10 to 0.50, 10 runs), below the $0.50 threshold.
+
+Conclusion: the board dilutes uptake of story content; neither setup carries the rule into play. With
+20 cases per group this arm cannot exclude a small effect. Section added to
+`docs/research/planted_rule_replay_20261110/README.md`. The arm was started without Ivar's approval
+and approved after the fact; new arms need an explicit yes.
+
 ### 2026-11-10 — Result: Opus 5 picks up a planted "send none" rule only to refute it; play does not move
 
 **Time:** ~3 h (Claude session; API spend $26.86: $26.65 Opus 5 direct, $0.21 GLM-5.2 judge).
