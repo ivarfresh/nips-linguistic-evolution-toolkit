@@ -90,6 +90,25 @@ coded "send all"), own sends are unchanged, and the fresh-reader gap is $0.20 wi
 interval that includes zero and sits below the $0.50 threshold. With 20 cases per group the
 no-board arm cannot rule out a small effect.
 
+## Words: both changes shift where a myth's vocabulary comes from
+
+Measured afterwards on the same 240 board myths, no new calls (`borrowing_by_setting.csv`,
+content words as in `analyses/linguistic_uptake.py`). Shares are of the new myth's content
+words; differences are against "kept, self" with a 95% interval over the ten runs.
+
+| Setting | Words kept from own previous myth | Words new to the agent that other agents' board myths contain |
+|---|---|---|
+| kept, self (today's design) | 0.28 (±0.07) | 0.33 (±0.06) |
+| kept, others | 0.24 (±0.06), −0.04 (−0.06 to −0.02) | 0.37 (±0.06), +0.04 (0.02 to 0.06) |
+| removed, self | 0.20 (±0.04), −0.08 (−0.11 to −0.06) | 0.41 (±0.08), +0.08 (0.05 to 0.12) |
+| removed, others | 0.19 (±0.05), −0.09 (−0.12 to −0.06) | 0.42 (±0.07), +0.09 (0.06 to 0.12) |
+
+So the wording change moves about four points of vocabulary from the agent's own myth to
+other agents' myths, and removing own myths moves about eight. There is no placebo here:
+part of the "from others" share is vocabulary every Opus myth uses, so the levels overstate
+borrowing; the differences between settings are the result. The shift is in words only.
+Rule uptake and sends are the same in all four settings.
+
 ## Reading
 
 A direct reader of "send none" sends $0.90 less than a neutral reader. One retelling later
