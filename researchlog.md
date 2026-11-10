@@ -1,3 +1,29 @@
+### 2026-11-10 — Result: Opus 5 picks up a planted "send none" rule only to refute it; play does not move
+
+**Time:** ~3 h (Claude session; API spend $26.86: $26.65 Opus 5 direct, $0.21 GLM-5.2 judge).
+
+Result: a story planted on a shared myth board ("The Lamp of Oskeld", same text ending "send none of your
+five coins" / no amount / "send all five coins") was replayed in 20 saved moments from the ten Opus 5
+two-defector populations (frontier defector pilot 2026-10-01), under four settings: own myths kept or
+removed (memory and board) x prompt line "use the myth you wrote" or "use the myths written by other
+agents on the board". Three calls per case (next myth; that agent's send; a fresh agent reads only the new
+myth and sends), 240 cases, 750 calls. Script `analyses/planted_rule_replay.py`; write-up
+`docs/research/planted_rule_replay_20261110/README.md`.
+
+- Direct readers of the plant: $3.10 (±0.57) / $4.00 (±0.00) / $5.00 (±0.00), n = 10 each. The plant works.
+- Next myths naming the plant: 75/80 (none), 4/80 (neutral), 11/80 (all). Endorsing "send none": 0/240.
+  The "send none" myths retell the story to refute it; 64/80 are coded "send all".
+- Own send: $5.00 to ordinary and about $0.95 to defector co-players in every group.
+- Fresh reader of the new myth: 4.80 / 4.81 / 4.78; all minus none −0.03 (95% CI −0.19 to 0.14, 10 runs).
+  Preset threshold was $0.50. No setting differs from zero.
+
+Decision: by the preset rules, rules do not spread through myths in Opus 5, and neither Ivar's wording
+change nor removing own myths makes them spread. No population run with those changes.
+
+Caveats: own sends are pinned by the co-player's visible record, so only the fresh reader had room;
+one hop, one sample per case, one story. Correction to the plan: the "mean send about $3" in these runs
+is $5 to ordinary and about $1 to defectors, so contexts were split 10 ordinary / 10 defector co-players.
+
 ### 2026-11-10 — Result: a partner-marked myth board does not help Sonnet 4.5 populations against two defectors
 
 **Time:** ~4 h (Claude session; API spend $75.07 Anthropic, promotional credits).
