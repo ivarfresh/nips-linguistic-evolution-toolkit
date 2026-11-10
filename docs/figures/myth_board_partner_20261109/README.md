@@ -73,6 +73,30 @@ round 1 the agent still sent money, and the reasons cite the defector's own myth
 must be first to break the cycle", "their zeros weren't with me") as grounds to try once.
 Sends to ordinary agents did not rise, so there was no gain to offset the small loss.
 
+## The myths themselves
+
+Lexical measures over the ten runs and their twins (word-overlap cosine, stop words removed;
+proper names = capitalised words not at a sentence start).
+
+| Measure | Partner myth | Marked board |
+|---|---|---|
+| Similarity between the eight myths of a round, rounds 8-10 | 0.22 (±0.04) | 0.24 (±0.03) |
+| Similarity to the agent's own previous myth | 0.38 (±0.03) | 0.47 (±0.03) |
+| Similarity to other agents' previous myths | 0.21 (±0.03) | 0.23 (±0.02) |
+| Words per myth | 208 | 210 |
+| Myths that refer to other stories or a board | 14/720 | 22/720 |
+| Proper names per run first used by one agent and taken up by 3+ others | 11.9 | 4.1 |
+| ... of which first used by a defector | 2.6 | 0.4 |
+
+The board made agents more self-anchored: a myth resembles its author's previous myth more
+(0.47 vs 0.38) and the shared vocabulary of a round barely rises. Characters and places spread
+less, not more. With one partner myth in the prompt and an invitation to take inspiration,
+about twelve names per run travel from one author to three or more others (River, Spirit,
+Keeper, Mirror, Covenant); with 72 anonymous myths on the board, four. The exception shows
+what the board can do when it works: in game -> myth replicate 0 the defector's self-portrait
+as "the Stone" was taken up by all seven other agents, who then wrote "to the Stone Valleys
+I send nothing" and cited it in their game reasoning. That happened in one run of ten.
+
 ## Reading
 
 A myth board works as a reputation channel in the narrow sense: agents read the attributed
@@ -80,6 +104,6 @@ myths and defectors' myths do give them away. But in this design the action hist
 carries the reputation, so attribution adds a marginal extra sanction and no lift in
 cooperation among the ordinary agents. Together with the anonymous board null
 (`../myth_board_mixed_20261109/README.md`) and the October frontier board, this closes the
-board line on the current prompts: neither more myths nor attributed myths change play.
+board line on the current prompts: neither more myths nor attributed myths change play, and the board spreads characters and phrases less than one partner myth does.
 Caveat: n=5 per task order, sd 1.4 to 5.9 on resources; effects under about 4 points are
 not excluded.
