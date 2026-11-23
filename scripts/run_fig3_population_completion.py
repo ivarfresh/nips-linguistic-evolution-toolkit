@@ -7,7 +7,8 @@ Letting each family take a turn as the minority (1, 2 or 4 of 8) among each of
 the other two gives 15 distinct compositions; this launcher runs the nine not
 yet run: 1 or 2 GPT among Gemini, 1 or 2 Sonnet among GPT, 1, 2 or 4 Gemini
 among Sonnet, and 1 or 2 Sonnet among Gemini. Task orders game, game_myth and
-myth_game; five replicates per cell (ids 0-4); 135 runs. The minority family
+myth_game; five replicates per cell (ids 0-4); 135 runs. ``--replicates 5-9``
+runs the top-up (the ``*_n5ext`` sets, another 135 runs). The minority family
 occupies the lowest agent ids.
 
 The plan step proves, before any paid call, that every non-model input equals
@@ -31,12 +32,16 @@ sys.path.insert(0, str(ROOT))
 from scripts.run_noisy_missing import expected_output_path, run_missing_job  # noqa: E402
 from scripts.rerun_negative_only_crossmodel import EXPECTED_POLICIES  # noqa: E402
 from scripts.run_mixed_model_populations import FAMILY, MODEL_ONLY_KEYS, RATES, SHAPES, _quiet_combinations, audit  # noqa: E402
-from experiments.run_noisy_batch import build_noisy_protocol  # noqa: E402
+from experiments.run_noisy_batch import build_noisy_protocol, resolve_protocol_seeds  # noqa: E402
 from src.llm_settings import is_mixed_plan  # noqa: E402
 from src.utils import is_exhausted_quota  # noqa: E402
 
 OUTPUT = "mixed_model_populations_20261123"
-REPLICATES = [0, 1, 2, 3, 4]
+# --replicates -> (set-name suffix, replicate ids, receipt file).
+BATCHES = {
+    "0-4": ("n5", [0, 1, 2, 3, 4], "completion_receipt.json"),
+    "5-9": ("n5ext", [5, 6, 7, 8, 9], "completion_receipt_n5ext.json"),
+}
 # Set-name suffix -> (minority family, minority count, majority family).
 COMPOSITIONS = {
     "gpt2_gemini6": ("gpt", 2, "gemini"), "gpt1_gemini7": ("gpt", 1, "gemini"),
@@ -52,10 +57,11 @@ PER_AGENT_USD = {
     "openai": {"game": 0.0115, "game_myth": 0.0550, "myth_game": 0.0564},
     "google": {"game": 0.0188, "game_myth": 0.1150, "myth_game": 0.1163},
 }
-N_RUNS = len(SHAPES) * len(COMPOSITIONS) * len(REPLICATES)
+N_RUNS = len(SHAPES) * len(COMPOSITIONS) * 5
 
 
-def plan():
+def plan(batch="0-4"):
+    suffix, replicates, _ = BATCHES[batch]
     jobs = []
     for shape in SHAPES:
         reference = [
@@ -65,9 +71,9 @@ def plan():
         assert len(reference) == 1, shape
         reference_inputs = {k: v for k, v in reference[0]["comparison_inputs"].items() if k not in MODEL_ONLY_KEYS}
         for comp, (minority, count, majority) in COMPOSITIONS.items():
-            name = f"mixed_pop_{shape}_{comp}_n5"
+            name = f"mixed_pop_{shape}_{comp}_{suffix}"
             combos = _quiet_combinations(name)
-            assert [c["replicate_id"] for c in combos] == REPLICATES, name
+            assert [c["replicate_id"] for c in combos] == replicates, name
             expected_models = {f"Agent_{i+1}": FAMILY[minority if i < count else majority] for i in range(8)}
             for i, c in enumerate(combos):
                 assert c["agent_models"] == expected_models, (name, c["agent_models"])
@@ -80,6 +86,9 @@ def plan():
                     agent_request = request["agents"][agent_id]
                     assert agent_request["model"] == model
                     assert agent_request["policy"] == EXPECTED_POLICIES[model], (name, agent_id)
+                # Paired noise/pairing seeds follow the replicate id, so the top-up continues the sequence.
+                base = int(params.get("protocol_seed_base", 0))
+                assert resolve_protocol_seeds(params, c) == (base + c["replicate_id"], base + c["replicate_id"]), name
                 actual_inputs = {k: v for k, v in c["comparison_inputs"].items() if k not in MODEL_ONLY_KEYS}
                 differing = sorted(k for k in set(actual_inputs) | set(reference_inputs) if actual_inputs.get(k) != reference_inputs.get(k))
                 assert not differing, (name, "non-model inputs differ from September control", differing)
@@ -109,20 +118,27 @@ def main():
     p.add_argument("--execute", action="store_true")
     p.add_argument("--audit-only", action="store_true")
     p.add_argument("--smoke", action="store_true", help="one game-only replicate of the cheapest cell (1 run)")
+    p.add_argument("--replicates", choices=sorted(BATCHES), default="0-4")
     args = p.parse_args()
     assert 1 <= args.workers <= 40
-    jobs = plan()
+    jobs = plan(args.replicates)
     if args.smoke:
         jobs = [j for j in jobs if j[0] == "mixed_pop_game_gpt1_gemini7_n5" and j[1] == 0]
         assert len(jobs) == 1
-    pending, receipts = [], []
+    # A final that fails the audit (a failed provider call, say) is held: left on
+    # disk, kept out of the receipt and never resampled here. What to do with it
+    # is a decision for a person.
+    pending, receipts, held = [], [], []
     for j in jobs:
         if j[3].exists():
-            receipts.append(audit(j))
+            try:
+                receipts.append(audit(j))
+            except AssertionError as e:
+                held.append({"set": j[0], "index": j[1], "path": str(j[3].relative_to(ROOT)), "reason": f"{type(e).__name__}: {e}"})
         else:
             pending.append(j)
     est = estimate(pending)
-    print(f"VALIDATED N={len(jobs)} POPULATIONS_8 COMPOSITIONS={len(COMPOSITIONS)} BALANCED_PAIRING=1 NO_DEFECTORS=1 EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
+    print(f"VALIDATED N={len(jobs)} POPULATIONS_8 COMPOSITIONS={len(COMPOSITIONS)} BALANCED_PAIRING=1 NO_DEFECTORS=1 EXISTING={len(receipts)} HELD={len(held)} PENDING={len(pending)}", flush=True)
     print(
         f"MODEL=mixed(gpt-in-gemini 1/2, sonnet-in-gpt 1/2, gemini-in-sonnet 1/2/4, sonnet-in-gemini 1/2) N={len(pending)} WORKERS={args.workers} "
         f"EST_COST=${sum(est.values()):.2f} (anthropic ${est['anthropic']:.2f}, openai ${est['openai']:.2f}, google ${est['google']:.2f}; +20% allowance ${1.2*sum(est.values()):.2f})",
@@ -163,10 +179,12 @@ def main():
                         receipts.append(receipt)
                         print(f"COMPLETE {len(receipts)}/{len(jobs)} {j[0]} index={j[1]} cost=${receipt['standard_rate_usd']:.3f}", flush=True)
                     except Exception as e:
-                        print(f"FAILED {j[0]} index={j[1]} {type(e).__name__}: {e}", flush=True)
                         # Never silently resample a final that fails scientific validation.
                         if j[3].exists():
-                            raise
+                            held.append({"set": j[0], "index": j[1], "path": str(j[3].relative_to(ROOT)), "reason": f"{type(e).__name__}: {e}"})
+                            print(f"HELD {j[0]} index={j[1]} {type(e).__name__}: {e}", flush=True)
+                            continue
+                        print(f"FAILED {j[0]} index={j[1]} {type(e).__name__}: {e}", flush=True)
                         failed.append(j)
             if quota_exhausted:
                 raise RuntimeError("Provider credits exhausted; top up before resuming. Completed finals preserved.")
@@ -179,15 +197,16 @@ def main():
                 print(f"CONTINUATION PENDING={len(pending)} WORKERS={workers} ATTEMPT={attempt+1}", flush=True)
                 time.sleep(min(60, 2 ** attempt))
     by_provider = {k: sum(r["standard_rate_usd_by_provider"][k] for r in receipts) for k in RATES}
-    target = ROOT / "data/json/noise_experiments" / OUTPUT / ("smoke_receipt.json" if args.smoke else "completion_receipt.json")
+    target = ROOT / "data/json/noise_experiments" / OUTPUT / ("smoke_receipt.json" if args.smoke else BATCHES[args.replicates][2])
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({
         "runs": len(receipts),
         "standard_rate_usd": sum(r["standard_rate_usd"] for r in receipts),
         "standard_rate_usd_by_provider": by_provider,
         "finals": receipts,
+        "held": held,
     }, indent=2) + "\n")
-    print(f"AUDIT PASSED {len(receipts)}/{len(jobs)}; cost=${sum(by_provider.values()):.2f} {by_provider}; receipt={target}", flush=True)
+    print(f"AUDIT PASSED {len(receipts)}/{len(jobs)} HELD={len(held)}; cost=${sum(by_provider.values()):.2f} {by_provider}; receipt={target}", flush=True)
 
 
 if __name__ == "__main__":
