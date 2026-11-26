@@ -1,3 +1,19 @@
+### 2026-11-26 — Correction to the 2026-11-10 partner-marked board entry
+
+**Time:** ~0.2 h (Claude session; no API spend).
+
+Two statements in the 2026-11-10 partner-marked board entry below are wrong; the numbers in
+`docs/figures/myth_board_partner_20261109/README.md` are the correct ones.
+
+- "6/266 in the twins cite any myth" is wrong. Every twin reason mentions a myth, almost always the
+  agent's own; 19 of 266 cite the other agent's myth (README, corrected in commit bde6dccfa).
+- "Neither more myths nor attributed myths change play" is too strong. Earnings and cooperation among
+  ordinary agents did not move (48.4 vs 49.0, p 0.68). Sends to defectors did fall a little with the
+  marked board: rounds 2-10 0.43 vs 0.58 per decision (paired p 0.01, uncorrected, one of about 27
+  tests), $0 sends 42/70 vs 56/70.
+
+Found by the independent review of PR #47 (2026-11-26). The decision to close the board line stands.
+
 ### 2026-11-10 — Result: without a board the planted story's content spreads more, its rule still does not (Opus 5)
 
 **Time:** ~0.5 h (Claude session; API spend $3.94, Opus 5 direct plus GLM-5.2 judge).
