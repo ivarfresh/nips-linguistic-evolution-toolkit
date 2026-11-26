@@ -70,7 +70,7 @@ BINARY = {  # measure -> (column, value) ; share of myths where column == value
 # Holm correction runs over these headline measures only. With 10 runs per cell the smallest exact
 # Wilcoxon p is 0.002, so correcting over every column and category (~70 tests) could never reach
 # 0.05; the first run (2026-10-10) showed this. Mediator and resolution are left out because the
-# DeepSeek judge counts the gift-carrying river as a mediator (60% agreement with GLM on 20 myths).
+# DeepSeek judge counts the gift-carrying river as a mediator (52% agreement with GLM-5.2 on 854 myths; myth_structure_judge_agreement.py).
 # Columns and the remaining categories keep raw p only and are exploratory.
 HEADLINE = ["main: giving_hoarding", "main: trust_fear", "main: cooperation_betrayal", "any: clarity_distortion",
             "any: punishment_forgiveness", "arc: improves", "arc: stable order", "role inversion"]

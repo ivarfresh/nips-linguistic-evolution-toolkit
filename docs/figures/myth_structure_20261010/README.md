@@ -45,8 +45,24 @@ pooled, and the task orders are never pooled.
 ## Caveats
 
 - **The mediator and resolution fields are not reliable.** DeepSeek counts the gift-carrying river or bridge as a
-  mediator despite the rubric. On 20 myths coded by both judges it agrees with GLM-5.2 60% of the time on mediator
-  and 50% on resolution (65% on the central opposition, 70% on arc). Both fields are left out of the headline tests.
+  mediator despite the rubric. On the 854 September myths that GLM-5.2 also coded under the same rubric, the two
+  judges agree on 52% for mediator and 44% for resolution (65% on the central opposition, 73% on arc, 96% on role
+  inversion; `judge_agreement_september_n10.csv`, from `analyses/myth_structure_judge_agreement.py`). Both fields
+  are left out of the headline tests. No frontier myth was coded by both judges.
+- **The "columns" are weak clusters.** The best silhouette is 0.16 (September) and 0.14 (frontier), and in the
+  frontier corpus k = 20 beats k = 15 by 0.003. A rerun moves a handful of mythemes between clusters (2 of about
+  50,000 in September), so column shares can shift by up to 0.014; every other number reproduces exactly.
+- **The judge never sees the round number, but round-1 Sonnet myths look different.** Every Sonnet round-1 myth
+  opens with a title line; about a third of its later myths do. The Sonnet round-1-versus-later contrast therefore
+  carries a format difference on top of the prompt change noted below.
+- **"New" features are new only relative to the coded rounds.** An agent's earlier myths are known for rounds 1, 2,
+  5, 6, 9 and 10 only. A feature the agent itself used in round 3 or 4, and its partner then copied, counts as
+  adopted from the partner at round 6. At round 2, where the history is complete, adoption excess in the September
+  single-model runs is about zero (columns: -0.006 to +0.013); the positive excess sits in rounds 6 and 10.
+- **The transmission tests pool the model families** within a cell (size, single-model or mixed, task order), and
+  mixed runs pool their compositions.
+- In `transmission_summary.csv`, `excess_mean` and its test are paired within child myths. `shown_mean` and
+  `null_mean` are averaged over different sets of children and do not subtract to `excess_mean`.
 - The Holm family was restricted to eight headline measures after the first run. With 10 runs per cell, the smallest
   exact Wilcoxon p is 0.002, so correcting over all ~70 measures could never reach 0.05.
 - **Frontier tests cannot reach significance**: with 5 runs per cell the smallest exact Wilcoxon p is 0.0625. Read
