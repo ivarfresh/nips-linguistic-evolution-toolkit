@@ -20,6 +20,7 @@ base_models:
   claude_haiku: "anthropic/claude-3-haiku"
   claude_haiku_45: "anthropic/claude-haiku-4.5"
   claude_sonnet_45: "anthropic/claude-sonnet-4.5"
+  claude_sonnet_55: "anthropic/claude-sonnet-5-5"
   deepseek_v3: "deepseek/deepseek-chat-v3-0324"
   gemini_3_flash: "google/gemini-3-flash-preview"
   gemini_3_7_flash: "google/gemini-3.7-flash"
@@ -37,6 +38,18 @@ llm_profiles:
       thinking:
         type: "enabled"
         budget_tokens: 8192
+    temperature: "default"
+    max_output_tokens: 64000
+  # 2026-11-07 Sonnet 5.5 baseline cell: adaptive thinking at effort high, as the
+  # frontier Opus 5 / 5.5 arms (config/frontier_rerun_20260918.yaml september18_opus5);
+  # Sonnet 5.5 rejects the fixed 8192-token budget Sonnet 4.5 used and non-default temperature.
+  november7_sonnet55: &november7_sonnet55
+    provider: "anthropic"
+    reasoning:
+      thinking:
+        type: "adaptive"
+      output_config:
+        effort: "high"
     temperature: "default"
     max_output_tokens: 64000
   september8_gpt: &september8_gpt
@@ -388,6 +401,19 @@ prompt_templates:
   myth_writing_later_rounds_directive_memory_primary: |
     Here is the myth the other agent wrote in the previous round:
     {other_agent_myth}
+
+    Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
+  # Board variant (2026-11-07 myth board pilot): the partner-myth line of
+  # myth_writing_later_rounds_directive_memory_primary is replaced by the shared
+  # board of every earlier myth; nothing else changes. Same text as the 2026-10-02
+  # frontier board pilot (scripts/build_frontier_rerun_config.py BOARD_TEMPLATE).
+  myth_writing_later_rounds_board_memory_primary: |
+    Here is the shared myth board. It holds every myth that any agent in this population has written in earlier rounds, without author names:
+    {myth_board}
 
     Write your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
 
@@ -1181,6 +1207,33 @@ game_params:
     paired_protocol_seeds: true
     protocol_seed_base: 202608250
 
+  # 2026-11-07 myth board pilot: noisy8_crossmodel_negative_twotask_r3 plus a
+  # shared myth board that every agent reads in its myth prompt AND, pasted once,
+  # ahead of every game decision from round 2 (src/myth_writer.py persistent_game).
+  noisy8_crossmodel_negative_twotask_board_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    myth_board: "persistent_game"
+
   noisy8_crossmodel_negative_defectors25_twotask_r3:
     endowment: 5
     multiplier: 3
@@ -1207,6 +1260,37 @@ game_params:
     defector_action_policy: "forced_zero"
     defector_myth_policy: "normal"
     defector_role_visible_to_self: false
+
+  # 2026-11-09 partner-marked board: the defectors25 two-task cell plus a shared
+  # myth board in every myth prompt and, with this round's co-player's myths
+  # marked, ahead of every game decision from round 2 (persistent_game_partner).
+  noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3:
+    endowment: 5
+    multiplier: 3
+    num_turns: 10
+    num_agents: 8
+    temperature: 0.8
+    memory_capacity: 6
+    chat_memory_mode: "memory_primary"
+    noise_config:
+      type: "uniform"
+      range: 1.0
+      direction: "negative"
+      applies_to: "both"
+      inform_agents: true
+    other_player_names: "default"
+    history_policy: "self_and_coplayer"
+    self_history_window: 0
+    coplayer_history_window: 3
+    show_agent_names: false
+    pairing_mode: "balanced"
+    paired_protocol_seeds: true
+    protocol_seed_base: 202608250
+    defector_ratio: 0.25
+    defector_action_policy: "forced_zero"
+    defector_myth_policy: "normal"
+    defector_role_visible_to_self: false
+    myth_board: "persistent_game_partner"
 
   noisy8_crossmodel_negative_defectors50_twotask_r3:
     endowment: 5
@@ -6170,3 +6254,99 @@ experiment_sets:
     <<: *t1x_mixed_pop_myth_game_gpt4_sonnet4_n5
     game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
     replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # 2026-11-07 myth board pilot (Ivar): 10 Sonnet 4.5 + 10 GPT-5 Nano 8-agent
+  # populations, 5 per task order, replicates 0-4 so every run is seed-paired
+  # to its September partner-myth twin (negative_only_reasoning_rerun_*_n5).
+  # Only the myth later-round template and the game params (myth_board) differ.
+  # Launcher: scripts/run_myth_board_pilot.py. Design: docs/research/myth_board_design_v2_20261106.md.
+  myth_board_pilot_population_game_myth_claude_n5:
+    <<: *reasoning_rerun_population_game_myth
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  myth_board_pilot_population_myth_game_claude_n5:
+    <<: *reasoning_rerun_population_myth_game
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  myth_board_pilot_population_game_myth_gpt_n5:
+    <<: *t1x_negative_only_reasoning_rerun_population_game_myth_gpt_n5
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  myth_board_pilot_population_myth_game_gpt_n5:
+    <<: *t1x_negative_only_reasoning_rerun_population_myth_game_gpt_n5
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  # 2026-11-07 Sonnet 5.5 partner-myth baselines (Ivar): the September Sonnet 4.5
+  # population cells rerun on Claude Sonnet 5.5, replicates 0-4, seed-paired to the
+  # Sonnet 4.5 twins. Decides whether Sonnet 5.5 has headroom for a board cell.
+  sonnet55_baseline_population_game_myth_n5:
+    <<: *reasoning_rerun_population_game_myth
+    models: ["claude_sonnet_55"]
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings: *november7_sonnet55
+
+  sonnet55_baseline_population_myth_game_n5:
+    <<: *reasoning_rerun_population_myth_game
+    models: ["claude_sonnet_55"]
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings: *november7_sonnet55
+
+  # 2026-11-09 mixed-population board cell (Ivar): 4 GPT-5 Nano (Agent_1-4) +
+  # 4 Sonnet 4.5 (Agent_5-8), game->myth, replicates 0-9, seed-paired to the
+  # Table 1 twins mixed_pop_game_myth_gpt4_sonnet4_n5 (0-4) and _n5ext (5-9).
+  # Only the myth later-round template and the game params (myth_board) differ.
+  # Launcher: scripts/run_myth_board_pilot.py --stage mixed_board.
+  myth_board_pilot_population_game_myth_gpt4_sonnet4_n10:
+    <<: *t1x_mixed_pop_game_myth_gpt4_sonnet4_n5
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_board_r3"]
+    replicate_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+  # 2026-11-09 partner-marked board (Ivar): the September Sonnet 4.5 defectors25
+  # population cells (two forced-zero defectors, drawn per replicate) with the board;
+  # replicates 0-4, seed-paired to negative_only_reasoning_rerun_population_*_claude_n5.
+  # Measures whether a board that marks the co-player's myths lets agents stop paying
+  # the defectors. Launcher: scripts/run_myth_board_pilot.py --stage partner_board.
+  myth_board_partner_population_game_myth_claude_n5:
+    <<: *reasoning_rerun_population_game_myth
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  myth_board_partner_population_myth_game_claude_n5:
+    <<: *reasoning_rerun_population_myth_game
+    myth_prompt_arms:
+      - id: "board_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_board_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_defectors25_twotask_board_partner_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
