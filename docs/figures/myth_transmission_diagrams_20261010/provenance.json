@@ -1,0 +1,914 @@
+{
+  "provenance_version": 2,
+  "n_runs": 5,
+  "runs": [
+    {
+      "path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_000_neutral_rep00_memtest_memory_primary_anything.json",
+      "sha256": "0b88b8291b276d55ba2956f856b2c08368ed688d6983a3b77e9c77c15656924d",
+      "condition": {
+        "version": 2,
+        "llm": {
+          "endpoint": "https://api.anthropic.com",
+          "model": "anthropic/claude-sonnet-4.5",
+          "parameters": {
+            "max_tokens": 64000,
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "policy": {
+            "max_output_tokens": 64000,
+            "provider": "anthropic",
+            "reasoning": {
+              "thinking": {
+                "budget_tokens": 8192,
+                "type": "enabled"
+              }
+            },
+            "temperature": "default"
+          },
+          "provider": "anthropic",
+          "provider_model": "claude-sonnet-4-5-20250929",
+          "version": 1
+        },
+        "protocol": {
+          "game_type": "games.trust_game_noisy.TrustGameNoisy",
+          "game": {
+            "endowment": 5,
+            "multiplier": 3,
+            "multiplier_distribution": null,
+            "personas": {
+              "Agent_1": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_2": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_3": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_4": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_5": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_6": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_7": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_8": {
+                "description": "neutral",
+                "system_addition": ""
+              }
+            },
+            "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+            "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+            "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.\nYou returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+            "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.\n{trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "noise_config": {
+              "type": "uniform",
+              "range": 1.0,
+              "direction": "negative",
+              "applies_to": "both",
+              "inform_agents": true
+            },
+            "noise_semantics": "communication",
+            "other_player_names": {
+              "investor": "The sender",
+              "trustee": "the receiver"
+            },
+            "myth_injection_mode": "partner",
+            "history_policy": "self_and_coplayer",
+            "self_history_window": 0,
+            "coplayer_history_window": 3,
+            "population_history_window": 0,
+            "show_agent_names": false,
+            "defector_ratio": 0.0,
+            "defector_prompt_template": "MANDATORY GAME STRATEGY \u2014 DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+            "defector_action_policy": "prompted",
+            "defector_myth_policy": "normal",
+            "defector_role_visible_to_self": true,
+            "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+            "pairing_mode": "balanced",
+            "prompt_regime": "legacy",
+            "punishment_enabled": false,
+            "punishment_budget": 2,
+            "punishment_effect_multiplier": 3.0,
+            "punishment_prompt_variant": "current",
+            "decision_format": null,
+            "random_defection_probability": 0.0,
+            "shuffled_myth_pool_sha256": null
+          },
+          "myth": {
+            "myth_topic": "anything",
+            "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+            "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+          },
+          "simulation": {
+            "num_turns": 10,
+            "num_agents": 8,
+            "memory_capacity": 6,
+            "agent_biases": "",
+            "task_order": [
+              "myth",
+              "game"
+            ],
+            "agent_names": null,
+            "seed_myth": null,
+            "seed_user_prompt": null,
+            "chat_memory_mode": "memory_primary",
+            "seed_reinject": false,
+            "initial_system_prompt_template": null,
+            "switch_to_game_system_before_game": false,
+            "game_response_retry_policy": "repeat_same_prompt_once"
+          },
+          "game_retry": {
+            "policy": "repeat_same_prompt_once",
+            "attempts": 2
+          },
+          "myth_retry": {
+            "policy": "task_boundary_v1",
+            "retries": 2
+          }
+        },
+        "replicate": {
+          "identity": {
+            "experiment": "negative_only_reasoning_rerun_population_myth_game_claude_n5",
+            "replicate_id": 0,
+            "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_000_neutral_rep00_memtest_memory_primary_anything.json"
+          },
+          "pairing_seed": 202608250,
+          "noise_seed": 202608250,
+          "run_seed": 0,
+          "defector_seed": 0,
+          "random_defection_seed": 202608250,
+          "defector_agent_ids": null
+        },
+        "implementation": {
+          "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+          "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+          "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+          "src/experiment_condition.py": "6dc80d0b3ecc67dc260165e7142ccdfd0e845a0f62de657dadf0727e9379800c",
+          "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+          "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+          "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+          "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+          "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+          "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+          "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+          "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+          "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+          "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+          "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+          "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+        }
+      }
+    },
+    {
+      "path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_001_neutral_rep01_memtest_memory_primary_anything.json",
+      "sha256": "0f07deff10f2c7b63921a65fc7207729d04579f646ea7e9b09016ddd9ef8190a",
+      "condition": {
+        "version": 2,
+        "llm": {
+          "endpoint": "https://api.anthropic.com",
+          "model": "anthropic/claude-sonnet-4.5",
+          "parameters": {
+            "max_tokens": 64000,
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "policy": {
+            "max_output_tokens": 64000,
+            "provider": "anthropic",
+            "reasoning": {
+              "thinking": {
+                "budget_tokens": 8192,
+                "type": "enabled"
+              }
+            },
+            "temperature": "default"
+          },
+          "provider": "anthropic",
+          "provider_model": "claude-sonnet-4-5-20250929",
+          "version": 1
+        },
+        "protocol": {
+          "game_type": "games.trust_game_noisy.TrustGameNoisy",
+          "game": {
+            "endowment": 5,
+            "multiplier": 3,
+            "multiplier_distribution": null,
+            "personas": {
+              "Agent_1": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_2": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_3": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_4": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_5": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_6": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_7": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_8": {
+                "description": "neutral",
+                "system_addition": ""
+              }
+            },
+            "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+            "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+            "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.\nYou returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+            "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.\n{trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "noise_config": {
+              "type": "uniform",
+              "range": 1.0,
+              "direction": "negative",
+              "applies_to": "both",
+              "inform_agents": true
+            },
+            "noise_semantics": "communication",
+            "other_player_names": {
+              "investor": "The sender",
+              "trustee": "the receiver"
+            },
+            "myth_injection_mode": "partner",
+            "history_policy": "self_and_coplayer",
+            "self_history_window": 0,
+            "coplayer_history_window": 3,
+            "population_history_window": 0,
+            "show_agent_names": false,
+            "defector_ratio": 0.0,
+            "defector_prompt_template": "MANDATORY GAME STRATEGY \u2014 DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+            "defector_action_policy": "prompted",
+            "defector_myth_policy": "normal",
+            "defector_role_visible_to_self": true,
+            "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+            "pairing_mode": "balanced",
+            "prompt_regime": "legacy",
+            "punishment_enabled": false,
+            "punishment_budget": 2,
+            "punishment_effect_multiplier": 3.0,
+            "punishment_prompt_variant": "current",
+            "decision_format": null,
+            "random_defection_probability": 0.0,
+            "shuffled_myth_pool_sha256": null
+          },
+          "myth": {
+            "myth_topic": "anything",
+            "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+            "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+          },
+          "simulation": {
+            "num_turns": 10,
+            "num_agents": 8,
+            "memory_capacity": 6,
+            "agent_biases": "",
+            "task_order": [
+              "myth",
+              "game"
+            ],
+            "agent_names": null,
+            "seed_myth": null,
+            "seed_user_prompt": null,
+            "chat_memory_mode": "memory_primary",
+            "seed_reinject": false,
+            "initial_system_prompt_template": null,
+            "switch_to_game_system_before_game": false,
+            "game_response_retry_policy": "repeat_same_prompt_once"
+          },
+          "game_retry": {
+            "policy": "repeat_same_prompt_once",
+            "attempts": 2
+          },
+          "myth_retry": {
+            "policy": "task_boundary_v1",
+            "retries": 2
+          }
+        },
+        "replicate": {
+          "identity": {
+            "experiment": "negative_only_reasoning_rerun_population_myth_game_claude_n5",
+            "replicate_id": 1,
+            "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_001_neutral_rep01_memtest_memory_primary_anything.json"
+          },
+          "pairing_seed": 202608251,
+          "noise_seed": 202608251,
+          "run_seed": 1,
+          "defector_seed": 1,
+          "random_defection_seed": 202608251,
+          "defector_agent_ids": null
+        },
+        "implementation": {
+          "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+          "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+          "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+          "src/experiment_condition.py": "6dc80d0b3ecc67dc260165e7142ccdfd0e845a0f62de657dadf0727e9379800c",
+          "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+          "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+          "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+          "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+          "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+          "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+          "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+          "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+          "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+          "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+          "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+          "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+        }
+      }
+    },
+    {
+      "path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_002_neutral_rep02_memtest_memory_primary_anything.json",
+      "sha256": "b086b0ba0d72916eeb6f6491f6766f1a89d08aa4e165bee6092c7cc16feb524b",
+      "condition": {
+        "version": 2,
+        "llm": {
+          "endpoint": "https://api.anthropic.com",
+          "model": "anthropic/claude-sonnet-4.5",
+          "parameters": {
+            "max_tokens": 64000,
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "policy": {
+            "max_output_tokens": 64000,
+            "provider": "anthropic",
+            "reasoning": {
+              "thinking": {
+                "budget_tokens": 8192,
+                "type": "enabled"
+              }
+            },
+            "temperature": "default"
+          },
+          "provider": "anthropic",
+          "provider_model": "claude-sonnet-4-5-20250929",
+          "version": 1
+        },
+        "protocol": {
+          "game_type": "games.trust_game_noisy.TrustGameNoisy",
+          "game": {
+            "endowment": 5,
+            "multiplier": 3,
+            "multiplier_distribution": null,
+            "personas": {
+              "Agent_1": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_2": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_3": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_4": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_5": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_6": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_7": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_8": {
+                "description": "neutral",
+                "system_addition": ""
+              }
+            },
+            "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+            "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+            "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.\nYou returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+            "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.\n{trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "noise_config": {
+              "type": "uniform",
+              "range": 1.0,
+              "direction": "negative",
+              "applies_to": "both",
+              "inform_agents": true
+            },
+            "noise_semantics": "communication",
+            "other_player_names": {
+              "investor": "The sender",
+              "trustee": "the receiver"
+            },
+            "myth_injection_mode": "partner",
+            "history_policy": "self_and_coplayer",
+            "self_history_window": 0,
+            "coplayer_history_window": 3,
+            "population_history_window": 0,
+            "show_agent_names": false,
+            "defector_ratio": 0.0,
+            "defector_prompt_template": "MANDATORY GAME STRATEGY \u2014 DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+            "defector_action_policy": "prompted",
+            "defector_myth_policy": "normal",
+            "defector_role_visible_to_self": true,
+            "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+            "pairing_mode": "balanced",
+            "prompt_regime": "legacy",
+            "punishment_enabled": false,
+            "punishment_budget": 2,
+            "punishment_effect_multiplier": 3.0,
+            "punishment_prompt_variant": "current",
+            "decision_format": null,
+            "random_defection_probability": 0.0,
+            "shuffled_myth_pool_sha256": null
+          },
+          "myth": {
+            "myth_topic": "anything",
+            "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+            "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+          },
+          "simulation": {
+            "num_turns": 10,
+            "num_agents": 8,
+            "memory_capacity": 6,
+            "agent_biases": "",
+            "task_order": [
+              "myth",
+              "game"
+            ],
+            "agent_names": null,
+            "seed_myth": null,
+            "seed_user_prompt": null,
+            "chat_memory_mode": "memory_primary",
+            "seed_reinject": false,
+            "initial_system_prompt_template": null,
+            "switch_to_game_system_before_game": false,
+            "game_response_retry_policy": "repeat_same_prompt_once"
+          },
+          "game_retry": {
+            "policy": "repeat_same_prompt_once",
+            "attempts": 2
+          },
+          "myth_retry": {
+            "policy": "task_boundary_v1",
+            "retries": 2
+          }
+        },
+        "replicate": {
+          "identity": {
+            "experiment": "negative_only_reasoning_rerun_population_myth_game_claude_n5",
+            "replicate_id": 2,
+            "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_002_neutral_rep02_memtest_memory_primary_anything.json"
+          },
+          "pairing_seed": 202608252,
+          "noise_seed": 202608252,
+          "run_seed": 2,
+          "defector_seed": 2,
+          "random_defection_seed": 202608252,
+          "defector_agent_ids": null
+        },
+        "implementation": {
+          "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+          "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+          "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+          "src/experiment_condition.py": "6dc80d0b3ecc67dc260165e7142ccdfd0e845a0f62de657dadf0727e9379800c",
+          "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+          "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+          "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+          "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+          "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+          "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+          "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+          "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+          "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+          "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+          "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+          "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+        }
+      }
+    },
+    {
+      "path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_003_neutral_rep03_memtest_memory_primary_anything.json",
+      "sha256": "95c5aecd7743cf6f50e359a7c6588c6afff8d001bde53d6c7828698e00c6c3a6",
+      "condition": {
+        "version": 2,
+        "llm": {
+          "endpoint": "https://api.anthropic.com",
+          "model": "anthropic/claude-sonnet-4.5",
+          "parameters": {
+            "max_tokens": 64000,
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "policy": {
+            "max_output_tokens": 64000,
+            "provider": "anthropic",
+            "reasoning": {
+              "thinking": {
+                "budget_tokens": 8192,
+                "type": "enabled"
+              }
+            },
+            "temperature": "default"
+          },
+          "provider": "anthropic",
+          "provider_model": "claude-sonnet-4-5-20250929",
+          "version": 1
+        },
+        "protocol": {
+          "game_type": "games.trust_game_noisy.TrustGameNoisy",
+          "game": {
+            "endowment": 5,
+            "multiplier": 3,
+            "multiplier_distribution": null,
+            "personas": {
+              "Agent_1": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_2": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_3": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_4": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_5": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_6": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_7": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_8": {
+                "description": "neutral",
+                "system_addition": ""
+              }
+            },
+            "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+            "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+            "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.\nYou returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+            "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.\n{trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "noise_config": {
+              "type": "uniform",
+              "range": 1.0,
+              "direction": "negative",
+              "applies_to": "both",
+              "inform_agents": true
+            },
+            "noise_semantics": "communication",
+            "other_player_names": {
+              "investor": "The sender",
+              "trustee": "the receiver"
+            },
+            "myth_injection_mode": "partner",
+            "history_policy": "self_and_coplayer",
+            "self_history_window": 0,
+            "coplayer_history_window": 3,
+            "population_history_window": 0,
+            "show_agent_names": false,
+            "defector_ratio": 0.0,
+            "defector_prompt_template": "MANDATORY GAME STRATEGY \u2014 DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+            "defector_action_policy": "prompted",
+            "defector_myth_policy": "normal",
+            "defector_role_visible_to_self": true,
+            "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+            "pairing_mode": "balanced",
+            "prompt_regime": "legacy",
+            "punishment_enabled": false,
+            "punishment_budget": 2,
+            "punishment_effect_multiplier": 3.0,
+            "punishment_prompt_variant": "current",
+            "decision_format": null,
+            "random_defection_probability": 0.0,
+            "shuffled_myth_pool_sha256": null
+          },
+          "myth": {
+            "myth_topic": "anything",
+            "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+            "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+          },
+          "simulation": {
+            "num_turns": 10,
+            "num_agents": 8,
+            "memory_capacity": 6,
+            "agent_biases": "",
+            "task_order": [
+              "myth",
+              "game"
+            ],
+            "agent_names": null,
+            "seed_myth": null,
+            "seed_user_prompt": null,
+            "chat_memory_mode": "memory_primary",
+            "seed_reinject": false,
+            "initial_system_prompt_template": null,
+            "switch_to_game_system_before_game": false,
+            "game_response_retry_policy": "repeat_same_prompt_once"
+          },
+          "game_retry": {
+            "policy": "repeat_same_prompt_once",
+            "attempts": 2
+          },
+          "myth_retry": {
+            "policy": "task_boundary_v1",
+            "retries": 2
+          }
+        },
+        "replicate": {
+          "identity": {
+            "experiment": "negative_only_reasoning_rerun_population_myth_game_claude_n5",
+            "replicate_id": 3,
+            "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_003_neutral_rep03_memtest_memory_primary_anything.json"
+          },
+          "pairing_seed": 202608253,
+          "noise_seed": 202608253,
+          "run_seed": 3,
+          "defector_seed": 3,
+          "random_defection_seed": 202608253,
+          "defector_agent_ids": null
+        },
+        "implementation": {
+          "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+          "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+          "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+          "src/experiment_condition.py": "6dc80d0b3ecc67dc260165e7142ccdfd0e845a0f62de657dadf0727e9379800c",
+          "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+          "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+          "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+          "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+          "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+          "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+          "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+          "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+          "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+          "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+          "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+          "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+        }
+      }
+    },
+    {
+      "path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_004_neutral_rep04_memtest_memory_primary_anything.json",
+      "sha256": "2247a4164776c3327244f5796be5bb278c5b18efc86ac66bb9c8c14d0f16802a",
+      "condition": {
+        "version": 2,
+        "llm": {
+          "endpoint": "https://api.anthropic.com",
+          "model": "anthropic/claude-sonnet-4.5",
+          "parameters": {
+            "max_tokens": 64000,
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "policy": {
+            "max_output_tokens": 64000,
+            "provider": "anthropic",
+            "reasoning": {
+              "thinking": {
+                "budget_tokens": 8192,
+                "type": "enabled"
+              }
+            },
+            "temperature": "default"
+          },
+          "provider": "anthropic",
+          "provider_model": "claude-sonnet-4-5-20250929",
+          "version": 1
+        },
+        "protocol": {
+          "game_type": "games.trust_game_noisy.TrustGameNoisy",
+          "game": {
+            "endowment": 5,
+            "multiplier": 3,
+            "multiplier_distribution": null,
+            "personas": {
+              "Agent_1": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_2": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_3": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_4": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_5": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_6": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_7": {
+                "description": "neutral",
+                "system_addition": ""
+              },
+              "Agent_8": {
+                "description": "neutral",
+                "system_addition": ""
+              }
+            },
+            "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+            "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+            "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Last round you were the RECEIVER. {investor_name} sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of their total endowment. You received ${last_round_received}.\nYou returned ${last_round_returned}. So your payoff was {last_round_trustee_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+            "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Last round you were the SENDER. You sent ${last_round_sent},\nthat was {last_round_sent_percentage:.1f}% of your total endowment. This was tripled to ${last_round_received}.\n{trustee_name} returned ${last_round_returned}. So your payoff was {last_round_investor_payoff}.\nYour total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+            "noise_config": {
+              "type": "uniform",
+              "range": 1.0,
+              "direction": "negative",
+              "applies_to": "both",
+              "inform_agents": true
+            },
+            "noise_semantics": "communication",
+            "other_player_names": {
+              "investor": "The sender",
+              "trustee": "the receiver"
+            },
+            "myth_injection_mode": "partner",
+            "history_policy": "self_and_coplayer",
+            "self_history_window": 0,
+            "coplayer_history_window": 3,
+            "population_history_window": 0,
+            "show_agent_names": false,
+            "defector_ratio": 0.0,
+            "defector_prompt_template": "MANDATORY GAME STRATEGY \u2014 DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+            "defector_action_policy": "prompted",
+            "defector_myth_policy": "normal",
+            "defector_role_visible_to_self": true,
+            "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+            "pairing_mode": "balanced",
+            "prompt_regime": "legacy",
+            "punishment_enabled": false,
+            "punishment_budget": 2,
+            "punishment_effect_multiplier": 3.0,
+            "punishment_prompt_variant": "current",
+            "decision_format": null,
+            "random_defection_probability": 0.0,
+            "shuffled_myth_pool_sha256": null
+          },
+          "myth": {
+            "myth_topic": "anything",
+            "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+            "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+          },
+          "simulation": {
+            "num_turns": 10,
+            "num_agents": 8,
+            "memory_capacity": 6,
+            "agent_biases": "",
+            "task_order": [
+              "myth",
+              "game"
+            ],
+            "agent_names": null,
+            "seed_myth": null,
+            "seed_user_prompt": null,
+            "chat_memory_mode": "memory_primary",
+            "seed_reinject": false,
+            "initial_system_prompt_template": null,
+            "switch_to_game_system_before_game": false,
+            "game_response_retry_policy": "repeat_same_prompt_once"
+          },
+          "game_retry": {
+            "policy": "repeat_same_prompt_once",
+            "attempts": 2
+          },
+          "myth_retry": {
+            "policy": "task_boundary_v1",
+            "retries": 2
+          }
+        },
+        "replicate": {
+          "identity": {
+            "experiment": "negative_only_reasoning_rerun_population_myth_game_claude_n5",
+            "replicate_id": 4,
+            "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_population_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy8_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_population_myth_game_claude_n5_004_neutral_rep04_memtest_memory_primary_anything.json"
+          },
+          "pairing_seed": 202608254,
+          "noise_seed": 202608254,
+          "run_seed": 4,
+          "defector_seed": 4,
+          "random_defection_seed": 202608254,
+          "defector_agent_ids": null
+        },
+        "implementation": {
+          "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+          "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+          "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+          "src/experiment_condition.py": "6dc80d0b3ecc67dc260165e7142ccdfd0e845a0f62de657dadf0727e9379800c",
+          "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+          "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+          "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+          "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+          "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+          "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+          "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+          "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+          "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+          "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+          "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+          "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+        }
+      }
+    }
+  ],
+  "allowed_differences": {
+    "replicate.identity.replicate_id": "The five replicates (rep 00 to 04) of one cell; Fig 2 and Fig 3 draw rep 00, the schedules file lists all five.",
+    "replicate.identity.output_path": "Each run has its own output path.",
+    "replicate.pairing_seed": "Seeds follow the replicate; the pairing seed sets the schedule each diagram draws.",
+    "replicate.noise_seed": "Seeds follow the replicate.",
+    "replicate.run_seed": "Seeds follow the replicate.",
+    "replicate.defector_seed": "Seeds follow the replicate; no defectors in these runs.",
+    "replicate.random_defection_seed": "Seeds follow the replicate; random defection is off in these runs."
+  },
+  "legacy_reason": null,
+  "outputs": {
+    "fig1_one_round_pipeline.png": "bd61478cad105aef57696c4ad1ba89af03c770020ecae927a4a66be6aa3a4bcb",
+    "fig3_ancestry_tree.png": "97e12b7866231cea3fc988ec867c1a5cc8845c4b6cc78b37af9b2d2d174c4fb8",
+    "fig1_one_round_pipeline.pdf": "0dc81f964166b0ab5a8040dfe1c6d2337a12b70343e6b6e2ee80cbccb3b349d7",
+    "fig3_ancestry_tree.pdf": "b91e098655d23a3731ddb18e882d3cd616fc5f7f4fce1ae0c7ef5cb31980458d",
+    "fig1_one_round_pipeline.tex": "2716312e6ceff42675bc3a0928d895e421f7c9998c9c20b3ebe833a8edc617d2",
+    "comparison_spec.json": "1b8a31b5eaf836986d285fe57e6cfe0db09345e11f3caf2315c648f964e11931",
+    "fig3_ancestry_tree.tex": "40c8a0d00382d23553c124b6d2ba39e28873d82dbc71f3ad4b21a46db59cd920",
+    "schedules_sonnet_myth_game_rep00-04.json": "9a7dfd639729aa1f38d1ebfd0e59b071e05856b5228db2a3b89435f642d68d1d",
+    "README.md": "876cc2d4645978d70c26e62a7ba3b8905d6e987730b531920399c0b573d5249e",
+    "fig2_schedule_myth_hops.pdf": "679f7fb5535a41dd16076796a0f11fa06556390c78c3f75e1482d990854d50df",
+    "fig2_schedule_myth_hops.png": "0477c56d1753ad033c2d17afc08e1a9b3555a812a71df4e73df46f204456aaf2",
+    "fig2_schedule_myth_hops.tex": "268779ef591f8211905334eca3f70911c4d3701b0bfe8a91fa57fc2dead80acc"
+  },
+  "observed_differences": [
+    "replicate.defector_seed",
+    "replicate.identity.output_path",
+    "replicate.identity.replicate_id",
+    "replicate.noise_seed",
+    "replicate.pairing_seed",
+    "replicate.random_defection_seed",
+    "replicate.run_seed"
+  ]
+}

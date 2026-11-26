@@ -75,3 +75,13 @@ respectively. In rep 00, Agent 1's founding myth is in the lineage of 1, 2, 4,
   partner's myth verbatim; none quoted the agent's own or a third agent's.
 - Prompts quoted in Fig 1 are from the same rep 00 run (Agent 1, round 4) and
   from `config/experiments_noisy.yaml` / `config/experiments.yaml`.
+- `provenance.json` records the five run finals listed in the schedules file and
+  hashes every file in this folder (`scripts/check_safeguards.py` checks it).
+  The rep 01 run used only for the rule check above produced no file here and is
+  not listed. Rewrite it after any edit to the folder, from the repository root:
+
+  ```
+  python3 scripts/write_provenance.py docs/figures/myth_transmission_diagrams_20261010 \
+      $(python3 -c "import json,pathlib; print(' '.join(str(pathlib.Path(v['path']).resolve()) for v in json.load(open('docs/figures/myth_transmission_diagrams_20261010/schedules_sonnet_myth_game_rep00-04.json')).values()))") \
+      --comparison-spec docs/figures/myth_transmission_diagrams_20261010/comparison_spec.json
+  ```
