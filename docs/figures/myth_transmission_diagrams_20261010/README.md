@@ -56,11 +56,16 @@ The two partners of a round swap myths with a one-round lag. There is no
 broadcast and no board in this design (a shared board exists only as the
 separate `frontier_myth_board_20261002` ablation).
 
+Chat memory also still holds the prompts of the last three rounds, so a myth
+call's full context carries the partner myths shown in those rounds as well.
+That adds no new ancestors: each of them already fed one of the agent's own
+earlier myths.
+
 Consequence for spread: each new myth has two inputs (own previous myth,
 shown myth), so the number of founding myths in a myth's ancestry can at most
 double per round. In the five Sonnet 4.5 myth-then-game reps, every agent's
-myth has all eight round-1 myths in its ancestry by round 4, 5, 5, 5 and 6
-respectively. In rep 00, Agent 1's founding myth is in the lineage of 1, 2, 4,
+myth has all eight round-1 myths in its ancestry by round 6, 5, 5, 4 and 5
+for reps 00 to 04. In rep 00, Agent 1's founding myth is in the lineage of 1, 2, 4,
 6, 8 agents in rounds 1 to 5 (Fig 2).
 
 ## Provenance
