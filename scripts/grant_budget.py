@@ -43,7 +43,17 @@ def secret(name):
         return os.environ[name]
     r = subprocess.run(["security", "find-generic-password", "-s", name, "-w"],
                        capture_output=True, text=True)
-    return r.stdout.strip() if r.returncode == 0 else None
+    if r.returncode == 0:
+        return r.stdout.strip()
+    # Fall back to the main checkout's .env (worktrees have none of their own).
+    common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=ROOT,
+                            capture_output=True, text=True).stdout.strip()
+    for env_file in (ROOT / ".env", Path(common).parent / ".env" if common else ROOT / ".env"):
+        if env_file.exists():
+            for line in env_file.read_text().splitlines():
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'") or None
+    return None
 
 
 def get_json(url, params=None, headers=None):
@@ -272,6 +282,11 @@ def main():
                          if b == "unclassified" and usd >= 0.005]
     rows.append((f"Google Gemini (entered by hand, as of {cfg['google']['as_of']})",
                  float(cfg["google"]["amount_eur"])))
+    credits = cfg.get("credits") or []
+    if credits:
+        credit_usd = sum(float(c["amount_usd"]) for c in credits)
+        names = ", ".join(f"{c['provider']} ${float(c['amount_usd']):,.0f}" for c in credits)
+        rows.append((f"Free credits ({names})", -credit_usd * latest))
     spent = sum(v for _, v in rows)
     left = grant - spent
 
