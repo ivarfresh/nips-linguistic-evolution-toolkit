@@ -282,11 +282,6 @@ def main():
                          if b == "unclassified" and usd >= 0.005]
     rows.append((f"Google Gemini (entered by hand, as of {cfg['google']['as_of']})",
                  float(cfg["google"]["amount_eur"])))
-    credits = cfg.get("credits") or []
-    if credits:
-        credit_usd = sum(float(c["amount_usd"]) for c in credits)
-        names = ", ".join(f"{c['provider']} ${float(c['amount_usd']):,.0f}" for c in credits)
-        rows.append((f"Free credits ({names})", -credit_usd * latest))
     spent = sum(v for _, v in rows)
     left = grant - spent
 
