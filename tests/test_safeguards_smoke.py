@@ -57,7 +57,7 @@ def local_simulation(monkeypatch, tmp_path):
         def do_POST(self):
             payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             captured.append(payload)
-            response = openai_response(details={"reasoning_tokens": 0})
+            response = openai_response(details={"reasoning_tokens": 0}, model=payload["model"])
             key = "send" if len(captured) % 2 else "return"
             response["choices"][0]["message"]["content"] = json.dumps({key: 3})
             body = json.dumps(response).encode()
