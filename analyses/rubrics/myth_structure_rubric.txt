@@ -1,0 +1,89 @@
+# Myth Structure Rubric (after Lévi-Strauss, "The Structural Study of Myth", 1955)
+
+## Task
+
+You are an LLM judge. You will receive a short myth (about 200 words). Describe its structure with the
+fields below and return ONLY a JSON object. Describe what is in the text; do not guess at the author's intent.
+
+## Context
+
+The myth was written by a player of a repeated trust game: a sender may send some of $5, the amount is
+tripled, and the receiver chooses how much to return. Myths usually retell this metaphorically (seeds,
+coins, light, rivers, bridges, spirits). You do not need to decode the metaphor; describe the story.
+
+## Fields
+
+1. `mythemes` — the 3 to 6 key relations that carry the story, in story order. A mytheme is ONE relation
+   between two things: "who does what to whom" or "what becomes what". Each item has two strings:
+   * `text`: the relation in the myth's own terms, 4-10 words ("the Sower casts five grains into the River").
+   * `roles`: the same relation with every proper name and concrete image replaced by its abstract role,
+     4-10 words, using generic words such as giver, receiver, partner, guardian, spirit, trickster, community,
+     gift, resource, debt, punishment ("giver entrusts whole gift to guardian"). No proper names here.
+
+2. `oppositions` — 1 to 3 pairs of opposed terms the myth is built on, MOST CENTRAL FIRST. Each item:
+   * `pole_a`, `pole_b`: the two opposed terms as they appear in the myth, 1-4 words each.
+   * `category`: the closest of
+     - "giving_hoarding"        generosity, sharing, open hand vs greed, hoarding, clutching
+     - "trust_fear"             trust, faith, courage to give vs fear, doubt, suspicion
+     - "cooperation_betrayal"   keeping a bond, reciprocity vs betrayal, exploitation, cheating
+     - "punishment_forgiveness" sanction, exclusion, consequence vs mercy, second chance, forgiveness
+     - "individual_community"   self, one person vs group, village, the whole circle
+     - "scarcity_abundance"     want, withering, famine vs plenty, flourishing, multiplication
+     - "clarity_distortion"     what is seen truly vs mist, noise, illusion, distorted signal
+     - "honesty_deception"      truth-telling vs lies, tricks, false claims
+     - "order_chaos"            law, balance, covenant vs disorder, collapse
+     - "life_death"             life, growth vs death, decay
+     - "high_low"               sky, heaven, mountain vs earth, underworld, depth
+     - "light_dark"             light, dawn vs darkness, night
+     - "human_divine"           mortals vs gods, spirits
+     - "nature_culture"         wild, raw nature vs human craft, settlement, ritual
+     - "other"                  none of the above fits
+
+3. `main_resolution` — how the myth treats its MOST CENTRAL opposition:
+   * "one_pole_wins": one side is shown as right and the other as wrong or failing
+   * "mediated": a third figure or element stands between the poles and reconciles them (see field 4)
+   * "balanced": the myth says the right way is a measured mix or middle point of the two poles
+   * "unresolved": the tension is left open
+
+4. `mediator` — is there a figure or element that stands BETWEEN the two poles of the CENTRAL opposition
+   and reconciles them, usually by sharing features of both sides (as Coyote, the carrion-eater, sits between
+   hunting and death; or a trickster who is both giver and taker)? Be strict:
+   * The thing that carries or multiplies the gift (the river, bridge, well, fire, basket, waters) is part of
+     the game's setting, NOT a mediator, unless the myth explicitly shows it reconciling the two poles.
+   * A character who simply belongs to one pole (the generous giver, the greedy hoarder) is NOT a mediator.
+   * A spirit or elder who only teaches the lesson or rewards one side is NOT a mediator.
+   Fields:
+   * `present`: true or false
+   * `figure`: the mediator as named in the myth, 1-5 words, or null
+   * `type`: one of "spirit_or_deity", "trickster", "natural_element", "object_or_artifact",
+     "law_or_ritual", "human_character", "none"
+   If `main_resolution` is "mediated", `present` must be true.
+
+5. `transformation` — compare the situation at the START of the myth with the situation at the END. Only count
+   what the story narrates as happening, not hypothetical branches ("if either hoards, the bridge sags").
+   * `opening`: the starting situation in one short sentence (max 15 words)
+   * `closing`: the ending situation in one short sentence (max 15 words)
+   * `arc`: one of
+     - "improves": opens at the bad pole (scarcity, distrust, a broken bond) and ends at the good pole
+     - "declines": opens at the good pole and ends at the bad pole
+     - "restored": opens good, falls to the bad pole in the middle, ends good again
+     - "stable": the situation is good (or bad) throughout; the myth describes a working order
+       rather than a change
+     - "mixed": none of the above
+   * `role_inversion`: true ONLY if a specific character or group that held one pole at the start holds the
+     OPPOSITE pole at the end (the hoarder becomes the giver, the betrayer becomes the betrayed, the mighty
+     giver becomes the one in need). General improvement for everyone is NOT a role inversion.
+
+## Output format
+
+Return exactly this JSON shape and nothing else:
+
+{"mythemes": [{"text": "...", "roles": "..."}],
+ "oppositions": [{"pole_a": "...", "pole_b": "...", "category": "..."}],
+ "main_resolution": "...",
+ "mediator": {"present": false, "figure": null, "type": "none"},
+ "transformation": {"opening": "...", "closing": "...", "arc": "...", "role_inversion": false}}
+
+## Myth
+
+{text}
