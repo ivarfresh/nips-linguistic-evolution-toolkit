@@ -404,6 +404,66 @@ def plot_convergence(conv: pd.DataFrame, families, colors, figs: Path) -> None:
     plt.close(fig)
 
 
+# --------------------------------------------------------------------------- provenance
+
+TRACKED_OUT = ROOT / "docs/figures/myth_structure_20261010"
+CORPORA = ("september_n10", "frontier")
+
+
+def write_provenance(out: Path = TRACKED_OUT) -> None:
+    """provenance.json for the tracked folder: the run finals behind the myths of both corpora.
+
+    The folder holds one subfolder per corpus, so the manifest records four pools (n=10 mixed and
+    single-model, frontier single-model and mixed). No statistic pools the corpora. Run this last,
+    after every edit to the folder (README included): scripts/check_safeguards.py compares the
+    hashes of all tracked files.
+    """
+    from analyses.table1_n10 import n10_pools, use_n10_final_paths
+    from analyses._mixed_model_provenance import POOL_REASON as N10_REASON
+    from scripts import analyze_mixed_model_dyads as dyads
+    from scripts import analyze_mixed_model_populations as populations
+    from scripts.analyze_frontier_main_mixed_20260928 import load as frontier_load
+    from scripts.analyze_frontier_update_20260928 import ALLOWED as FRONTIER_ALLOWED
+    from scripts.analyze_frontier_update_20260928 import POOL_REASON as FRONTIER_REASON
+    from src.experiment_condition import output_provenance
+
+    missing = [name for name in CORPORA if not (out / name / "by_round_single_model.csv").exists()]
+    if missing:
+        raise SystemExit(f"{out}: no results for {missing}; run the analysis for every corpus first")
+
+    def used(name: str) -> set[Path]:
+        paths = pd.read_csv(linguistic_datasets.get(name).data / "myths.csv", usecols=["path"]).path.unique()
+        return {(ROOT / p).resolve() for p in paths}
+
+    def pick(paths, wanted: set[Path]) -> list[Path]:
+        return [p.resolve() for p in paths if p.resolve() in wanted]
+
+    n10 = used("september_n10")
+    use_n10_final_paths(n10_pools())  # the original runs plus the 2026-10-01 extension
+    dyad_mixed, dyad_single = dyads.final_paths()
+    pop_mixed, pop_single = populations.final_paths()
+    frontier = used("frontier")
+    _, frontier_single, frontier_mixed = frontier_load()  # receipt-audited finals
+    pools = {
+        "september_n10_mixed": pick(dyad_mixed + pop_mixed, n10),
+        "september_n10_single_model": pick(dyad_single + pop_single, n10),
+        "frontier_single_model": pick(frontier_single, frontier),
+        "frontier_mixed": pick(frontier_mixed, frontier),
+    }
+    listed = {p for paths in pools.values() for p in paths}
+    if listed != n10 | frontier:
+        raise SystemExit(f"{len((n10 | frontier) ^ listed)} myth runs do not match the audited run finals")
+    allowed = {**dyads.ALLOWED, **populations.ALLOWED, **FRONTIER_ALLOWED}
+    reason = (f"{N10_REASON} {FRONTIER_REASON} The September n=10 pools and the frontier pools are separate "
+              "corpora with their own subfolder each; no table, figure or test in this folder pools them.")
+    outputs = sorted(p for p in out.rglob("*")
+                     if p.is_file() and p.name != "provenance.json" and not p.name.startswith("."))
+    runs = [p for paths in pools.values() for p in paths]
+    document = output_provenance(runs, outputs, allowed, output_root=out, pools=pools, pool_reason=reason)
+    (out / "provenance.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    print(f"provenance: {len(runs)} runs, {len(outputs)} outputs -> {(out / 'provenance.json').relative_to(ROOT)}")
+
+
 # --------------------------------------------------------------------------- main
 
 def main() -> None:
@@ -411,7 +471,12 @@ def main() -> None:
     ap.add_argument("--dataset", choices=sorted(linguistic_datasets.DATASETS), default="september_n10")
     ap.add_argument("--tag", help="judge-output tag (default: <dataset>_<JUDGE>); a non-default tag "
                     "writes figures to a scratch folder under the data directory")
+    ap.add_argument("--provenance-only", action="store_true",
+                    help="only rewrite provenance.json (e.g. after a README edit)")
     args = ap.parse_args()
+    if args.provenance_only:
+        write_provenance()
+        return
     ds = linguistic_datasets.get(args.dataset)
     tag = args.tag or f"{ds.name}_{JUDGE}"
     figs = (ROOT / "docs/figures/myth_structure_20261010" / ds.name if not args.tag
@@ -464,6 +529,11 @@ def main() -> None:
     ts.to_csv(figs / "transmission_summary.csv", index=False)
     plot_transmission(ts, figs)
     print(f"-> {figs}")
+    if not args.tag:
+        if all((TRACKED_OUT / name / "by_round_single_model.csv").exists() for name in CORPORA):
+            write_provenance()
+        else:
+            print("provenance.json not written: run the analysis for the other corpus too")
 
 
 if __name__ == "__main__":
