@@ -66,7 +66,7 @@ withholding (171/200 contain nothing/zero/kept-all language, as 176/200 do in th
 characters called Keeper, Silence, Stone, the Oracle who "knows but cannot act".
 
 **Why it did not move resources.** Two things. First, the twins already know who defects:
-the prompt lists the co-player's last three games, and after round 3 twin agents send a
+the prompt lists the co-player's last three games, and from round 2 on twin agents send a
 defector $0 in 60% of decisions. The board raised that to 80%, worth about $0.11 per
 decision, two decisions in seven, over ten rounds. Second, a confessional myth sometimes
 buys the defector a second chance. In 14 of 70 board decisions against a defector after
@@ -110,6 +110,8 @@ myths and defectors' myths do give them away. But in this design the action hist
 carries the reputation, so attribution adds a marginal extra sanction and no lift in
 cooperation among the ordinary agents. Together with the anonymous board null
 (`../myth_board_mixed_20261109/README.md`) and the October frontier board, this closes the
-board line on the current prompts: neither more myths nor attributed myths change play.
+board line on the current prompts: neither more myths nor attributed myths raise cooperation
+or earnings. The attributed board's one effect is a slightly sharper sanction on defectors
+(the uncorrected tests above).
 Caveat: n=5 per task order, sd 1.4 to 5.9 on resources; effects under about 4 points are
 not excluded.

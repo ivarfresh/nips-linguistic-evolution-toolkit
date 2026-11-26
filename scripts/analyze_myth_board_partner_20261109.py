@@ -36,7 +36,7 @@ def load_finals(data_root):
     receipt = data_root / BOARD_RECEIPT
     if receipt.exists():
         for f in json.loads(receipt.read_text())["finals"]:
-            path = data_root.parent.parent / f["path"]
+            path = data_root / f["path"].split("data/json/", 1)[1]  # receipt paths start at the repo root
             d = json.loads(path.read_text())
             d["_path"] = path
             board[(f["task_order"], d["run_metadata"]["replicate_id"])] = d
@@ -46,6 +46,7 @@ def load_finals(data_root):
                 continue
             d = json.loads(p.read_text())
             d["_path"] = p
+            assert (shape, d["run_metadata"]["replicate_id"]) not in twins, f"two twin finals for one replicate: {p}"
             twins[(shape, d["run_metadata"]["replicate_id"])] = d
     return board, twins
 
@@ -85,8 +86,9 @@ ALLOWED_DIFFERENCES = {
     "protocol.myth.board": "The board is the manipulation: on in the board runs, absent in the partner-myth twins.",
     "protocol.myth.board_seed": "Per-run shuffle order of the board; absent in the twins.",
     "protocol.myth.later_rounds_template": "Board runs use the board version of the later-round myth prompt.",
-    "implementation": "Board runs use later src/ code (the board feature); scripts/run_myth_board_pilot.py asserts "
-                      "before launch that a board run's inputs differ from its twin's only in the board settings.",
+    "implementation": "Board runs use later src/ code than their September twins: the board feature, per-agent "
+                      "request plans and billing-error detection. Within every pair the recorded request "
+                      "settings, system prompts, pairings and seeds are identical (2026-11-26 review).",
     "replicate.identity.experiment": "Board runs and their twins are separate experiment sets.",
     "replicate.identity.replicate_id": "Ten replicates, paired by replicate id.",
     "replicate.identity.output_path": "Each run has its own output path.",
