@@ -43,7 +43,17 @@ def secret(name):
         return os.environ[name]
     r = subprocess.run(["security", "find-generic-password", "-s", name, "-w"],
                        capture_output=True, text=True)
-    return r.stdout.strip() if r.returncode == 0 else None
+    if r.returncode == 0:
+        return r.stdout.strip()
+    # Fall back to the main checkout's .env (worktrees have none of their own).
+    common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=ROOT,
+                            capture_output=True, text=True).stdout.strip()
+    for env_file in (ROOT / ".env", Path(common).parent / ".env" if common else ROOT / ".env"):
+        if env_file.exists():
+            for line in env_file.read_text().splitlines():
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'") or None
+    return None
 
 
 def get_json(url, params=None, headers=None):

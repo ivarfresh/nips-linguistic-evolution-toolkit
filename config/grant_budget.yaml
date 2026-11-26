@@ -52,7 +52,7 @@ openai:
 # OpenAI bill it and it is already counted above. Later spend is the growth in
 # the account's lifetime credit usage (/api/v1/credits) since `snapshot`.
 openrouter:
-  fixed_until: "2026-10-01"
+  fixed_until: "2026-11-26"
   fixed_usd_by_month:
     2026-01: 24.84
     2026-02: 92.08
@@ -63,11 +63,19 @@ openrouter:
     2026-07: 8.93
     2026-08: 3.78
     2026-09: 21.78
-  snapshot: null   # set with: python scripts/grant_budget.py --snapshot-openrouter
+    # 2026-10-01..2026-11-26: lifetime credit usage 371.17 (API, 2026-11-26) minus the
+    # Jan-Sep months above (340.77). Upper bound: assumes no pre-2026 credit usage.
+    # The 30-day activity API shows only $0.26 (2026-11-10) since 2026-10-27.
+    2026-10: 30.40
+  snapshot:
+    taken_at: "2026-11-26T17:10:00Z"
+    total_usage_usd: 371.170000   # lifetime credit usage at that moment
 
 # Google has no cost API without a BigQuery billing export. Refresh by hand from
 # https://console.cloud.google.com/billing/0154C5-218C4A-7856EC/reports;timeRange=CUSTOM_RANGE;from=2026-01-01;to=<today>;grouping=GROUP_BY_SERVICE
 # (all of it is the Gemini API, project "nano banana"). Billed in EUR.
+# The report can lag by up to a day, so the most recent day may be partly missing.
 google:
-  amount_eur: 142.28
-  as_of: "2026-10-01"
+  amount_eur: 224.56
+  as_of: "2026-11-26"
+
