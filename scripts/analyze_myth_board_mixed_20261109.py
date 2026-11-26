@@ -7,6 +7,8 @@ whole group and per model family: final resources (mean of the agents' balances)
 difference, a paired t-test, and the mean send decision per investor -> trustee family.
 
     python3 scripts/analyze_myth_board_mixed_20261109.py [--data-root data/json] [--out DIR]
+
+With --out the tables are written and the folder's provenance.json is rewritten.
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ import csv
 import json
 from pathlib import Path
 import statistics
+import sys
 
 from scipy import stats
 
@@ -32,13 +35,16 @@ def load_finals(data_root):
     receipt = data_root / BOARD_RECEIPT
     if receipt.exists():
         for f in json.loads(receipt.read_text())["finals"]:
-            d = json.loads((ROOT / f["path"]).read_text())
+            path = data_root.parent.parent / f["path"]
+            d = json.loads(path.read_text())
+            d["_path"] = path
             board[d["run_metadata"]["replicate_id"]] = d
     for name, folder in TWIN_SETS.items():
         for p in (data_root / folder / name).rglob(f"{name}_*.json"):
             if p.name.endswith(".results.json"):
                 continue
             d = json.loads(p.read_text())
+            d["_path"] = p
             assert d["run_metadata"]["agent_models"]
             twins[d["run_metadata"]["replicate_id"]] = d
     return board, twins
@@ -68,6 +74,32 @@ def sends(d):
 
 def msd(xs):
     return f"{statistics.mean(xs):.1f} (±{statistics.stdev(xs):.1f})" if len(xs) > 1 else f"{xs[0]:.1f}"
+
+
+# Fields that differ between the runs this folder is built from, each with its reason
+# (scripts/check_safeguards.py rejects any undeclared difference).
+_SEED = "Seeds follow the replicate; a board run and its twin share them (asserted by the launcher)."
+ALLOWED_DIFFERENCES = {
+    "protocol.myth.board": "The board is the manipulation: on in the board runs, absent in the partner-myth twins.",
+    "protocol.myth.board_seed": "Per-run shuffle order of the board; absent in the twins.",
+    "protocol.myth.later_rounds_template": "Board runs use the board version of the later-round myth prompt.",
+    "implementation": "Board runs use later src/ code (the board feature); scripts/run_myth_board_pilot.py asserts "
+                      "before launch that a board run's inputs differ from its twin's only in the board settings.",
+    "replicate.identity.experiment": "Board runs and their twins are separate experiment sets.",
+    "replicate.identity.replicate_id": "Ten replicates, paired by replicate id.",
+    "replicate.identity.output_path": "Each run has its own output path.",
+    "replicate.noise_seed": _SEED, "replicate.pairing_seed": _SEED, "replicate.run_seed": _SEED,
+    "replicate.defector_seed": _SEED, "replicate.random_defection_seed": _SEED,
+}
+
+
+def write_provenance(out, finals):
+    """Record the board runs and their twins and hash every file in the folder. Run last, also after a
+    README edit: scripts/check_safeguards.py compares the hashes of all tracked files."""
+    sys.path.insert(0, str(ROOT))
+    from analyses._shared import write_output_provenance
+    write_output_provenance(out, sorted(Path(p).resolve() for p in finals), allowed_differences=ALLOWED_DIFFERENCES)
+    print(f"provenance: {len(finals)} runs -> {Path(out) / 'provenance.json'}")
 
 
 def main():
@@ -111,6 +143,7 @@ def main():
             w.writeheader()
             w.writerows(rows)
         print(f"\nwrote {out / 'board_vs_partner_by_replicate.csv'}")
+        write_provenance(out, [d["_path"] for k in reps for d in (board[k], twins[k])])
 
 
 if __name__ == "__main__":
