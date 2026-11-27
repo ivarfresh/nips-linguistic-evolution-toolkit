@@ -100,9 +100,10 @@ def validate_memory(data, combo, num_agents):
         raise ValueError("Not a complete ten-round game-only final")
     if len(data["agents"]) != num_agents:
         raise ValueError("Wrong group size")
-    noise = data["run_metadata"].get("noise_config") or {}
-    if {k: noise.get(k) for k in NOISE} != NOISE:
-        raise ValueError(f"Wrong noise setting recorded: {noise}")
+    # This runner path does not record noise_config in run_metadata; check the draws.
+    draws = [action["noise"] for row in data["conversation_history"] for action in row["actions"].values()]
+    if not draws or min(draws) < -NOISE["range"] or max(draws) > 0 or not any(draws):
+        raise ValueError(f"Noise draws outside U(-1,0): min={min(draws, default=None)} max={max(draws, default=None)}")
     seeded = combo["seed_type"] != "baseline"
     game, _ = population.game_and_writer(combo)
     game.configure_agents(list(data["agents"]), data["run_metadata"]["agent_names"])
