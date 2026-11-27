@@ -118,9 +118,6 @@ class GeminiProviderTests(unittest.TestCase):
                 _gemini_request_timeout_seconds()
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 def _plan(provider):
     from src.llm_settings import resolve_request_plan
@@ -177,3 +174,19 @@ class VertexAndModelGuardTests(unittest.TestCase):
             out = _call_gemini(client, "gemini-3.7-flash", 1.0, self.messages, 1, request_plan=_plan("direct"))
         self.assertEqual(out["usage"]["response_model"], "gemini-3.7-flash-001")
         self.assertNotEqual(out["usage"]["outcome"], "model_mismatch")
+
+    def test_model_check_rejects_other_models_sharing_a_prefix(self):
+        from src.utils import model_matches
+        self.assertTrue(model_matches("gpt-5-nano", "gpt-5-nano-2025-08-07"))
+        self.assertTrue(model_matches("claude-sonnet-4-5", "claude-sonnet-4-5-20250929"))
+        self.assertTrue(model_matches("gemini-3.7-flash", "gemini-3.7-flash"))
+        self.assertTrue(model_matches("gemini-3.7-flash", "gemini-3.7-flash-001"))
+        self.assertFalse(model_matches("gpt-5", "gpt-5-nano"))
+        self.assertFalse(model_matches("claude-opus-5", "claude-opus-5-5"))
+        self.assertFalse(model_matches("gemini-3.7-flash", "gemini-3.7-flash-lite"))
+        self.assertFalse(model_matches("gemini-3.7-flash", "gemini-3.8-flash"))
+        self.assertFalse(model_matches("gemini-3.7-flash", None))
+
+
+if __name__ == "__main__":
+    unittest.main()
