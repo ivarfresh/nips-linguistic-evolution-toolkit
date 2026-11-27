@@ -118,5 +118,75 @@ class GeminiProviderTests(unittest.TestCase):
                 _gemini_request_timeout_seconds()
 
 
+
+def _plan(provider):
+    from src.llm_settings import resolve_request_plan
+    block = {"provider": provider, "reasoning": {"thinkingConfig": {"thinkingLevel": "high"}},
+             "temperature": "default", "max_output_tokens": "default"}
+    return resolve_request_plan("google/gemini-3.7-flash", block, {"google/gemini-3.7-flash": "gemini-3.7-flash"})
+
+
+class _VersionedResponse(_FakeResponse):
+    def __init__(self, version):
+        self.version = version
+
+    def read(self):
+        data = json.loads(super().read())
+        data["modelVersion"] = self.version
+        return json.dumps(data).encode("utf-8")
+
+
+class VertexAndModelGuardTests(unittest.TestCase):
+    messages = [{"role": "user", "content": "Decide."}]
+
+    def test_vertex_plan_uses_vertex_endpoint_and_native_model(self):
+        plan = _plan("vertex").as_dict()
+        self.assertEqual(plan["provider"], "vertex")
+        self.assertEqual(plan["endpoint"], "https://aiplatform.googleapis.com/v1/publishers/google")
+        self.assertEqual(plan["provider_model"], "gemini-3.7-flash")
+
+    def test_vertex_request_goes_to_publisher_model_url(self):
+        from src.utils import _create_vertex_client
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "k"}):
+            client = _create_vertex_client()
+        seen = {}
+
+        def fake_urlopen(request, timeout=None):
+            seen["url"] = request.full_url
+            return _VersionedResponse("gemini-3.7-flash")
+
+        with patch("src.utils.urllib.request.urlopen", side_effect=fake_urlopen):
+            out = _call_gemini(client.client, "gemini-3.7-flash", 1.0, self.messages, 1, request_plan=_plan("vertex"))
+        self.assertEqual(seen["url"], "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-3.7-flash:generateContent")
+        self.assertEqual(out["usage"]["response_model"], "gemini-3.7-flash")
+
+    def test_silent_redirect_to_another_model_fails_the_call(self):
+        from src.utils import LLMRequestError
+        client = {"api_key": "k", "base_url": "https://generativelanguage.googleapis.com/v1beta"}
+        with patch("src.utils.urllib.request.urlopen", return_value=_VersionedResponse("gemini-3.8-flash")):
+            with self.assertRaises(LLMRequestError) as caught:
+                _call_gemini(client, "gemini-3.7-flash", 1.0, self.messages, 1, request_plan=_plan("direct"))
+        self.assertEqual(caught.exception.usage["outcome"], "model_mismatch")
+
+    def test_dated_snapshot_of_requested_model_is_accepted(self):
+        client = {"api_key": "k", "base_url": "https://generativelanguage.googleapis.com/v1beta"}
+        with patch("src.utils.urllib.request.urlopen", return_value=_VersionedResponse("gemini-3.7-flash-001")):
+            out = _call_gemini(client, "gemini-3.7-flash", 1.0, self.messages, 1, request_plan=_plan("direct"))
+        self.assertEqual(out["usage"]["response_model"], "gemini-3.7-flash-001")
+        self.assertNotEqual(out["usage"]["outcome"], "model_mismatch")
+
+    def test_model_check_rejects_other_models_sharing_a_prefix(self):
+        from src.utils import model_matches
+        self.assertTrue(model_matches("gpt-5-nano", "gpt-5-nano-2025-08-07"))
+        self.assertTrue(model_matches("claude-sonnet-4-5", "claude-sonnet-4-5-20250929"))
+        self.assertTrue(model_matches("gemini-3.7-flash", "gemini-3.7-flash"))
+        self.assertTrue(model_matches("gemini-3.7-flash", "gemini-3.7-flash-001"))
+        self.assertFalse(model_matches("gpt-5", "gpt-5-nano"))
+        self.assertFalse(model_matches("claude-opus-5", "claude-opus-5-5"))
+        self.assertFalse(model_matches("gemini-3.7-flash", "gemini-3.7-flash-lite"))
+        self.assertFalse(model_matches("gemini-3.7-flash", "gemini-3.8-flash"))
+        self.assertFalse(model_matches("gemini-3.7-flash", None))
+
+
 if __name__ == "__main__":
     unittest.main()
