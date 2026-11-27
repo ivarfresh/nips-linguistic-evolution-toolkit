@@ -34,7 +34,7 @@ from scripts.run_noisy_missing import load_combinations, expected_output_path, c
 from scripts.rerun_negative_only_crossmodel import EXPECTED_POLICIES, TRUNCATION_REASONS  # noqa: E402
 from experiments.run_noisy_batch import build_noisy_protocol  # noqa: E402
 from src.llm_settings import is_mixed_plan  # noqa: E402
-from src.utils import is_exhausted_quota  # noqa: E402
+from src.utils import is_exhausted_quota, model_matches  # noqa: E402
 
 CONFIG = ROOT / "config/experiments_noisy.yaml"
 OUTPUT = "mixed_model_populations_20260918"
@@ -149,10 +149,10 @@ def audit(job):
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
             # The model that answered must be the one requested (the Gemini API
             # silently answered gemini-3.7-flash with gemini-3.8-flash from ~2026-10-10).
-            answered = u.get("response_model")
-            if answered and provider != "openrouter":
-                wanted = expected["provider_model"]
-                assert answered == wanted or answered.startswith(wanted + "-"), (name, agent_id, wanted, answered)
+            # A missing answering-model name fails too: no proof of which model answered.
+            if provider != "openrouter":
+                assert model_matches(expected["provider_model"], u.get("response_model")), (
+                    name, agent_id, expected["provider_model"], u.get("response_model"))
             calls += 1
             output = (u.get("output_tokens") or 0) + ((u.get("reasoning_tokens") or 0) if provider in ("google", "vertex") else 0)
             cost[provider] += ((u.get("input_tokens") or 0) * ir + output * orr) / 1e6
