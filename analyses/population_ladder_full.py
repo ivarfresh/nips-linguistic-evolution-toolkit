@@ -5,11 +5,13 @@ Paper Figure 3 shows 6 of the 15 two-family splits (1+7, 2+6, 4+4, 6+2, 7+1 for 
 family pairs). The other 9 were run on 2026-11-23/27 (PR #50; Gemini via Vertex AI so
 the answering model is gemini-3.7-flash, checked on every call by the launcher audit).
 This script pools the paper's n = 10 tables with the new runs and draws one row per
-family pair, single-model populations at both ends:
+family pair, single-model populations at both ends. Every row is a complete ladder, so
+each single-model population appears in two rows (Edward Hughes, meeting 2026-11-27:
+group the mixing axes explicitly, duplication is fine):
 
-  row 1  8 GPT ... Gemini/GPT splits ... 8 Gemini
-  row 2  8 Sonnet ... GPT/Sonnet splits ... 8 GPT
-  row 3  8 Sonnet ... Gemini/Sonnet splits ... 8 Gemini
+  row 1  8 GPT ... GPT/Gemini splits ... 8 Gemini
+  row 2  8 GPT ... GPT/Sonnet splits ... 8 Sonnet
+  row 3  8 Gemini ... Gemini/Sonnet splits ... 8 Sonnet
 
 Inputs:
   docs/figures/mixed_vs_average_n10_20261001/population_{agent_finals,games}.csv  (paper, 270 runs)
@@ -46,9 +48,9 @@ RECEIPTS = [
 ]
 FAMILY_ORDER = ["Gemini", "GPT", "Sonnet"]
 ROWS = [
-    ("Gemini / GPT", "GPT", "Gemini"),
-    ("GPT / Sonnet", "Sonnet", "GPT"),
-    ("Gemini / Sonnet", "Sonnet", "Gemini"),
+    ("GPT / Gemini", "GPT", "Gemini"),
+    ("GPT / Sonnet", "GPT", "Sonnet"),
+    ("Gemini / Sonnet", "Gemini", "Sonnet"),
 ]
 SPLITS = [7, 6, 4, 2, 1]  # agents of the left-hand family, left to right after the pure end
 SHORT_ORDERS = ["Game\nonly", "Game\n→ Myth", "Myth\n→ Game"]
@@ -72,16 +74,8 @@ def name(left: str, n_left: int, right: str) -> str:
 
 
 def layout():
-    """Each panel once: a single-model population already shown in an earlier row is left blank."""
-    seen, rows = set(), []
-    for label, left, right in ROWS:
-        row = []
-        for n in [8, *SPLITS, 0]:
-            c = name(left, n, right)
-            row.append(None if c in seen else c)
-            seen.add(c)
-        rows.append((label, row))
-    return rows
+    """One complete ladder per family pair, the left-hand family shrinking from 8 to 0."""
+    return [(label, [name(left, n, right) for n in [8, *SPLITS, 0]]) for label, left, right in ROWS]
 
 
 def new_tables(new_root: Path):
