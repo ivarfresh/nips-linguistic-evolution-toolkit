@@ -87,7 +87,7 @@ def raw_section(E):
                          load("2_response_gemini_api.json"), load("2_response_vertex.json")))
     for pid, title in (("founding_myth-000", "First myth"), ("later_myth-000", "Later myth"), ("game-000", "Game move")):
         if (d / f"{pid}_response_vertex.json").exists():
-            examples.append((f"{title} ({pid}, captured 2026-11-27): Vertex only, the Gemini API refused (prepaid balance empty)", load(f"{pid}_recorded.json"),
+            examples.append((f"{title} ({pid}, captured 2026-11-27), full responses from both routes", load(f"{pid}_recorded.json"),
                              (load(f"{pid}_request.json") or {}).get("body"),
                              load(f"{pid}_response_gemini_api.json"), load(f"{pid}_response_vertex.json")))
     for title, rec, body, api, vtx in examples:
