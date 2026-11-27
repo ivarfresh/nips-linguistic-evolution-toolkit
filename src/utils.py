@@ -315,12 +315,25 @@ def _create_vertex_client():
     return LLMClient("vertex", {"api_key": api_key, "base_url": _ENDPOINTS["vertex"]})
 
 
+# A dated or numbered snapshot suffix: -20250929, -2025-08-07, -001. Anything else
+# after the requested id (gpt-5 -> gpt-5-nano, claude-opus-5 -> claude-opus-5-5,
+# gemini-3.7-flash -> gemini-3.7-flash-lite) is a different model.
+_SNAPSHOT_SUFFIX = re.compile(r"-(\d{8}|\d{4}-\d{2}-\d{2}|\d{3})$")
+
+
+def model_matches(expected, got):
+    """True when ``got`` is ``expected`` or a dated/numbered snapshot of it."""
+    if not expected or not got:
+        return False
+    return got == expected or (got.startswith(expected) and bool(_SNAPSHOT_SUFFIX.fullmatch(got[len(expected):])))
+
+
 def check_response_model(usage, request_plan):
     """Fail a pinned call when the provider answered with a different model than requested.
 
     Providers can silently redirect a retired model id to its successor (Google sent
     gemini-3.7-flash traffic to gemini-3.8-flash from 2026-10-10). Accept the exact id
-    or a dated/versioned snapshot of it (``<id>-<suffix>``).
+    or a dated/numbered snapshot of it (see ``model_matches``).
     """
     if request_plan is None:
         return usage
@@ -328,7 +341,7 @@ def check_response_model(usage, request_plan):
     got = usage.get("response_model")
     if request_plan.provider == "openrouter" or not got:
         return usage
-    if got == expected or got.startswith(expected + "-"):
+    if model_matches(expected, got):
         return usage
     usage["outcome"] = "model_mismatch"
     raise LLMRequestError(f"Requested {expected!r} but the provider answered with {got!r}", usage)
