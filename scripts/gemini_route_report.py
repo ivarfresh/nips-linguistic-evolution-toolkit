@@ -73,12 +73,12 @@ def raw_section(E):
            "The left column is the September call as stored in our run file (our own record, not Google's raw JSON).</p>"]
     examples = []
     if (d / "2_response_vertex.json").exists():
-        examples.append(("Game move, both routes (captured 2026-11-26)", load("0_recorded_call.json"),
+        examples.append(("Example 1: game move, FULL RESPONSES FROM BOTH ROUTES (captured 2026-11-26)", load("0_recorded_call.json"),
                          (load("1_request_vertex.json") or {}).get("body"),
                          load("2_response_gemini_api.json"), load("2_response_vertex.json")))
     for pid, title in (("founding_myth-000", "First myth"), ("later_myth-000", "Later myth"), ("game-000", "Game move")):
         if (d / f"{pid}_response_vertex.json").exists():
-            examples.append((f"{title} ({pid}, captured 2026-11-27)", load(f"{pid}_recorded.json"),
+            examples.append((f"{title} ({pid}, captured 2026-11-27): Vertex only, the Gemini API refused (prepaid balance empty)", load(f"{pid}_recorded.json"),
                              (load(f"{pid}_request.json") or {}).get("body"),
                              load(f"{pid}_response_gemini_api.json"), load(f"{pid}_response_vertex.json")))
     for title, rec, body, api, vtx in examples:
