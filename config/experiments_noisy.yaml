@@ -404,6 +404,19 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
+  # 2026-11-27 ablation: memory-primary prompt with only the sentence "Use the
+  # myth you wrote in the previous round as inspiration, but adapt it in your
+  # own way." deleted; nothing is put in its place. The agent's own earlier
+  # myths stay in chat memory.
+  myth_writing_later_rounds_directive_memory_primary_noselfline: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
   # Lineage variant: self-myth pointer ("base it on the myths you wrote
   # earlier this session") — attention to own 3-round lineage in memory,
   # no content duplication. A/B vs myth_writing_later_rounds_directive_memory_primary.
@@ -6838,3 +6851,156 @@ experiment_sets:
     <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
     llm_settings_by_model: *mixed_llm_settings_by_model_vertex
     replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # 2026-11-27: full-run ablation of the self-inspiration sentence, Sonnet 4.5
+  # dyads, no-defector condition. Each set is its September original with only
+  # the later-round myth prompt changed (sentence deleted), replicates 0-4,
+  # so every run shares its paired noise seed with one baseline run of the
+  # *_n5 sets. Launcher:
+  # scripts/run_no_self_line_dyads.py.
+  # -----------------------------------------------------------------------
+  no_self_line_dyad_game_myth_claude_n5:
+    <<: *reasoning_rerun_dyad_game_myth
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    game_params_list: ["noisy2_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  no_self_line_dyad_myth_game_claude_n5:
+    <<: *reasoning_rerun_dyad_myth_game
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    game_params_list: ["noisy2_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+
+  # -----------------------------------------------------------------------
+  # 2026-11-27: the same ablation in mixed dyads, Sonnet 4.5 with GPT-5 Nano
+  # and with Gemini 3.7 Flash. Each set is its mixed_dyad_*_n3 original with
+  # only the later-round myth prompt changed; replicates 0-4 (0/2/4: first-
+  # named family sends first; 1/3: reversed) on the baseline seeds. Gemini
+  # goes through Vertex AI, because the Gemini API now answers 3.7 requests
+  # with 3.8; the September baseline used the Gemini API. Launcher:
+  # scripts/run_no_self_line_mixed_dyads.py.
+  # -----------------------------------------------------------------------
+  no_self_line_mixed_dyad_game_myth_sonnet_gpt:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["claude_sonnet_45", "gpt5_nano"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+
+  no_self_line_mixed_dyad_game_myth_gpt_sonnet:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["gpt5_nano", "claude_sonnet_45"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+
+  no_self_line_mixed_dyad_game_myth_sonnet_gemini:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["claude_sonnet_45", "gemini_3_7_flash"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_game_myth_gemini_sonnet:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["gemini_3_7_flash", "claude_sonnet_45"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_myth_game_sonnet_gpt:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["claude_sonnet_45", "gpt5_nano"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+
+  no_self_line_mixed_dyad_myth_game_gpt_sonnet:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["gpt5_nano", "claude_sonnet_45"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+
+  no_self_line_mixed_dyad_myth_game_sonnet_gemini:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["claude_sonnet_45", "gemini_3_7_flash"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_myth_game_gemini_sonnet:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["gemini_3_7_flash", "claude_sonnet_45"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  # 2026-11-27: third pairing, Gemini 3.7 Flash (Vertex) with GPT-5 Nano; same design.
+  no_self_line_mixed_dyad_game_myth_gemini_gpt:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["gemini_3_7_flash", "gpt5_nano"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_game_myth_gpt_gemini:
+    <<: *mixed_dyad_game_myth
+    agent_models: ["gpt5_nano", "gemini_3_7_flash"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_myth_game_gemini_gpt:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["gemini_3_7_flash", "gpt5_nano"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [0, 2, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  no_self_line_mixed_dyad_myth_game_gpt_gemini:
+    <<: *mixed_dyad_myth_game
+    agent_models: ["gpt5_nano", "gemini_3_7_flash"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    replicate_ids: [1, 3]
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
