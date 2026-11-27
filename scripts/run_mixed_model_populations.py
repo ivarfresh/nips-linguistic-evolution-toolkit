@@ -150,7 +150,11 @@ def audit(job):
             # The model that answered must be the one requested (the Gemini API
             # silently answered gemini-3.7-flash with gemini-3.8-flash from ~2026-10-10).
             # A missing answering-model name fails too: no proof of which model answered.
-            if provider != "openrouter":
+            # Exception: a failed attempt (recorded with "error", e.g. Gemini's empty reply)
+            # carries no answer into the run; the simulation rolls the prompt back and retries,
+            # and that retry is checked like any other call. Its tokens still count as cost.
+            failed_attempt = bool(e.get("error")) and not (r.get("content") or "").strip()
+            if provider != "openrouter" and not failed_attempt:
                 assert model_matches(expected["provider_model"], u.get("response_model")), (
                     name, agent_id, expected["provider_model"], u.get("response_model"))
             calls += 1
