@@ -161,8 +161,12 @@ def plot(draw, data, ylabel, filename, new, legend):
         fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10)
         bottom = 0.04
     fig.tight_layout(rect=(0.015, bottom, 1, 1), h_pad=1.4, w_pad=0.6)
-    fig.savefig(OUTPUT / f"{filename}.png", dpi=200, bbox_inches="tight")
-    fig.savefig(OUTPUT / f"{filename}.pdf", bbox_inches="tight")
+    # The y labels sit left of the panels; leave the same margin on the right so the
+    # panels themselves are centred on the page.
+    left = min(ax.get_position().x0 for ax in fig.axes)
+    fig.tight_layout(rect=(0.015, bottom, 1 - left + 0.01, 1), h_pad=1.4, w_pad=0.6)
+    fig.savefig(OUTPUT / f"{filename}.png", dpi=200)
+    fig.savefig(OUTPUT / f"{filename}.pdf")
     plt.close(fig)
 
 
