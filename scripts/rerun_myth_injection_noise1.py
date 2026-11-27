@@ -1,12 +1,13 @@
 """Myth-injection ablation at the main-figure noise setting.
 
-Same seven cells and apparatus as scripts/rerun_slide678.py (populations) and
-scripts/rerun_slide678_dyad.py (dyads), with two changes:
+Same apparatus and seven cells as scripts/rerun_slide678.py (populations) and
+scripts/rerun_slide678_dyad.py (dyads), with three changes:
 
 - Noise is informed negative-only U(-1, 0), as in the main figures. The
   September batches used uninformed U(-5, 0).
 - Injected myths come from the paper's main-figure population runs
   (scripts/build_myth_injection_donors_20261127.py), not the June donors.
+- An eighth cell injects late myths from low-cooperation GPT-5 Nano populations.
 
 Modes: prepare freezes the plan; run executes pending runs; audit prints cell
 means; supervise runs batches until all finals validate and writes a receipt.
@@ -40,7 +41,7 @@ from src.utils import DIRECT_MODEL_ALIASES
 
 PARAMS = "phase3_8agent_anon_neg5_myth_only"
 NOISE = {"type": "uniform", "range": 1.0, "direction": "negative", "applies_to": "both", "inform_agents": True}
-CELLS = ["baseline", "s_end_plus", "s_start", "s_end_minus", "s_filler", "s_end_plus_gemini", "s_end_plus_gpt"]
+CELLS = ["baseline", "s_end_plus", "s_start", "s_end_minus", "s_filler", "s_end_plus_gemini", "s_end_plus_gpt", "s_end_minus_gpt"]
 REPS = 5
 RUNS = len(CELLS) * REPS
 NUM_TURNS = 10
@@ -48,7 +49,7 @@ MANIFEST = ROOT / "data/phase3/seed_manifest_main_figures_20261127.json"
 OUTPUT_ROOT = ROOT / "data/json/noise_experiments/myth_injection_noise1_20261127"
 SIZES = {"population": 8, "dyad": 2}
 # Planning allowance per batch; September recorded $27.50 (population) and $8.49 (dyad).
-ESTIMATE_USD = {"population": 35, "dyad": 11}
+ESTIMATE_USD = {"population": 40, "dyad": 13}
 STOP_ABOVE_USD = {"population": 60, "dyad": 20}
 PLAN_KEY = "myth_injection_noise1_plan_sha256"
 
@@ -83,9 +84,10 @@ def prepare(size):
         "differences_from_september_batch": [
             "Informed negative-only U(-1,0) communication noise instead of uninformed U(-5,0).",
             "Donor myths from the main-figure population runs instead of the June donors; filler texts unchanged.",
+            "Added cell: late myths from low-cooperation GPT-5 Nano populations.",
         ],
         "preserved": [
-            "seven cells, five donor/run replicates, ten game-only rounds",
+            "the seven September cells, five donor/run replicates, ten game-only rounds",
             "myth-only context with the identical text re-injected each round; no game history block",
             "hidden names, balanced roles, fresh unseeded pairing and noise draws",
             "pinned native Anthropic September Sonnet 4.5 profile; same-prompt retry once",

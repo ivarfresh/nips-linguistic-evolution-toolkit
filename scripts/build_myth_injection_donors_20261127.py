@@ -6,7 +6,8 @@ Rule, fixed before any myth text was read:
   and its n=10 extension). Ten runs per family and task order.
 - Rank runs by mean final resources per agent; ties broken by replicate id.
 - High-cooperation cells: the five highest myth->game runs of the family.
-- Low-cooperation Sonnet cell: the five lowest Sonnet runs over both task orders.
+- Low-cooperation cells (Sonnet, GPT-5 Nano): the five lowest runs of the
+  family over both task orders.
 - One agent per run, drawn with random.Random(20261127) in a fixed order.
   The early (round 1) and late (round 10) Sonnet cells use the same run and agent.
 - Filler texts are reused unchanged from data/phase3/seed_manifest.json.
@@ -101,6 +102,9 @@ def build(data_root: Path):
     seeds["s_end_minus"] = [seed_entry(r, rng.choice(agents), 10) for r in low]
     for family, cell in (("gemini", "s_end_plus_gemini"), ("gpt", "s_end_plus_gpt")):
         seeds[cell] = [seed_entry(r, rng.choice(agents), 10) for r in top(cells[(family, "myth_game")])]
+    # Drawn last so the earlier cells' agent picks do not depend on this cell.
+    low_gpt = sorted(cells[("gpt", "myth_game")] + cells[("gpt", "game_myth")], key=lambda r: (r["mean_final"], r["order"], r["rep"]))[:5]
+    seeds["s_end_minus_gpt"] = [seed_entry(r, rng.choice(agents), 10) for r in low_gpt]
     old = json.loads((ROOT / "data/phase3/seed_manifest.json").read_text())
     seeds["s_filler"] = old["seeds"]["s_filler"]
     return {
