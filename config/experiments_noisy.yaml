@@ -404,6 +404,19 @@ prompt_templates:
     Write 200 words. Format exactly:
     Myth: [your story here].
 
+  # 2026-11-27 ablation: memory-primary prompt with only the sentence "Use the
+  # myth you wrote in the previous round as inspiration, but adapt it in your
+  # own way." deleted; nothing is put in its place. The agent's own earlier
+  # myths stay in chat memory.
+  myth_writing_later_rounds_directive_memory_primary_noselfline: |
+    Here is the myth the other agent wrote in the previous round:
+    {other_agent_myth}
+
+    Write your own myth. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.
+
+    Write 200 words. Format exactly:
+    Myth: [your story here].
+
   # Lineage variant: self-myth pointer ("base it on the myths you wrote
   # earlier this session") — attention to own 3-round lineage in memory,
   # no content duplication. A/B vs myth_writing_later_rounds_directive_memory_primary.
@@ -6838,3 +6851,29 @@ experiment_sets:
     <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
     llm_settings_by_model: *mixed_llm_settings_by_model_vertex
     replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # 2026-11-27: full-run ablation of the self-inspiration sentence, Sonnet 4.5
+  # dyads, no-defector condition. Each set is its September original with only
+  # the later-round myth prompt changed (sentence deleted) and replicates 0-9,
+  # so every run shares its paired noise seed with one baseline run (0-4 in
+  # the *_n5 sets, 5-9 in the *_n5ext sets). Launcher:
+  # scripts/run_no_self_line_dyads.py.
+  # -----------------------------------------------------------------------
+  no_self_line_dyad_game_myth_claude_n10:
+    <<: *reasoning_rerun_dyad_game_myth
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    game_params_list: ["noisy2_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+  no_self_line_dyad_myth_game_claude_n10:
+    <<: *reasoning_rerun_dyad_myth_game
+    myth_prompt_arms:
+      - id: "memtest_memory_primary_noselfline"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary_noselfline"
+    game_params_list: ["noisy2_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
