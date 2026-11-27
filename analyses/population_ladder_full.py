@@ -135,28 +135,32 @@ def plot(draw, data, ylabel, filename, new, legend):
     from matplotlib.lines import Line2D
 
     rows = layout()
-    fig, axes = plt.subplots(len(rows), 7, figsize=(17, 3.4 * len(rows) + 0.5), sharey=True)
+    ncols = 7
+    fig = plt.figure(figsize=(17, 3.4 * len(rows) + 0.5))
+    # Half-column grid so the shorter rows can be centred.
+    grid = fig.add_gridspec(len(rows), 2 * ncols)
+    shared = None
     for r, (row_label, compositions) in enumerate(rows):
-        first = next(i for i, c in enumerate(compositions) if c is not None)
-        for i, composition in enumerate(compositions):
-            ax = axes[r, i]
-            if composition is None:
-                ax.axis("off")
-                continue
+        panels = [c for c in compositions if c is not None]
+        offset = ncols - len(panels)
+        for i, composition in enumerate(panels):
+            ax = fig.add_subplot(grid[r, offset + 2 * i: offset + 2 * i + 2], sharey=shared)
+            shared = shared or ax
             draw(ax, data, composition)
             title = composition.replace(" + ", " +\n") if "+" in composition else composition
-            ax.set_title(title + (" *" if composition in new else ""), fontsize=9.5, fontweight="bold")
+            ax.set_title(title, fontsize=9.5, fontweight="bold")
             ax.spines[["top", "right"]].set_visible(False)
-            if i == first:
+            if i:
+                ax.tick_params(labelleft=False)
+            else:
                 ax.set_ylabel(row_label, fontsize=10.5, fontweight="bold", labelpad=8)
-                ax.tick_params(labelleft=True)
     fig.supylabel(ylabel, fontsize=11.5, x=0.004)
-    handles = []
+    bottom = 0.0
     if legend:
         handles = [Line2D([], [], color=pr.LINE_COLORS[t], linewidth=2, marker="o", ms=4, label=pr.ORDER_LABELS[t]) for t in pr.TASK_ORDERS]
-    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10,
-               title="* = composition added Nov 2026 (n = 10)", title_fontsize=9)
-    fig.tight_layout(rect=(0.015, 0.05, 1, 1), h_pad=1.4, w_pad=0.6)
+        fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10)
+        bottom = 0.04
+    fig.tight_layout(rect=(0.015, bottom, 1, 1), h_pad=1.4, w_pad=0.6)
     fig.savefig(OUTPUT / f"{filename}.png", dpi=200, bbox_inches="tight")
     fig.savefig(OUTPUT / f"{filename}.pdf", bbox_inches="tight")
     plt.close(fig)
