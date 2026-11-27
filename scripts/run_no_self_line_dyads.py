@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Full-run ablation of the self-inspiration sentence in Sonnet 4.5 dyads; dry-run by default.
 
-20 runs in the no_self_line_* sets of config/experiments_noisy.yaml (added 2026-11-27):
-Sonnet 4.5 dyads, game_myth and myth_game, no-defector condition, replicates 0-9. The
+10 runs in the no_self_line_* sets of config/experiments_noisy.yaml (added 2026-11-27):
+Sonnet 4.5 dyads, game_myth and myth_game, no-defector condition, replicates 0-4. The
 later-round myth prompt drops the sentence "Use the myth you wrote in the previous round as
 inspiration, but adapt it in your own way." and nothing else.
 
 The plan step proves, before any paid call, that every run has the inputs, request plan and
-paired noise seed of its September baseline run (replicates 0-4 in the *_n5 set, 5-9 in the
-*_n5ext set) except for that one sentence. The audit step re-checks every final, confirms
+paired noise seed of its September baseline run (same replicate of the *_n5 set) except for that one sentence. The audit step re-checks every final, confirms
 the sentence is absent from every prompt sent, and prices the run from recorded token usage.
 """
 from __future__ import annotations
@@ -38,12 +37,12 @@ PER_RUN_USD = {"game_myth": 2 * 0.4041, "myth_game": 2 * 0.3955}  # run_table1_n
 def plan():
     jobs = []
     for shape in ("game_myth", "myth_game"):
-        name = f"no_self_line_dyad_{shape}_claude_n10"
+        name = f"no_self_line_dyad_{shape}_claude_n5"
         src = f"negative_only_reasoning_rerun_dyad_{shape}_claude_n5"
         combos = _quiet(name)
-        baseline = {o["replicate_id"]: o for o in _quiet(src) + _quiet(src + "ext")
+        baseline = {o["replicate_id"]: o for o in _quiet(src)
                     if o["game_params_name"] == "noisy2_crossmodel_negative_twotask_r3"}
-        assert [c["replicate_id"] for c in combos] == list(range(10)) and sorted(baseline) == list(range(10))
+        assert [c["replicate_id"] for c in combos] == list(range(5)) and sorted(baseline) == list(range(5))
         for i, c in enumerate(combos):
             o = baseline[c["replicate_id"]]
             a, b = c["comparison_inputs"], o["comparison_inputs"]
@@ -57,7 +56,7 @@ def plan():
             game, _ = build_noisy_protocol(c, i)
             assert len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0
             jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT)))
-    assert len(jobs) == 20 and len({str(j[3]) for j in jobs}) == 20
+    assert len(jobs) == 10 and len({str(j[3]) for j in jobs}) == 10
     return jobs
 
 
