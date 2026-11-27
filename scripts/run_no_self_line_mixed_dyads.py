@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Self-inspiration sentence ablation in mixed dyads (Sonnet 4.5 with GPT-5 Nano / Gemini 3.7 Flash).
 
-20 runs in the no_self_line_mixed_dyad_* sets of config/experiments_noisy.yaml (2026-11-27):
-two pairs x game_myth / myth_game x replicates 0-4 (0/2/4 Sonnet sends first, 1/3 the other
-family). Dry-run by default.
+30 runs in the no_self_line_mixed_dyad_* sets of config/experiments_noisy.yaml (2026-11-27):
+three pairs (Sonnet+GPT, Sonnet+Gemini, Gemini+GPT) x game_myth / myth_game x replicates 0-4 (0/2/4 the first-named family sends first, 1/3 the
+other). Dry-run by default.
 
 The plan step proves, before any paid call, that every run has the inputs and paired seeds of
 its September mixed-dyad baseline run except the deleted sentence. For Sonnet+Gemini the
@@ -34,7 +34,8 @@ OUTPUT = "no_self_line_mixed_dyads_20261127"
 LINE = "Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. "
 ARM = "memtest_memory_primary_noselfline"
 ORDERINGS = [("sonnet", "gpt", [0, 2, 4]), ("gpt", "sonnet", [1, 3]),
-             ("sonnet", "gemini", [0, 2, 4]), ("gemini", "sonnet", [1, 3])]
+             ("sonnet", "gemini", [0, 2, 4]), ("gemini", "sonnet", [1, 3]),
+             ("gemini", "gpt", [0, 2, 4]), ("gpt", "gemini", [1, 3])]  # third pairing added later the same day
 
 
 def plan():
@@ -67,7 +68,7 @@ def plan():
                 game, _ = build_noisy_protocol(c, i)
                 assert len(game.defector_agent_ids) == 0 and game.random_defection_probability == 0
                 jobs.append((name, i, c, expected_output_path(c, name, i, OUTPUT)))
-    assert len(jobs) == 20 and len({str(j[3]) for j in jobs}) == 20
+    assert len(jobs) == 30 and len({str(j[3]) for j in jobs}) == 30
     return jobs
 
 
@@ -111,7 +112,7 @@ def main():
     est = estimate(pending)
     print(f"VALIDATED N={len(jobs)} ONLY_DIFFERENCE=self-inspiration sentence (+Vertex route for Gemini) SEEDS=baseline "
           f"EXISTING={len(receipts)} PENDING={len(pending)}", flush=True)
-    print(f"MODEL=sonnet-4.5 + gpt-5-nano / gemini-3.7-flash via Vertex (September profiles) N={len(pending)} "
+    print(f"MODEL=sonnet-4.5 / gpt-5-nano / gemini-3.7-flash via Vertex (September profiles) N={len(pending)} "
           f"WORKERS={args.workers} EST_COST=${sum(est.values()):.2f} " + str({k: round(v, 2) for k, v in est.items() if v}), flush=True)
     if args.audit_only:
         assert not pending
