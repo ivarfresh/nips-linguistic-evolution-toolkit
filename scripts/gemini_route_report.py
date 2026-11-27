@@ -54,6 +54,47 @@ def classifier(a_texts, b_texts, groups):
     return emb, words, paired
 
 
+USED_FIELDS = ["candidates[].content.parts[].text (the answer)", "candidates[].finishReason",
+               "usageMetadata.promptTokenCount", "usageMetadata.candidatesTokenCount",
+               "usageMetadata.thoughtsTokenCount", "modelVersion", "responseId"]
+
+
+def raw_section(E):
+    """Full JSON objects saved by gemini_route_raw_examples.py (and the first pair from 2026-11-26)."""
+    d = OUT / "raw_pair"
+    if not d.exists():
+        return []
+    load = lambda f: json.load(open(d / f)) if (d / f).exists() else None  # noqa: E731
+    pretty = lambda o: E(json.dumps(o, indent=1, ensure_ascii=False))  # noqa: E731
+    out = ["<h2 id=raw>Full response objects</h2>",
+           "<p class=muted>Exactly what each provider returned, unedited. Both routes received the same request body, "
+           "byte for byte (shown once per example). Our code reads only these fields, which both routes return: "
+           + ", ".join(f"<code>{E(f)}</code>" for f in USED_FIELDS) + ". Everything else is ignored. "
+           "The left column is the September call as stored in our run file (our own record, not Google's raw JSON).</p>"]
+    examples = []
+    if (d / "2_response_vertex.json").exists():
+        examples.append(("Game move, both routes (captured 2026-11-26)", load("0_recorded_call.json"),
+                         (load("1_request_vertex.json") or {}).get("body"),
+                         load("2_response_gemini_api.json"), load("2_response_vertex.json")))
+    for pid, title in (("founding_myth-000", "First myth"), ("later_myth-000", "Later myth"), ("game-000", "Game move")):
+        if (d / f"{pid}_response_vertex.json").exists():
+            examples.append((f"{title} ({pid}, captured 2026-11-27)", load(f"{pid}_recorded.json"),
+                             (load(f"{pid}_request.json") or {}).get("body"),
+                             load(f"{pid}_response_gemini_api.json"), load(f"{pid}_response_vertex.json")))
+    for title, rec, body, api, vtx in examples:
+        out.append(f"<div class=item><div class=meta><b>{E(title)}</b></div>")
+        out.append(f"<details><summary>Request body sent to both routes</summary><pre>{pretty(body)}</pre></details>")
+        out.append("<div class=grid>")
+        out.append(f"<div class=col><h4>Recorded, Sept 2026 (our run file)</h4><pre>{pretty(rec)}</pre></div>")
+        for label, obj in (("Gemini API, full response", api), ("Vertex AI, full response", vtx)):
+            note = ""
+            if obj and obj.get("http_error") == 402:
+                note = "<div class=tag><span class=bad>Not available: the AI Studio prepaid balance ran out on 2026-11-27.</span></div>"
+            out.append(f"<div class=col><h4>{E(label)}</h4>{note}<pre>{pretty(obj)}</pre></div>")
+        out.append("</div></div>")
+    return out
+
+
 def main():
     prompts = json.load(open(OUT / "prompts.json"))
     res = {}
@@ -142,7 +183,8 @@ def main():
         cells = ("–", "–", "–") if emb is None else (f"{emb:.2f}", f"{words:.2f}", f"{paired:.3f}")
         out.append(f"<tr><td>{E(lab[a])} vs {E(lab[b])}</td><td>{n}</td><td>{cells[0]}</td><td>{cells[1]}</td><td>{cells[2]}</td></tr>")
     out.append("</table>")
-    out.append("<nav>Jump to: <a href='#founding_myth'>first myths</a><a href='#later_myth'>later myths</a><a href='#game'>game moves</a></nav>")
+    out.extend(raw_section(E))
+    out.append("<nav>Jump to: <a href='#raw'>full response objects</a><a href='#founding_myth'>first myths</a><a href='#later_myth'>later myths</a><a href='#game'>game moves</a></nav>")
 
     titles = {"founding_myth": "First myths (round 1, written before any game or partner myth)",
               "later_myth": "Later myths (round 3 and after)", "game": "Game moves"}
