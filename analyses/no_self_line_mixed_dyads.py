@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""No-self-line mixed dyads (2026-11-27): Sonnet 4.5 with GPT-5 Nano / Gemini 3.7 Flash.
+"""No-self-line mixed dyads (2026-11-27): Sonnet 4.5, GPT-5 Nano and Gemini 3.7 Flash in pairs.
 
-Compares the 20 runs of data/json/noise_experiments/no_self_line_mixed_dyads_20261127 with
+Compares the 30 runs of data/json/noise_experiments/no_self_line_mixed_dyads_20261127 with
 their paired September mixed-dyad runs (same replicate 0-4, same seeds, same first sender).
-Run-level measure: round-10 resources per agent. Per-family measures (the Sonnet agent and
-its partner separately): mean send, return share, self-copying, partner-word uptake, and
+Run-level measure: round-10 resources per agent. Per-family measures (each agent of the
+pair separately): mean send, return share, self-copying, partner-word uptake, and
 borrowing (uptake minus uptake from a never-shown myth: the same family's myth of that round
 in the other runs of the same condition and arm). Definitions as analyses/no_self_line_dyads.py.
 Differences are paired by replicate with a 95% t interval.
@@ -34,9 +34,9 @@ FAMILY = {"anthropic/claude-sonnet-4.5": "sonnet", "openai/gpt-5-nano": "gpt", "
 METRICS = ["send", "return_share", "self_copy", "partner_uptake", "borrowing"]
 
 
-def load(arm: str, order: str, other: str, root: Path) -> list[dict]:
+def load(arm: str, order: str, one: str, other: str, root: Path) -> list[dict]:
     runs = []
-    for a, b in (("sonnet", other), (other, "sonnet")):
+    for a, b in ((one, other), (other, one)):
         base = root / (NEW if arm == "no_line" else OLD).format(o=order, a=a, b=b)
         runs += [json.loads(f.read_text()) for f in sorted(base.rglob("*_anything.json")) if "quarantine" not in f.parts]
     runs = [r for r in runs if r["run_metadata"]["replicate_id"] <= 4]
@@ -46,7 +46,7 @@ def load(arm: str, order: str, other: str, root: Path) -> list[dict]:
         assert m["defector_count"] == 0 and m["random_defection_probability"] == 0 and m["num_agents"] == 2
         sent = [str(x.get("content")) for a in r["agents"].values() for e in a["interaction_history"]
                 for x in e.get("messages_sent") or []]
-        assert any(LINE in s for s in sent) == (arm == "line"), (arm, order, other)
+        assert any(LINE in s for s in sent) == (arm == "line"), (arm, order, one, other)
     return runs
 
 
@@ -119,26 +119,26 @@ def main() -> None:
     ap.add_argument("--data-root", type=Path, default=ROOT, help="checkout holding the September baseline runs")
     args = ap.parse_args()
     per_run, summary = [], []
-    for other in ("gpt", "gemini"):
+    for one, other in (("sonnet", "gpt"), ("sonnet", "gemini"), ("gemini", "gpt")):
         A, B = [], []
         for order in ("game_myth", "myth_game"):
-            a = measures(load("line", order, other, args.data_root)).assign(task_order=order)
-            b = measures(load("no_line", order, other, ROOT)).assign(task_order=order)
+            a = measures(load("line", order, one, other, args.data_root)).assign(task_order=order)
+            b = measures(load("no_line", order, one, other, ROOT)).assign(task_order=order)
             chk = a.merge(b, on=["replicate", "family"])
             assert len(chk) == 10 and (chk["noise_seed_x"] == chk["noise_seed_y"]).all() and (chk["first_sender_x"] == chk["first_sender_y"]).all()
             A.append(a), B.append(b)
-            per_run += [a.assign(arm="line", pair=f"sonnet+{other}"), b.assign(arm="no_line", pair=f"sonnet+{other}")]
+            per_run += [a.assign(arm="line", pair=f"{one}+{other}"), b.assign(arm="no_line", pair=f"{one}+{other}")]
         A, B = pd.concat(A), pd.concat(B)
         for scope in ("both", "game_myth", "myth_game"):
             a = A if scope == "both" else A[A["task_order"] == scope]
             b = B if scope == "both" else B[B["task_order"] == scope]
             keys = ["task_order", "replicate"]
             runs_a, runs_b = a.drop_duplicates(keys), b.drop_duplicates(keys)
-            summary.append({"pair": f"sonnet+{other}", "task_order": scope, "family": "run", "metric": "resources",
+            summary.append({"pair": f"{one}+{other}", "task_order": scope, "family": "run", "metric": "resources",
                             **paired(runs_a, runs_b, "resources", keys)})
-            for family in ("sonnet", other):
+            for family in (one, other):
                 for mt in METRICS:
-                    summary.append({"pair": f"sonnet+{other}", "task_order": scope, "family": family, "metric": mt,
+                    summary.append({"pair": f"{one}+{other}", "task_order": scope, "family": family, "metric": mt,
                                     **paired(a[a["family"] == family], b[b["family"] == family], mt, keys)})
     OUT.mkdir(parents=True, exist_ok=True)
     pd.concat(per_run).to_csv(OUT / "mixed_per_run.csv", index=False)

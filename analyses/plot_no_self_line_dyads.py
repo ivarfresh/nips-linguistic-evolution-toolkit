@@ -4,7 +4,7 @@
 Left, in the format of paper Figure 5a (analyses/plot_word_adoption_panel.py): share of the
 shown myth's new-to-the-reader words that the reader adopts (dark) against a comparable unseen
 myth (light), with and without the sentence, for single-model dyads (Sonnet-4.5) and mixed
-dyads (Sonnet-4.5 with GPT-5-Nano or Gemini-3.7; both readers). Bars: means over runs with 95%
+dyads (the three pairings of Sonnet-4.5, GPT-5-Nano and Gemini-3.7; both readers). Bars: means over runs with 95%
 CI; above each pair, the Holm-corrected paired Wilcoxon test and the number of runs in which
 the shown myth scores higher.
 Right, in the format of paper Figure 3 (analyses/population_ladder_nine_panels.py): final
@@ -49,8 +49,8 @@ def main() -> None:
     mixed_runs = mixed.groupby(keys)[["partner_uptake", "unseen_uptake", "resources"]].mean().reset_index()
     runs = pd.concat([single[keys + ["partner_uptake", "unseen_uptake", "resources"]], mixed_runs])
 
-    fig = plt.figure(figsize=(13.5, 4.15))
-    grid = fig.add_gridspec(1, 5, width_ratios=[2.6, 0.32, 1, 1, 1], wspace=0.1)
+    fig = plt.figure(figsize=(15.5, 4.15))
+    grid = fig.add_gridspec(1, 6, width_ratios=[2.6, 0.32, 1, 1, 1, 1], wspace=0.1)
 
     # ---- left: Figure 5a format
     ax = fig.add_subplot(grid[0, 0])
@@ -76,7 +76,7 @@ def main() -> None:
 
     # ---- right: Figure 3 format
     first = None
-    titles = {"sonnet+sonnet": "2 Sonnet-4.5", "sonnet+gpt": "1 Sonnet-4.5 +\n1 GPT-5-Nano", "sonnet+gemini": "1 Sonnet-4.5 +\n1 Gemini-3.7"}
+    titles = {"sonnet+sonnet": "2 Sonnet-4.5", "sonnet+gpt": "1 Sonnet-4.5 +\n1 GPT-5-Nano", "sonnet+gemini": "1 Sonnet-4.5 +\n1 Gemini-3.7", "gemini+gpt": "1 Gemini-3.7 +\n1 GPT-5-Nano"}
     for i, (pair, title) in enumerate(titles.items()):
         bx = fig.add_subplot(grid[0, i + 2], sharey=first)
         first = first or bx
@@ -105,7 +105,7 @@ def main() -> None:
     handles = [Patch(facecolor=BOX[o], edgecolor="#666666", label=ORDER_LABEL[o]) for o in BOX]
     handles += [Patch(facecolor="white", edgecolor="#666666", label="with the sentence"),
                 Patch(facecolor="white", edgecolor="#666666", hatch="////", label="without the sentence")]
-    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=9, bbox_to_anchor=(0.7, -0.09))
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=9, bbox_to_anchor=(0.69, -0.09))
     for ext in ("png", "pdf"):
         fig.savefig(OUT / f"no_self_line_transmission_cooperation.{ext}", dpi=200, bbox_inches="tight")
     print(OUT / "no_self_line_transmission_cooperation.png")

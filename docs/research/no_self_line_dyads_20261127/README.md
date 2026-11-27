@@ -108,3 +108,27 @@ Both task orders together, 10 pairs per row, mean (±SD), paired difference with
 
 Extra limits: three of five replicates per cell have Sonnet sending first; the Gemini route
 differs from the baseline (Vertex vs Gemini API, same model id confirmed per call).
+
+### Third pairing: Gemini 3.7 Flash with GPT-5 Nano (added the same day)
+
+Ten more runs, same design (10/10 audited, $1.83; all 30 mixed runs $11.37). Both task
+orders together, 10 pairs:
+
+| Measure | With sentence | Without | Difference |
+|---|---|---|---|
+| Resources per agent | 72.1 (±2.7) | 71.1 (±3.6) | −1.0 (−2.9 to 1.0) |
+| GPT send ($) | 4.41 (±0.54) | 4.22 (±0.72) | −0.19 (−0.59 to 0.20) |
+| Gemini send ($) | 5.00 (±0.00) | 5.00 (±0.00) | 0 |
+| Gemini self-copying | 29.0% (±3.2) | 24.8% (±3.5) | −4.2 pts (−8.5 to 0.1) |
+| GPT self-copying | 39.4% (±3.2) | 36.9% (±3.6) | −2.5 pts (−5.3 to 0.4) |
+| Gemini borrowing | 2.5 pts (±1.7) | 0.2 pts (±0.9) | **−2.3 (−3.8 to −0.9)** |
+| GPT borrowing | 1.2 pts (±1.3) | 0.5 pts (±0.8) | −0.7 (−2.0 to 0.6) |
+
+Same picture: no rise in borrowing without the sentence (Gemini borrows less from GPT, lower
+in 9 of 10 pairs), smaller self-copying drops that do not exclude zero, cooperation unchanged.
+
+## Figure
+
+`no_self_line_transmission_cooperation.png` (`analyses/plot_no_self_line_dyads.py`): word
+adoption in the format of paper Figure 5a (left) and final resources in the format of paper
+Figure 3 (right), with and without the sentence.
