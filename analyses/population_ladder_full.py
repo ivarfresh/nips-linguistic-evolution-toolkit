@@ -72,7 +72,16 @@ def name(left: str, n_left: int, right: str) -> str:
 
 
 def layout():
-    return [(label, [name(left, n, right) for n in [8, *SPLITS, 0]]) for label, left, right in ROWS]
+    """Each panel once: a single-model population already shown in an earlier row is left blank."""
+    seen, rows = set(), []
+    for label, left, right in ROWS:
+        row = []
+        for n in [8, *SPLITS, 0]:
+            c = name(left, n, right)
+            row.append(None if c in seen else c)
+            seen.add(c)
+        rows.append((label, row))
+    return rows
 
 
 def new_tables(new_root: Path):
@@ -128,14 +137,19 @@ def plot(draw, data, ylabel, filename, new, legend):
     rows = layout()
     fig, axes = plt.subplots(len(rows), 7, figsize=(17, 3.4 * len(rows) + 0.5), sharey=True)
     for r, (row_label, compositions) in enumerate(rows):
+        first = next(i for i, c in enumerate(compositions) if c is not None)
         for i, composition in enumerate(compositions):
             ax = axes[r, i]
+            if composition is None:
+                ax.axis("off")
+                continue
             draw(ax, data, composition)
             title = composition.replace(" + ", " +\n") if "+" in composition else composition
             ax.set_title(title + (" *" if composition in new else ""), fontsize=9.5, fontweight="bold")
             ax.spines[["top", "right"]].set_visible(False)
-            if i == 0:
+            if i == first:
                 ax.set_ylabel(row_label, fontsize=10.5, fontweight="bold", labelpad=8)
+                ax.tick_params(labelleft=True)
     fig.supylabel(ylabel, fontsize=11.5, x=0.004)
     handles = []
     if legend:
@@ -168,7 +182,7 @@ def main():
     games = pd.concat([old_games, new_games], ignore_index=True)
     per_run = agents.groupby(["composition", "task_order", "path"], sort=False)["final_balance"].mean().reset_index()
     n = per_run.groupby(["composition", "task_order"]).size()
-    shown = {c for _, cs in layout() for c in cs}
+    shown = {c for _, cs in layout() for c in cs if c is not None}
     assert shown <= set(n.index.get_level_values(0)), sorted(shown - set(n.index.get_level_values(0)))
     assert (n.loc[sorted(shown)] == 10).all(), n[n != 10]
 
