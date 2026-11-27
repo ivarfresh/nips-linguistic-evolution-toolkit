@@ -16,6 +16,7 @@ requests for ``gemini-3.7-flash`` with ``gemini-3.8-flash``, so every 2026-11-23
 run with a Gemini agent is a 3.8 run. ``--replicates vertex`` repeats the seven
 Gemini compositions (replicates 0-4, the ``*_vertex_n5`` sets) with Gemini sent
 through Vertex AI, which still serves 3.7, into a separate output folder.
+``--replicates vertex-5-9`` adds their replicates 5-9 (``*_vertex_n5ext``).
 ``--replicates 5-9`` now covers only the two compositions without Gemini.
 
 The plan step proves, before any paid call, that every non-model input equals
@@ -51,6 +52,7 @@ BATCHES = {
     "0-4": ("n5", [0, 1, 2, 3, 4], "completion_receipt.json", None, OUTPUT, "google"),
     "5-9": ("n5ext", [5, 6, 7, 8, 9], "completion_receipt_n5ext.json", NO_GEMINI, OUTPUT, "google"),
     "vertex": ("vertex_n5", [0, 1, 2, 3, 4], "completion_receipt.json", "gemini", VERTEX_OUTPUT, "vertex"),
+    "vertex-5-9": ("vertex_n5ext", [5, 6, 7, 8, 9], "completion_receipt_n5ext.json", "gemini", VERTEX_OUTPUT, "vertex"),
 }
 # Set-name suffix -> (minority family, minority count, majority family).
 COMPOSITIONS = {
