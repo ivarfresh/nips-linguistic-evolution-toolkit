@@ -214,6 +214,7 @@ def create_llm_client(model, provider=None, request_plan=None):
             "openai": lambda: _create_openai_client(pinned=True),
             "anthropic": lambda: _create_anthropic_client(pinned=True),
             "google": _create_gemini_client,
+            "vertex": _create_vertex_client,
             "openrouter": _create_openrouter_client,
         }
         client = factories[request_plan.provider]()
@@ -303,6 +304,34 @@ def _create_gemini_client():
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY or GOOGLE_API_KEY is not set.")
     return LLMClient("google", {"api_key": api_key, "base_url": GEMINI_API_BASE_URL})
+
+
+def _create_vertex_client():
+    """Vertex AI express mode: the same generateContent API, authenticated with an API key."""
+    from src.llm_settings import ENDPOINTS as _ENDPOINTS
+    api_key = _env("VERTEX_API_KEY") or _gemini_api_key()
+    if not api_key:
+        raise RuntimeError("VERTEX_API_KEY (or GEMINI_API_KEY) is not set.")
+    return LLMClient("vertex", {"api_key": api_key, "base_url": _ENDPOINTS["vertex"]})
+
+
+def check_response_model(usage, request_plan):
+    """Fail a pinned call when the provider answered with a different model than requested.
+
+    Providers can silently redirect a retired model id to its successor (Google sent
+    gemini-3.7-flash traffic to gemini-3.8-flash from 2026-10-10). Accept the exact id
+    or a dated/versioned snapshot of it (``<id>-<suffix>``).
+    """
+    if request_plan is None:
+        return usage
+    expected = request_plan.provider_model
+    got = usage.get("response_model")
+    if request_plan.provider == "openrouter" or not got:
+        return usage
+    if got == expected or got.startswith(expected + "-"):
+        return usage
+    usage["outcome"] = "model_mismatch"
+    raise LLMRequestError(f"Requested {expected!r} but the provider answered with {got!r}", usage)
 
 
 def _unwrap_client(client):
@@ -406,7 +435,7 @@ def _dispatch_llm(client, model, temperature, messages, max_retries, reasoning_e
     if request_plan is not None and provider != request_plan.provider:
         raise LLMSettingsError("Provider changed after request planning")
     if request_plan is not None:
-        endpoint = api_client["base_url"] if provider == "google" else str(api_client.base_url)
+        endpoint = api_client["base_url"] if provider in ("google", "vertex") else str(api_client.base_url)
         if endpoint.rstrip("/") != request_plan.as_dict()["endpoint"].rstrip("/"):
             raise LLMSettingsError("Endpoint changed after request planning")
     extra = {"request_plan": request_plan} if request_plan is not None else {}
@@ -419,7 +448,7 @@ def _dispatch_llm(client, model, temperature, messages, max_retries, reasoning_e
             max_retries,
             **extra,
         )
-    if provider == "google":
+    if provider in ("google", "vertex"):
         return _call_gemini(
             api_client,
             resolve_model_for_provider(client, model),
@@ -557,6 +586,7 @@ def _call_openai_compatible(
             if request_plan is not None:
                 usage["response_model"] = getattr(response, "model", None)
                 usage["response_id"] = getattr(response, "id", None)
+                check_response_model(usage, request_plan)
             return {
                 "content": response.choices[0].message.content,
                 "reasoning": reasoning,
@@ -672,6 +702,7 @@ def _call_anthropic(client, provider_model, temperature, messages, max_retries, 
             if request_plan is not None:
                 usage["response_model"] = getattr(response, "model", None)
                 usage["response_id"] = getattr(response, "id", None)
+                check_response_model(usage, request_plan)
             if not content:
                 if request_plan is not None:
                     raise LLMRequestError("Empty response from LLM", usage)
@@ -783,6 +814,7 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries, req
             if request_plan is not None:
                 usage["response_model"] = response_data.get("modelVersion")
                 usage["response_id"] = response_data.get("responseId")
+                check_response_model(usage, request_plan)
             return {
                 "content": content,
                 "reasoning": None,

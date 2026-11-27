@@ -15,12 +15,16 @@ REASONING_FIELDS = {
     "openai": {"reasoning_effort"},
     "anthropic": {"thinking", "output_config"},
     "google": {"thinkingConfig"},
+    "vertex": {"thinkingConfig"},
     "openrouter": {"reasoning"},
 }
 ENDPOINTS = {
     "openai": "https://api.openai.com/v1",
     "anthropic": "https://api.anthropic.com",
     "google": "https://generativelanguage.googleapis.com/v1beta",
+    # Google Cloud Vertex AI (express mode, API key). Serves Gemini versions the
+    # Gemini API has retired or silently redirected (e.g. 3.7 Flash after 2026-10-10).
+    "vertex": "https://aiplatform.googleapis.com/v1/publishers/google",
     "openrouter": "https://openrouter.ai/api/v1",
 }
 
@@ -79,7 +83,7 @@ def validate_reasoning(provider, reasoning):
             or output["effort"] not in {"low", "medium", "high", "max"}
         ):
             raise LLMSettingsError("Only an explicit output_config.effort is supported")
-    elif provider == "google":
+    elif provider in ("google", "vertex"):
         thinking = reasoning.get("thinkingConfig")
         if not isinstance(thinking, dict) or set(thinking) not in ({"thinkingLevel"}, {"thinkingBudget"}):
             raise LLMSettingsError("Gemini needs exactly thinkingLevel or thinkingBudget")
@@ -125,7 +129,8 @@ def resolve_request_plan(model, block, aliases):
     validate_settings(block)
     vendor = model.split("/", 1)[0]
     provider = vendor if block["provider"] == "direct" else block["provider"]
-    if provider not in ENDPOINTS or (provider != "openrouter" and provider != vendor):
+    hosts = {"vertex": "google"}
+    if provider not in ENDPOINTS or (provider != "openrouter" and hosts.get(provider, provider) != vendor):
         raise LLMSettingsError(f"Configured provider does not match model {model!r}")
     validate_reasoning(provider, block["reasoning"])
     native_model = model if provider == "openrouter" else aliases.get(model, model.split("/", 1)[-1])
@@ -138,7 +143,7 @@ def resolve_request_plan(model, block, aliases):
     if provider == "anthropic" and cap == "default":
         raise LLMSettingsError("Anthropic requires an explicit positive max_output_tokens")
     if cap != "default":
-        cap_key = {"google": "maxOutputTokens", "openai": "max_completion_tokens"}.get(provider, "max_tokens")
+        cap_key = {"google": "maxOutputTokens", "vertex": "maxOutputTokens", "openai": "max_completion_tokens"}.get(provider, "max_tokens")
         parameters[cap_key] = cap
     if provider == "anthropic":
         budget = parameters["thinking"].get("budget_tokens")

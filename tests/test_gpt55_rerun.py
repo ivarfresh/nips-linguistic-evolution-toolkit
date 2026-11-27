@@ -66,7 +66,7 @@ def test_twelve_cells_through_http_final_audit_and_resume(tmp_path, monkeypatch)
                 content = '{"return": 1}'
             else:
                 content = 'A river taught the village to share. Each spring they retold its story.'
-            response = openai_response(details={'reasoning_tokens': 0})
+            response = openai_response(details={'reasoning_tokens': 0}, model=payload['model'])
             response['choices'][0]['message']['content'] = content
             body = json.dumps(response).encode()
             self.send_response(200)

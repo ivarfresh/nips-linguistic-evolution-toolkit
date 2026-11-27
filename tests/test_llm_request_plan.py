@@ -26,13 +26,13 @@ def plan_for(model="openai/gpt-5-nano", **kwargs):
     return resolve_request_plan(model, settings(**kwargs), DIRECT_MODEL_ALIASES)
 
 
-def openai_response(finish="stop", details=None):
+def openai_response(finish="stop", details=None, model="gpt-5-nano"):
     usage = {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
     if details is not None:
         usage["completion_tokens_details"] = details
     return {
         "id": "test-response", "object": "chat.completion", "created": 0,
-        "model": "test-returned-model",
+        "model": model,
         "choices": [{"index": 0, "message": {"role": "assistant", "content": '{"send": 3}'}, "finish_reason": finish}],
         "usage": usage,
     }
@@ -41,7 +41,7 @@ def openai_response(finish="stop", details=None):
 def mocked_openai(plan, captured, response=None, status=200):
     def transport(request):
         captured.append(json.loads(request.content))
-        return httpx.Response(status, json=response if response is not None else openai_response())
+        return httpx.Response(status, json=response if response is not None else openai_response(model=captured[-1].get("model", "test-returned-model")))
 
     native = OpenAI(api_key="test-key", base_url=plan.as_dict()["endpoint"], max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(transport)))
     client = LLMClient(plan.provider, native)
