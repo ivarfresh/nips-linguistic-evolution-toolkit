@@ -52,6 +52,16 @@ llm_profiles:
         thinkingLevel: "high"
     temperature: 0.8
     max_output_tokens: 65536
+  # Same Gemini 3.7 Flash request as september8_gemini, sent through Vertex AI.
+  # Since about 2026-10-10 the Gemini API answers gemini-3.7-flash with
+  # gemini-3.8-flash; Vertex AI still serves 3.7 (replay check, 2026-11-26).
+  september8_gemini_vertex: &september8_gemini_vertex
+    provider: "vertex"
+    reasoning:
+      thinkingConfig:
+        thinkingLevel: "high"
+    temperature: 0.8
+    max_output_tokens: 65536
 
 # Prompt Templates
 # Note: Templates now support {investor_name} and {trustee_name} for asymmetric naming
@@ -6628,3 +6638,97 @@ experiment_sets:
   mixed_pop_myth_game_sonnet1_gemini7_n5ext:
     <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
     replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # Figure 3 completion on Vertex AI, 2026-11-27. The *_n5 / *_n5ext sets above
+  # with Gemini ran on 2026-11-23..26 and were answered by gemini-3.8-flash (the
+  # Gemini API redirect). These sets repeat the seven Gemini compositions with
+  # the identical protocol, seeds and request policy, routed through Vertex AI so
+  # that gemini-3.7-flash answers. Replicates 0-4.
+  # -----------------------------------------------------------------------
+  mixed_pop_game_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_gpt2_gemini6_n5
+    llm_settings_by_model: &mixed_llm_settings_by_model_vertex
+      claude_sonnet_45: *september8_claude
+      gpt5_nano: *september8_gpt
+      gemini_3_7_flash: *september8_gemini_vertex
+
+  mixed_pop_game_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
