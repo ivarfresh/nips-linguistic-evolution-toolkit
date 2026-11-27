@@ -761,6 +761,9 @@ def _should_retry_anthropic(error):
     )
 
 
+GEMINI_OVERLOAD_EXTRA_ATTEMPTS = 9
+
+
 def _call_gemini(client, provider_model, temperature, messages, max_retries, request_plan=None):
     api_key = client["api_key"]
     base_url = client["base_url"].rstrip("/")
@@ -787,7 +790,11 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries, req
 
     url = f"{base_url}/models/{provider_model}:generateContent"
 
-    for attempt in range(max_retries):
+    # A 503 means the model is overloaded, not that the request is wrong: wait it
+    # out (up to GEMINI_OVERLOAD_EXTRA_ATTEMPTS more tries, waits capped at 60 s)
+    # rather than record a failed call.
+    total_attempts = max_retries + GEMINI_OVERLOAD_EXTRA_ATTEMPTS
+    for attempt in range(total_attempts):
         try:
             request = urllib.request.Request(
                 url,
@@ -829,9 +836,10 @@ def _call_gemini(client, provider_model, temperature, messages, max_retries, req
 
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="replace")
-            if _should_retry_gemini_http(e.code) and attempt < max_retries - 1:
-                wait_time = (2 ** attempt) + random.uniform(0, 1)
-                print(f"⚠️  Gemini API retryable error ({e.code}). Waiting {wait_time:.2f}s before retry {attempt + 1}/{max_retries}...")
+            attempt_limit = total_attempts if e.code == 503 else max_retries
+            if _should_retry_gemini_http(e.code) and attempt < attempt_limit - 1:
+                wait_time = min(60, 2 ** attempt) + random.uniform(0, 1)
+                print(f"⚠️  Gemini API retryable error ({e.code}). Waiting {wait_time:.2f}s before retry {attempt + 1}/{attempt_limit}...")
                 time.sleep(wait_time)
                 continue
             public_body = _redact_error_message(body) if request_plan is not None else _redact_gemini_error(body)

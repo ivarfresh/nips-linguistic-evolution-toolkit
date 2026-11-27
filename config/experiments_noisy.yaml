@@ -52,6 +52,16 @@ llm_profiles:
         thinkingLevel: "high"
     temperature: 0.8
     max_output_tokens: 65536
+  # Same Gemini 3.7 Flash request as september8_gemini, sent through Vertex AI.
+  # Since about 2026-10-10 the Gemini API answers gemini-3.7-flash with
+  # gemini-3.8-flash; Vertex AI still serves 3.7 (replay check, 2026-11-26).
+  september8_gemini_vertex: &september8_gemini_vertex
+    provider: "vertex"
+    reasoning:
+      thinkingConfig:
+        thinkingLevel: "high"
+    temperature: 0.8
+    max_output_tokens: 65536
 
 # Prompt Templates
 # Note: Templates now support {investor_name} and {trustee_name} for asymmetric naming
@@ -6169,4 +6179,662 @@ experiment_sets:
   mixed_pop_myth_game_gpt4_sonnet4_n5ext:
     <<: *t1x_mixed_pop_myth_game_gpt4_sonnet4_n5
     game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # Figure 3 completion, 2026-11-23 (review request): the nine eight-agent
+  # compositions missing from the 1/2/4 ladder once each family takes a turn as
+  # the minority: 1 or 2 GPT among Gemini, 1 or 2 Sonnet among GPT, 1/2/4 Gemini
+  # among Sonnet and 1 or 2 Sonnet among Gemini. Same September population
+  # protocol and pinned profiles as mixed_pop_*_n5; only the models differ. The
+  # minority family occupies the lowest agent ids. 9 compositions x 3 task
+  # orders x 5 replicates = 135 runs. Launcher: scripts/run_fig3_population_completion.py.
+  # -----------------------------------------------------------------------
+
+  mixed_pop_game_gpt2_gemini6_n5: &f3c_mixed_pop_game_gpt2_gemini6_n5
+    agent_models: ["gpt5_nano", "gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_gpt1_gemini7_n5: &f3c_mixed_pop_game_gpt1_gemini7_n5
+    agent_models: ["gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_sonnet2_gpt6_n5: &f3c_mixed_pop_game_sonnet2_gpt6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_sonnet1_gpt7_n5: &f3c_mixed_pop_game_sonnet1_gpt7_n5
+    agent_models: ["claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_gemini1_sonnet7_n5: &f3c_mixed_pop_game_gemini1_sonnet7_n5
+    agent_models: ["gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_gemini2_sonnet6_n5: &f3c_mixed_pop_game_gemini2_sonnet6_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_gemini4_sonnet4_n5: &f3c_mixed_pop_game_gemini4_sonnet4_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_sonnet2_gemini6_n5: &f3c_mixed_pop_game_sonnet2_gemini6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_sonnet1_gemini7_n5: &f3c_mixed_pop_game_sonnet1_gemini7_n5
+    agent_models: ["claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game"]]
+    game_params_list: ["noisy8_crossmodel_negative_game_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_gpt2_gemini6_n5: &f3c_mixed_pop_game_myth_gpt2_gemini6_n5
+    agent_models: ["gpt5_nano", "gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_gpt1_gemini7_n5: &f3c_mixed_pop_game_myth_gpt1_gemini7_n5
+    agent_models: ["gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_sonnet2_gpt6_n5: &f3c_mixed_pop_game_myth_sonnet2_gpt6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_sonnet1_gpt7_n5: &f3c_mixed_pop_game_myth_sonnet1_gpt7_n5
+    agent_models: ["claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_gemini1_sonnet7_n5: &f3c_mixed_pop_game_myth_gemini1_sonnet7_n5
+    agent_models: ["gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_gemini2_sonnet6_n5: &f3c_mixed_pop_game_myth_gemini2_sonnet6_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_gemini4_sonnet4_n5: &f3c_mixed_pop_game_myth_gemini4_sonnet4_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_sonnet2_gemini6_n5: &f3c_mixed_pop_game_myth_sonnet2_gemini6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_game_myth_sonnet1_gemini7_n5: &f3c_mixed_pop_game_myth_sonnet1_gemini7_n5
+    agent_models: ["claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["game", "myth"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_gpt2_gemini6_n5: &f3c_mixed_pop_myth_game_gpt2_gemini6_n5
+    agent_models: ["gpt5_nano", "gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_gpt1_gemini7_n5: &f3c_mixed_pop_myth_game_gpt1_gemini7_n5
+    agent_models: ["gpt5_nano", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_sonnet2_gpt6_n5: &f3c_mixed_pop_myth_game_sonnet2_gpt6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_sonnet1_gpt7_n5: &f3c_mixed_pop_myth_game_sonnet1_gpt7_n5
+    agent_models: ["claude_sonnet_45", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano", "gpt5_nano"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_gemini1_sonnet7_n5: &f3c_mixed_pop_myth_game_gemini1_sonnet7_n5
+    agent_models: ["gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_gemini2_sonnet6_n5: &f3c_mixed_pop_myth_game_gemini2_sonnet6_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_gemini4_sonnet4_n5: &f3c_mixed_pop_myth_game_gemini4_sonnet4_n5
+    agent_models: ["gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45", "claude_sonnet_45"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_sonnet2_gemini6_n5: &f3c_mixed_pop_myth_game_sonnet2_gemini6_n5
+    agent_models: ["claude_sonnet_45", "claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  mixed_pop_myth_game_sonnet1_gemini7_n5: &f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
+    agent_models: ["claude_sonnet_45", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash", "gemini_3_7_flash"]
+    templates: ["trust_game_default"]
+    personas: ["neutral"]
+    task_orders: [["myth", "game"]]
+    myth_topics: ["anything"]
+    myth_prompt_arms:
+      - id: "memtest_memory_primary"
+        default: "myth_writing_default_game_directive"
+        later: "myth_writing_later_rounds_directive_memory_primary"
+    game_params_list: ["noisy8_crossmodel_negative_twotask_r3"]
+    replicate_ids: [0, 1, 2, 3, 4]
+    llm_settings_by_model: *mixed_llm_settings_by_model
+
+  # -----------------------------------------------------------------------
+  # Figure 3 completion top-up (2026-11-23): replicates 5-9 of the nine
+  # compositions above. Each *ext set is its original set with only
+  # replicate_ids changed; paired protocol seeds follow the replicate id.
+  # Launcher: scripts/run_fig3_population_completion.py --replicates 5-9.
+  # -----------------------------------------------------------------------
+
+  mixed_pop_game_gpt2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_game_gpt2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gpt1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_game_gpt1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet2_gpt6_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet2_gpt6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet1_gpt7_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet1_gpt7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini1_sonnet7_n5ext:
+    <<: *f3c_mixed_pop_game_gemini1_sonnet7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini2_sonnet6_n5ext:
+    <<: *f3c_mixed_pop_game_gemini2_sonnet6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini4_sonnet4_n5ext:
+    <<: *f3c_mixed_pop_game_gemini4_sonnet4_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gpt2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gpt2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gpt1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gpt1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet2_gpt6_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet2_gpt6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet1_gpt7_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet1_gpt7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini1_sonnet7_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini1_sonnet7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini2_sonnet6_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini2_sonnet6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini4_sonnet4_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini4_sonnet4_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gpt2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gpt2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gpt1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gpt1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet2_gpt6_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet2_gpt6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet1_gpt7_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet1_gpt7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini1_sonnet7_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini1_sonnet7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini2_sonnet6_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini2_sonnet6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini4_sonnet4_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini4_sonnet4_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet2_gemini6_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet2_gemini6_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet1_gemini7_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  # -----------------------------------------------------------------------
+  # Figure 3 completion on Vertex AI, 2026-11-27. The *_n5 / *_n5ext sets above
+  # with Gemini ran on 2026-11-23..26 and were answered by gemini-3.8-flash (the
+  # Gemini API redirect). These sets repeat the seven Gemini compositions with
+  # the identical protocol, seeds and request policy, routed through Vertex AI so
+  # that gemini-3.7-flash answers. Replicates 0-4.
+  # -----------------------------------------------------------------------
+  mixed_pop_game_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_gpt2_gemini6_n5
+    llm_settings_by_model: &mixed_llm_settings_by_model_vertex
+      claude_sonnet_45: *september8_claude
+      gpt5_nano: *september8_gpt
+      gemini_3_7_flash: *september8_gemini_vertex
+
+  mixed_pop_game_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_game_myth_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_game_myth_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gpt2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gpt1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini1_sonnet7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini2_sonnet6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_gemini4_sonnet4_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_sonnet2_gemini6_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  mixed_pop_myth_game_sonnet1_gemini7_vertex_n5:
+    <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+
+  # Replicates 5-9 of the Vertex AI sets above (Figure 3 at n = 10, 2026-11-27).
+  mixed_pop_game_gpt2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gpt1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini1_sonnet7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini2_sonnet6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_gemini4_sonnet4_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_sonnet1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gpt2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gpt1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini1_sonnet7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini2_sonnet6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_gemini4_sonnet4_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_game_myth_sonnet1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_game_myth_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gpt2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gpt2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gpt1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gpt1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini1_sonnet7_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini1_sonnet7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini2_sonnet6_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini2_sonnet6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_gemini4_sonnet4_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_gemini4_sonnet4_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet2_gemini6_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet2_gemini6_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
+    replicate_ids: [5, 6, 7, 8, 9]
+
+  mixed_pop_myth_game_sonnet1_gemini7_vertex_n5ext:
+    <<: *f3c_mixed_pop_myth_game_sonnet1_gemini7_n5
+    llm_settings_by_model: *mixed_llm_settings_by_model_vertex
     replicate_ids: [5, 6, 7, 8, 9]

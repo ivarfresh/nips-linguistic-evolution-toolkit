@@ -34,7 +34,7 @@ from scripts.run_noisy_missing import load_combinations, expected_output_path, c
 from scripts.rerun_negative_only_crossmodel import EXPECTED_POLICIES, TRUNCATION_REASONS  # noqa: E402
 from experiments.run_noisy_batch import build_noisy_protocol  # noqa: E402
 from src.llm_settings import is_mixed_plan  # noqa: E402
-from src.utils import is_exhausted_quota  # noqa: E402
+from src.utils import is_exhausted_quota, model_matches  # noqa: E402
 
 CONFIG = ROOT / "config/experiments_noisy.yaml"
 OUTPUT = "mixed_model_populations_20260918"
@@ -47,7 +47,7 @@ COMPOSITIONS = {
 }
 COMP_ORDER = list(COMPOSITIONS)
 FAMILY = {"sonnet": "anthropic/claude-sonnet-4.5", "gpt": "openai/gpt-5-nano", "gemini": "google/gemini-3.7-flash"}
-RATES = {"anthropic": (3, 15), "openai": (0.05, 0.4), "google": (0.75, 3.75)}
+RATES = {"anthropic": (3, 15), "openai": (0.05, 0.4), "google": (0.75, 3.75), "vertex": (0.75, 3.75)}
 # Mean standard-rate cost per agent in the September informed-noise control
 # populations (recorded usage, negative_only_crossmodel_reasoning_rerun_20260909).
 PER_AGENT_USD = {
@@ -134,7 +134,7 @@ def audit(job):
     assert m["noise_config"] == c["game_params"]["noise_config"]
     assert set(d["agents"]) == set(request["agents"])
     calls = 0
-    cost = {"anthropic": 0.0, "openai": 0.0, "google": 0.0}
+    cost = dict.fromkeys(RATES, 0.0)
     for agent_id, a in d["agents"].items():
         expected = request["agents"][agent_id]
         assert a["model"] == expected["model"], (agent_id, a["model"])
@@ -147,8 +147,14 @@ def audit(job):
             u = r.get("usage") or {}
             assert u.get("request_settings") == expected, (name, agent_id)
             assert u.get("outcome") == "complete" and u.get("finish_reason") not in TRUNCATION_REASONS
+            # The model that answered must be the one requested (the Gemini API
+            # silently answered gemini-3.7-flash with gemini-3.8-flash from ~2026-10-10).
+            # A missing answering-model name fails too: no proof of which model answered.
+            if provider != "openrouter":
+                assert model_matches(expected["provider_model"], u.get("response_model")), (
+                    name, agent_id, expected["provider_model"], u.get("response_model"))
             calls += 1
-            output = (u.get("output_tokens") or 0) + ((u.get("reasoning_tokens") or 0) if provider == "google" else 0)
+            output = (u.get("output_tokens") or 0) + ((u.get("reasoning_tokens") or 0) if provider in ("google", "vertex") else 0)
             cost[provider] += ((u.get("input_tokens") or 0) * ir + output * orr) / 1e6
     return {
         "path": str(path.relative_to(ROOT)),
