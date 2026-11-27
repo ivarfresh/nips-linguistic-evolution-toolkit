@@ -65,7 +65,16 @@ def raw_section(E):
     if not d.exists():
         return []
     load = lambda f: json.load(open(d / f)) if (d / f).exists() else None  # noqa: E731
-    pretty = lambda o: E(json.dumps(o, indent=1, ensure_ascii=False))  # noqa: E731
+    def shorten(o):
+        """Replace opaque signatures (thousands of base64 chars) by a placeholder with their length."""
+        if isinstance(o, dict):
+            return {k: (f"<omitted: {len(v):,} characters>" if k == "thoughtSignature" and isinstance(v, str) else shorten(v))
+                    for k, v in o.items()}
+        if isinstance(o, list):
+            return [shorten(x) for x in o]
+        return o
+
+    pretty = lambda o: E(json.dumps(shorten(o), indent=1, ensure_ascii=False))  # noqa: E731
     out = ["<h2 id=raw>Full response objects</h2>",
            "<p class=muted>Exactly what each provider returned, unedited. Both routes received the same request body, "
            "byte for byte (shown once per example). Our code reads only these fields, which both routes return: "
@@ -151,11 +160,11 @@ def main():
     table.s th{background:#f6f6f6}
     .item{border:1px solid #ddd;border-radius:6px;margin:18px 0;padding:12px 14px}
     .meta{font-size:13px;color:#555;margin-bottom:8px}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
     .col{border:1px solid #e5e5e5;border-radius:4px;padding:8px 10px;background:#fff}
     .col h4{margin:0 0 4px;font-size:13px} .tag{font:12px monospace;color:#444;margin-bottom:6px}
     .bad{color:#b00020;font-weight:600} .ok{color:#0a6b2d;font-weight:600}
-    pre{white-space:pre-wrap;word-wrap:break-word;font:13px/1.45 ui-monospace,Menlo,monospace;margin:0}
+    pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.45 ui-monospace,Menlo,monospace;margin:0}
     details summary{cursor:pointer;color:#333;font-size:13px} nav a{margin-right:12px}
     """
     out = [f"<!doctype html><html><head><meta charset=utf-8><title>Gemini route replay</title><style>{css}</style></head><body>"]
