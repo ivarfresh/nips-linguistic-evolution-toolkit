@@ -137,14 +137,14 @@ def plot(draw, data, ylabel, filename, new, legend):
     rows = layout()
     ncols = 7
     fig = plt.figure(figsize=(17, 3.4 * len(rows) + 0.5))
-    # Half-column grid so the shorter rows can be centred.
-    grid = fig.add_gridspec(len(rows), 2 * ncols)
+    # Every panel sits in its ladder column, so the same split lines up across rows;
+    # a single-model population already shown in an earlier row leaves its cell empty.
+    grid = fig.add_gridspec(len(rows), ncols)
     shared = None
     for r, (row_label, compositions) in enumerate(rows):
-        panels = [c for c in compositions if c is not None]
-        offset = ncols - len(panels)
-        for i, composition in enumerate(panels):
-            ax = fig.add_subplot(grid[r, offset + 2 * i: offset + 2 * i + 2], sharey=shared)
+        panels = [(col, c) for col, c in enumerate(compositions) if c is not None]
+        for i, (col, composition) in enumerate(panels):
+            ax = fig.add_subplot(grid[r, col], sharey=shared)
             shared = shared or ax
             draw(ax, data, composition)
             title = composition.replace(" + ", " +\n") if "+" in composition else composition
