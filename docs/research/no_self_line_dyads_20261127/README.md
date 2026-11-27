@@ -66,3 +66,45 @@ Sonnet 4.5 only, dyads only, five replicates per task order, no-defector conditi
 unseen-myth baseline uses the same seat's myth in the other four runs of the same condition
 and arm. Word measures only; no amount or moral coding. The paired design shares noise
 seeds, not model sampling.
+
+## Mixed dyads: Sonnet 4.5 with GPT-5 Nano and with Gemini 3.7 Flash (added the same day)
+
+*Launcher `scripts/run_no_self_line_mixed_dyads.py`, analysis
+`analyses/no_self_line_mixed_dyads.py`. 20 runs, 20/20 audited, $9.54.*
+
+Same deleted sentence, for both agents. Two pairs × game→myth / myth→game × replicates 0–4,
+each paired with the September mixed-dyad run of the same replicate (same seeds, same first
+sender; Sonnet sends first in replicates 0/2/4, the partner in 1/3). One route difference:
+Gemini 3.7 Flash goes through Vertex AI with the same request settings, because the Gemini
+API now answers 3.7 requests with 3.8; the September baseline used the Gemini API. The audit
+confirms every Gemini call was answered by 3.7.
+
+Both task orders together, 10 pairs per row, mean (±SD), paired difference with a 95% interval
+(`mixed_summary.csv`, `mixed_per_run.csv`):
+
+| Pair | Measure | With sentence | Without | Difference |
+|---|---|---|---|---|
+| Sonnet + GPT | Resources per agent | 60.1 (±11.3) | 57.2 (±8.9) | −2.9 (−11.6 to 5.8) |
+| | Sonnet send ($) | 3.49 (±1.09) | 3.33 (±0.85) | −0.17 (−0.96 to 0.62) |
+| | GPT send ($) | 3.53 (±1.23) | 3.11 (±1.01) | −0.42 (−1.40 to 0.57) |
+| | Sonnet self-copying | 35.2% (±4.0) | 28.4% (±2.3) | **−6.8 pts (−10.2 to −3.4)** |
+| | GPT self-copying | 38.8% (±5.1) | 34.0% (±3.3) | −4.8 pts (−9.8 to 0.2) |
+| | Sonnet borrowing | 1.2 pts (±1.2) | 0.8 pts (±1.3) | −0.4 (−1.4 to 0.6) |
+| | GPT borrowing | 1.9 pts (±0.8) | 1.9 pts (±0.8) | +0.1 (−0.9 to 1.0) |
+| Sonnet + Gemini | Resources per agent | 73.5 (±0.9) | 73.7 (±0.8) | +0.2 (−0.7 to 1.0) |
+| | Sonnet send ($) | 4.71 (±0.19) | 4.74 (±0.17) | +0.03 (−0.14 to 0.21) |
+| | Gemini send ($) | 5.00 (±0.00) | 5.00 (±0.00) | 0 |
+| | Sonnet self-copying | 36.6% (±8.3) | 29.4% (±2.4) | **−7.2 pts (−12.7 to −1.7)** |
+| | Gemini self-copying | 30.6% (±4.8) | 24.0% (±3.2) | **−6.6 pts (−11.1 to −2.1)** |
+| | Sonnet borrowing | 3.5 pts (±1.7) | 1.1 pts (±2.0) | **−2.5 (−4.4 to −0.5)** |
+| | Gemini borrowing | 1.7 pts (±1.1) | 1.2 pts (±1.7) | −0.5 (−2.2 to 1.1) |
+
+- **The self-copying drop repeats in every family.** Sonnet −7 points with either partner
+  (−8.4 in Sonnet-only dyads), Gemini −6.6, GPT −4.8 (interval just reaches zero).
+- **Borrowing does not rise anywhere.** With Gemini as partner, Sonnet borrows less
+  (−2.5 points, lower in 9 of 10 pairs); elsewhere there is no change.
+- **Cooperation is unchanged.** Sonnet + Gemini stays at the ceiling (73.5 vs 73.7).
+  Sonnet + GPT is 2.9 points lower with an interval of −11.6 to 5.8.
+
+Extra limits: three of five replicates per cell have Sonnet sending first; the Gemini route
+differs from the baseline (Vertex vs Gemini API, same model id confirmed per call).
