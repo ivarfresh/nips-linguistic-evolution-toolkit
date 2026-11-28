@@ -1,0 +1,176 @@
+Statistics verification for paper Sections 4.4 and 4.5 — 2026-11-23
+
+The headline numerical results reproduce. All 444 checked stored Holm adjustments
+are arithmetically correct. The paper still needs clearer statistical descriptions:
+one supplement caption names the wrong interval method, moral-matching p-values are
+uncorrected, and the small reading-to-writing amount association depends on which
+test family is corrected. Reproduction does not establish causal mediation or
+validate the machine-generated moral labels.
+
+This report accompanies the complete source-code bundle, three detailed specialist
+reports, full-precision result tables and runnable offline verification scripts.
+
+What was checked
+----------------
+The manuscript was checked against fetched Overleaf origin/main revision
+cb6336c39afcad6f3fc193502113f3ff2f827c19 (2026-11-20). Its results, methods and
+supplementary-results files match the local copies inspected. Analysis source
+snapshot: repository HEAD d1f88bbfaa9efa236db25375ff4a2ed19d6dc38a, plus the existing
+untracked word-panel plotting file; every delivered source has an individual hash.
+
+Three specialist audits independently covered Section 4.4, Section 4.5, and
+Holm/provenance. Checks included original final JSONs, cached data reconstruction,
+regression refits, original bootstrap calculations, signature-word permutations,
+held-out-run classification, embedding-distance bootstraps, and Holm recomputation.
+
+The provenance audit checked 771 distinct completed full-state final JSONs across
+nine manifests (2,247 source references), plus 126 registered output hashes. All
+matched. The September, September n=10 and frontier myth/decision caches were
+independently rebuilt with no value or condition-metadata discrepancies. The
+section-specific audit additionally checked injection completion receipts and
+decision-level replay receipts. No simulation or judge calls were made.
+
+Read the full results here
+-------------------------
+section44/REPORT.txt — every Section 4.4 number, formulas, sample counts, raw
+  p-values and intervals; opening, dyad effects, replay, injection and Table 1.
+section45/REPORT.txt — every Section 4.5 headline, relevant supplement statistics,
+  word/moral controls, classifier, amount models, moral regressions and judge checks.
+holm_provenance/REPORT.txt — exact correction families, assumptions, sensitivities,
+  source hashes, completed-run checks and cache verification.
+holm_provenance/all_corrections.csv — all 444 raw/stored/recomputed adjustments.
+CODE_INDEX.txt — claim-to-function map and complete source-file inventory.
+source_manifest.json — source paths, purposes, local dependencies and SHA-256 hashes.
+REPRODUCE.txt — commands and inputs for repeating the audit without model calls.
+statistics_audit_code_and_results.zip — source snapshots, manuscript snapshots,
+  reports, numerical outputs and audit scripts. Raw run data are not duplicated.
+
+Section 4.4: what the opening adjustment actually is
+---------------------------------------------------
+Each observation is one run. The outcome is that run's mean chosen transfer in
+rounds 2–10. Compare myth→game with game→myth, first without and then with its
+round-1 mean transfer as a predictor. Both models include a separate intercept
+for every composition × group-size cell:
+
+  before: later_send ~ myth_first + C(composition_and_size)
+  after:  later_send ~ myth_first + round1_send + C(composition_and_size)
+
+The coefficient of myth_first is the reported task-order difference. There are
+no game-only runs in this comparison. Standard errors are HC1 robust; intervals
+use a normal reference distribution. These are coefficients, not descriptive means.
+
+Subset        Runs  Before coefficient [95% CI]; raw p    After coefficient [95% CI]; raw p
+Single-model   60    .4163 [.0618,.7708]; .02135           .1712 [-.1375,.4798]; .27703
+Mixed-model    96    .4860 [.2214,.7506]; .000318          .6589 [.3146,1.0032]; .000176
+All           156   .4592 [.2476,.6709]; .0000211         .4859 [.2426,.7292]; .0000909
+
+Thus $0.42→$0.17 and $0.49→$0.66 reproduce. The single-model decrease itself
+was not tested. The opening is affected by task order, so conditioning on it
+does not identify how much of the treatment effect is caused by the opening.
+The current wording should remain descriptive rather than claim mediation.
+Code: analyses/myth_replay_analysis.py, opening_mediation(), line 72.
+
+The founding-myth result also reproduces: 44/62 authors sent the named amount,
+including 12/12 Sonnet authors naming $3. The pooled slope is .665703346,
+95% CI [.546294504,.785112188], raw p=8.5837151e-28 under the original
+run-clustered normal inference. This sample is conditional on a named amount:
+62 of 163 eligible Sonnet/GPT round-1 senders, across 37 runs.
+
+Definite correction: supplementary Table s-opening calls this interval
+“resampling runs.” Its source uses a regression with run-clustered standard
+errors, not a bootstrap. Retaining that method preserves [0.55,0.79]. The
+already-implemented cluster-t alternative gives [0.54,0.79]. Choose and state
+one method consistently. Add the six-replicate mixed-dyad exception to the
+supplement's first-five-replicates description.
+
+The remaining Section 4.4 checks pass: Nano's lag-adjusted $1.44/$1.59 effects,
+injection means, all six illustrative examples, and all replay coefficients.
+Replay primary Holm p-values are 4.82e-39 for the own founding myth, 1.25e-15
+for the own later myth and .0001147 for the partner myth. These correct three
+tests; they do not adjust the confidence intervals for the unplanned interim
+look that stopped the replay experiment. See section44/REPORT.txt for all
+counts, means with SDs, formulas and minor last-digit table discrepancies.
+
+Section 4.5: Holm families and the weaker findings
+-------------------------------------------------
+Word adoption, shown versus unseen myths: all five Holm-adjusted p-values are
+at most 4.888667e-11. Shown versus the author's-next-myth placebo: all five
+are at most 2.160294e-5. The paper's p<1e-10 and p<1e-4 claims are correct.
+The ten task-order-split word tests form their own separate correction family.
+The full tables, run counts, means and SDs appear in the specialist report.
+
+Moral matching uses raw Wilcoxon p-values. The same-family shown-minus-unseen
+result is +2.7126 percentage points, p=.015369. Illustrative Holm correction
+gives .030739 for the two same/cross-family comparisons, or .061477 for all
+four headline moral comparisons. These alternative families were checked for
+transparency; neither is being retroactively declared the registered analysis.
+Shown-minus-placebo remains inconclusive: +.8093 points, CI [-1.7140,3.3367],
+p=.543389 within family; -1.1304 points, p=.667668 across families.
+
+The reading-to-writing amount coefficient is .073886951, original 95% CI
+[.030274136,.117499766], raw p=.000898607; 2,564 observations in 45 runs.
+Its saved adjusted p-values depend on the explicitly named family:
+
+  25 selected primary tests:    .017972 — below .05
+  62 related R3 tests:          .055714 — above .05
+  178 estimable amount tests:   .142879 — above .05
+
+All three calculations are correct. The audit did not find separate dated
+evidence showing that the 25-test selection preceded inspecting results.
+Treat this association as exploratory and state the chosen family. Ordinary
+pointwise confidence intervals need not agree with multiplicity-adjusted
+decisions. Section45/REPORT.txt also records inference-convention sensitivities.
+
+Both this writing model and the read-amount-to-send model use a variable that
+takes an extracted numeric amount when available, otherwise a rule-category
+value: none=0, little=1.25, moderate=2.75, most=4.25, all=5. Numeric amounts
+can be narrated events as well as endorsed recommendations. Calling this only
+“the amount recommended” obscures the measurement. The read-to-send estimate
+reproduces at -.000244843, t(44) CI [-.098522,.098032], p=.996017.
+
+Further scope clarifications:
+- Later “71%” means 375/527 eligible sending occasions across 62 runs, where
+  a current myth names an amount and a previous own send exists. It is not
+  71% of all later myths or proof of intentional restatement.
+- The same-player generous-versus-fair sending estimate reproduces at
+  -.00421666 of the endowment, CI [-.0207970,.0123637], p=.618166.
+  The regression uses 300 runs; the descriptive plot drops Gemini and uses
+  260. The plot does not apply all the regression's controls.
+- The 99.5% classifier claim reproduces: 836/840 held-out-run myths correct
+  in each task order. Accuracy is per myth, with folds grouped by run.
+- Gemini's .59→.38 moral shift pools task orders; the individual shifts are
+  .525→.200 and .6625→.5625. Its transfers stay at $5. The second-judge
+  statement also refers to the pooled first-five-replicate sample.
+- The frontier own-moral sending-null holds. A small positive own-generous
+  association with returns exists (+.007258, raw p=.007484), so avoid extending
+  the sending-null to every outcome. Its multiplicity sensitivity is reported.
+- Correct p-values and a future-myth placebo support the lexical pattern;
+  they do not by themselves identify a causal effect of reading or prove
+  exactly zero behavioral transmission.
+
+Why Sections 4.4 and 4.5 need not contradict
+------------------------------------------
+Section 4.4's principal predictor is a specific amount in the author's founding
+myth before any play. Section 4.5's own-moral test uses broad generous/fair/cautious
+labels during play while controlling previous behavior. These are different
+measurements, times and questions. A specific initial amount can predict an
+opening send while a broad moral category adds little to later-send prediction.
+State this distinction rather than presenting a universal claim that myths
+either do or do not guide their authors.
+
+What remains unverified or unchanged
+------------------------------------
+The audit verifies arithmetic, source/corpus integrity and implementation of
+the stated models. It does not independently validate LLM labels/embeddings,
+establish preregistration of exploratory families, or resolve causal assumptions.
+Some historical scripts hard-code removed worktree paths and require old pickle
+intermediates. The supplied audit wrappers reproduce their estimates from the
+available canonical inputs. The original code and manuscript were not edited.
+Rebuttal/withdrawal and any manuscript changes remain decisions for the authors.
+
+Method references
+-----------------
+Holm algorithm: https://www.statsmodels.org/stable/generated/statsmodels.stats.multitest.multipletests.html
+Wilcoxon assumptions: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.wilcoxon.html
+Nested-FE correction convention: https://scorreia.com/software/reghdfe/faq.html
+Our numerical claims above are based on the actual local reruns, not these docs.

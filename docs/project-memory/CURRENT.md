@@ -1,6 +1,6 @@
 # Current research state
 
-Last updated: 2026-10-09 (placebo controls and interaction table committed; broad audit still partial).
+Last updated: 2026-11-28 (myth-injection rerun at main-figure noise completed; paper withdrawn from AAMAS on 2026-11-24; team meeting 2026-11-27 set the pre-arXiv plan; full dyad runs without the self-inspiration sentence completed; prior paper-statistics qualifications remain).
 
 ## Research question
 
@@ -14,6 +14,80 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Current operational state
 
+- **Myth-injection ablation rerun at main-figure noise (2026-11-28, Ivar: "run it"):**
+  80/80 validated runs, $41.69 recorded. Informed negative-only $1 noise; donor
+  myths from the main-figure population runs by a fixed rule; a low-cooperation
+  GPT-5 Nano cell added. Cooperative Sonnet 4.5 and Gemini 3.7 Flash myths raise
+  final resources in dyads and populations (late Sonnet high 69.3 / 68.7, Gemini
+  75.0 / 75.0, against 50.2 / 55.2 with nothing injected); filler, low Sonnet and
+  GPT-5 Nano myths stay at the no-injection level. n=5, one donor per run. This
+  replaces the September $5-noise batches as the paper's injection evidence once
+  the appendix text and figures are updated (not yet done). Fork PR #53 (open,
+  unreviewed), results on branch `runs/myth-injection-noise1-20261127` under
+  `docs/research/myth_injection_noise1_20261127/`.
+- **Paper withdrawn; pre-arXiv plan (emails 2026-11-24, team meeting 2026-11-27,
+  [Gemini-written notes](https://docs.google.com/document/d/17hQG5LqDBCbwG1QmMimmTdB53ieSpe2MLPH8hNk4W2o/edit); no verbatim transcript read):** Ivar withdrew
+  support for continuing at AAMAS on 2026-11-24 (not confident enough in Section
+  4.4, the LLM judges and the GPT-5 Nano myth data), Edward agreed, and Aron
+  withdrew the submission. Per the meeting notes (Ivar, Aron, Edward) the team
+  agreed to: post on arXiv before Christmas after Edward redlines the main text;
+  delete Section 4.4; rerun the myth-injection ablation at the main paper's
+  U(-1,0) noise range (it ran at U(-5,0)); restrict the self-inspiration-sentence
+  ablation to dyads (completed the same day, below); prioritize write-without-reading
+  and read-without-writing; drop the symmetric-noise and neutral-writing-prompt
+  controls; accept five replicates for supplementary figures and trim the
+  supplement; run a few dyad replicates with equal own/partner myth-history
+  lengths to check that the 4-partner/3-own asymmetry does not move cooperation
+  ([D001](decisions/001-history-and-memory.md)); document the GPT-5 Nano myth
+  retry message in the appendix. **Not run:** the myth-injection rerun, the two
+  new conditions and the equal-history check. Sonnet 4.5 retires on 2026-11-30.
+  Ivar's 18:52 email says the remaining grant funding is used up and asks Edward
+  about further funding; unanswered. **Unverified:** the retry rate (about 15% of
+  GPT-5 Nano myth calls in Ivar's agenda, 3.21% = 270/8400 in Aron's count, about
+  5% in the notes). See [D015](decisions/015-reviewer-followup-scope.md) and
+  [sources](sources/README.md).
+- **Reviewer follow-up scope (2026-11-27, Ivar relaying Ed):** retain
+  write-without-reading and read-without-writing live-partner conditions as
+  the two new controls to pursue. Skip the other unrun reviewer controls for
+  this revision and mark where existing evidence belongs in the manuscript.
+  The fixed-text transplant is related evidence for reading without writing.
+  See [D015](decisions/015-reviewer-followup-scope.md) for the scope and evidence.
+- **Superseded 2026-11-24 (withdrawn; see the first bullet). Paper under review; rebut or withdraw not decided (team meeting 2026-11-23,
+  [notes and transcript](https://docs.google.com/document/d/19DywyV_goSJWq-1Ap77QiuwEInuxfg5TvptPd50v3uw/edit)):**
+  reviews are in and the rebuttal is due Wednesday 2026-11-25. Edward judged
+  the scores fairly good (one reviewer moving is enough). Two options stay
+  open until a follow-up on 2026-11-24 14:00 UK: rewrite Sections 4.4 and 4.5
+  and rebut, or withdraw, post on arXiv and submit to ICML. The choice turns
+  on whether Ivar can fully stand behind the statistics. **At the meeting,
+  still under verification (completed audit below):** the Section 4.4 claim that the
+  myth-first advantage shrinks "after adjusting for the round one transfer"
+  (nobody in the meeting could say what the adjustment is); the Section 4.5
+  p-values and Holm correction; supplement captions and tables, which Edward
+  flagged as possibly machine-written. Sections 4.4 ("a myth acts as a plan for
+  its author") and 4.5 ("a myth's own moral is a poor guide for its author's
+  own play") read as contradictory and need one consistent wording. Agreed
+  rebuttal point: Review 2's statement that myths persist at most three rounds
+  without generational turnover misreads the design (myths are rewritten each
+  round; agents see a sliding window). Open gaps raised by reviewers: per-model
+  reasoning settings are not clearly stated in the paper; Figure 3 has 6 of the
+  15 compositions a like-for-like comparison needs (Ivar checks for existing
+  runs and estimates the cost of the other 9; not approved); write-only and
+  read-only myth conditions were never run. No new run is authorized.
+- **Statistics audit completed (2026-11-23, Ivar-authorized):** headline numbers
+  in Sections 4.4/4.5 and all 444 checked Holm adjustments reproduce; 771 distinct
+  completed finals and the three linguistic caches pass hash/extraction checks.
+  The opening adjustment is a run-level regression with round-1 send added:
+  single-model $0.416→$0.171; this does not establish mediation. The supplement
+  incorrectly calls the opening-slope interval a run bootstrap. Moral-matching
+  p-values are raw. The $0.074 writing association passes the selected 25-test
+  Holm family (.018), but misses the related 62-test (.056) and full 178-test
+  (.143) families; preselection timing is unverified. The amount variable can
+  use a rule-category midpoint, and later 71% refers to 375/527 eligible sender
+  occasions. Founding amounts before play and moral labels during play are
+  distinct tests, resolving the apparent statistical contradiction. Manuscript
+  wording/method choices remain open; original code/data/paper unchanged.
+  See [the full audit and code](../research/statistics_audit_20261123/REPORT.txt)
+  and [D014](decisions/014-paper-statistics-verification.md).
 - **Expanded narrative/rule-evolution analysis (2026-10-03, Ivar):** scope now
   includes canonical September-profile matrices/extensions, main and update
   frontier sets, and ordinary frontier defectors: 736 myth-bearing runs,
@@ -191,6 +265,22 @@ and [data audit](../research/mixed_future_data_audit.md).
 
 ## Current design understanding
 
+- **Saved-run memory audit (2026-11-27, existing data only):** forty saved calls
+  in one actual-research Sonnet myth→game dyad retain the same system and latest
+  six complete exchanges unchanged, in order, with whole-pair eviction. Actual
+  counts are one myth and one game per round. Six prior pairs cover three rounds
+  at myth calls, but portions of four round labels at game calls. Final buffers
+  contain seven pairs; steady myth calls expose three own versus four partner
+  myths through historical/current prompts. New prompts insert only the previous
+  partner myth. Inputs are pre-adapter snapshots; provider wire bodies and hidden
+  retry counts remain unverified. See [D001](decisions/001-history-and-memory.md)
+  and [the reproducible evidence](../research/memory_window_audit_20261127/REPORT.txt).
+- **Task-order follow-up (same date, existing data only):** the corresponding
+  game→myth dyad also passes forty saved-call window checks. At game time both
+  orders expose three partner myths; in game→myth they are one source-round
+  older because the newest partner myth arrives after the game. Own myths are
+  also one round older. This establishes an input difference, not its behavioural
+  effect; see [the exposure rows](../research/memory_window_audit_20261127/game_myth_followup.json).
 - Ordinary checked eight-agent runs hide display names, retain own game/myth
   exchanges through memory-primary chat context, provide the current
   co-player's three-game history separately, and transmit the previous
@@ -282,6 +372,20 @@ and [data audit](../research/mixed_future_data_audit.md).
   borrowing from the shown partner myth (−2.0 pts over the unseen-myth baseline,
   −3.5 to −0.5, 20 runs). Self-anchoring is not caused by the instruction; the own myth in chat
   memory is the likelier source (not tested: the replay never removed it). See [the README](../research/self_anchor_replay_20261002/README.md).
+  **Full-run successor (2026-11-27, Ivar: "please run full runs for this only for the dyads", "only 5 replicates"; 10/10 audited, $7.98):**
+  with the sentence deleted for whole Sonnet 4.5 dyad runs (game→myth and myth→game, replicates 0–4 on the
+  baseline noise seeds), self-copying falls from 35.2% to 26.8% (−8.4 pts, −13.5 to −3.3, 10 pairs), so over a
+  run the sentence does raise self-copying; the single-call replay missed this. Borrowing from the partner does
+  not rise (−1.8 pts, −5.0 to 1.3). No detectable change in cooperation at n=5 (resources +3.4, −5.1 to 11.8;
+  myth→game +7.0, −8.9 to 22.9). See [fork PR #52](https://github.com/ivarfresh/nips-linguistic-evolution-toolkit/pull/52) (`docs/research/no_self_line_dyads_20261127/README.md` on its branch).
+  **Mixed dyads (same day, Ivar: "also do for sonnet/gemini 3.7 and sonnet/gpt 5 nano"; 20/20 audited, $9.54):**
+  the self-copying drop repeats in every family (Sonnet −6.8 pts with GPT-5 Nano and −7.2 with Gemini 3.7 Flash;
+  Gemini −6.6; GPT −4.8, interval −9.8 to 0.2); borrowing rises nowhere (Sonnet with Gemini −2.5 pts, −4.4 to −0.5);
+  resources unchanged (Sonnet+GPT −2.9, −11.6 to 5.8; Sonnet+Gemini 73.5 vs 73.7). Gemini 3.7 ran through Vertex AI
+  (baseline: Gemini API), answering model checked per call. Same PR and README.
+  **Third pairing (same day, Ivar: "please also run one gpt/gemini"; 10/10 audited, $1.83):** Gemini 3.7 Flash +
+  GPT-5 Nano shows the same picture: Gemini borrows less from GPT without the sentence (−2.3 pts, −3.8 to −0.9),
+  self-copying −4.2 (Gemini) and −2.5 (GPT) with intervals reaching zero, resources 72.1 vs 71.1.
 - The pinned-profile slide-678 rerun is descriptive at n=5 donor/run replicates
   per cell. It shows strong context-dependent behavioral differences under the
   historical transplant apparatus, but does not isolate narrative form from

@@ -1,0 +1,1062 @@
+{
+  "original_path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_dyad_game_myth_claude_n5/claude-sonnet-4.5/game_myth/noisy2_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_dyad_game_myth_claude_n5_000_neutral_rep00_memtest_memory_primary_anything.json",
+  "sha256": "a44d5243e6b03c5282033e25948cc181d723fedf4f73661a2534a3720bd99e99",
+  "run_metadata": {
+    "model": "anthropic/claude-sonnet-4.5",
+    "temperature": "default",
+    "num_turns": 10,
+    "num_agents": 2,
+    "memory_capacity": 6,
+    "agent_names": {
+      "Agent_1": "Aster",
+      "Agent_2": "Briar"
+    },
+    "seed_myth": null,
+    "seed_user_prompt": null,
+    "chat_memory_mode": "memory_primary",
+    "seed_reinject": false,
+    "game_response_retry_policy": "repeat_same_prompt_once",
+    "initial_system_prompt_overridden": false,
+    "switch_to_game_system_before_game": false,
+    "llm_provider": "anthropic",
+    "provider_model": "claude-sonnet-4-5-20250929",
+    "llm_provider_mode": "anthropic",
+    "llm_request": {
+      "endpoint": "https://api.anthropic.com",
+      "model": "anthropic/claude-sonnet-4.5",
+      "parameters": {
+        "max_tokens": 64000,
+        "thinking": {
+          "budget_tokens": 8192,
+          "type": "enabled"
+        }
+      },
+      "policy": {
+        "max_output_tokens": 64000,
+        "provider": "anthropic",
+        "reasoning": {
+          "thinking": {
+            "budget_tokens": 8192,
+            "type": "enabled"
+          }
+        },
+        "temperature": "default"
+      },
+      "provider": "anthropic",
+      "provider_model": "claude-sonnet-4-5-20250929",
+      "version": 1
+    },
+    "execution_provenance_version": 1,
+    "code_commit": "893a9713b5cf71f12561d544817f9a4d978d6cf9",
+    "code_dirty": false,
+    "config_path": "/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/config/experiments_noisy.yaml",
+    "config_sha256": "12ee3857e4627592b9a4daa85d5e469b128d86d549c01adb7104e9e439963d74",
+    "comparison_inputs": {
+      "defector_game_instruction": "MANDATORY GAME STRATEGY — DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+      "game_params": {
+        "chat_memory_mode": "memory_primary",
+        "endowment": 5,
+        "memory_capacity": 6,
+        "multiplier": 3,
+        "noise_config": {
+          "applies_to": "both",
+          "direction": "negative",
+          "inform_agents": true,
+          "range": 1.0,
+          "type": "uniform"
+        },
+        "num_agents": 2,
+        "num_turns": 10,
+        "other_player_names": "default",
+        "paired_protocol_seeds": true,
+        "pairing_mode": "fixed",
+        "protocol_seed_base": 202608250,
+        "temperature": 0.8
+      },
+      "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+      "initial_system_prompt_template": null,
+      "llm_request": {
+        "endpoint": "https://api.anthropic.com",
+        "model": "anthropic/claude-sonnet-4.5",
+        "parameters": {
+          "max_tokens": 64000,
+          "thinking": {
+            "budget_tokens": 8192,
+            "type": "enabled"
+          }
+        },
+        "policy": {
+          "max_output_tokens": 64000,
+          "provider": "anthropic",
+          "reasoning": {
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "temperature": "default"
+        },
+        "provider": "anthropic",
+        "provider_model": "claude-sonnet-4-5-20250929",
+        "version": 1
+      },
+      "model": "anthropic/claude-sonnet-4.5",
+      "myth_injection_mode": "partner",
+      "myth_topic": "anything",
+      "myth_writing_default": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+      "myth_writing_later_rounds": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n",
+      "noise_semantics": "communication",
+      "persona": {
+        "description": "neutral",
+        "system_addition": ""
+      },
+      "replicate_id": 0,
+      "shuffled_myth_pool_path": null,
+      "switch_to_game_system_before_game": false,
+      "task_order": [
+        "game",
+        "myth"
+      ],
+      "template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+      "trust_game_later_investor": "Round {turn}\n\nYou are the SENDER this round. Your total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+      "trust_game_later_trustee": "Round {turn}\n\nYou are the RECEIVER this round. Your total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+      "trust_game_round1_investor": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+      "trust_game_round1_trustee": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n"
+    },
+    "defector_ratio_requested": 0.0,
+    "defector_ratio_actual": 0.0,
+    "defector_count": 0,
+    "defector_agent_ids": [],
+    "defector_seed": 0,
+    "defector_action_policy": "prompted",
+    "defector_myth_policy": "normal",
+    "defector_role_visible_to_self": true,
+    "random_defection_probability": 0.0,
+    "random_defection_seed": 202608250,
+    "random_defection_unit": "agent_game_decision",
+    "experiment_condition": {
+      "version": 2,
+      "llm": {
+        "endpoint": "https://api.anthropic.com",
+        "model": "anthropic/claude-sonnet-4.5",
+        "parameters": {
+          "max_tokens": 64000,
+          "thinking": {
+            "budget_tokens": 8192,
+            "type": "enabled"
+          }
+        },
+        "policy": {
+          "max_output_tokens": 64000,
+          "provider": "anthropic",
+          "reasoning": {
+            "thinking": {
+              "budget_tokens": 8192,
+              "type": "enabled"
+            }
+          },
+          "temperature": "default"
+        },
+        "provider": "anthropic",
+        "provider_model": "claude-sonnet-4-5-20250929",
+        "version": 1
+      },
+      "protocol": {
+        "game_type": "games.trust_game_noisy.TrustGameNoisy",
+        "game": {
+          "endowment": 5,
+          "multiplier": 3,
+          "multiplier_distribution": null,
+          "personas": {
+            "Agent_1": {
+              "description": "neutral",
+              "system_addition": ""
+            },
+            "Agent_2": {
+              "description": "neutral",
+              "system_addition": ""
+            }
+          },
+          "system_prompt_template": "You are an agent participating in a multi-task experiment. You will play a game and may also be asked to write myths.\n\nGAME:\nYou will play different roles across multiple rounds.\n\nWhen you are the SENDER:\n- You receive ${endowment} each round\n- You decide how much to SEND to the RECEIVER ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- Receiver decides how much to RETURN\n- You keep: ${endowment} - sent + returned\n- Receiver keeps: received - returned\n- Response format: {{'send': <amount>}}\n\nWhen you are the RECEIVER:\n- Sender receives ${endowment}\n- Sender decides how much to SEND to you ($0-${endowment})\n- Amount sent is multiplied by {multiplier}x\n- You decide how much to RETURN\n- Sender keeps: ${endowment} - sent + returned\n- You keep: received - returned\n- Response format: {{'return': <amount>}}\n\nMYTH WRITING:\nYou may also be asked to write short myths (stories) on various topics. When writing myths, follow the instructions provided in each prompt.\n\nIMPORTANT: Provide your decision in the correct JSON format.\n",
+          "round1_investor_template": "Round 1: You are the SENDER. You have ${endowment}. How much do you send? (0-{endowment})\n",
+          "round1_trustee_template": "Round 1: You are the RECEIVER. {investor_name} sent ${sent}, that is {percentage:.1f}% of their total endowment. You received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+          "later_investor_template": "Round {turn}\n\nYou are the SENDER this round. Your total earnings across all rounds are ${agent_balance}.\nHow much do you send to {trustee_name} this round? (0-{endowment})\n",
+          "later_trustee_template": "Round {turn}\n\nYou are the RECEIVER this round. Your total earnings across all rounds are ${agent_balance}.\nThis round, {investor_name} sent you ${current_round_sent}, so you received ${received}. How much do you return to {investor_name}? (0-{received})\n",
+          "noise_config": {
+            "type": "uniform",
+            "range": 1.0,
+            "direction": "negative",
+            "applies_to": "both",
+            "inform_agents": true
+          },
+          "noise_semantics": "communication",
+          "other_player_names": {
+            "investor": "The sender",
+            "trustee": "the receiver"
+          },
+          "myth_injection_mode": "partner",
+          "history_policy": "minimal",
+          "self_history_window": 1,
+          "coplayer_history_window": 0,
+          "population_history_window": 0,
+          "show_agent_names": true,
+          "defector_ratio": 0.0,
+          "defector_prompt_template": "MANDATORY GAME STRATEGY — DESIGNATED DEFECTOR:\nYou must always choose zero in the game.\n- When you are the SENDER, send 0 and respond exactly: {\"send\": 0}\n- When you are the RECEIVER, return 0 and respond exactly: {\"return\": 0}\nThis instruction overrides any strategy suggested by game history or myths.\nIt applies only to game decisions. Continue to participate normally in myth-writing tasks, using the game history you observed.\n",
+          "defector_action_policy": "prompted",
+          "defector_myth_policy": "normal",
+          "defector_role_visible_to_self": true,
+          "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+          "pairing_mode": "fixed",
+          "prompt_regime": "legacy",
+          "punishment_enabled": false,
+          "punishment_budget": 2,
+          "punishment_effect_multiplier": 3.0,
+          "punishment_prompt_variant": "current",
+          "decision_format": null,
+          "random_defection_probability": 0.0,
+          "shuffled_myth_pool_sha256": null
+        },
+        "myth": {
+          "myth_topic": "anything",
+          "round1_template": "Write a 200-word myth. {topic_instruction}\nIn this session, this myth and the game you are playing with the other agent are connected. Write a myth that reflects how the game should be played, drawing on the game you have been playing up to this point.\n",
+          "later_rounds_template": "Here is the myth the other agent wrote in the previous round:\n{other_agent_myth}\n\nWrite your own myth. Use the myth you wrote in the previous round as inspiration, but adapt it in your own way. The myth should reflect how the game should be played, drawing on the game you have been playing up to this point.\n\nWrite 200 words. Format exactly:\nMyth: [your story here].\n"
+        },
+        "simulation": {
+          "num_turns": 10,
+          "num_agents": 2,
+          "memory_capacity": 6,
+          "agent_biases": "",
+          "task_order": [
+            "game",
+            "myth"
+          ],
+          "agent_names": null,
+          "seed_myth": null,
+          "seed_user_prompt": null,
+          "chat_memory_mode": "memory_primary",
+          "seed_reinject": false,
+          "initial_system_prompt_template": null,
+          "switch_to_game_system_before_game": false,
+          "game_response_retry_policy": "repeat_same_prompt_once"
+        },
+        "game_retry": {
+          "policy": "repeat_same_prompt_once",
+          "attempts": 2
+        },
+        "myth_retry": {
+          "policy": "task_boundary_v1",
+          "retries": 2
+        }
+      },
+      "replicate": {
+        "identity": {
+          "experiment": "negative_only_reasoning_rerun_dyad_game_myth_claude_n5",
+          "replicate_id": 0,
+          "output_path": "data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_dyad_game_myth_claude_n5/claude-sonnet-4.5/game_myth/noisy2_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_dyad_game_myth_claude_n5_000_neutral_rep00_memtest_memory_primary_anything.json"
+        },
+        "pairing_seed": 202608250,
+        "noise_seed": 202608250,
+        "run_seed": 0,
+        "defector_seed": 0,
+        "random_defection_seed": 202608250,
+        "defector_agent_ids": null
+      },
+      "implementation": {
+        "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "src/agents.py": "23b9d892bedcf4a8d025fe14841eae60c0201dc33b522699a4a5829a51dc5dfe",
+        "src/batch_utils.py": "621dc7524ad8f764c49189ce6ed3cd8507ff58e60157f1b75900f86ca1a5dafa",
+        "src/control_text_pool.py": "3b8c2c170b5f5d0d4e6bc8ef76a85ea7a145afe14dec7ea683e489fe3ce53aa1",
+        "src/experiment_condition.py": "34c710ce9f619ec9dbe3fe09d4aa9ee0f0e08c048e2d53f06be11dd59dfb2b17",
+        "src/experiment_config.py": "58d3385f81242386cd6abcf8e9a79a5ed09fa05d3e4e1cad274e2b0ec10be51c",
+        "src/llm_settings.py": "04893efbd372da021a15106fea20b0b6cc030f7db5ba2319c9418f6e7ca0b77b",
+        "src/monitor.py": "c82a572309ea18e3ddfb44705cbf1aa9a6a12a8b12a756bf19592ce992bf4ccf",
+        "src/myth_writer.py": "01710f00a454b38e086b2ae699edb5aa458d8b4a0cb2708850e4f653a4be9023",
+        "src/shared_context.py": "c5929019266069a18e8f2a0a5f32c51fa272c6c4f4aa92fa5b88fa81096ca579",
+        "src/simulation.py": "ce15d59847e3c9354e0cb9491809e343a8617d52c862d51d0cb0966562953638",
+        "src/transcript.py": "39c5cae7076dcddd9b78823a72c17a859adf9ab80e4a6ff9a3c8e82ee756d902",
+        "src/utils.py": "07ac2dd5f9123f8ebbbb116d6195ff83d7a9a8a03e88a54f32c479ce4736fa47",
+        "games/base_game.py": "bdec6b0ef6c1639be124fcacfe954b437ffdf051b7ec074b3207c09a83b46d48",
+        "games/dyadic_pairing.py": "b1e1998ba25628eddd83bcb4566ad2dab1d887821ded9ecd99907870a722f832",
+        "games/trust_game.py": "a405ae7677ee1ea3a50f8792a969db08d511000eb86aaeea828ab7e0ea72aa63",
+        "games/trust_game_noisy.py": "0655df4f9e34fba8ab3bd27ecf442b84c9e8dda43fe117fcb291f0a2a9f5afec"
+      }
+    },
+    "condition_sha256": "1b9d48cbe7af21d1d3c560949e993fc0eb323b0e4962dcc849a911ab4f82f649",
+    "myth_topic_id": "anything",
+    "myth_topic": "anything",
+    "game_params_name": "noisy2_crossmodel_negative_twotask_r3",
+    "noise_config": {
+      "type": "uniform",
+      "range": 1.0,
+      "direction": "negative",
+      "applies_to": "both",
+      "inform_agents": true
+    },
+    "noise_semantics": "communication",
+    "system_prompt_template": "trust_game_default",
+    "initial_system_template": null,
+    "round_prompt_templates": {
+      "round1_investor": "trust_game_round1_investor",
+      "round1_trustee": "trust_game_round1_trustee",
+      "later_investor": "trust_game_later_investor_minimal",
+      "later_trustee": "trust_game_later_trustee_minimal"
+    },
+    "myth_prompt_templates": {
+      "round1": "myth_writing_default_game_directive",
+      "later": "myth_writing_later_rounds_directive_memory_primary"
+    },
+    "other_player_names": "default",
+    "replicate_id": 0,
+    "myth_prompt_arm_id": "memtest_memory_primary",
+    "myth_default_prompt_key": "myth_writing_default_game_directive",
+    "myth_later_prompt_key": "myth_writing_later_rounds_directive_memory_primary",
+    "game_prompt_addition_id": "myth_decision_link",
+    "game_prompt_addition": "Take any myths written in this session into account when making your decision.",
+    "myth_injection_mode": "partner",
+    "shuffled_myth_pool_path": null,
+    "history_policy": "minimal",
+    "self_history_window": 1,
+    "coplayer_history_window": 0,
+    "population_history_window": 0,
+    "show_agent_names": true,
+    "pairing_mode": "fixed",
+    "effective_pairing_mode": "fixed",
+    "pairing_seed": 202608250,
+    "noise_seed": 202608250,
+    "prompt_regime": "legacy",
+    "punishment_enabled": false,
+    "punishment_budget": 2,
+    "punishment_effect_multiplier": 3,
+    "punishment_prompt_variant": "current",
+    "configured_openai_reasoning_effort": null
+  },
+  "checks_passed": true,
+  "recorded_calls_checked": 40,
+  "rows": [
+    {
+      "agent": "Agent_1",
+      "call": 1,
+      "round": 1,
+      "task": "game",
+      "messages_including_system": 2,
+      "own_myth_rounds": [],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[0].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 2,
+      "round": 1,
+      "task": "myth",
+      "messages_including_system": 4,
+      "own_myth_rounds": [],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[1].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 3,
+      "round": 2,
+      "task": "game",
+      "messages_including_system": 6,
+      "own_myth_rounds": [
+        1
+      ],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[2].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 4,
+      "round": 2,
+      "task": "myth",
+      "messages_including_system": 8,
+      "own_myth_rounds": [
+        1
+      ],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [
+        1
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[3].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 5,
+      "round": 3,
+      "task": "game",
+      "messages_including_system": 10,
+      "own_myth_rounds": [
+        1,
+        2
+      ],
+      "partner_in_history": [
+        1
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[4].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 6,
+      "round": 3,
+      "task": "myth",
+      "messages_including_system": 12,
+      "own_myth_rounds": [
+        1,
+        2
+      ],
+      "partner_in_history": [
+        1
+      ],
+      "partner_in_current_prompt": [
+        2
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[5].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 7,
+      "round": 4,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_history": [
+        1,
+        2
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[6].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 8,
+      "round": 4,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_history": [
+        1,
+        2
+      ],
+      "partner_in_current_prompt": [
+        3
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[7].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 9,
+      "round": 5,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_history": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[8].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 10,
+      "round": 5,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_history": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_current_prompt": [
+        4
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[9].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 11,
+      "round": 6,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_history": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[10].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 12,
+      "round": 6,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_history": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_current_prompt": [
+        5
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[11].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 13,
+      "round": 7,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_history": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[12].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 14,
+      "round": 7,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_history": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_current_prompt": [
+        6
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[13].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 15,
+      "round": 8,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_history": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[14].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 16,
+      "round": 8,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_history": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_current_prompt": [
+        7
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[15].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 17,
+      "round": 9,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_history": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[16].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 18,
+      "round": 9,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_history": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_current_prompt": [
+        8
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[17].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 19,
+      "round": 10,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        7,
+        8,
+        9
+      ],
+      "partner_in_history": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_1.interaction_history[18].messages_sent"
+    },
+    {
+      "agent": "Agent_1",
+      "call": 20,
+      "round": 10,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        7,
+        8,
+        9
+      ],
+      "partner_in_history": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_current_prompt": [
+        9
+      ],
+      "original_json_location": "agents.Agent_1.interaction_history[19].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 1,
+      "round": 1,
+      "task": "game",
+      "messages_including_system": 2,
+      "own_myth_rounds": [],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[0].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 2,
+      "round": 1,
+      "task": "myth",
+      "messages_including_system": 4,
+      "own_myth_rounds": [],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[1].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 3,
+      "round": 2,
+      "task": "game",
+      "messages_including_system": 6,
+      "own_myth_rounds": [
+        1
+      ],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[2].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 4,
+      "round": 2,
+      "task": "myth",
+      "messages_including_system": 8,
+      "own_myth_rounds": [
+        1
+      ],
+      "partner_in_history": [],
+      "partner_in_current_prompt": [
+        1
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[3].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 5,
+      "round": 3,
+      "task": "game",
+      "messages_including_system": 10,
+      "own_myth_rounds": [
+        1,
+        2
+      ],
+      "partner_in_history": [
+        1
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[4].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 6,
+      "round": 3,
+      "task": "myth",
+      "messages_including_system": 12,
+      "own_myth_rounds": [
+        1,
+        2
+      ],
+      "partner_in_history": [
+        1
+      ],
+      "partner_in_current_prompt": [
+        2
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[5].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 7,
+      "round": 4,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_history": [
+        1,
+        2
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[6].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 8,
+      "round": 4,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_history": [
+        1,
+        2
+      ],
+      "partner_in_current_prompt": [
+        3
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[7].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 9,
+      "round": 5,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_history": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[8].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 10,
+      "round": 5,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_history": [
+        1,
+        2,
+        3
+      ],
+      "partner_in_current_prompt": [
+        4
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[9].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 11,
+      "round": 6,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_history": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[10].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 12,
+      "round": 6,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_history": [
+        2,
+        3,
+        4
+      ],
+      "partner_in_current_prompt": [
+        5
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[11].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 13,
+      "round": 7,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_history": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[12].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 14,
+      "round": 7,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_history": [
+        3,
+        4,
+        5
+      ],
+      "partner_in_current_prompt": [
+        6
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[13].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 15,
+      "round": 8,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_history": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[14].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 16,
+      "round": 8,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_history": [
+        4,
+        5,
+        6
+      ],
+      "partner_in_current_prompt": [
+        7
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[15].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 17,
+      "round": 9,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_history": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[16].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 18,
+      "round": 9,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_history": [
+        5,
+        6,
+        7
+      ],
+      "partner_in_current_prompt": [
+        8
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[17].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 19,
+      "round": 10,
+      "task": "game",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        7,
+        8,
+        9
+      ],
+      "partner_in_history": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_current_prompt": [],
+      "original_json_location": "agents.Agent_2.interaction_history[18].messages_sent"
+    },
+    {
+      "agent": "Agent_2",
+      "call": 20,
+      "round": 10,
+      "task": "myth",
+      "messages_including_system": 14,
+      "own_myth_rounds": [
+        7,
+        8,
+        9
+      ],
+      "partner_in_history": [
+        6,
+        7,
+        8
+      ],
+      "partner_in_current_prompt": [
+        9
+      ],
+      "original_json_location": "agents.Agent_2.interaction_history[19].messages_sent"
+    }
+  ],
+  "finding": "At steady game calls: three own myths R-3..R-1 and three partner myths R-4..R-2. At myth calls: same retained myths plus partner R-1 in current prompt. This describes saved pre-adapter inputs, not wire captures or behavioural effects."
+}

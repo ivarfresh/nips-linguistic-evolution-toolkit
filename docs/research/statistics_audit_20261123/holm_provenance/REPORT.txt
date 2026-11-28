@@ -1,0 +1,231 @@
+Holm correction and data-provenance audit — 2026-11-23
+
+The implemented Holm corrections are arithmetically correct. All 444 saved
+adjusted p-values checked agree with both an independently written sorted
+step-down implementation and statsmodels.stats.multitest.multipletests.
+This verifies the correction for the declared family, not that every family
+was chosen before inspecting results, nor that the underlying observational
+comparison identifies a causal effect.
+
+Scope and reproducibility
+-------------------------
+Paper Sections 4.4/4.5 and their directly supporting statistical tables.
+The lead fetched Overleaf origin/main cb6336c39afcad6f3fc193502113f3ff2f827c19;
+the scoped results/methods/supplement files match the local manuscript.
+No model calls, paid runs, labels, source data, or original outputs were changed.
+Run this offline audit with:
+  python3 docs/research/statistics_audit_20261123/holm_provenance/audit.py
+Numerical environment: numpy 1.26.4, pandas 3.0.3, scipy 1.16.2,
+statsmodels 0.15.0. Audit results are written beside this report.
+
+1. What Holm does here
+---------------------
+Sort the m raw p-values from smallest to largest. Multiply the first by m,
+the second by m−1, and so on; take cumulative maxima, cap at 1, and restore
+the original order. These are adjusted p-values. It is not just p multiplied
+by the number of tests, and it is not the Benjamini–Hochberg/FDR procedure.
+The functions in linguistic_uptake.py and myth_replay_analysis.py both
+implement this correctly. 350 randomized/edge cases per implementation also
+passed, including zeros, ones, tied p-values, and shuffled order; the uptake
+function additionally passed missing-value cases. Missing/non-estimable
+tests are excluded from the saved families, as their source code specifies.
+
+The 95% intervals in these results are ordinary pointwise intervals, not
+simultaneous Holm-adjusted intervals. The interval and adjusted-p decision can
+therefore differ without an arithmetic error.
+
+2. Word adoption: headline correction verified
+----------------------------------------------
+The unit tested is a run, after averaging reader–myth pairs within that run.
+The five settings are: homogeneous dyads, mixed dyads, homogeneous populations,
+mixed-population cross-family exposure, and mixed-population within-family
+exposure. The latter two use the same 120 runs; their presence as two hypotheses
+does not create 240 independent runs. Holm can accommodate dependent tests.
+
+Shown versus unseen, pooled across task orders:
+Setting                         Runs  Raw p          Holm p         Positive
+Dyads, homogeneous               60   1.629556e-11   4.888667e-11     60/60
+Dyads, mixed                     60   1.803039e-11   4.888667e-11     59/60
+Population, homogeneous          60   2.696655e-11   4.888667e-11     58/60
+Population, mixed cross-family  120   3.340139e-21   1.336056e-20    116/120
+Population, mixed same-family   120   1.971952e-21   9.859759e-21    120/120
+
+The paper's Holm p < 1e−10 holds for all five settings. The task-order-split
+supplement uses a SEPARATE ten-test family; its ten word-adoption adjusted
+p-values also reproduce. Semantic cosine has its own five/ten-test families.
+The caption/method should make these family boundaries explicit rather than
+suggesting one correction covering every analysis in the paper.
+
+Shown versus author's-next-myth placebo, pooled across task orders:
+Setting                         Runs  Raw p          Holm p         Positive
+Dyads, homogeneous               60   2.160294e-05   2.160294e-05     44/60
+Dyads, mixed                     60   1.112604e-08   3.337813e-08     48/60
+Population, homogeneous          60   1.593099e-07   3.186197e-07     43/60
+Population, mixed cross-family  120   6.443625e-17   2.577450e-16    104/120
+Population, mixed same-family   120   2.293083e-21   1.146542e-20    119/120
+
+The paper's Holm p < 1e−4 holds. word_adoption_placebo.py actually computes
+six contrasts, each corrected across the five settings separately. As an
+additional sensitivity check, correcting jointly across all 30 tests in that
+file still leaves all five headline shown-versus-placebo p-values below 1e−4
+(largest 2.160294e−5). This conclusion is not fragile to that wider family.
+
+3. Moral matching: printed p-values are UNCORRECTED
+-------------------------------------------------
+The paper prints raw Wilcoxon p-values here, correctly reproduced:
+  Shown−unseen, same family:  p=0.0153694 (printed 0.015).
+  Shown−unseen, other family: p=0.1251056 (printed 0.13).
+  Shown−placebo, same family: p=0.5433895 (printed 0.54).
+  Shown−placebo, other family:p=0.6676683 (printed 0.67).
+All are based on 60 mixed-population myth→game runs. The shown−unseen test
+uses its full available pair set; the placebo contrast uses complete pairs.
+
+The smallest natural family for the same/cross-family shown−unseen comparison
+has two tests: p=0.0153694 becomes Holm p=0.0307387. Including the four
+headline tests above makes it 0.0614774. Correcting the ten setting/order
+shown−unseen rows of the existing full table makes it 0.0512650; correcting
+all 40 tests of that table makes it 0.4610806. These are sensitivity families,
+not claims about what was pre-registered. The full-table comparison has a
+slightly different complete-pair restriction from the full-set headline.
+
+Therefore the weak shown−unseen moral association must not be described as
+robustly multiplicity-corrected. The scientific conclusion is still no clear
+shown−placebo difference: neither of those raw tests is close to significance,
+and correction only increases their p-values. Failure to reject does not
+demonstrate an exactly zero causal effect.
+
+4. The $0.07 reading-to-writing amount claim depends on test family
+----------------------------------------------------------------
+The exact saved coefficient is 0.073886951, interval [0.030274136,0.117499766],
+raw p=0.000898607, 2,564 observations from 45 runs. It concerns an extracted
+amount measure that uses a named amount when present and a rule-band midpoint
+otherwise; it is not restricted to literal numerals in the myth.
+
+amount/tests.csv records three valid arithmetic corrections for this row:
+  Selected primary family, 25 estimable tests: Holm p=0.01797214.
+  R3 family, 62 estimable tests:              Holm p=0.05571365.
+  All 178 estimable tests in the lens:       Holm p=0.14287852.
+The file has 269 rows total; 91 lack an estimable p-value and are excluded.
+Thus 'passes Holm' and 'fails Holm' each need a named family. The selected
+primary list is explicit in analyze.py:434–448, but this audit finds no
+separate dated evidence establishing that this selection preceded analysis.
+The code and all results were committed together on 2026-09-30 (428fc92e3).
+
+The section-specific audit also checked the underlying regression inference:
+the original uses absorbed fixed effects with normal-reference clustered
+inference. A cluster-t reference and full-dummy small-sample convention give
+larger p-values. Fixed effects nested within run clusters need not count as
+independent parameters in the small-sample correction, so the full-dummy
+alternative is a sensitivity analysis, not an automatically definitive fix.
+Our Holm verification above is conditional on the saved raw p-values.
+
+5. Replay supplement: three-position family verified
+----------------------------------------------------
+Position  Raw p          Holm p
+A         1.607584e-39   4.822752e-39
+B         1.147063e-04   1.147063e-04
+C         6.260139e-16   1.252028e-15
+These are the three pooled Sonnet+GPT rule-edit coefficients, not all the
+model-specific and secondary edit tests. All three pass 0.05 after correction.
+The intervals remain pointwise. The recorded unplanned interim stopping
+decision is not adjusted away by Holm; this limits confirmatory interpretation.
+
+6. Test assumptions and scope
+----------------------------
+The stored word p-values reproduce with scipy 1.16.2 defaults. Untied n=30
+task-order cells use exact signed-rank probabilities; n=60/120 cells use
+the asymptotic calculation. Moral contrasts have ties/zero differences and
+use the asymptotic calculation. The placebo/moral code rounds run differences
+to ten decimals before testing, avoiding artificial floating-point ties.
+The original uptake code does not round, but none of its tested differences
+has an exact zero or tied absolute rank in this corpus.
+
+Wilcoxon tests a symmetric distribution of paired differences around zero;
+it is not itself a confidence test for the arithmetic mean shown by a bar.
+The figure intervals use a t interval for the run mean, while moral intervals
+use a run bootstrap. Report this distinction without claiming inconsistency.
+Heterogeneous cells and skewed differences motivate caution about the signed-
+rank assumptions. The audit exports sign-test and exact-distribution checks
+as sensitivities, not substitutions selected for a preferred result.
+
+In dyads, the unseen-myth baseline uses other runs from the same cell, so the
+constructed run differences share baseline inputs. Raw signed-rank inference
+does not explicitly model that dependence. In populations the baseline is
+within-run, and shown−placebo contrasts are within-run at both sizes. This
+supports the manuscript's decision to base transmission claims on populations.
+Holm handles dependence among hypothesis tests; it cannot repair invalid raw
+p-values or establish causal reading effects by itself.
+
+7. Provenance: raw finals and caches verified
+--------------------------------------------
+Nine relevant manifests reference 771 distinct full-state final JSON files
+(2,247 references because manifests share runs). All 2,247 recorded SHA-256
+hashes match. All 771 have the final JSON suffix/full-state keys, all expected
+rounds in order, the expected agent count, and every expected dyad per round.
+No checkpoint, results-only file, error snapshot, or incomplete run passed.
+All 126 registered output hashes across these manifests also match.
+
+Independently re-extracted from original finals and compared every cached row:
+  September first-replicate corpus: 8,520 myths and 8,520 decisions, 156 runs.
+  September n=10 corpus:           16,800 myths and 16,800 decisions, 300 runs.
+  Main frontier corpus:             4,520 myths and 4,520 decisions, 106 runs.
+Zero mismatches in text, word counts, exposure author/round, pairing, transfers,
+received/returned amounts, return proportions, or cooperation scores. Metadata
+also matches: run identity, size, composition, family, partner/exposure family,
+task order, replicate identity, and mixed/single-model classification.
+The 8,519-myth analysis descriptions exclude the one short/invalid myth from
+the 8,520-row first-replicate cache; the cache is not missing a final round.
+
+One portability issue: 144 paths in the original n=10 linguistic manifest
+point to a removed nips-wt-grant-budget checkout. Resolving the same data/json
+relative paths in this repository finds every file and every hash matches.
+The later placebo/map manifests already use working paths. This is a stale
+absolute locator, not a data discrepancy.
+
+Boundaries: raw-source agreement verifies what was simulated and extracted;
+it does not independently validate LLM moral/rule labels or embeddings, nor
+prove the human interpretation of a myth. Those cached derived inputs remain
+conditional inputs to the statistical verification. The full section audits
+provide independent numerical regression/feature reconstruction as applicable.
+
+8. All relevant correction/provenance code
+-----------------------------------------
+analyses/linguistic_uptake.py:97   null-myth selection
+analyses/linguistic_uptake.py:129  pair-level word/semantic scores
+analyses/linguistic_uptake.py:155  per-run averaging, Wilcoxon, CIs
+analyses/linguistic_uptake.py:182  custom Holm implementation
+analyses/linguistic_uptake.py:454  five/ten/family-pair table calls
+analyses/word_adoption_placebo.py:57   contrasts and setting order
+analyses/word_adoption_placebo.py:67   placebo construction and reproduction gate
+analyses/word_adoption_placebo.py:167  per-run tests and per-contrast Holm families
+analyses/moral_placebo.py:52      raw Wilcoxon and bootstrap
+analyses/moral_placebo.py:66      per-run contrasts
+analyses/moral_placebo.py:145     full-set headline sample
+docs/research/myth_predictors_20260930/amount/analyze.py:424  all/rung/primary Holm
+analyses/myth_replay_analysis.py:45   clustered replay slope
+analyses/myth_replay_analysis.py:63   replay Holm
+analyses/myth_replay_analysis.py:126  pooled-primary three-test selection
+analyses/linguistic_corpus.py:138     original corpus extraction
+analyses/linguistic_datasets.py      dataset path/condition definitions
+analyses/linguistic_provenance.py:52  manifests and input pools
+src/experiment_condition.py:219     full-state final reader
+src/experiment_condition.py:297     provenance validation
+src/experiment_condition.py:335     source/output manifest generation
+
+Audit artifacts
+---------------
+all_corrections.csv: every checked raw p, saved adjusted p, independently
+recomputed adjusted p, family size/name, and hypothesis identity (444 rows).
+word_wilcoxon_and_holm.csv and word_placebo_wilcoxon_and_holm.csv: run-level
+retests, counts, differences with SD, exact/asymptotic/sign-test sensitivities.
+moral_*_multiplicity_sensitivity.csv: explicitly alternative family choices.
+manifest_source_hashes_and_completion.csv: every source check.
+manifest_output_hashes.csv: all registered output checks.
+raw_to_cache_checks.csv: all 1,124 corpus/run/table comparisons.
+summary.json and holm_implementations.csv: machine-readable audit summary.
+
+Authoritative methodological references
+---------------------------------------
+https://www.statsmodels.org/stable/generated/statsmodels.stats.multitest.multipletests.html
+https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.wilcoxon.html
+https://scorreia.com/software/reghdfe/faq.html

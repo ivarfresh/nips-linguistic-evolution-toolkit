@@ -1,0 +1,324 @@
+Section 4.5 statistics audit — 2026-11-23
+
+Scope and verdict
+
+The main numerical claims reproduce from the stored myths, decisions, judge labels,
+and cached embeddings. This is a numerical reproduction, not a validation of the LLM
+judge's labels or proof of causal transmission. The important remaining issues are
+which sample a claim describes, what the amount variable means, which hypotheses
+belong to a correction family, and how much a null regression can establish.
+
+Manuscript checked: overleaf-paper/overleaf-upload/4_results.tex lines 126–151,
+3_methods.tex lines 67–69 and directly supporting supplementary_results.tex.
+Parent audit fetched Overleaf origin/main cb6336c39afcad6f3fc193502113f3ff2f827c19;
+these scoped source files are identical to the local checkout.
+
+Every rerun is free and offline. No simulation, judge request, or paid call was made.
+reproduce.py redirects outputs into this directory. The two original placebo
+programs independently reconstruct their child tables from myth text/labels and
+compare them with the earlier tables before calculating the statistics. The parent
+audit's separate provenance specialist verifies the final JSONs and extraction.
+
+Reproduction environment: Python 3.11.10; numpy 1.26.4; pandas 3.0.3; scipy 1.16.2;
+statsmodels 0.15.0; scikit-learn 1.7.2. In the targeted formula regressions, pandas
+string columns are converted to object because installed patsy cannot interpret
+pandas 3 extension strings. This changes storage, not values or the design matrix.
+
+1. Shown-versus-unseen word adoption — PASS
+
+Source: analyses/linguistic_uptake.py:71–192 and 454–466.
+Reruns: word_shown_unseen.csv; word_by_order.csv; word_independent.csv.
+
+For each reader myth, the numerator counts distinct words present in the comparison
+myth and the reader's new myth but absent from that reader's earlier OWN myths.
+The denominator counts comparison-myth words absent from the reader's earlier own
+myths. Words are lower-case content-word types, not token counts; they need not be
+words the reader has never encountered in any previous received myth.
+
+The unseen comparison is averaged across eligible same-family, same-round myths:
+another agent in the same population run, or another matched run for dyads. Each
+run's pairwise shares are averaged first; each run then receives equal weight.
+The test is a two-sided Wilcoxon signed-rank test of the per-run difference. The
+reported confidence intervals are t intervals for the mean difference, which is a
+different estimand from the signed-rank test's symmetry/location null.
+
+Setting                        Runs  Shown % (±SD)    Unseen % (±SD)  Ratio  Positive
+Single-model dyads               60   15.473 (±5.056)   6.409 (±1.139)  2.414  60/60
+Mixed dyads, other family        60    6.615 (±1.431)   4.515 (±0.684)  1.465  59/60
+Single-model populations         60   13.322 (±2.331)   8.476 (±0.983)  1.572  58/60
+Mixed populations, same family  120   13.985 (±1.910)   7.786 (±0.759)  1.796 120/120
+Mixed populations, other family 120    6.006 (±1.500)   4.385 (±0.615)  1.370 116/120
+
+Thus 1.4–2.4 times and at least 96% reproduce after rounding. Exact minimum positive
+fraction is 58/60 = 96.6667%. Both mixed-population rows use the SAME 120 runs;
+the full corpus has 300, not 420, independent runs. The 6.2 vs 1.6 percentage-point
+within/across-family excesses reproduce: .0619857363 vs .0162084495.
+
+All five raw p values and all five Holm values are in word_shown_unseen.csv.
+Holm is across these five settings separately for word adoption and embedding
+cosine similarity. The largest word-adoption adjusted p is 4.888667e-11, hence
+the main p < 1e-10 claim is correct. Supplement Table word-adoption has a separate
+ten-test Holm family after splitting by task order; it also reproduces.
+
+2. Word-adoption placebo — PASS, observational control
+
+Source: analyses/word_adoption_placebo.py:67–216.
+Rerun: word_placebo/placebo_summary.csv and placebo_children.csv.
+The shown author's myth written in the reader's writing round is the placebo.
+The original 14,678 eligible reader-myth pairs become 14,677 after one invalid
+placebo is dropped. All 300 runs remain. The original program's reproduction
+assertions pass; all output summary columns reproduce numerically exactly.
+
+Setting                          Shown/placebo  Positive  Raw p         Holm p
+Single-model dyads                 1.259118      44/60     2.160294e-5   2.160294e-5
+Mixed dyads, other family          1.177227      48/60     1.112604e-8   3.337813e-8
+Single-model populations           1.210799      43/60     1.593099e-7   3.186197e-7
+Mixed populations, same family     1.340556     119/120    2.293083e-21  1.146542e-20
+Mixed populations, other family    1.163528     104/120    6.443625e-17  2.577450e-16
+
+The text's 1.2–1.3, 72–99%, and Holm p < 1e-4 all reproduce with its rounding.
+The primary comparison has five-test Holm correction; additional exploratory
+contrasts each have their own separate five-test correction, not a common 30-test
+correction. Holm details are independently audited in the sibling audit.
+
+A positive shown-minus-placebo difference supports exposure-specific word uptake.
+The future myth is an observational negative control, not a randomized replacement
+of the shown myth. Its author has read the reader's previous myth; it can share
+words for that reason. Calling the difference a quantitatively identified causal
+effect, or claiming that a CI strictly bounds all hidden transmission, needs extra
+assumptions. This does not alter the arithmetic or the strong lexical pattern.
+
+3. Signature-word adoption — PASS
+
+Source: analyses/linguistic_uptake.py:202–295. Signature words/bigrams are selected
+from single-model myths, then measured in mixed runs. The denominator is eligible
+(child myth, marker) opportunities for markers absent from the child's earlier own
+myths. The quoted percentages are not the probability that a whole myth contains
+at least one adopted marker and are not means across runs. The 1.2-point null is
+the average excess over 1,000 randomly substituted unseen-author myths.
+The full 10-row, 1,000-permutation output matches the saved table numerically
+exactly. For GPT reading Sonnet in populations: 186 markers, 908 eligible child
+myths; p_start_if_used=.032835, p_start_if_not_used=.006258, excess=.026577;
+permutation-null mean=.011606 (SD .000873), p_perm=1/1001=.000999001.
+The text's 3.3%, 0.6%, 2.7 points and 1.2 points reproduce. This particular p value
+is not printed in the main text; its finite permutation resolution is 1/1001.
+
+4. Classifier and embedding separation — PASS
+
+Source: analyses/myth_map_significance.py:101–152 and 273–366, using
+analyses/myth_convergence_map.py:66–81.
+Reruns: classifier.csv; distance_curves.csv; distance_change.csv;
+map_significance.csv. No embeddings were regenerated.
+
+Round-1 family classification, five GroupKFold folds split by run: 836/840 myths
+correct for EACH task order (150 runs each), accuracy .9952380952. Thus 99.5% is
+correct. It is a per-myth accuracy on held-out runs, not 99.5% of runs classified
+correctly. The binomial p in the source treats myths as independent; it is not the
+main-text claim and should not be used as a run-level inferential test. The source
+also supplies a separate single-model run-label permutation check.
+
+In 8-agent single-model groups, round-1-to-10 cosine-distance changes range from
+.0541066742 to .1983179092; all six unadjusted bootstrap intervals exclude zero.
+In mixed 8-agent groups they range .0059472725 to .0223282254; three of four
+intervals include zero. The main caption's .05–.20 and .01–.02 reproduce. These
+are full-embedding distances, not distances in the plotted PCA projection.
+The bootstrap resamples runs, preserving their rounds within each draw.
+The main PCA variance claim reproduces: the first two components keep 23.157167%
+of total embedding variance. The supplementary chosen-axis claims reproduce: 72.8165% of between-family
+and 76.7769% of between-round variation, versus 93.4222% and 10.1977% for PCA.
+
+Supporting dyad caption also reproduces: single-model changes .03792549–.18208847;
+mixed changes −.08418734–+.03291365; 49/60 mixed runs have increasing partner
+closeness relative to other runs; Wilcoxon p=2.1037299e-7. The latter is raw p,
+not Holm-adjusted. The tests/intervals in the map analysis are not globally
+multiplicity-adjusted; state that if they are promoted to confirmatory claims.
+
+5. Read amount to reader's send — PASS, variable needs clearer description
+
+Source: docs/research/frontier_myth_predictors_20260930/plan/common.py:40–218;
+plan/analyze.py:215–246. Rerun: amount_models.csv.
+
+Sample: September first-five-replicate corpus, 8-agent myth→game only,
+1,080 complete investor decisions in 45 runs; shown author differs from current
+partner. Model in dollars:
+
+send ~ shown_judge_amount + unseen_judge_amount + lag_sent
+       + own_prev_judge_amount + b_coop_prev + c_coop_prev + C(runround)
+
+lag_sent is the agent's previous own send; b_coop_prev is the shown author's
+cooperation in their last game together; c_coop_prev is the current partner's
+previous-round cooperation. Fixed effects are run × round; errors cluster by run.
+
+Coefficient −.0002448429, t(44) CI [−.0985221476,.0980324618], p=.99601655.
+The printed −$0.00 and [−.10,.10] reproduce. This supports 'no detectable
+association under this model', not absence of any reader effect or equivalence.
+
+IMPORTANT VARIABLE DEFINITION: judge_amount is the named amount if present,
+otherwise a midpoint assigned to the judged rule: none=0, little=1.25,
+moderate=2.75, most=4.25, all=5. It includes narrated amounts and band-imputed
+amounts, not only explicitly endorsed/recommended numbers. The same definition
+is used in the +$0.07 writing analysis below. Methods should disclose it.
+Suggested wording: 'We scored the amount a myth describes using its named amount
+when available; otherwise we assigned the judged send rule a value of 0, 1.25,
+2.75, 4.25 or 5 for none, little, moderate, most or all. In populations where the
+author was not the reader's current partner, this score had no detectable
+association with the reader's next send (slope −0.0002, 95% CI −0.099 to 0.098).'
+For the writing analysis: 'The reader's amount score was 0.074 points higher per
+point of the shown myth's score (unadjusted 95% CI 0.030 to 0.117); this exploratory
+association was sensitive to the choice of multiple-testing family.'
+
+6. Moral matching and moral placebo — PASS, p values are RAW
+
+Source: analyses/moral_placebo.py:52–184; analyses/moral_carryover.py:135–170.
+Rerun: moral_placebo/. Reconstructed 14,634 eligible moral pairs; the original
+child-table assertions pass. Main sample: mixed 8-agent myth→game, 60 runs.
+
+Full sample (4,090 pairs), shown-minus-unseen:
+ same family: +.0271258842 (2.71259 points), p=.01536937435, 35 positive/22 negative
+ other family: +.0160158923 (1.60159 points), p=.1251056069, 34 positive/22 negative
+
+Complete placebo subset (4,087 pairs), shown-minus-placebo:
+ same family: +.008093, 95% bootstrap CI [−.017140,.033367], p=.543389
+ other family: −.011304, 95% bootstrap CI [−.039256,.015016], p=.667668
+
+The text's point estimates, intervals and p values reproduce. Raw p=.015 is not
+a Holm-significant result as presented: this code applies no Holm correction.
+There is no single prescribed family spanning every test in these two sections.
+For transparent illustrative sensitivities, .015369 becomes .030739 across the
+two shown-versus-unseen contrasts or .061477 across the four headline contrasts.
+Those are alternative post-hoc families, not original results. The sibling Holm
+audit reports all scopes. The placebo-null interpretation is unchanged.
+
+7. Within-player moral-to-behavior regressions — PASS
+
+Source: analyses/moral_carryover.py:251–330 and
+analyses/plot_moral_send_return_simple.py:64–101.
+Reruns: moral_regression.csv; moral_regression_metadata.json;
+figure6_september_n10.csv; figure6_frontier.csv.
+
+Exact formula, separately for investor send/5 and trustee return/received:
+coop ~ own_label + shown_label + previous coop in the same role
+       + agent-within-run fixed effects + round fixed effects.
+Reference label: be fair. Cluster-robust errors by run; source uses normal-based
+inference, not t(G−1). No Holm correction is applied to these coefficients.
+
+September n10 send model: 6,718 decisions, 300 runs, 1,680 agents.
+ shown generous: −.0042166623 [−.0207970122,.0123636876], p=.618165593
+ shown cautious: +.0069931315 [−.0310213997,.0450076627], p=.718432989
+ own generous:  +.0056216249 [−.0072781801,.0185214299], p=.393029876
+ own cautious:  −.0228202451 [−.0657129816,.0200724915], p=.297059154
+September return model: 5,561 decisions, 300 runs, 1,574 agents; neither own
+nor shown generous/cautious coefficient is significant at raw .05. All estimates,
+SEs and p values are in moral_regression.csv, including lag coefficients.
+
+Frontier: 1,808 decisions per role, 106 runs, 452 agents.
+ shown generous send: +.0030363829 [−.0051252403,.0111980060], p=.465898403
+ shown generous return: −.0012413527 [−.0071322981,.0046495927], p=.679600876
+These match the supplementary caption.
+
+The sole raw-significant OWN-label coefficient among the four frontier own-label
+tests is generous vs fair RETURN proportion: +.0072582460
+[+.0019391506,+.0125773415], p=.0074841613. It is a small positive association.
+Own generous send is +.0003093557, p=.902703541; own cautious send p=.379574978;
+own cautious return p=.203413214. A blanket statement that no own-moral measure
+predicts any kind of play would be too broad; the main send-null is supported.
+No Holm family was defined in this source. Illustrative correction within four
+own-label × role frontier tests gives .0299366 for this return coefficient; within
+all eight own/shown × label × role frontier tests gives .0598733. These are
+sensitivity scopes, not original corrected findings.
+
+Figure 6 is a descriptive plot, not this regression. It removes Gemini and
+demeans each player's moves in each role, but it does not residualize the round,
+own-label or lag terms. It uses 260 runs; the matching regression uses all 300.
+The frontier plot uses 86 runs vs 106 in its regression. Both plotted numerical
+tables reproduce exactly. The source comments disclose this distinction.
+With a short panel and lagged outcome, fixed-effects estimates require care;
+these conditional associations cannot identify a causal moral-content effect.
+
+8. Later named amounts repeat the previous send — PASS with narrower sample
+
+Original source: docs/research/myth_predictors_20260930/search/later_rounds_amount.py.
+Independent reconstruction: reproduce.py amount(), from the original decisions
+and rules via plan/common.py. Rerun: later_restatement.csv.
+
+375/527 = .711574953 = 71.16%, across 62 runs. Sonnet: 293/377 (77.72%);
+GPT: 82/150 (54.67%). These are myth→game INVESTOR decisions after round 1 with
+a named current myth amount and a previous own send. It is not a census of all
+later myths in either role. The earlier search table yields the same count.
+Suggested precise scope: 'Before later sends, among myths that name an amount,
+71% name the author's previous send amount.' This is descriptive, not a test
+that the author deliberately restated a previous send.
+
+9. Read amount to next written amount — PASS, exploratory and correction-sensitive
+
+Original: docs/research/myth_predictors_20260930/amount/analyze.py:185–196,
+Holm families at 424–448. Rebuilt independently via current plan/common.py.
+2,564 complete myths, 45 first-five-replicate 8-agent myth→game runs.
+Outcome and predictor both use named-else-band-midpoint judge_amount.
+Controls: unseen amount, own previous myth amount, own preceding cooperation,
+shown author's last cooperation, and run × round fixed effects; errors cluster
+by run. Coefficient .0738869510; original normal CI [.0302741360,.1174997661],
+raw p=.0008986071. The printed +.07 [.03,.12] reproduces.
+
+Stored Holm p values depend on family: .0179721421 across 25 explicitly selected
+'primary' tests, .0557136406 within 62 R3 tests, .1428785300 across 178 finite
+tests. Do not say simply 'survives Holm' or 'fails Holm'; name the family.
+The audit does not establish that the 25-test selection was pre-registered.
+
+Inference sensitivity, not an automatic bug correction: the original absorbed-FE
+fit omits the absorbed FE count from the covariance small-sample factor. This is
+a defensible convention when FE are nested within clusters (as run × round is
+within run), documented by reghdfe. With the same covariance and t(44) inference,
+the writing interval is [.0290413038,.1187325982], p=.0018131064. A full-dummy
+statsmodels fit with its larger parameter-count correction plus t(44) gives
+[.0250634276,.1227104745], p=.0038677972. Both reproduce the coefficient exactly.
+The analogous read-to-send sensitivity CI is [−.120191389,.119701703], p=.996736.
+These comparisons should be disclosed as inference conventions, not silently
+substituted or used to select a favorable result.
+
+Primary documentation: https://scorreia.com/software/reghdfe/faq.html (nested
+fixed effects are not penalized twice), and
+https://www.statsmodels.org/stable/generated/statsmodels.stats.sandwich_covariance.cov_cluster.html
+(small-sample correction is enabled by default). These sources explain the
+conventions; the numeric comparisons above are this audit's actual reruns.
+
+10. Gemini moral drift and judge agreement — PASS
+
+Reruns: gemini_morals.csv; gemini_send.json; judge_agreement.json.
+N10 all-Gemini 8-agent populations, both orders pooled:
+round1 95/160=.59375; round10 61/160=.38125, 20 runs.
+Run SDs .156414 and .267404 respectively. Same agents send $5 in all 800
+investor decisions (SD0). By order: game→myth .525→.200; myth→game .6625→.5625.
+Pooling is stated for Figure5 and the surrounding plots; the main Gemini
+sentence would be clearer with 'pooled over task orders'. Both declines exist,
+but their magnitudes differ substantially.
+
+Second judge on the first-five-replicate corpus: pooled .8375→.8500;
+game→myth .775→.875; myth→game .900→.825. Thus 'shows no such fall' is accurate
+for the pooled quantity, not a claim of no decrease under either order.
+
+The judges agree on 6,354/8,519 = .7458621904, kappa=.5346088996. Hence 74.6%
+and kappa .53 reproduce. Human validation is absent, as the supplement states.
+
+Supplement corpus counts reproduce: 1,200 / 1,199 / 4,800 / 9,600 labeled myths across
+60 / 60 / 60 / 120 runs, total 16,799 labels from 16,800 generated slots. Supplement
+population-wide moral shares also reproduce: generous .30417→.13542, fair
+.63958→.80139; cautious .05625–.09028 across rounds. Among POPULATION myths,
+cautious shares are GPT 735/6400=.11484375; Sonnet 300/5000=.06;
+Gemini 2/3000=.0006667. These match 11.5%, 6.0%, 0.1%; do not read them as all-size
+corpus percentages.
+
+Reproducibility and code delivery
+
+reproduce.py contains every call performed in this specialist audit. Run its
+word, moral, markers, regression, map, amount and descriptive modes from the repo
+root. It reads the cached scientific inputs, never calls a judge or model.
+comparison_checks.json records eight whole-table comparisons with stored output;
+all pass. Audit CSVs retain full precision, standard deviations for descriptive
+means, sample counts and confidence intervals.
+
+source_code.tsv lists the primary code and direct supporting pipeline files.
+Some original historical lens programs use hard-coded historical worktree paths;
+the audit wrapper uses the current repo inputs instead. This is an execution
+path repair in the audit only. Existing analysis scripts, input data, manuscript,
+project memory and researchlog were not modified by this specialist.
