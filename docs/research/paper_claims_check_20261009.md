@@ -66,3 +66,37 @@ New caption claims, verified:
 - Fig 5b "0.05–0.20 in single-model populations, 0.01–0.02 in mixed": 8-agent rows of `myth_convergence_map_n10_20261006/significance.csv`: single-model +0.054 to +0.198, mixed +0.006 to +0.022. Correct now that the sentence says populations (the old −0.08 included dyads). Note three of the four mixed-population intervals include 0; "by only" is fair.
 
 Still open from sections 2 and 3: all eight wording/claim issues, the TODO in 4.4 (line 94), the CHECK in 3.5 (line 71), the uncommitted frontier boxplot PNG (the placebo analyses and the interaction table are committed as of 2026-10-09).
+
+## 5. Third pass, Overleaf commit f4f505d (2026-10-09, ~12:00)
+
+Of the eight wording items in section 2: items 2, 5, 6, 7 were fixed in Aron's merge (3fc2cb4);
+items 1, 3, 4 (main text and supplement caption, now citing fig:s-frontier-update) were fixed by
+Ivar. Item 8, the Discussion opening paragraph, is unchanged in the live file. The CHECK marker in
+3.5 is gone; the TODO in 4.4 (line 94, Ed's citation) remains. Aron's new 4.5 numbers (3.3% vs
+0.6%, excess 2.7 vs 1.2 null; 99.5%; Holm p<1e-10; κ 0.53 in all three places) match
+`linguistic_analysis_n10_20261001/marker_specific_uptake.csv` and the n=10 myth map.
+
+## 6. Final pass, Overleaf commit f4f505d (2026-10-09, ~12:30)
+
+Ivar keeps Arabella's Discussion opening paragraph as written (his decision; item 8 closed).
+Re-read of the full main text against the verified numbers:
+
+- Every Results number traces to a committed source or the merged placebo/interaction scripts
+  (fork PR #44). New since the last pass and verified: 4.1 "mean of $0 … under the other task
+  orders"; 4.2 Gemini "first turn as sender … later turns"; 4.5 cross-family uptake 3.3% vs 0.6%,
+  excess 2.7 vs null 1.2 (`marker_specific_uptake.csv`, GPT child / Sonnet parent, size 8);
+  99.5% classifier; Holm p<1e-10; κ 0.53 in Methods, Limitations and supplement; "second judge
+  shows no such fall" (DeepSeek: 8-agent Gemini generous share 0.78→0.88 game→myth, 0.90→0.83
+  myth→game, `linguistic_analysis_20260923/moral_label_shares_deepseek__deepseek-v4-flash.csv`);
+  5.1 "frontier non-defectors sent defectors more with myths" (`frontier_defector_populations_20261002/README.md:133`).
+- New cite keys openai2026hfreport, metr2026hf, FAY2018300 all exist in references.bib.
+
+**One new overstatement (Intro bullet 2):** "without myths a mixed group sinks toward its least
+cooperative member". Game-only, `mixed_vs_average.csv`: Sonnet+Gemini dyads end at 70.4, near
+Gemini's 75 and 6.5 above the parts' average (Holm-significant); 4 Gemini + 4 GPT populations end
+at 55.1, 5.0 above their parts (Holm-significant); 1 GPT + 7 Sonnet is 0.9 above. The sinking
+holds for groups with GPT-5 Nano in dyads and for the GPT-majority ladders only. Suggested:
+"without myths a mixed group with GPT-5 Nano sinks toward its level; with myths mixed groups
+rise above the average of their parts in 17 of 18 cells."
+
+Still compiling into the main text: the red TODO in 4.4 (Ed's citation on initial conditions).

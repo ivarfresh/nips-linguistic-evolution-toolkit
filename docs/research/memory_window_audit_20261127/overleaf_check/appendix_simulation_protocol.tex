@@ -1,0 +1,136 @@
+% Simulation protocol, revised 8 Oct 2026. Run counts: researchlog entries 2026-09-18 to
+% 2026-10-02 and the batch READMEs; model IDs and settings from
+% config/frontier_rerun_20260918.yaml.
+
+\section{Simulation Protocol}
+\label{sec:canonical-simulation-protocol}
+
+This supplement documents the protocol behind every run reported in the paper. Each run's saved metadata records the source commit, configuration hash, request settings, and seeds; where this description and a run's metadata disagree, the metadata describe what was executed.
+
+\subsection{Corpus}
+\label{sec:protocol-corpus}
+
+A run is one ten-round simulation. Table~\ref{tab:protocol-corpus} lists the batches. The main comparisons use the request settings in Table~\ref{tab:protocol-models} and informed negative-only communication noise with $a=\$1$ (described below); the remaining batches depart from that design as described below. Replicates 5--9 of the mid-tier batches (6--9 for mixed dyads) were run on 1 October with the same configuration and request settings as the first replicates; only the replicate index, and with it the seeds, differs.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Runs reported in the paper. Task orders are game only, game$\rightarrow$myth and myth$\rightarrow$game.}
+\label{tab:protocol-corpus}
+\begin{tabular}{p{0.3\linewidth}p{0.52\linewidth}r}
+\toprule
+Batch & Design & Runs \\
+\midrule
+\multicolumn{3}{l}{\textit{Mid-tier models, informed noise $a=\$1$}} \\
+Single-model groups & Sonnet 4.5, GPT-5 Nano, Gemini 3.7 Flash; dyads and eight-agent populations; 3 task orders; 10 replicates & 180 \\
+Mixed-model dyads & Sonnet+GPT, Sonnet+Gemini, Gemini+GPT; 3 task orders; 10 replicates, first sender alternating & 90 \\
+Mixed-model populations & 1, 2 or 4 Gemini among GPT; 1, 2 or 4 GPT among Sonnet; 3 task orders; 10 replicates & 180 \\
+\addlinespace
+\multicolumn{3}{l}{\textit{Frontier models, informed noise $a=\$1$}} \\
+Single-model groups & Opus 5, Gemini 3.1 Pro, GPT-5.6 Sol; dyads and populations; 3 task orders; 5 replicates & 90 \\
+Mixed dyads and population & Opus 5+Sol, Opus 5+Gemini, Gemini+Sol dyads (6 replicates); 2 Gemini 3.1 Pro + 3 Opus 5 + 3 Sol population (5 replicates); 3 task orders & 69 \\
+Populations with scripted defectors & 8 Opus 5, 8 Sol, or 4 of each, with 2 scripted defectors; 3 task orders; 5 replicates & 45 \\
+Newer models & GPT-6 Sol and Opus 5.5 groups (dyads and populations); 2 Gemini 3.1 Pro + 3 GPT-6 Sol + 3 Opus 5.5 population; 3 task orders; 5 replicates & 75 \\
+\addlinespace
+\multicolumn{3}{l}{\textit{Robustness, mid-tier models, 5 replicates}} \\
+Noise variants & As the single-model groups, with no noise or with uninformed noise ($a=\$1$) & 180 \\
+Stronger noise & Dyads; Sonnet 4.5 and Gemini 3.7 Flash; game only and myth$\rightarrow$game; informed, $a=\$2$ & 20 \\
+Forced defection & As the single-model groups, with random defection (dyads, 25\% or 50\% of decisions) or scripted defectors (populations, 2 or 4 of 8 agents) & 180 \\
+Myth-injection ablation & Sonnet 4.5; dyads and populations; 7 injected-text cells (described below) & 70 \\
+\addlinespace
+% \multicolumn{3}{l}{\textit{Pilots (Section ``Pilots'' of the supplementary results)}} \\
+% Shared myth board & Frontier defector mix, myth$\rightarrow$game, every agent reads every earlier myth & 3 \\
+% Saboteur myths & Frontier defector mix, defectors privately told to persuade others to send less; partner and board channels & 6 \\
+% Planted rule & Sonnet 4.5 populations, myth$\rightarrow$game, shared board, one planted rule; plus a newcomer test & 3 \\
+% Word budget and council & Sonnet 4.5 dyads, myth$\rightarrow$game; 2 budgets $\times$ council on or off & 20 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The replay test (below) resends single logged decisions rather than running games: 1,359 replays in the main run, after four pilot runs.
+
+\subsection{Agents, request settings, and memory}
+\label{sec:protocol-agents}
+
+Each agent is an independent sequence of calls to a model through its provider's API. Agents in a run share prompt templates but have separate identifiers and private conversation buffers; no agent can read another agent's buffer. In mixed-model runs, every agent carries its own request settings, identical to those of the same model in the single-model runs. In mixed populations, agents of the minority model occupy the lowest agent identifiers; the pairing schedule does not depend on model.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Request settings. Temperature ``default'' means none was sent and the provider default applies; Claude models with extended or adaptive thinking and OpenAI reasoning models do not accept a custom temperature.}
+\label{tab:protocol-models}
+\begin{tabular}{p{0.2\linewidth}p{0.24\linewidth}p{0.26\linewidth}p{0.1\linewidth}r}
+\toprule
+Model & Provider model ID & Reasoning setting & Temp. & Max output \\
+\midrule
+Claude Sonnet 4.5 & \texttt{claude-sonnet-4-5-20250929} & extended thinking, budget 8{,}192 tokens & default & 64{,}000 \\
+GPT-5 Nano & \texttt{gpt-5-nano} & reasoning effort high & default & 128{,}000 \\
+Gemini 3.7 Flash & \texttt{gemini-3.7-flash} & thinking level high & 0.8 & 65{,}536 \\
+\addlinespace
+Claude Opus 5 & \texttt{claude-opus-5} & adaptive thinking, effort high & default & 64{,}000 \\
+GPT-5.6 Sol & \texttt{gpt-5.6-sol} & reasoning effort high & default & 128{,}000 \\
+Gemini 3.1 Pro & \texttt{gemini-3.1-pro-preview} & thinking level high & 0.8 & 65{,}536 \\
+\addlinespace
+Claude Opus 5.5 & \texttt{claude-opus-5-5} & adaptive thinking, effort high & default & 64{,}000 \\
+GPT-6 Sol & \texttt{gpt-6-sol} & reasoning effort high & default & 128{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Memory is measured in completed prompt--response exchanges. The system prompt is always kept; before each call, the buffer keeps at most the configured number of preceding exchanges and appends the current prompt. Game and myth exchanges enter the same buffer. The buffer holds three exchanges in game-only runs and six in runs with both tasks, so every game decision has at most the three preceding rounds of play in context, and exactly three from round four on; we checked all 7,680 game calls from round five onward in the original single-model and mixed-model runs. The two-task conditions add three myth exchanges, lengthening the median context 5.7-fold in dyads and 3.0-fold in populations. Buffers retain each response's visible text, not hidden reasoning. Agents often summarize earlier rounds in their visible responses, so information from outside the window can persist through these summaries.
+
+\subsection{Pairing and roles}
+\label{sec:protocol-pairing}
+
+Every round partitions the agents into sender--receiver dyads, and each agent plays exactly one interaction per round. In dyads the same two agents play all ten rounds and alternate roles, with the first agent sending in odd rounds; in mixed dyads, which model sends first alternates across replicates. Populations of eight follow a balanced rotating schedule, generated from a recorded pairing seed, in which every agent sends five times and receives five times and agents who have met less often are preferentially paired. We confirmed the five-and-five split for every agent in every run. Population agents are told that pairings rotate and that names are hidden; partners are referred to as ``your current co-player''.
+
+\subsection{Prompts and decisions}
+\label{sec:protocol-prompts}
+
+All prompts are reproduced verbatim in the Prompts section. The system prompt describes both roles, the payoffs and the response format; in informed-noise conditions it adds a note that reported amounts may differ slightly from actual ones, and in populations a description of the rotating, anonymous setting. Each round the sender is prompted first and the receiver is then told the communicated transfer and the corresponding receipt, with the displayed receipt as the upper bound for its return. Later prompts report the agent's running total of visible earnings. Population prompts also list the current partner's last three games as that partner saw them: its role, the communicated amounts it observed, and its visible payoff. In myth conditions every game prompt ends with ``Take any myths written in this session into account when making your decision.''; game-only prompts never contain it.
+
+Agents answer with a JSON object, \texttt{\{'send': x\}} or \texttt{\{'return': y\}}. A response without a valid amount for the current role is re-sent once with the same prompt; a second failure stops the run. Parsed amounts are bounded to the feasible range ($[0,E]$ for sends, $[0,ms]$ for returns), although no decision in the reported runs fell outside it.
+
+\subsection{Communication noise and the two ledgers}
+\label{sec:protocol-noise}
+
+Noise perturbs what each agent sees of its partner's action, not the action itself. For an action $x$, the communicated amount is $\widetilde{x}=\max\{0,x+\epsilon\}$ with $\epsilon\sim\mathcal{U}(-a,0)$, rounded to the cent. (The simulator also caps reports at the largest feasible amount, a cap that negative noise never reaches.) Sends and returns receive separate draws. Each draw is a deterministic function of a replicate seed, the round, the dyad and the action type; replicate $k$ uses the same seed in every batch, so draws are matched across task orders and model compositions.
+
+The simulator keeps two ledgers. Actual payoffs are $E-s+r$ for the sender and $ms-r$ for the receiver, and all reported outcomes use them. The visible ledger accumulates the payoffs an agent would infer from what it saw: $E-s+\widetilde{r}$ as sender and $m\widetilde{s}-r$ as receiver. Only the visible ledger appears in prompts. The receiver is shown $\widetilde{s}$ and a receipt of $m\widetilde{s}$, which never exceeds its actual allocation $ms$, so any return in the displayed range is feasible. Population prompts displayed some amounts without rounding (for example, a receipt of \$12.149999999999999).
+
+\subsection{Myth task}
+\label{sec:protocol-myths}
+
+In myth conditions every agent writes one myth per round, before or after its game decision depending on the task order. Under myth$\rightarrow$game, the first myth prompt precedes any play. From round two, the prompt quotes the myth written in the previous round by the agent's partner from that round (in populations, not necessarily its current partner) and asks the agent to use its own previous myth as inspiration; the agent's own previous myth is available through its buffer rather than quoted. Transmission therefore has a one-round lag and follows the realized pairings: each myth has exactly one reader. Myths are never broadcast, and all myth calls in a round run concurrently, so no agent sees a same-round myth. A response that is empty or continues into a game decision is removed from the buffer and retried with a clarifying suffix, at most twice; if both retries fail, the run stops. Transmission is fixed by the protocol: no mechanism gives myths or agents with higher payoffs more influence.
+
+\subsection{Additional treatments}
+\label{sec:protocol-treatments}
+
+\paragraph{Noise variants.} These runs repeat the single-model design with no noise, or with $a=\$1$ noise and no notice in the system prompt. A further dyad batch uses informed noise with $a=\$2$.
+
+\paragraph{Forced defection, mid-tier models.} In dyads, each agent decision is independently replaced by a zero send or zero return with probability 0.25 or 0.5. The schedule is seeded by replicate, round, agent and role; it is shared across models and task orders, and every forced decision in a 25\% run also occurs in the matching 50\% run. The replaced decision is written into the agent's buffer as its own response, so the agent sees itself as having defected. In populations, 2 or 4 of the 8 agents are scripted defectors that always send and return zero without a model call. They still write myths through the normal model call, are not told that their game decisions are scripted, and names remain hidden. Where figures and tables report non-defectors, scripted defectors are excluded.
+
+\paragraph{Frontier populations with scripted defectors.} Eight-agent populations of Claude Opus 5, of GPT-5.6 Sol, or of four of each play under informed noise ($a=\$1$) with two scripted defectors that always send and return zero, configured as in the mid-tier defector runs (not told that their decisions are scripted; myths follow the usual one-reader routing). The defectors occupy fixed seats (Agent\_4 and Agent\_8), one of each model in the mixed population; in the mid-tier runs defector seats were drawn per replicate. Outcomes are scored on the six non-defectors. Gemini 3.1 Pro was left out because it sends its whole endowment in every condition.
+
+\paragraph{Myth-injection ablation.}\label{sec:protocol-ablation} This batch uses a separate setup to ask whether a myth's content changes behavior when it is the only conversation text an agent keeps between rounds. Sonnet 4.5 agents with the request settings in Table~\ref{tab:protocol-models} play the game only, either in a fixed dyad or in a rotating population of eight with hidden names and no partner history. Noise is $\mathcal{U}(-5,0)$ and agents are not told about it. The conversation buffer retains no game exchanges; its only persistent content is an injected text, presented as the agent's own reply to the first-round myth prompt and re-inserted every round, so each decision sees the system prompt, the injected text, and the current game prompt, which reports the visible running total and, in dyads, restates the previous round. The seven cells inject nothing (baseline), a length-matched non-narrative filler text paraphrased from Wikipedia (187--198 words), or a myth of 192--233 words taken from an earlier run:
+\begin{itemize}
+\item the round-10 myths of highly cooperative Sonnet 4.5 populations;
+\item the round-1 myths of those same populations;
+\item the round-10 myths of less cooperative Sonnet 4.5 populations;
+\item the round-10 myths of Gemini 3.1 Flash-Lite populations;
+\item the round-10 myths of GPT-5 Nano populations of mixed cooperativeness.
+\end{itemize}
+Each replicate draws its injected myth from a different source run. The dyad and population batches use the same texts.
+
+\paragraph{Replay test.} Every call's complete message list is stored with the run. Resending a stored message list with the recorded request settings reproduces the context the experiment supplied, and the model decides again. Contexts were drawn with a fixed seed from the no-defector myth runs of the mid-tier models (first five replicates; single-model and mixed): 40 per model and myth position. The three positions are the agent's own founding myth before its round-1 transfer (myth$\rightarrow$game), its own myth written after the previous game before a round-2 or round-3 transfer (game$\rightarrow$myth), and the myth it read from its previous partner before a round-2 or round-3 transfer (eight-agent myth$\rightarrow$game). The main edit appends one sentence to the chosen myth, stating an amount of one, two, three or all five of the five; for Sonnet myths that already state an amount, a secondary edit rewrites that amount inside the story with an editor model (prompts in the Prompts section). Each context is also replayed unedited. Each agent is replayed with its own recorded request settings and the same model identifier (a dated snapshot for Sonnet 4.5; undated identifiers, which the provider could have updated, for GPT-5 Nano and Gemini 3.7 Flash), with 2 samples per version for Sonnet 4.5, 4 for GPT-5 Nano and 1 for Gemini 3.7 Flash, in a seeded shuffled order. The slope of the replayed transfer on the stated amount is estimated within contexts (context fixed effects), with standard errors clustered by run, $t$-based intervals, and Holm correction across the three positions; every edit counts, whatever a judge later reads in it. The decision rules (own-myth positions confirmed if the slope is at least \$0.30 with the interval above zero; the partner's-myth position classed as below threshold (``no effect'') only if its interval stays below \$0.20) were fixed before four pilots. We stopped the main run at 1,359 of 4,720 planned replays (29\%), after interim results showed both own-myth positions far past their thresholds; the completed rows are the first 1,359 of the shuffled order, so every cell is 26--34\% complete. Unedited replays land close to the logged decisions on average: for each model and position, their mean transfer is within \$0.24 of the logged mean.
+
+% \paragraph{Pilots.} The shared-board, saboteur, planted-rule and word-budget pilots are described in the supplementary results; their prompt additions are recorded with each run.
+\subsection{Myth-language measures}
+\label{sec:protocol-language}
+
+For each myth we identify the myth its author read before writing, from each run's record of which myth each agent was shown. The language analyses use all no-defector myth runs of the mid-tier models (300 runs at ten replicates) and, separately, of the frontier models. Word adoption is the share of distinct content words in the shown myth (lowercased, English stop words removed, no lemmatization) that the reader had not used in its own earlier myths and uses in the myth it writes next. The comparison averages the same share over unseen myths of the same family from the same round: in populations another agent's myth from the same run, in dyads the same-family agent's myth in another run of the same cell. Similarity in meaning uses all-mpnet-base-v2 sentence embeddings. An LLM judge (GLM-5.2) labels each myth's moral as \emph{be generous}, \emph{be fair} or \emph{be cautious} with a three-label rubric and extracts the amounts it states; a second judge (DeepSeek V4 Flash), run on the first five replicates, gives the same label for 74.6\% of those myths (Cohen's $\kappa=0.53$). Carryover is tested by regressing an agent's next send fraction or return proportion on the moral of its own latest myth and of the myth it last read, with agent-within-run and round fixed effects and the agent's previous move in the same role as a control. Because a myth's author is always its reader's previous opponent, each association between a myth and its reader is tested against a placebo, the author's next myth, which the reader never saw. Word-adoption intervals are $t$ intervals over runs; bootstrap intervals elsewhere in the paper are 95\% percentile intervals that resample runs.
+
+\subsection{Execution and admissibility}
+\label{sec:protocol-execution}
+
+Runs were launched from committed code, and every run records its source commit. Calls that fail with transient provider errors (rate limits, connection failures, server errors) are attempted up to three times with exponential backoff. A run is admitted to analysis only if its final state contains all ten rounds and every model call completed; admitted files are identified by SHA-256 hashes recorded in each batch's completion receipt or provenance record. Runs that failed, for example after two unparseable decisions, exhausted provider credit, or an incomplete call, were discarded and rerun from the start with the same seeds. Every call's prompt, full message list, response, token usage and metadata are stored with the run, separately from the agent's conversation buffer. Code and data will be released upon publication.

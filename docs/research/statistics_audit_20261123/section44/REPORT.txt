@@ -1,0 +1,250 @@
+SECTION 4.4 AND ITS DIRECT SUPPLEMENT: AUDIT, 2026-11-23
+
+VERDICT
+All numerical headline claims in Section 4.4 reproduce from the saved data.
+The main definite error is the supplement's description of the opening-slope
+confidence interval as “resampling runs”: the reported interval is a clustered
+normal-theory interval, not a bootstrap. The opening-adjustment result is a real
+regression result, but it is not a mediation test or an identified causal mechanism.
+No manuscript or original analysis output was changed.
+
+Version and verification boundary
+- Manuscript: local overleaf-upload/4_results.tex lines 90–124; Methods line 67;
+  supplementary_results.tex lines 402–480 and the six Table 1 examples. Lead fetched
+  origin/main cb6336c39afcad6f3fc193502113f3ff2f827c19; these scoped files match it.
+- Recomputed all 8,520 decision rows and 8,520 myth rows in the September cache
+  against 156 original, full-state, ten-round JSON finals. All checked values match.
+  There are 8,519 myths at least 20 words long; the cache also retains one two-word row.
+- Recomputed all 4,520 decision/myth rows in the frontier cache against 106 full finals.
+- Rebuilt the three numeric input columns of the lag-adjusted dyad regression from
+  180 raw dyad finals (3,600 decision rows), including lagged shown sends and own sends.
+- Independently fitted all reported observational/replay coefficients. Recreated the
+  original 2,000-draw bootstrap stream for the dyad table; all stored endpoints match
+  to its three-decimal precision. Also ran an independent 20,000-draw check.
+- Revalidated all 35 injection finals against completion-receipt hashes and rebuilt
+  their final resources. Replay analysis uses the 1,359 saved response receipts;
+  no new model calls. Rebuilt the original replay job list: exactly 4,720 jobs.
+- New code, numeric outputs and hashes are in this directory. Source-final hashes are
+  recorded in september_finals_verified.csv and frontier_finals_verified.csv. These
+  checks establish agreement with the current original files; broader historical
+  provenance/hash-manifest checks are the separate provenance auditor's task.
+
+1. NAMED FOUNDING AMOUNT AND FIRST SEND (main text line 93; Table s-opening)
+
+Sample: myth→game, round-1 investors, first five replicates except six per mixed
+dyad cell; Sonnet/GPT only for the pooled slope; judge extracted a numeric amount.
+There are 163 eligible Sonnet/GPT senders, of whom 62 name an amount; the result is
+conditional on naming an amount, not a 71% success rate across all senders.
+
+Exact matches:
+  Sonnet+GPT: 44/62 = 70.96774194%; 37 runs. Printed 71% is correct.
+  Sonnet:    32/40 = 80%; 22 runs. Printed 80% is correct.
+  GPT:       12/22 = 54.54545455%; 17 runs. Printed 55% is correct.
+  Sonnet names $3: 12/12 authors send $3. Correct; identifiers in sonnet_3_named.csv.
+  Gemini: 50/50 named amounts and sends are $5. Correct; 27 runs.
+  Frontier Sol+Opus: 50/52 match (31/31 Sol, 19/21 Opus); 27 runs. Correct.
+  Frontier GeminiPro: 37/37 name/send $5. Correct; 20 runs.
+
+Original regression:
+  sent_dollars = intercept + b * named_amount_dollars + composition fixed effects
+  ordinary least squares; standard errors clustered by run.
+  Composition labels already distinguish dyads from populations and model mixes.
+  No separate author-family term in the pooled original; this is composition-adjusted.
+
+Group          b             original 95% CI                original raw p
+Sonnet+GPT     0.665703346   [0.546294504, 0.785112188]        8.5837151e-28
+Sonnet         0.848516320   [0.742077965, 0.954954676]        4.9467543e-55
+GPT            0.484183104   [0.340717603, 0.627648604]        3.7230251e-11
+Frontier pool  0.853102005   [0.691323096, 1.014880914]        4.8739118e-25
+
+The main 0.67 [0.55,0.79], Sonnet 0.85, GPT 0.48 and frontier 0.85 reproduce.
+These are regression coefficients, not mean values. The historical r4_reconcile.py
+uses the default normal distribution for clustered inference. No Holm correction is
+applied to this small reconciliation table and none is claimed in Section 4.4.
+
+DEFINITE CAPTION ERROR: Table s-opening says the CI resamples runs. It does not.
+The newer portable frontier/plan analysis reports t(G−1) intervals instead. For the
+same pooled 62 senders this is [0.542143751,0.789262941], raw p=5.5234869e-13;
+it would print [0.54,0.79]. The point estimate and conclusion remain unchanged.
+Use one method consistently: retain [0.55,0.79] and accurately call it a run-clustered
+normal interval, or use the already-implemented t inference and update to [0.54,0.79].
+The supplement's “first five replicates” also needs the main text's six-mixed-dyad
+qualification. Do not describe an ordinary 95% interval as multiplicity adjusted.
+
+Prompt claim: all 213 September myth-first round-1 senders across 78 runs have one
+identical non-myth prompt fingerprint within each family×size group. The only message
+text varying there is the own-myth assistant message. This supports the stated input
+comparison. It does not alone isolate the named amount from all other text features,
+or prove that the agent treats its story as a commitment. The judge counts narrated
+events as well as endorsed rules, as the supplement correctly states.
+
+Source: amount/r4_reconcile.py:6–16; frontier/plan/analyze.py:130–170.
+Outputs: round1_named_models.csv, round1_named_descriptives.csv,
+september_round1_named_rows.csv, frontier_round1_named_rows.csv,
+round1_prompt_fingerprint_summary.csv.
+
+2. WHAT “ADJUSTING FOR THE ROUND-1 TRANSFER” MEANS (lines 95–97)
+
+Each run supplies two numbers: mean chosen send in round 1 (one sender in a dyad,
+four in a population), and mean chosen send over rounds 2–10. All agents are averaged
+within that run. The run, not the individual decision, is the observation.
+
+Let M=1 for myth→game and M=0 for game→myth. Fit separately to single-model runs,
+mixed-model runs, then all runs:
+  Before: later_send = composition×size intercept + b*M + error
+  After:  later_send = composition×size intercept + b*M + c*round1_send + error
+HC1 heteroskedasticity-robust standard errors; normal 95% intervals. No game-only
+runs enter this comparison. All these runs have informed noise. This procedure does
+not subtract round 1 from each decision; it adds the opening send as a predictor.
+
+Subset       Runs  Before b (95% CI), raw p                  After b (95% CI), raw p
+Single-model 60    .4162963 [.0618024,.7707902], .0213541     .1711803 [-.1374691,.4798298], .277029
+Mixed-model  96    .4860359 [.2214372,.7506346], .000317951   .6588603 [.3145669,1.0031537], .000176339
+All          156   .4592130 [.2475639,.6708621], .0000211384  .4859064 [.2425717,.7292411], .0000908617
+
+All main-text values reproduce exactly before rounding, including the adjusted
+single-model interval [-0.14,0.48]. There are six single-model and nine mixed-model
+composition×size cells. The round-1 coefficient c is +.2000947 (p=.09898) in the
+single-model subset, −.1063535 (p=.08802) in mixed runs and −.0181446 (p=.75580)
+pooled. A single positive opening-carryover mechanism is therefore not established.
+
+Limitations of interpretation:
+- The before/after decrease itself was not tested. One coefficient being significant
+  and the adjusted one not significant is not evidence that their difference is.
+- Round-1 send is itself changed by task order: conditioning on it is a post-treatment
+  adjustment, not a randomized intervention on openings or a causal mediation test.
+- The adjustment imposes one linear opening slope within each fitted subset.
+- HC1 treats runs as independent; it does not explicitly pair shared replicate/noise
+  seeds across task orders. No Holm correction was used or claimed for these models.
+- “single-model groups” is accurate; older README wording “single-model populations”
+  is too narrow because both dyads and populations enter these 60 runs.
+
+Recommended descriptive wording: “Adding each run's opening transfer to this
+regression reduced the estimated single-model task-order difference from $0.42 to
+$0.17 (95% CI −$0.14 to $0.48). This adjustment does not establish mediation through
+the opening. The corresponding mixed-model estimate increased from $0.49 to $0.66.”
+
+Source: analyses/myth_replay_analysis.py:72–92, also accurately described in Methods67.
+Outputs: opening_adjustment_models.csv, opening_adjustment_runs.csv,
+opening_adjustment_descriptives.csv (means and SDs).
+
+3. LAG-ADJUSTED DYAD TASK-ORDER COEFFICIENTS (line 97; Table s-push)
+
+One OLS model per model family:
+  send_t = intercept + b1*game_myth + b2*myth_game
+           + c*partner_last_shown_send + d*own_previous_send + error
+Both lag variables are in dollars. Missing own previous sender turn removes rounds
+1–2, leaving rounds 3–10. Game-only is the omitted task order. Mid-tier models pool
+five runs per task order at each of three noise conditions, 45 runs/360 sender decisions
+per model. Frontier models use five informed-noise runs per order, 15 runs/120 decisions.
+The 2,000-draw bootstrap resamples matched (replicate,noise) blocks containing all three
+task orders: 15 blocks for mid-tier and five for frontier. No noise predictor is fitted.
+
+Model         game→myth b [95% bootstrap CI]           myth→game b [95% bootstrap CI]
+Sonnet4.5     .1018081 [-.0311297,.2314778]             .1407132 [.0559615,.2810251]
+GPT5Nano      1.5906090 [1.2246374,2.1980325]           1.4390372 [1.0352206,1.9915429]
+GPT5.6Sol     .2918760 [.1270545,.4936757]              .1998500 [.0203926,.5728595]
+Opus5        .1116435 [.0594825,.1855205]               .0268317 [-.0031298,.0941509]
+
+Thus the main $1.59 and $1.44 are correct. The table's GPT CI lower endpoints have
+minor last-digit differences from rounding the full-precision results: 1.23 printed
+vs 1.22 directly rounded, and 1.03 printed vs 1.04 directly rounded. Stored three-decimal
+CSV values are 1.225 and 1.035; this is reporting precision, not a scientific reversal.
+All signs and zero-crossing conclusions survive the independent 20,000-draw check.
+
+Partner-following slopes (game/game→myth/myth→game), after run and round centering:
+  Sonnet: .536131/.390699/.481078 -> .54/.39/.48, correct.
+  Nano: no game-only outcome variation; .044734/.399111 -> --/.04/.40, correct.
+  Sol: .623494/.501135/.241673 -> .62/.50/.24, correct.
+  Opus: −.120165/−.012718/0 -> −.12/−.01/.00, correct.
+  Opus run means in rounds2–10: 4.311111 (±.290274), 4.944444 (±.124226),
+  5.000000 (±0); n=5/order, matching the caption's 4.31/4.94/5.00.
+
+Scope/interpretation: these are SINGLE-MODEL dyads, not mixed dyads. Main text should
+say that explicitly if needed. Coefficients compare task orders conditional on recent
+behavior, not the effect of a myth's specific content. Both lagged behavior controls
+are post-treatment. The supplement already discloses noise pooling and the small number
+of bootstrap blocks. There is no Holm correction here; no p-values are reported.
+
+Source: analyses/partner_responsiveness.py:261–310; extract.py:103 onward.
+Outputs: push_original_bootstrap.csv, push_models.csv (independent20k),
+following_models.csv, push_input_verification.json.
+
+4. REPLAY EXPERIMENT AND ITS THREE-TEST HOLM CORRECTION (supplement)
+
+Recomputed directly from all 1,359 unique saved receipts: 0 errors, 0 parse failures.
+The job generator independently reproduces 4,720 planned replays. These are completed
+decision-level replay responses, not 1,359 completed multi-round simulation runs.
+The underlying 156 ten-round source simulations are complete; the replay experiment
+itself intentionally stopped early, as disclosed in the manuscript.
+
+Model: send ~ edited_amount + context fixed effects; SE clustered by original run;
+t(G−1) inference. Three primary tests: Sonnet+GPT pooled, rule edits only, one per
+myth position. The hand-written Holm helper agrees with statsmodels multipletests.
+
+Position      Slope         95% CI                N responses/contexts/runs  Raw p         Holm p
+Own founding  .930600922   [.874703964,.986497880]   273/76/59                1.607584e-39  4.822752e-39
+Own later     .676537254   [.552897842,.800176665]   260/75/61                6.260139e-16  1.252028e-15
+Partner read  .232888307   [.123030409,.342746205]   314/78/40                1.147063e-4   1.147063e-4
+
+All three primary slopes remain different from zero under this three-test family.
+The intervals printed in Table s-replay are ordinary 95% pointwise intervals, not
+Holm-adjusted simultaneous intervals; its “primary tests” wording should not be read
+as claiming adjusted intervals. All 12 printed table rows and context/run counts
+reproduce (full precision in replay_models.csv). The pooled own-myth effects exceed
+the $0.30 threshold by 22.58 and 6.09 standard errors, respectively: “more than five”
+is arithmetically correct. This does not mathematically undo the unplanned interim look.
+
+Sonnet founding rule-$1 replays: mean1.850000 (±1.182103), n20.
+Unedited founding replays: mean4.074074 (±.906215), n27. Both text values reproduce.
+Those aggregate samples have unequal context mixes after early stopping; causal
+interpretation should rest on the context-fixed-effect slopes, not this raw mean gap.
+Story-only founding slope .5669958 [.2274647,.9065268], n50 responses/21contexts/18runs,
+matches .57 [.23,.91]; rule-only Sonnet .8659713 [.7480409,.9839017] matches .87.
+
+Limitations preserved: optional stopping was not adjusted; positions differ in
+context and decision times; the read-myth edit leaves the subsequently written own
+myth unchanged; explicit inserted rules do not isolate authentic narrative content.
+The older README's claim that stopping “does not affect A and C” is too strong as an
+inferential statement, even though their observed effects are large. The manuscript
+properly says its intervals are unadjusted for the look.
+
+Sources: analyses/myth_replay_analysis.py:48–69,110–127;
+analyses/myth_replay_probe.py:716–732 (job plan), rule edit in make_main.
+Outputs: replay_models.csv, replay_descriptives.csv, replay_integrity.json.
+
+5. INJECTION CASE STUDY AND ILLUSTRATIVE TABLE 1
+
+Receipt-verified raw finals, final total resources divided by two agents:
+  baseline:       45.00 (±2.371708), n5
+  late Sonnet:    70.10 (±6.931811), n5
+  matched filler: 45.70 (±1.899013), n5
+All line99 values reproduce. These are descriptive five-replicate means, with donor
+text and run variation combined. They are a different stronger-uninformed-noise,
+myth-only-memory apparatus; the main text correctly calls it an earlier case study.
+No significance test or Holm correction is claimed for these three figures.
+
+All six Table1 excerpts resolve to source myths with the stated next send and final
+resources: 5/71.0, 3/73.375, 5/74.2625, 5/75.0, 5/72.0, 0/29.75. Next-send rounds
+are 1,1,1,1,8,6, respectively. Values round to the printed resources. The “three sacks”
+fragment also occurs elsewhere; table1_examples.csv retains those candidate matches
+and marks the unique candidate matching the row's setting/resources. Examples are
+selected illustrations and support no estimate of how often myths are followed.
+
+6. REPRODUCTION AND CODE HANDOFF
+
+Safe no-API audit command (repository root):
+  python3 docs/research/statistics_audit_20261123/section44/audit_section44.py
+
+Python3.11.10, numpy1.26.4, pandas3.0.3, scipy1.16.2, statsmodels0.15.0.
+Requires the local cached corpus CSVs, judge amount CSVs, full source JSONs and replay
+main.jsonl already present here. It writes only this audit directory. Historical
+paid producer code is included as source evidence; it is not an instruction to run it.
+
+code_manifest.json lists 26 original source files, direct purposes, transitive local
+dependencies and SHA256 hashes for the lead's complete code bundle. The new audit
+script is additional. Historical amount/common.py hard-codes a removed worktree and
+amount/r4_reconcile.py expects absent local pickle intermediates; those scripts are
+not independently one-command reproducible in this checkout. The portable plan code
+and this audit rebuild the same values directly from the available canonical tables.
+No source cleanup or path migration was performed in this statistical audit.

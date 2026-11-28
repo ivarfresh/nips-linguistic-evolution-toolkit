@@ -1,0 +1,71 @@
+% ===========================================================================
+% METHODS: revision of 5 Oct 2026 (Aron; pushed to Overleaf 6 Oct 2026).
+% Changes from the 4 Oct Overleaf version: Opus 5 settled as the frontier Claude model;
+% myth routing stated (3.3); n = 10 for the main models and the frontier defector
+% populations added (3.4); new 3.5 on the replay probe; 3.6 now says Welch + Holm and
+% bootstrap within groups (matches analyses/mixed_vs_average.py), and describes the
+% per-round push, the language measures, the judges and the placebo; AI-use note.
+% Sources: myth_replay_probe_20261001/README.md, analyses/myth_replay_probe.py
+% (EDITOR_MODEL = z-ai/glm-5.2), linguistic_analysis_20260923/README.md, D002,
+% researchlog 2026-10-01/02, analyses/mixed_vs_average.py.
+% Clarity pass (5 Oct, evening): "replay probe" -> "replay test"; long sentences split.
+% Cut pass (5 Oct, late): 3.1, 3.2 noise, 3.3, defector bullet, ablation, 3.5 and the
+%   placebo sentence shortened; Figure 1 caption trimmed (1358 -> 1271 prose words).
+% 6 Oct (with Aron): 3.1 trimmed (Figure 1 panel b now shows what agents see); noise
+%   formula simplified; 3.3-3.6 shortened; ablation moved to Results 4.4.
+% 6 Oct afternoon (with Aron): style pass (fewer colons/semicolons and metaphors).
+% 8 Oct: second editorial review N017-N022, N024, N026, N027.
+% 8 Oct (Ed, via Aron): 3.5 Replay test removed (moved to the supplement); 3.6 renumbered 3.5.
+% 8 Oct: editorial review E036-E040, E042-E051, E053-E055 ("push" -> adjusted effect).
+% ===========================================================================
+\providecommand{\CHECK}[1]{\textcolor{orange}{[#1]}}
+
+\subsection{3.1 Overview}\label{overview}
+
+% Figure 1 (fig:design) is defined at the top of 1_introduction.tex so that it floats to the top of page 2.
+
+Each run is a ten-round repeated trust game between LLM agents, in a fixed dyad or in a population of eight agents re-paired every round. In both, each agent sends five times and receives five times (Figure~\ref{fig:design}, which also shows what an agent sees before each decision). In populations, names are hidden and each prompt summarizes the current partner's last three games, so populations differ from dyads in partner rotation, anonymity and partner history as well as in size. Request settings, prompts and run counts are in the supplementary material.
+
+\subsection{3.2 Repeated trust game}\label{repeated-trust-game}
+
+In each interaction the sender begins with $E=\$5$ and transfers $s\in[0,E]$. The transfer is multiplied by $m=3$, and the receiver returns $r\in[0,ms]$. Payoffs are
+\begin{equation}
+\pi^{S}=E-s+r,
+\qquad
+\pi^{R}=ms-r.
+\label{eq:tg-payoffs}
+\end{equation}
+Returns only move resources between the two players, so mean cumulative resources per agent after ten rounds equal $25+10\bar{s}$, where $\bar{s}$ is the mean transfer over all of the run's interactions. Mean resources per agent thus range from 25 when no one sends to 75 when every sender transfers everything.
+
+Agents see their partner's actions through uniform negative-only noise. A transfer or return $x$ is reported as $\max\{0,x+\epsilon\}$, with $\epsilon\sim\mathcal{U}(-a,0)$ and $a=\$1$ in the main comparisons. Agents are told only that reported amounts may differ slightly from actual ones. For given actions, noise changes what agents see but not what they earn. Prompts show the running earnings an agent would infer from what it saw, while payoffs and our analyses use actual amounts. Noise draws depend only on a seed, the round, the dyad and the action, so they are matched across conditions.
+
+\subsection{3.3 Myth-writing task}\label{myth-writing-task}
+
+In the myth conditions every agent writes a myth of about 200 words each round that ``reflects how the game should be played''. From round two its prompt also quotes the myth its previous partner wrote in the previous round and asks it to write a new myth, taking its own previous one as inspiration. In a dyad the two agents read each other's myths, so the author of the myth an agent reads is also the partner it plays next. In populations the next partner is usually someone else. Each myth has one reader, in the following round, so its content can spread further only through the myths that reader writes. The myth treatment therefore combines writing a myth, reading a partner's myth, an instruction in each game prompt to take myths into account, and up to three earlier myth prompts and responses in each agent's context.
+
+% Figure 2 (fig:dyads) is defined here rather than in Results so that it floats to the top of page 4.
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.65\textwidth]{figures/mid_tier_n10/mid_tier_n10_resources_boxplots.png}
+\caption{Final resources per agent in fixed dyads. Top: single-model dyads. Bottom: mixed dyads, in which the model that sends first alternates across runs. Each dot is one run ($n=10$ per box). Gray: game only; orange: game$\rightarrow$myth; green: myth$\rightarrow$game. Boxes represent the middle 50\% of runs, lines the median and whiskers $1.5\times$ the inter-quartile range.}
+\label{fig:dyads}
+\end{figure*}
+
+\subsection{3.4 Conditions}\label{conditions}
+
+We cross three task orders with the composition of the group and call each combination a cell. The task orders are game only (no myths), game$\rightarrow$myth (each round's game, then a myth) and myth$\rightarrow$game (a myth, then the game). The compositions are:
+\begin{itemize}
+\item single-model dyads and populations of each mid-tier model;
+\item mixed dyads of each pair of mid-tier models;
+\item mixed populations with 1, 2 or 4 Gemini agents among GPT agents, or 1, 2 or 4 GPT agents among Sonnet agents;
+\item single-model groups of the frontier models, mixed dyads of each pair of frontier models, and one mixed population of two Gemini 3.1 Pro, three Claude Opus 5 and three GPT-5.6 Sol agents.
+\end{itemize}
+Each cell has ten runs for the mid-tier models, five for the frontier models and six for mixed frontier dyads. The supplementary material reports further noise and defection variants, including frontier populations with scripted defectors.
+
+\subsection{3.5 Measures and analysis}\label{measures-and-analysis}
+
+We report final resources per agent (25 to 75), transfers, and return proportions $r/(ms)$, defined only when something was sent, by model and partner model. To test whether a mixed group ends higher than its composition predicts, we compare its mean final resources with the composition-weighted mean of the matching single-model groups, its parts: $\tfrac{k}{8}R_A+\tfrac{8-k}{8}R_B$ for a population with $k$ agents of model $A$, and the mean of the two single-model dyads for a mixed dyad. We test this contrast with a Welch contrast over the three groups involved (Welch--Satterthwaite degrees of freedom), Holm-corrected across all 27 cells, and report 95\% percentile bootstrap intervals with runs resampled within each group. To test whether myths change this margin, we apply the same Welch contrast to its difference between each myth task order and game-only play, with $t$-based intervals, Holm-corrected across 18 cells. We estimate the adjusted effect of each myth task order on transfers in dyads with an ordinary least-squares regression, fitted for each model, of each transfer in rounds 3--10 on task order, the partner's last transfer as the agent saw it, and the agent's own previous transfer. These coefficients compare task orders at the same recent history and do not isolate the effect of a myth's content. For the mid-tier models it pools runs with no noise, uninformed noise and informed noise, without a noise term (frontier models have informed noise only). Intervals come from a bootstrap over matched sets of runs (one replicate's three task orders at one noise level). To see how much of the advantage of writing first is associated with the opening transfer, we regress each run's mean transfer in rounds 2--10 on task order (myth$\rightarrow$game against game$\rightarrow$myth), with and without the run's round-1 transfer. Its unit is a run; it uses the informed-noise myth runs of the mid-tier models from the first five replicates (six for mixed dyads), with fixed effects for each composition and group size and robust (HC1) standard errors.
+
+Word adoption is the share of the distinct content words in the myth an agent reads that the agent has not used in its own earlier myths but uses in the myth it writes next. We compare it with the same share averaged over unseen myths of the same family and round. In populations this is another agent's myth from the same run, and in dyads the same-family agent's myth in another run of the same cell. We test the difference with paired Wilcoxon tests over runs, Holm-corrected across settings, and measure similarity in meaning with all-mpnet-base-v2 sentence embeddings~\citep{reimers2019}. An LLM judge (GLM-5.2, temperature 0) labels each myth's moral as \emph{be generous} (give substantially by default), \emph{be fair} (match the partner's behavior) or \emph{be cautious} (limit exposure until trust is earned) with a fixed rubric and extracts any amounts it states. On the myths of the first five replicates, a second judge (DeepSeek V4 Flash) agrees with it on 74.6\% (Cohen's $\kappa=0.53$). A myth's author is always its reader's previous opponent, so the two can match because of the game they just played. We therefore compare word adoption and moral matching with a placebo, the author's next myth, which the reader never saw. For word adoption this is the author's myth from the round in which the reader writes, scored on the same words new to the reader. Because the author's next myth is written after it has read the reader's previous myth, the placebo may share some of the reader's words, which would shrink the shown-minus-placebo difference.
+
+AI coding assistants wrote most of the simulation and analysis code and proposed several analyses under the authors' direction. The supplementary material lists all AI tools, versions and, where kept, prompts.

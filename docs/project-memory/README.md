@@ -46,6 +46,8 @@ across tools belongs here.
 - [D011 — Frontier-model rerun](decisions/011-frontier-model-rerun.md)
 - [D012 — Myth-pressure pilot](decisions/012-myth-pressure-pilot.md)
 - [D013 — Bounded strategy-clause audit](decisions/013-strategy-clause-audit.md)
+- [D014 — Paper statistics verification](decisions/014-paper-statistics-verification.md)
+- [D015 — Reviewer follow-up scope](decisions/015-reviewer-followup-scope.md)
 - [Decision template](decisions/TEMPLATE.md)
 
 ## Automatic maintenance

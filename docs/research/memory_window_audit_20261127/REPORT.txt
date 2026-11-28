@@ -1,0 +1,151 @@
+EXISTING-RUN MEMORY AUDIT — 2026-11-27
+
+RESULT: The saved pre-request inputs implement a six-exchange FIFO sliding
+window in this run. Two stronger claims fail: the final stored buffers contain
+seven exchanges, and steady myth-writing inputs expose four partner myths.
+No new simulation or LLM API call was made. No original data/config/source was edited.
+
+ORIGINAL FINAL (not a checkpoint or results-only file)
+/Users/ivar/Desktop/Research/AI_projects/LLM_evolution/nips-linguistic-evolution-toolkit/data/json/noise_experiments/negative_only_crossmodel_reasoning_rerun_20260909/negative_only_reasoning_rerun_dyad_myth_game_claude_n5/claude-sonnet-4.5/myth_game/noisy2_crossmodel_negative_twotask_r3/negative_only_reasoning_rerun_dyad_myth_game_claude_n5_000_neutral_rep00_memtest_memory_primary_anything.json
+SHA256: 4b92a43771e3716308c77957a885cabe996a8bea0a0aecf65af29205c12885e6
+Recorded commit: 893a9713b5cf71f12561d544817f9a4d978d6cf9; code_dirty=false. All 17 implementation hashes plus
+the historical config hash match the local Git objects. source_manifest.json
+also preserves matching research-manifest and earlier paper-audit rows.
+
+RUN CONFIGURATION
+Two agents; ten complete rounds; one myth then one game decision per agent per
+round (observed, not assumed): 20 logical calls each. memory_primary; capacity=6.
+Replicate 0, fixed dyad, ordinary agents, no seed/reinjection/forced defection.
+Myth topic anything; directive memory-primary myth template; minimal game prompts.
+Communication noise: uniform negative, range $1, both transfer directions,
+agents informed. Native Anthropic claude-sonnet-4-5-20250929; pinned temperature
+policy default; thinking budget 8192; output ceiling 64000. Full resolved settings,
+templates, seeds and condition hash are in metadata.json. The inherited game_params
+temperature=0.8 is not the resolved request temperature: llm_request is authoritative.
+Agent_1 saved timestamps: 2026-09-09T15:53:59 to
+2026-09-09T16:02:12 (timezone not recorded).
+
+WHAT THE SNAPSHOTS PROVE
+agents.<agent>.interaction_history[i].messages_sent is the deep copy taken
+before call_llm, not the cumulative interaction log or the final agent.messages.
+Historical agents.py:168-182 captures it; :55-81 and :231-236 record it;
+simulation.py:259-285 serializes stored events. These files are hash-matched
+to this run and included under source_at_run/. Snapshot lengths grow to 14
+then plateau, with original pairs disappearing; they are not cumulative histories.
+
+The saved snapshot is PRE-ADAPTER. Historical utils.py:322-336 separates system
+and drops assistant usage/reasoning. :610-643 constructs the Anthropic request.
+Thus 14 here means 1 separate system input + 13 provider chat messages:
+12 historical messages (6 pairs) + 1 unanswered current prompt. Provider input
+projections are derived from saved evidence and verified code, NOT captured HTTP
+bodies. The 40 successful, distinct response IDs do not exclude hidden transport
+retries. The table enumerates every recorded logical interaction, not every
+possible network attempt. Exact wire bytes/attempt counts remain unverified.
+
+EMPIRICAL CHECKS (BOTH AGENTS)
+710 core checks; 0 failures. See verification.json for each comparison.
+- Same system message in all 40 snapshots; no removal or modification.
+- At most six complete previous pairs in every request (observed maximum six).
+- Each pair equals the original prompt and response, including all saved fields.
+- Exact chronological latest-six suffix; no split pair, skipped pair, mutation,
+  reordered pair, or unexpected original-pair reintroduction.
+- After filling, each next input removes precisely the oldest user AND assistant
+  messages and retains the other original messages unchanged.
+- All responses are saved as LLM/end_turn/complete; all 20 myths agree with their
+  per-round records. No saved event errors or extra logical calls.
+
+CONTRADICTIONS / LIMITATIONS
+- Both final agent.messages contain 15 messages = system + SEVEN completed pairs.
+  Each equals the last input plus its new answer. Therefore 'stored history never
+  exceeds six' is contradicted. Six is the limit on PREVIOUS exchanges at request
+  time. Trimming before the next call explains this; intermediate post-response
+  buffer states were not independently snapshotted.
+- Six prior exchanges = exactly three previous rounds at MYTH calls once full.
+  At GAME calls they span four round labels: oldest round's game, two whole
+  intervening rounds, and current round's myth. This is an exchange window, not
+  a rule that deletes whole rounds.
+- Direct myth source ages differ: at steady myth calls own R-3..R-1 (three),
+  partner R-4..R-1 (four). A universal three-round direct-myth limit is false.
+- Findings are scoped to this final and its successful path, not every run,
+  provider, task ordering, retry path or the current repository configuration.
+
+MYTH RETENTION AND REINTRODUCTION
+At myth-writing rounds 1..10, own counts: 0,1,2,3,3,3,3,3,3,3;
+partner counts: 0,1,2,3,4,4,4,4,4,4 (including current prompt).
+Both agents' nine later myth prompts EXACTLY equal the saved fixed scaffold plus
+the whole previous-round partner myth. No own full myth, older partner full myth,
+or other variable history block is inserted. Game prompts contain no full myth.
+The text 'Use the myth you wrote in the previous round as inspiration' is an
+instruction, not a copy of that myth. The own original text is available through
+retained assistant content. Although myth_writer.py passes last_myth to format(),
+this run's saved template has no last_myth placeholder.
+
+1. DIRECT RETENTION: original own user/assistant pairs remain verbatim. Older
+   partner myths remain verbatim INSIDE retained historical user prompts.
+2. EXPLICIT DELIVERY: each new later myth prompt inserts partner R-1, its first
+   delivery to this agent. No older-than-R-1 full myth is reintroduced. Once a
+   delivered partner text's containing prompt leaves, that original delivery is gone.
+3. INDIRECT CONTINUITY: later myths can carry names/information forward after
+   originals leave. 'Valley of Echoing Waters' occurs in own M2 through M10 and
+   no partner myth. At call19, M2 is absent but the name remains in retained
+   M7/M8/M9 and is repeated in M10. Exact texts and locations are in
+   indirect_textual_continuity.json. This establishes text persistence, not
+   causal ancestry, internal recall or the amount of information retained.
+   Stored private reasoning is not resent by this run's Anthropic adapter.
+
+AGENT_1 CALL TABLE
+Games/own/partner numbers refer to source rounds; Cn means recorded call n.
+Messages includes system; Prior pairs excludes system and unanswered current prompt.
+Partner historical/current separates retained delivery prompts from the new prompt.
+Removed lists exact message identities absent since the preceding input.
+Call | Round | Task | Messages | Prior pairs | Games | Own myths | Partner historical | Partner current | Removed                
+1    | 1     | myth | 2        | 0           | -     | -         | -                  | -               | -                      
+2    | 1     | game | 4        | 1           | -     | 1         | -                  | -               | -                      
+3    | 2     | myth | 6        | 2           | 1     | 1         | -                  | 1               | -                      
+4    | 2     | game | 8        | 3           | 1     | 1,2       | 1                  | -               | -                      
+5    | 3     | myth | 10       | 4           | 1,2   | 1,2       | 1                  | 2               | -                      
+6    | 3     | game | 12       | 5           | 1,2   | 1,2,3     | 1,2                | -               | -                      
+7    | 4     | myth | 14       | 6           | 1,2,3 | 1,2,3     | 1,2                | 3               | -                      
+8    | 4     | game | 14       | 6           | 1,2,3 | 2,3,4     | 1,2,3              | -               | C1.user, C1.assistant  
+9    | 5     | myth | 14       | 6           | 2,3,4 | 2,3,4     | 1,2,3              | 4               | C2.user, C2.assistant  
+10   | 5     | game | 14       | 6           | 2,3,4 | 3,4,5     | 2,3,4              | -               | C3.user, C3.assistant  
+11   | 6     | myth | 14       | 6           | 3,4,5 | 3,4,5     | 2,3,4              | 5               | C4.user, C4.assistant  
+12   | 6     | game | 14       | 6           | 3,4,5 | 4,5,6     | 3,4,5              | -               | C5.user, C5.assistant  
+13   | 7     | myth | 14       | 6           | 4,5,6 | 4,5,6     | 3,4,5              | 6               | C6.user, C6.assistant  
+14   | 7     | game | 14       | 6           | 4,5,6 | 5,6,7     | 4,5,6              | -               | C7.user, C7.assistant  
+15   | 8     | myth | 14       | 6           | 5,6,7 | 5,6,7     | 4,5,6              | 7               | C8.user, C8.assistant  
+16   | 8     | game | 14       | 6           | 5,6,7 | 6,7,8     | 5,6,7              | -               | C9.user, C9.assistant  
+17   | 9     | myth | 14       | 6           | 6,7,8 | 6,7,8     | 5,6,7              | 8               | C10.user, C10.assistant
+18   | 9     | game | 14       | 6           | 6,7,8 | 7,8,9     | 6,7,8              | -               | C11.user, C11.assistant
+19   | 10    | myth | 14       | 6           | 7,8,9 | 7,8,9     | 6,7,8              | 9               | C12.user, C12.assistant
+20   | 10    | game | 14       | 6           | 7,8,9 | 8,9,10    | 7,8,9              | -               | C13.user, C13.assistant
+
+THREE CONSECUTIVE CALLS: 7, 8, 9
+C7 R4 myth: retains C1..C6 (M1,G1,M2,G2,M3,G3), plus current M4 prompt.
+C8 R4 game: removes C1.user + C1.assistant (M1), retains C2..C7;
+  C7's answer enters history, and the G4 prompt is new.
+C9 R5 myth: removes C2.user + C2.assistant (G1), retains C3..C8;
+  C8's answer enters history, and the M5 prompt delivers partner M4.
+Partner M1 remains in the historical M2 prompt through C9, leaves before C10.
+Unabridged role/content: selected_calls_full_input.txt and report.html.
+All raw snapshot fields: selected_calls_saved_snapshots.json.
+Provider-format system/messages: selected_calls_provider_projection.json (derived).
+Every event for both agents: all_saved_interactions.json (direct extraction).
+Exact full-message additions/removals: message_changes.json.
+
+AUTHORITATIVE SOURCE LOCATIONS (ALL UNDER source_at_run/ AT THE RECORDED COMMIT)
+src/agents.py:83-88 truncation; :168-182 snapshot/call; :55-81 recording;
+  :217-236 append response and record snapshot.
+src/utils.py:322-336 Anthropic conversion; :361 retry default;
+  :610-674 request construction and internal retries.
+src/simulation.py:259-285 serialization.
+src/myth_writer.py:131-204 previous-round selection and prompt formatting.
+config/experiments_noisy.yaml:34-41 model profile; :388-395 myth template;
+  :983-1000 dyad parameters; :5149-5167 inherited condition; :5179-5183 chosen set.
+Current src/agents.py matches this version, but other current files have changed.
+
+REPRODUCTION
+From repository root, using Python 3.10+ and local Git history, no dependencies:
+python3 docs/research/memory_window_audit_20261127/audit.py --out /tmp/memory-window-recheck
+The script fails if the original final or historical implementation hashes differ.
+It reads saved JSON and local git objects only. It never imports experiment code.

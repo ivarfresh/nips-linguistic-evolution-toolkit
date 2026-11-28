@@ -1,3 +1,144 @@
+### 2026-11-28 — Result: myth injection at main-figure noise
+
+**Time:** ~2 hours (donor selection, runner, 80 runs, write-up).
+
+Result: the myth-injection ablation rerun with informed negative-only noise of
+up to $1 and donor myths from the main-figure population runs (fixed top-five /
+bottom-five rule, seeded agent draw). Sonnet 4.5, game only, text re-injected
+every round, 8 cells x 5 replicates, dyads and populations: 80/80 finals
+validated, $41.69 recorded. Final resources per agent, dyads / populations:
+nothing 50.2 (±3.7) / 55.2 (±1.1); filler 48.7 (±2.0) / 56.8 (±0.9); early
+Sonnet 61.7 (±11.1) / 66.8 (±9.0); late Sonnet high 69.3 (±5.4) / 68.7 (±5.6);
+late Sonnet low 52.5 (±2.2) / 53.6 (±2.2); late Gemini 3.7 Flash 75.0 (±0.0) /
+75.0 (±0.0); late GPT-5 Nano highest 49.7 (±2.5) / 57.5 (±1.5); late GPT-5 Nano
+low 48.4 (±1.3) / 55.1 (±1.4). Cooperative Sonnet and Gemini myths raise
+cooperation; filler, low Sonnet and GPT-5 Nano myths do not move it. Same donor
+texts give the same outcome in both group sizes. Caveats: n=5, one donor per
+run; high/low are relative to family; low Sonnet donors are all game→myth. The
+population batch stopped once on an empty Anthropic balance and resumed from
+complete-round checkpoints. The poem control was considered and left out.
+Fork PR #53; `docs/research/myth_injection_noise1_20261127/README.md` on branch
+`runs/myth-injection-noise1-20261127`.
+
+### 2026-11-27 — Result: self-inspiration sentence removed, Gemini + GPT dyads
+
+**Time:** 0.5 hours.
+
+Result: third mixed pairing of the same ablation, Gemini 3.7 Flash (Vertex) + GPT-5 Nano,
+game→myth and myth→game, replicates 0–4 paired with the September runs. 10/10 audited,
+$1.83. Borrowing does not rise without the sentence: Gemini −2.3 pts (−3.8 to −0.9), GPT
+−0.7 (−2.0 to 0.6). Self-copying Gemini −4.2 pts (−8.5 to 0.1), GPT −2.5 (−5.3 to 0.4).
+Resources 72.1 vs 71.1 (−1.0, −2.9 to 1.0). A two-panel figure in the formats of paper
+Figures 5a and 3 covers all 40 ablation runs. Fork PR #52,
+`docs/research/no_self_line_dyads_20261127/` on that branch.
+
+### 2026-11-27 — Team meeting: plan after the AAMAS withdrawal
+
+**Time:** 1 hour (meeting).
+
+The paper was withdrawn from AAMAS on 2026-11-24 (emails: Ivar not confident enough
+in Section 4.4, the LLM judges and the GPT-5 Nano myth data; Edward agreed; Aron
+withdrew). Meeting with Aron and Edward, per the Gemini-written notes: arXiv before
+Christmas; delete Section 4.4; rerun the myth-injection ablation at U(-1,0) (it ran
+at U(-5,0)); self-inspiration ablation for dyads only; write-without-reading and
+read-without-writing are the new conditions to run; five replicates are enough for
+supplementary figures; a few dyad replicates to check the 4-partner/3-own myth
+asymmetry; GPT-5 Nano myth retry goes in the appendix.
+Rejected: symmetric-noise and neutral-writing-prompt controls.
+Caveats: notes only, no transcript read; the three new runs are not started; grant
+funding is used up (Ivar's email to Edward, unanswered); Sonnet 4.5 retires 11-30.
+See `docs/project-memory/CURRENT.md` and D015.
+
+### 2026-11-27 — Result: self-inspiration sentence removed in mixed dyads
+
+**Time:** 1 hour.
+
+Result: the same deleted sentence in Sonnet 4.5 + GPT-5 Nano and Sonnet 4.5 + Gemini 3.7
+Flash dyads (game→myth and myth→game, replicates 0–4, paired with the September mixed
+dyads on the same seeds and first sender). 20/20 audited, $9.54. Self-copying falls in
+every family: Sonnet −6.8 pts with GPT (−10.2 to −3.4) and −7.2 with Gemini (−12.7 to
+−1.7), Gemini −6.6 (−11.1 to −2.1), GPT −4.8 (−9.8 to 0.2). Borrowing from the partner
+rises nowhere; Sonnet with Gemini borrows less (−2.5 pts, −4.4 to −0.5). Resources
+unchanged: Sonnet+GPT −2.9 (−11.6 to 5.8), Sonnet+Gemini 73.5 vs 73.7.
+Caveats: Gemini 3.7 ran through Vertex AI (the baseline used the Gemini API; answering
+model checked on every call); the batch was paused once at Ivar's request, ten
+interrupted runs were restarted from round 1 and their partial spend (not measured) is
+outside the $9.54. Fork PR #52, same README as the entry below; runs in
+`data/json/noise_experiments/no_self_line_mixed_dyads_20261127/`.
+
+### 2026-11-27 — Result: full dyad runs without the self-inspiration sentence
+
+**Time:** 1.5 hours.
+
+Result: ten Sonnet 4.5 dyad runs (game→myth and myth→game, replicates 0–4, September
+profile and noise seeds) with only the sentence "Use the myth you wrote in the previous
+round as inspiration, but adapt it in your own way." deleted from the later-round myth
+prompt. 10/10 audited, $7.98. Against the paired September runs: self-copying 35.2% →
+26.8% (−8.4 pts, 95% interval −13.5 to −3.3, lower in 8 of 10 pairs); borrowing from the
+partner −1.8 pts (−5.0 to 1.3); resources +3.4 (−5.1 to 11.8), myth→game alone +7.0
+(−8.9 to 22.9). So the sentence does raise self-copying over a run, which the October
+single-call replay did not show; cooperation is not detectably changed at n=5.
+Caveat: a first launch with ten replicates per condition was stopped within minutes
+(scope changed to five); no run finished, its small spend is not in the $7.98.
+Sonnet only, dyads only. Fork PR #52; write-up
+`docs/research/no_self_line_dyads_20261127/README.md` on that branch; runs in
+`data/json/noise_experiments/no_self_line_dyads_20261127/`; D007.
+
+### 2026-11-27 — Reviewer follow-up scope narrowed
+
+**Time:** not tracked separately.
+
+Keep the write-without-reading and read-without-writing controls for the
+revision, following Ed's recommendation as relayed by Ivar. Skip the other
+unrun controls and use the existing evidence where it addresses the review.
+The earlier fixed-text transplant informs reading effects under a different
+game and memory setup. The new conditions are pending design and execution.
+See [D015](docs/project-memory/decisions/015-reviewer-followup-scope.md).
+
+### 2026-11-27 — Result: task order shifts exposure
+
+**Time:** not tracked separately (offline follow-up; no experiment/API spend).
+
+Result: forty saved calls in the corresponding September Sonnet game→myth
+dyad also retain the exact latest six exchanges. Both task orders expose three
+partner myths at game time, but game→myth exposes partner and own myths one
+source-round older: round-5 game sees partner 1–3 and own 2–4, versus partner
+2–4 and own 3–5 in myth→game. Input timing measured; behavioural effect untested.
+Original files unchanged. Source hash, metadata, exposure rows and extractor:
+`docs/research/memory_window_audit_20261127/game_myth_followup.{json,py}`; D001.
+
+### 2026-11-27 — Result: saved memory window verified
+
+**Time:** not tracked separately (offline audit with three independent agents; no experiment/API spend).
+
+Result: forty saved inputs from a completed September Sonnet dyad retain the
+system and latest six complete exchanges, unchanged and chronological, with
+whole-pair eviction. Observed one myth + one game per round. Two qualifications:
+final stored buffers hold seven pairs; steady myth calls expose three own myths
+but four partner myths through historical/current prompts. New prompts insert
+only the previous-round partner myth. Later rewriting preserves a name after
+its original message leaves; causal recall is unverified. Saved inputs precede
+the provider adapter, so wire payloads/hidden retries remain unverified.
+Original source/config/data unchanged; no new simulations. Reproducible script,
+full inputs, table and hash-matched source: `docs/research/memory_window_audit_20261127/`.
+Project-memory record D001; 710 checks and independent reproduction passed.
+
+### 2026-11-23 — Result: paper statistics reproduce with qualifications
+
+**Time:** not tracked separately (local four-agent statistical audit; no API spend).
+
+Result: Sections 4.4/4.5 headline statistics reproduce against the latest fetched
+manuscript; all 444 checked Holm adjustments match independent calculations.
+Verified 771 distinct completed finals and rebuilt the three linguistic caches
+without discrepancies. The opening adjustment is run-level OLS adding opening
+transfer ($0.416→$0.171 in single-model runs); it does not identify mediation.
+The supplement mislabels its opening-slope CI as a bootstrap. Moral p-values
+are uncorrected; the $0.074 writing association passes the selected 25-test
+family but not the broader 62/178-test families. Amount-variable and later-71%
+sample wording need qualification. Original manuscript/code/data unchanged.
+Full reports, offline scripts, exact p-values and hashed source bundle:
+`docs/research/statistics_audit_20261123/`; project-memory record D014.
+
 ### 2026-10-09 — Result: placebo controls and the interaction table now rebuild from the repo
 
 **Time:** ~1.5 h (Claude session; no API spend).
