@@ -89,7 +89,9 @@ def bar_figure(size, values, out_dir):
     positions = np.arange(len(CELLS))
     rng = np.random.default_rng(seed=6)
     tops = []
-    for index, (cell, _label, color, _legend) in enumerate(CELLS):
+    # Bars run from the lowest cell mean (left) to the highest (right), per figure.
+    cells = sorted(CELLS, key=lambda item: statistics.mean(values[item[0]].values()))
+    for index, (cell, _label, color, _legend) in enumerate(cells):
         observations = [values[cell][rep] for rep in range(5)]
         mean = statistics.mean(observations)
         sd = statistics.stdev(observations)
@@ -105,7 +107,7 @@ def bar_figure(size, values, out_dir):
     ax.axhline(baseline, color="#7f7f7f", linestyle=":", alpha=0.6, linewidth=1.4,
                label=f"Nothing injected, mean ({baseline:.1f})")
     ax.set_xticks(positions)
-    ax.set_xticklabels([label for _, label, _, _ in CELLS], fontsize=10)
+    ax.set_xticklabels([label for _, label, _, _ in cells], fontsize=10)
     ax.set_xlabel("Text injected at every decision")
     ax.set_ylabel(f"Final resources per agent ({group_label})")
     ax.set_ylim(0, max(tops) + 12)
